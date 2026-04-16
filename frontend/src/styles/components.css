@@ -1,0 +1,26 @@
+.site-nav a {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.35rem;
+}
+
+.site-nav a.active {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.page-card {
+  padding: 2rem;
+  border: 1px solid var(--color-grey-200);
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
+
+.page-card h1 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+.page-card p {
+  margin: 0;
+  line-height: 1.6;
+}

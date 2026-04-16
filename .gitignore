@@ -1,0 +1,22 @@
+# IntelliJ
+.idea/
+*.iml
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Frontend build / dependencies
+/frontend/node_modules/
+/frontend/dist/
+
+# TypeScript incremental build files
+/frontend/*.tsbuildinfo
+
+# Local environment files
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.*.local
