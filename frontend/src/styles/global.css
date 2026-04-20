@@ -1,20 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:ital,wght@0,100;0,300;0,400;0,600;1,400&display=swap');
+
 :root {
   /* Primary */
-  --color-primary: #315c5c;
-  --color-secondary: #5f7a61;
-  --color-tertiary: #d8c79b;
+  --color-primary: #3b6b61;
+  --color-secondary: #264037;
+  --color-tertiary: #66bda4;
 
   /* Greys */
-  --color-grey-100: #f5f5f5;
-  --color-grey-200: #dddddd;
-  --color-grey-300: #9a9a9a;
+  --color-grey-100: #f4f7f2;
+  --color-grey-200: #e6e6e6;
+  --color-grey-300: #999999;
 
   /* Base */
   --color-background: #f8f7f3;
-  --color-text: #222222;
+  --color-text: #1f2a2e;
 
   /* Font */
-  --font-family-base: Arial, sans-serif;
+  --font-family-base: 'IBM Plex Sans Condensed', sans-serif;
 }
 
 * {

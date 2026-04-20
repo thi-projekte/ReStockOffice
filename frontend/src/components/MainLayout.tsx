@@ -5,7 +5,7 @@ export function MainLayout() {
     <div className="app-shell">
       <header className="site-header">
         <div className="container site-header__inner">
-          <div className="site-logo">ReStockOffice</div>
+          <div className="site-logo"> ReStockOffice </div>
 
           <nav aria-label="Hauptnavigation" className="site-nav">
             <NavLink to="/">Home</NavLink>
