@@ -1,5 +1,5 @@
 import { useState } from "react";
-import iconColored from "../assets/logos/icon_colored.png";
+import logoColored from "../assets/logos/logo_colored.png";
 import type { Product } from "../types/shop";
 import { getProductEndpoint } from "../services/productService";
 
@@ -34,7 +34,7 @@ function ProductCard({ product, onAdd }: ProductCardProps) {
     <article className="product-card">
       <img
         className="product-card__image"
-        src={iconColored}
+        src={logoColored}
         alt={product.name}
       />
       <div className="product-card__content">
