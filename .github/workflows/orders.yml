@@ -44,7 +44,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./orders
+          context: ./ReStockOffice/orders
           file: ./web/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
           tags: |
