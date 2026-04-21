@@ -1,7 +1,12 @@
-// @ts-ignore
-import { RouterProvider } from "react-router-dom";
-import { router } from "./router";
+import { Outlet } from "react-router-dom";
+import { AppShell } from "./components/AppShell";
 
 export function App() {
-  return <RouterProvider router={router} />;
+  return (
+      <AppShell>
+        {({ isLoggedIn, onLogin }) => (
+            <Outlet context={{ isLoggedIn, onLogin }} />
+        )}
+      </AppShell>
+  );
 }
