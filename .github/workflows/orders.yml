@@ -26,11 +26,11 @@ jobs:
           cache: maven
 
       - name: Test
-        working-directory: orders
+        working-directory: ReStockOffice/orders
         run: ./mvnw verify -B
 
       - name: Package native
-        working-directory: orders
+        working-directory: ReStockOffice/orders
         run: ./mvnw package -Dnative -DskipTests
 
       - name: Log in to GHCR
