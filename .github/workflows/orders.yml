@@ -48,8 +48,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./web
-          file: ./web/src/main/docker/Dockerfile.native-micro
+          context: ./orders
+          file: ./orders/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
           tags: |
             ghcr.io/d135-1r43/pruefstein-web:latest
