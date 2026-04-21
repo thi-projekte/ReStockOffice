@@ -1,0 +1,51 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:ital,wght@0,100;0,300;0,400;0,600;1,400&display=swap");
+
+:root {
+  --color-primary: #3b6b61;
+  --color-secondary: #264037;
+  --color-tertiary: #66bda4;
+  --color-grey-100: #f4f7f2;
+  --color-grey-200: #e6e6e6;
+  --color-grey-300: #999999;
+  --color-background: #f8f7f3;
+  --color-surface: #ffffff;
+  --color-text: #1f2a2e;
+  --color-danger: #b24c3d;
+  --shadow-soft: 0 16px 40px rgba(38, 64, 55, 0.08);
+  --font-family-base: "IBM Plex Sans Condensed", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+  font-family: var(--font-family-base);
+  background:
+    radial-gradient(circle at top right, rgba(102, 189, 164, 0.18), transparent 26%),
+    linear-gradient(180deg, #fbfaf6 0%, var(--color-background) 100%);
+  color: var(--color-text);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
