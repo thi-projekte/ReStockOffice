@@ -1,5 +1,3 @@
-## A basic GitHub Actions workflow for your Quarkus application.
-
 name: CI build
 
 on:
@@ -38,7 +36,6 @@ jobs:
           ./mvnw package -Dnative -DskipTests
 
       - name: Log in to GHCR
-        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -50,7 +47,7 @@ jobs:
         with:
           context: ./orders
           file: ./orders/src/main/docker/Dockerfile.native-micro
-          push: ${{ github.event_name == 'push' }}
+          push: true
           tags: |
             ghcr.io/thi-projekte/restockoffice:latest
             ghcr.io/thi-projekte/restockoffice:${{ github.sha }}
