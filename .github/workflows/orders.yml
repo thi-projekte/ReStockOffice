@@ -52,5 +52,5 @@ jobs:
           file: ./orders/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/d135-1r43/pruefstein-web:latest
-            ghcr.io/d135-1r43/pruefstein-web:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
