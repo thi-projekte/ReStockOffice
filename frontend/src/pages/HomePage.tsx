@@ -114,10 +114,11 @@ export function HomePage() {
           <div>
             <span className="eyebrow">{eyebrow}</span>
             <h2>{title}</h2>
+            <p className="section-copy">{description}</p>
           </div>
         </div>
 
-        <p className="section-copy">{description}</p>
+
 
         {isLoading ? (
           <p className="empty-state">Produkte werden geladen...</p>
@@ -208,7 +209,7 @@ export function HomePage() {
               <small>Jetzt shoppen</small>
             </a>
 
-            <a className="highlight-tile highlight-tile--link" href="#fuer-dein-buero">
+            <a className="highlight-tile highlight-tile--link" href="#empfehlungen">
               <strong>Empfehlungen</strong>
               <span>Persönlich zusammengestellte Empfehlungen für dich</span>
               <small>Jetzt shoppen</small>
@@ -249,7 +250,7 @@ export function HomePage() {
         "sale",
         "angebote",
         "Angebote",
-        "Jetzt im Angebot",
+        "Aktuelle Deals",
         "Entdecke regelmäßig wechselnde Deals und Preisaktionen",
         saleProducts,
       )}
@@ -257,7 +258,7 @@ export function HomePage() {
       {renderCarouselSection(
         "reorder",
         "nochmal-kaufen",
-        "Nachkaufen",
+        "Nachbestellen",
         "Nochmal kaufen",
         "Produkte aus früheren Bestellungen schnell erneut kaufen",
         reorderProducts,
@@ -265,9 +266,9 @@ export function HomePage() {
 
       {renderCarouselSection(
         "office",
-        "fuer-dein-buero",
+        "empfehlungen",
+        "Empfehlungen",
         "Für dein Büro",
-        "Passende Produkte",
         "Produkte, die auf deinen Interessen und bisherigen Käufen basieren",
         officeProducts,
       )}
@@ -276,7 +277,7 @@ export function HomePage() {
         <div className="section-head">
           <div>
             <span className="eyebrow">Kategorien</span>
-            <h2>Top Kategorien</h2>
+            <h2>Unsere Top Kategorien</h2>
           </div>
         </div>
 
