@@ -52,5 +52,5 @@ jobs:
           file: ./orders/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/thi-projekte/restockoffice:latest
+            ghcr.io/thi-projekte/restockoffice:${{ github.sha }}
