@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import iconColored from "../assets/logos/icon_colored.png";
 import { CartDrawer } from "./CartDrawer";
@@ -41,7 +41,7 @@ export function AppShell({ children }: AppShellProps) {
     }
 
     setIsLoggedIn(true);
-    navigate("/search");
+    navigate("/");
   }
 
   function handleLogout() {
@@ -49,6 +49,17 @@ export function AppShell({ children }: AppShellProps) {
     setCartOpen(false);
     navigate("/login");
   }
+
+  useEffect(() => {
+    if (!isLoggedIn && location.pathname !== "/login") {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    if (isLoggedIn && location.pathname === "/login") {
+      navigate("/", { replace: true });
+    }
+  }, [isLoggedIn, location.pathname, navigate]);
 
   const onSearchPage = location.pathname === "/search";
 
@@ -58,13 +69,9 @@ export function AppShell({ children }: AppShellProps) {
         <div className="container site-header__inner">
           <div className="brand-column">
             <nav aria-label="Hauptnavigation" className="site-nav">
-              <NavLink to="/" className="logo-link">
+              <NavLink to={isLoggedIn ? "/" : "/login"} className="logo-link">
                 <div className="brand-block">
-                  <img
-                      className="brand-block__logo"
-                      src={iconColored}
-                      alt="ReStockOffice"
-                  />
+                  <img className="brand-block__logo" src={iconColored} alt="ReStockOffice" />
                   <div>
                     <div className="site-logo">ReStockOffice</div>
                   </div>
@@ -74,6 +81,12 @@ export function AppShell({ children }: AppShellProps) {
           </div>
 
           <div className="header-actions">
+            {isLoggedIn ? (
+              <NavLink className="button button--ghost" to="/">
+                Home
+              </NavLink>
+            ) : null}
+
             {isLoggedIn ? (
               <NavLink className="button button--ghost" to="/search">
                 Suche
@@ -91,11 +104,7 @@ export function AppShell({ children }: AppShellProps) {
             ) : null}
 
             {isLoggedIn ? (
-              <button
-                className="button button--ghost"
-                type="button"
-                onClick={handleLogout}
-              >
+              <button className="button button--ghost" type="button" onClick={handleLogout}>
                 Abmelden
               </button>
             ) : (
@@ -116,7 +125,7 @@ export function AppShell({ children }: AppShellProps) {
               <div className="section-head">
                 <div>
                   <h2>Artikel</h2>
-                  <p>All unsere Produkte findest du hier:</p>
+                  <p>Alle verfügbaren Produkte im aktuellen Mock-Datenbestand.</p>
                 </div>
 
                 <input
@@ -135,9 +144,7 @@ export function AppShell({ children }: AppShellProps) {
       </main>
 
       <footer className="site-footer">
-        <div className="container">
-          ReStockOffice - Simple in Stock
-        </div>
+        <div className="container">ReStockOffice - Simple in Stock</div>
       </footer>
 
       {isLoggedIn ? (

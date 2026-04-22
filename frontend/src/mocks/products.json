@@ -38,5 +38,45 @@
     "article_type": "Ablage",
     "units": 1,
     "imageUrl": ""
+  },
+  {
+    "itemId": 10005,
+    "name": "Haftnotizen Pastell",
+    "description": "Selbstklebende Notizzettel für Schreibtisch, Meetings und schnelle Markierungen.",
+    "price": 2.49,
+    "brand": "NoteIt",
+    "article_type": "Schreibwaren",
+    "units": 12,
+    "imageUrl": ""
+  },
+  {
+    "itemId": 10006,
+    "name": "Whiteboard Marker Set",
+    "description": "Vierfarbiges Marker-Set für Besprechungen, Planung und Präsentationen.",
+    "price": 6.99,
+    "brand": "BoardLine",
+    "article_type": "Bürozubehör",
+    "units": 4,
+    "imageUrl": ""
+  },
+  {
+    "itemId": 10007,
+    "name": "Versandbox Small",
+    "description": "Kompakter Versandkarton für interne Logistik und kleine Bestellungen.",
+    "price": 1.29,
+    "brand": "PackFlow",
+    "article_type": "Lager",
+    "units": 1,
+    "imageUrl": ""
+  },
+  {
+    "itemId": 10008,
+    "name": "Kaffee Bohnen Classic",
+    "description": "Milde Röstung für Küchenbereich, Pausenraum und spontane Meetings.",
+    "price": 13.49,
+    "brand": "OfficeRoast",
+    "article_type": "Küche",
+    "units": 1000,
+    "imageUrl": ""
   }
 ]

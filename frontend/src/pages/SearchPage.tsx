@@ -17,7 +17,8 @@ export function SearchPage() {
     <section className="page-card">
       <h1>Suchen und Bestellen</h1>
       <p>
-        ...
+          Suche, filtere und bestelle Bürobedarf effizient an einem Ort.
+          Alles, was dein Arbeitsplatz braucht – jederzeit verfügbar. Simple in Stock.
       </p>
     </section>
   );
