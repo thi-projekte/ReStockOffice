@@ -2,7 +2,7 @@ name: CI build
 
 on:
   push:
-    branches: [ main, feature/articleservice ]
+    branches: [ main, feature/artikelservice ]
   pull_request:
     branches: [ main ]
 
