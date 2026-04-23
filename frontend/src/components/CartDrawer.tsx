@@ -1,4 +1,8 @@
 import type { CartItem } from "../types/shop";
+import {Link} from "react-router-dom";
+
+// Icons
+import { MdDelete } from "react-icons/md";
 
 interface CartDrawerProps {
   items: CartItem[];
@@ -77,7 +81,7 @@ export function CartDrawer({
                       type="button"
                       onClick={() => onRemove(product.itemId)}
                     >
-                      Entfernen
+                      <MdDelete  />
                     </button>
                   </div>
                 </li>
@@ -85,13 +89,16 @@ export function CartDrawer({
             </ul>
 
             <div className="cart-summary">
-              <strong>Gesamt</strong>
+              <strong>Gesamt:</strong>
               <span>
                 {totalPrice.toLocaleString("de-DE", {
                   style: "currency",
                   currency: "EUR",
                 })}
               </span>
+              <Link className="button" to="/checkout">
+                Weiter zum Checkout
+              </Link>
             </div>
           </>
         )}

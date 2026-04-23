@@ -8,6 +8,12 @@ import type { LoginFormData } from "../types/shop";
 import { authenticateUser } from "../services/authService";
 import { productMocks } from "../services/productService";
 
+// Icons
+import { FaHome, FaShoppingCart, FaSearch, FaUser } from "react-icons/fa";
+import { MdLogin } from "react-icons/md";
+
+
+
 interface AppShellProps {
   children: (context: {
     isLoggedIn: boolean;
@@ -69,7 +75,7 @@ export function AppShell({ children }: AppShellProps) {
         <div className="container site-header__inner">
           <div className="brand-column">
             <nav aria-label="Hauptnavigation" className="site-nav">
-              <NavLink to={isLoggedIn ? "/" : "/login"} className="logo-link">
+              <NavLink to={isLoggedIn ? "/" : "/login"} className="logo-link" title="ReStockOffice - Startseite">
                 <div className="brand-block">
                   <img className="brand-block__logo" src={iconColored} alt="ReStockOffice" />
                   <div>
@@ -82,14 +88,14 @@ export function AppShell({ children }: AppShellProps) {
 
           <div className="header-actions">
             {isLoggedIn ? (
-              <NavLink className="button button--ghost" to="/">
-                Home
+              <NavLink className="button button--ghost" to="/" title={"Startseite"}>
+                <FaHome />
               </NavLink>
             ) : null}
 
             {isLoggedIn ? (
-              <NavLink className="button button--ghost" to="/search">
-                Suche
+              <NavLink className="button button--ghost" to="/search" title={"Suche"}>
+                <FaSearch />
               </NavLink>
             ) : null}
 
@@ -98,18 +104,19 @@ export function AppShell({ children }: AppShellProps) {
                 className="button button--ghost"
                 type="button"
                 onClick={() => setCartOpen(true)}
+                title="Warenkorb"
               >
-                Warenkorb ({cart.totalItems})
+                <FaShoppingCart/> ({cart.totalItems})
               </button>
             ) : null}
 
             {isLoggedIn ? (
-              <button className="button button--ghost" type="button" onClick={handleLogout}>
-                Abmelden
+              <button className="button button--ghost" type="button" onClick={handleLogout} title="Konto">
+                <FaUser />
               </button>
             ) : (
-              <NavLink className="button button--ghost" to="/login">
-                Login
+              <NavLink className="button button--ghost" to="/login" title={"Login"}>
+                <MdLogin/>
               </NavLink>
             )}
           </div>
@@ -125,7 +132,7 @@ export function AppShell({ children }: AppShellProps) {
               <div className="section-head">
                 <div>
                   <h2>Artikel</h2>
-                  <p>Alle verfügbaren Produkte im aktuellen Mock-Datenbestand.</p>
+                  <p>Alle verfügbaren Produkte</p>
                 </div>
 
                 <input
