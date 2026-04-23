@@ -9,12 +9,14 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class ArticleRessource {
 
+    // Rückgabe aller Artikel mit /articles
     @GET
     @Path("articles")
     public List<Article> getArticles(){
         return Article.listAll();
     }
 
+    // Rückgabe aller Artikel mit /article?itemId=xxxxx
     @GET
     @Path("article")
     public Article getArticleByItemId(@QueryParam("itemId") String itemId){
@@ -26,6 +28,7 @@ public class ArticleRessource {
         return article;
     }
 
+    // Rückgabe aller Artikel mit /articleByCategory?article-type=xxxxxx
     @GET
     @Path("articleByCategory")
     public Article getArticleByCategory(@QueryParam("article-type") String articleType){
