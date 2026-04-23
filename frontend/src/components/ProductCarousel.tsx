@@ -71,6 +71,7 @@ export function ProductCarousel({
                 key={`${title}-${product.itemId}`}
                 className="product-card product-card--link carousel-card"
                 to={`/products/${product.itemId}`}
+                onClick={() => window.scrollTo(0, 0)}
               >
                 <div className="carousel-card__media">
                   {getBadge ? (

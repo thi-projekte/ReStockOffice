@@ -4,8 +4,8 @@ import { AppShell } from "./components/AppShell";
 export function App() {
   return (
       <AppShell>
-        {({ isLoggedIn, onLogin }) => (
-            <Outlet context={{ isLoggedIn, onLogin }} />
+        {({ isLoggedIn, onLogin, onAddToCart }) => (
+            <Outlet context={{ isLoggedIn, onLogin, onAddToCart }} />
         )}
       </AppShell>
   );

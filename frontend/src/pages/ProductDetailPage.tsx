@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import {Link, Navigate, useOutletContext, useParams} from "react-router-dom";
 import logoColored from "../assets/logos/logo_colored.png";
 import { ProductCarousel } from "../components/ProductCarousel";
 import { getProductById, getProducts } from "../services/productService";
 import type { Product } from "../types/shop";
+
+interface ProductDetailProps {
+  onAddToCart: (product: Product) => void;
+  isLoggedIn: boolean;
+  onLogin: (formData: any) => void;
+}
 
 function formatPrice(value: number) {
   return value.toLocaleString("de-DE", {
@@ -38,6 +44,7 @@ export function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { onAddToCart } = useOutletContext<ProductDetailProps>();
 
   useEffect(() => {
     async function loadProduct() {
@@ -83,95 +90,99 @@ export function ProductDetailPage() {
   }
 
   return (
-    <div className="home-showcase">
-      <section className="page-card product-detail">
-        <div className="product-detail__media">
-          <img src={product.imageUrl || logoColored} alt={product.name} />
-        </div>
-
-        <div className="product-detail__summary">
-          <span className="eyebrow">{product.article_type}</span>
-          <h1>{product.name}</h1>
-          <p className="product-detail__description">{product.description}</p>
-
-          <div className="product-detail__price-box">
-            <strong>{formatPrice(product.price)}</strong>
-            <span>pro Verpackungseinheit</span>
-          </div>
-
-          <dl className="product-detail__facts">
+        <div className="home-showcase">
+          <section className="page-card product-detail">
+            <Link to="/search" className="product-detail__backlink">
+              <span className="eyebrow">Zurück zur Artikelsuche</span>
+            </Link>
             <div>
-              <dt>Marke</dt>
-              <dd>{product.brand}</dd>
+              <span className="eyebrow">{product.article_type}</span>
             </div>
-            <div>
-              <dt>Artikelnummer</dt>
-              <dd>{product.itemId}</dd>
+            <div className="product-detail__media">
+              <img src={product.imageUrl || logoColored} alt={product.name}/>
             </div>
-            <div>
-              <dt>Verpackung</dt>
-              <dd>{product.units} Einheiten</dd>
-            </div>
-            <div>
-              <dt>Kategorie</dt>
-              <dd>{product.article_type}</dd>
-            </div>
-          </dl>
+            <div className="product-detail__summary">
+              <h1>{product.name}</h1>
+              <p className="product-detail__description">{product.description}</p>
 
-          <div className="product-detail__actions">
-            <button
-                className="button"
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                }}
-            >
-              Zum Warenkorb hinzufügen
-            </button>
-          </div>
+              <div className="product-detail__price-box">
+                <strong>{formatPrice(product.price)}</strong>
+                <span>pro Verpackungseinheit</span>
+              </div>
+
+              <dl className="product-detail__facts">
+                <div>
+                  <dt>Artikelnummer</dt>
+                  <dd>{product.itemId}</dd>
+                </div
+                ><div>
+                  <dt>Verpackung</dt>
+                  <dd>{product.units} Einheit(en)</dd>
+                </div>
+                <div>
+                  <dt>Marke</dt>
+                  <dd>{product.brand}</dd>
+                </div>
+                <div>
+                  <dt>Kategorie</dt>
+                  <dd>{product.article_type}</dd>
+                </div>
+              </dl>
+
+              <div className="product-detail__actions">
+                <button
+                    className="button"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAddToCart(product);
+                    }}
+                >
+                  Zum Warenkorb hinzufügen
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="page-card product-specs">
+            <div className="section-head">
+              <div>
+                <span className="eyebrow">Spezifikationen</span>
+                <h2>Produktdetails</h2>
+                <p className="section-copy">Alle wichtigen Informationen auf einen Blick.</p>
+              </div>
+            </div>
+
+            <div className="product-specs__grid">
+              <article className="product-specs__item">
+                <span>Artikelnummer</span>
+                <strong>{product.itemId}</strong>
+              </article>
+              <article className="product-specs__item">
+                <span>Marke</span>
+                <strong>{product.brand}</strong>
+              </article>
+              <article className="product-specs__item">
+                <span>Kategorie</span>
+                <strong>{product.article_type}</strong>
+              </article>
+              <article className="product-specs__item">
+                <span>Einheiten pro Packung</span>
+                <strong>{product.units}</strong>
+              </article>
+              <article className="product-specs__item">
+                <span>Preis</span>
+                <strong>{formatPrice(product.price)}</strong>
+              </article>
+            </div>
+          </section>
+
+          <ProductCarousel
+              anchorId={"similar-products"}
+              eyebrow="Mehr entdecken"
+              title="Ähnliche Produkte"
+              description="Weitere Artikel, die zu diesem Produkt und seiner Kategorie passen."
+              products={similarProducts}/>
         </div>
-      </section>
-
-      <section className="page-card product-specs">
-        <div className="section-head">
-          <div>
-            <span className="eyebrow">Spezifikationen</span>
-            <h2>Produktdetails</h2>
-            <p className="section-copy">Alle wichtigen Informationen auf einen Blick.</p>
-          </div>
-        </div>
-
-        <div className="product-specs__grid">
-          <article className="product-specs__item">
-            <span>Artikelnummer</span>
-            <strong>{product.itemId}</strong>
-          </article>
-          <article className="product-specs__item">
-            <span>Marke</span>
-            <strong>{product.brand}</strong>
-          </article>
-          <article className="product-specs__item">
-            <span>Kategorie</span>
-            <strong>{product.article_type}</strong>
-          </article>
-          <article className="product-specs__item">
-            <span>Einheiten pro Packung</span>
-            <strong>{product.units}</strong>
-          </article>
-          <article className="product-specs__item">
-            <span>Preis</span>
-            <strong>{formatPrice(product.price)}</strong>
-          </article>
-        </div>
-      </section>
-
-      <ProductCarousel
-        anchorId={"similar-products"}
-        eyebrow="Mehr entdecken"
-        title="Ähnliche Produkte"
-        description="Weitere Artikel, die zu diesem Produkt und seiner Kategorie passen."
-        products={similarProducts}
-      />
-    </div>
   );
 }

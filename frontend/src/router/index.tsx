@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { App } from "../App";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
+import { CategoryPage } from "../pages/CategoryPage";
 import { ProductDetailPage } from "../pages/ProductDetailPage";
 import { SearchPage } from "../pages/SearchPage";
 
@@ -21,6 +22,10 @@ export const router = createBrowserRouter([
       {
         path: "search",
         element: <SearchPage />,
+      },
+      {
+        path: "categories/:categorySlug",
+        element: <CategoryPage />,
       },
       {
         path: "products/:itemId",

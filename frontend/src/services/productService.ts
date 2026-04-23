@@ -15,6 +15,27 @@ export async function getProductById(itemId: number): Promise<Product | undefine
   return products.find((product) => product.itemId === itemId);
 }
 
+export function getCategorySlug(category: string) {
+  return category.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+export async function getProductsByCategorySlug(categorySlug: string): Promise<Product[]> {
+  const products = await getProducts();
+
+  return products.filter(
+    (product) => getCategorySlug(product.article_type) === categorySlug.toLowerCase(),
+  );
+}
+
+export async function getCategoryNameBySlug(categorySlug: string): Promise<string | undefined> {
+  const products = await getProducts();
+  const matchingProduct = products.find(
+    (product) => getCategorySlug(product.article_type) === categorySlug.toLowerCase(),
+  );
+
+  return matchingProduct?.article_type;
+}
+
 export function getProductEndpoint(itemId: number) {
   return `${API_BASE_URL}/product?itemid=${itemId}`;
 }

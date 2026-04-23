@@ -4,7 +4,7 @@ import iconColored from "../assets/logos/icon_colored.png";
 import { CartDrawer } from "./CartDrawer";
 import { ProductGrid } from "./ProductGrid";
 import { useCart } from "../hooks/useCart";
-import type { LoginFormData } from "../types/shop";
+import type { LoginFormData, Product } from "../types/shop";
 import { authenticateUser } from "../services/authService";
 import { productMocks } from "../services/productService";
 
@@ -18,6 +18,7 @@ interface AppShellProps {
   children: (context: {
     isLoggedIn: boolean;
     onLogin: (formData: LoginFormData) => void;
+    onAddToCart: (product: Product) => void;
   }) => ReactNode;
 }
 
@@ -101,9 +102,9 @@ export function AppShell({ children }: AppShellProps) {
 
             {isLoggedIn ? (
               <button
-                className="button button--ghost"
+                className={`button button--ghost ${cartOpen ? "active" : ""}`}
                 type="button"
-                onClick={() => setCartOpen(true)}
+                onClick={() => cartOpen ? setCartOpen(false) : setCartOpen(true)}
                 title="Warenkorb"
               >
                 <FaShoppingCart/> ({cart.totalItems})
@@ -125,7 +126,7 @@ export function AppShell({ children }: AppShellProps) {
 
       <main className="site-main">
         <div className="container">
-          {children({ isLoggedIn, onLogin: handleLogin })}
+          {children({ isLoggedIn, onLogin: handleLogin, onAddToCart: cart.add })}
 
           {isLoggedIn && onSearchPage ? (
             <section className="page-card section-space">

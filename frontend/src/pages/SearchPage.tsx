@@ -1,9 +1,10 @@
 import { Navigate, useOutletContext } from "react-router-dom";
-import type { LoginFormData } from "../types/shop";
+import type { LoginFormData, Product } from "../types/shop";
 
 interface OutletContext {
   onLogin: (formData: LoginFormData) => void;
   isLoggedIn: boolean;
+  onAddToCart: (product: Product) => void;
 }
 
 export function SearchPage() {

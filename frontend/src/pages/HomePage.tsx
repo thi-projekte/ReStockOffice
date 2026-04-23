@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { Link } from "react-router-dom";
 import logoColored from "../assets/logos/logo_colored.png";
-import { getProducts } from "../services/productService";
+import { getCategorySlug, getProducts } from "../services/productService";
 import type { Product } from "../types/shop";
 import {ProductCarousel} from "../components/ProductCarousel";
 
@@ -88,9 +88,7 @@ export function HomePage() {
               <span>Strukturierte Übersicht aller verfügbaren Produkte</span>
               <small>Jetzt shoppen</small>
             </a>
-          </div>
 
-          <div className="dashboard-strip" aria-label="Kennzahlen und Aktionen">
             <article className="dashboard-stat">
               <span className="dashboard-stat__label">Nächste Lieferung</span>
               <strong>24. April 2026</strong>
@@ -137,11 +135,15 @@ export function HomePage() {
               <p className="empty-state">Kategorien werden geladen...</p>
           ) : (
               topCategories.map((category) => (
-                  <article key={category.id} className="category-tile">
+                  <Link
+                    key={category.id}
+                    className="category-tile highlight-tile highlight-tile--link"
+                    to={`/categories/${getCategorySlug(category.title)}`}
+                  >
                     <h3>{category.title}</h3>
                     <p>{category.description}</p>
                     <span className="category-tile__label">{category.count} Produkte</span>
-                  </article>
+                  </Link>
               ))
           )}
         </div>
