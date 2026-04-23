@@ -10,6 +10,11 @@ export async function getProducts(): Promise<Product[]> {
   return Promise.resolve(productMocks);
 }
 
+export async function getProductById(itemId: number): Promise<Product | undefined> {
+  const products = await getProducts();
+  return products.find((product) => product.itemId === itemId);
+}
+
 export function getProductEndpoint(itemId: number) {
   return `${API_BASE_URL}/product?itemid=${itemId}`;
 }

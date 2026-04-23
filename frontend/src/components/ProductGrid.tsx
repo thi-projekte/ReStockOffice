@@ -1,7 +1,7 @@
-import { useState } from "react";
+import type { KeyboardEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import logoColored from "../assets/logos/logo_colored.png";
 import type { Product } from "../types/shop";
-import { getProductEndpoint } from "../services/productService";
 
 interface ProductGridProps {
   products: Product[];
@@ -28,13 +28,30 @@ interface ProductCardProps {
 }
 
 function ProductCard({ product, onAdd }: ProductCardProps) {
-  const [imageSrc, setImageSrc] = useState(product.imageUrl);
+  const navigate = useNavigate();
+
+  function openDetails() {
+    navigate(`/products/${product.itemId}`);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openDetails();
+    }
+  }
 
   return (
-    <article className="product-card">
+    <article
+      className="product-card product-card--interactive"
+      role="link"
+      tabIndex={0}
+      onClick={openDetails}
+      onKeyDown={handleKeyDown}
+    >
       <img
         className="product-card__image"
-        src={logoColored}
+        src={product.imageUrl || logoColored}
         alt={product.name}
       />
       <div className="product-card__content">
@@ -61,7 +78,10 @@ function ProductCard({ product, onAdd }: ProductCardProps) {
           <button
             className="button"
             type="button"
-            onClick={() => onAdd(product)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onAdd(product);
+            }}
           >
             Hinzufügen
           </button>
