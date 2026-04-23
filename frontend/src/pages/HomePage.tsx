@@ -66,7 +66,6 @@ export function HomePage() {
 
         <div className="hero-copy">
           <h1>Alles für den Büroalltag an einem Ort</h1>
-
           <p>
             Hallo [Nutzer], lass uns direkt loslegen ...
           </p>
@@ -98,18 +97,18 @@ export function HomePage() {
               <small>Geplante Ankunft zwischen 09:00 und 12:00 Uhr</small>
             </article>
 
-            <article className="dashboard-stat">
-              <span className="dashboard-stat__label">Letzte Lieferung</span>
-              <strong>20. April 2026</strong>
-              <small>Vollständig eingegangen und verbucht</small>
-            </article>
-
             <article className="dashboard-stat dashboard-stat--action">
               <span className="dashboard-stat__label">Bestellungen</span>
               <Link className="button" to="/search">
                 Zu deinen Bestellung
               </Link>
               <small>Status und Details ansehen</small>
+            </article>
+
+            <article className="dashboard-stat">
+              <span className="dashboard-stat__label">Letzte Lieferung</span>
+              <strong>20. April 2026</strong>
+              <small>Vollständig eingegangen und verbucht</small>
             </article>
           </div>
         </div>
@@ -125,24 +124,6 @@ export function HomePage() {
           getBadge={() => (Math.random() < 0.5 ? "Angebot" : "Deal")}
       />
 
-      <ProductCarousel
-          anchorId={"reorder"}
-          eyebrow="Nachbestellen"
-          title="Nochmal kaufen"
-          description="Produkte aus früheren Bestellungen schnell erneut kaufen"
-          products={reorderProducts}
-          getBadge={() => (Math.random() < 0.5 ? "Routine" : "Tipp")}
-      />
-
-      <ProductCarousel
-          anchorId={"office"}
-          eyebrow="Empfehlungen"
-          title="Für dein Büro"
-          description="Produkte, die auf deinen Interessen und bisherigen Käufen basieren"
-          products={officeProducts}
-          getBadge={() => (Math.random() < 0.5 ? "Bestseller" : "Beliebt")}
-      />
-
       <section id="categories" className="page-card section-space">
         <div className="section-head">
           <div>
@@ -153,18 +134,36 @@ export function HomePage() {
 
         <div className="category-grid">
           {isLoading ? (
-            <p className="empty-state">Kategorien werden geladen...</p>
+              <p className="empty-state">Kategorien werden geladen...</p>
           ) : (
-            topCategories.map((category) => (
-              <article key={category.id} className="category-tile">
-                <h3>{category.title}</h3>
-                <p>{category.description}</p>
-                <span className="category-tile__label">{category.count} Produkte</span>
-              </article>
-            ))
+              topCategories.map((category) => (
+                  <article key={category.id} className="category-tile">
+                    <h3>{category.title}</h3>
+                    <p>{category.description}</p>
+                    <span className="category-tile__label">{category.count} Produkte</span>
+                  </article>
+              ))
           )}
         </div>
       </section>
+
+      <ProductCarousel
+          anchorId={"office"}
+          eyebrow="Empfehlungen"
+          title="Für dein Büro"
+          description="Produkte, die auf deinen Interessen und bisherigen Käufen basieren"
+          products={officeProducts}
+          getBadge={() => (Math.random() < 0.5 ? "Bestseller" : "Beliebt")}
+      />
+
+      <ProductCarousel
+          anchorId={"reorder"}
+          eyebrow="Nachbestellen"
+          title="Nochmal kaufen"
+          description="Produkte aus früheren Bestellungen schnell erneut kaufen"
+          products={reorderProducts}
+          getBadge={() => (Math.random() < 0.5 ? "Routine" : "Tipp")}
+      />
     </div>
   );
 }
