@@ -1,0 +1,3 @@
+services:
+  mein-service:
+    image: ghcr.io/org/mein-service:1.1.0
