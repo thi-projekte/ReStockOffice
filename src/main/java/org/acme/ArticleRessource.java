@@ -25,4 +25,15 @@ public class ArticleRessource {
         }
         return article;
     }
+
+    @GET
+    @Path("articleByCategory")
+    public Article getArticleByCategory(@QueryParam("article-type") String articleType){
+        Article article = Article.find("article-type", articleType).firstResult();
+
+        if(article == null){
+            throw new WebApplicationException("Artikel mit ID " + articleType + " nicht gefunden");
+        }
+        return article;
+    }
 }
