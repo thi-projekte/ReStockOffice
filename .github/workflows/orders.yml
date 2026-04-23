@@ -48,6 +48,7 @@ jobs:
           context: ./orders
           file: ./orders/src/main/docker/Dockerfile.native-micro
           push: true
+
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
