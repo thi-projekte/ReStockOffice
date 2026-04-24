@@ -1,0 +1,98 @@
+.hero {
+  padding: 64px 24px 80px;
+  background: var(--color-bg);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: var(--max-width);
+  margin-inline: auto;
+}
+
+.headline {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.2;
+  margin-bottom: 48px;
+  max-width: 700px;
+}
+
+.accent {
+  color: var(--color-accent);
+}
+
+/* ── Scene: building + bird ─────────────────────────────────────── */
+.scene {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 40px;
+}
+
+.building {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 8px 32px rgba(43, 122, 106, 0.15));
+}
+
+.bird {
+  position: absolute;
+  width: 72px;
+  height: auto;
+  /* start near roof of building */
+  top: 12%;
+  right: 8%;
+  animation: birdFly 3s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+@keyframes birdFly {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  30%  { transform: translate(18px, -12px) rotate(-6deg); }
+  55%  { transform: translate(44px, 30px) rotate(4deg); }
+  75%  { transform: translate(52px, 72px) rotate(2deg); }
+  85%  { transform: translate(48px, 82px) rotate(-2deg) scale(0.92); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* ── CTA button ─────────────────────────────────────────────────── */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-primary);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 1.125rem;
+  padding: 16px 40px;
+  border-radius: var(--radius-pill);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  margin-bottom: 20px;
+  /* bird "targets" this button */
+  position: relative;
+  z-index: 1;
+}
+.cta:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(43, 122, 106, 0.3);
+}
+.cta:active { transform: translateY(0); }
+
+.trust {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 600px) {
+  .headline { font-size: 1.5rem; }
+  .bird { width: 52px; }
+}
