@@ -97,7 +97,7 @@ export function HomePage() {
 
             <article className="dashboard-stat dashboard-stat--action">
               <span className="dashboard-stat__label">Bestellungen</span>
-              <Link className="button" to="/search">
+              <Link className="button" to="/account#orders">
                 Zu deinen Bestellung
               </Link>
               <small>Status und Details ansehen</small>

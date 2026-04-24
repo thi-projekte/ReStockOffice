@@ -40,9 +40,7 @@ export function LoginPage() {
       <h1>{isLoggedIn ? "Angemeldet" : "Login"}</h1>
 
       {isLoggedIn ? (
-        <div className="status-box">
-          Du bist nun eingeloggt.
-        </div>
+        <div className="status-box">Du bist nun eingeloggt.</div>
       ) : (
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
@@ -78,7 +76,6 @@ export function LoginPage() {
           <button className="button" type="submit">
             Anmelden
           </button>
-
         </form>
       )}
     </section>
