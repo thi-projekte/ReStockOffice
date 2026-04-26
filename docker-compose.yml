@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   frontend:
-    image: ghcr.io/thi-projekte/restockoffice/frontend:spa-1.0.0
+    image: ghcr.io/thi-projekte/restockoffice/frontend:spa-v1.0.0
     container_name: restockoffice-frontend
     restart: unless-stopped
 
