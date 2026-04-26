@@ -2,6 +2,7 @@ import type { KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import logoColored from "../assets/logos/logo_colored.png";
 import type { Product } from "../types/shop";
+import toast from "react-hot-toast";
 
 interface ProductGridProps {
   products: Product[];
@@ -81,6 +82,7 @@ function ProductCard({ product, onAdd }: ProductCardProps) {
             onClick={(event) => {
               event.stopPropagation();
               onAdd(product);
+              toast.success(`${product.name} wurde zum Warenkorb hinzugefügt`);
             }}
           >
             Hinzufügen

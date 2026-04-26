@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  frontend:
+    image: ghcr.io/thi-projekte/restockoffice/frontend:1.0.0
+    container_name: restockoffice-frontend
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+
+    environment:
+      - NODE_ENV=production

@@ -20,6 +20,7 @@ import { authenticateUser } from "../services/users";
 import type { LoginFormData, Product } from "../types/shop";
 import { CartDrawer } from "./CartDrawer";
 import { ProductGrid } from "./ProductGrid";
+import { Toaster } from "react-hot-toast";
 
 interface AppShellProps {
   children: (context: {
@@ -504,6 +505,7 @@ export function AppShell({ children }: AppShellProps) {
           onUpdateQuantity={cart.updateQuantity}
         />
       ) : null}
+      <Toaster position="bottom-center" />
     </div>
   );
 }

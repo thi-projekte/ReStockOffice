@@ -4,6 +4,7 @@ import logoColored from "../assets/logos/logo_colored.png";
 import { ProductCarousel } from "../components/ProductCarousel";
 import { getProductById, getProducts } from "../services/products";
 import type { Product } from "../types/shop";
+import toast from "react-hot-toast";
 
 interface ProductDetailProps {
   onAddToCart: (product: Product) => void;
@@ -136,6 +137,7 @@ export function ProductDetailPage() {
                     onClick={(event) => {
                       event.stopPropagation();
                       onAddToCart(product);
+                      toast.success(`${product.name} wurde zum Warenkorb hinzugefügt`);
                     }}
                 >
                   Zum Warenkorb hinzufügen
