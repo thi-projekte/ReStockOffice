@@ -3,7 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import type { LoginFormData } from "../types/shop";
 
 interface OutletContext {
-  onLogin: (formData: LoginFormData) => void;
+  onLogin: (formData: LoginFormData) => Promise<void>;
   isLoggedIn: boolean;
 }
 
@@ -15,7 +15,7 @@ export function LoginPage() {
   });
   const [error, setError] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!formData.username.trim() || !formData.password.trim()) {
@@ -25,7 +25,7 @@ export function LoginPage() {
 
     try {
       setError("");
-      onLogin(formData);
+      await onLogin(formData);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error

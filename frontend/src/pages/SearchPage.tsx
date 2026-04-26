@@ -2,7 +2,7 @@ import { Navigate, useOutletContext } from "react-router-dom";
 import type { LoginFormData, Product } from "../types/shop";
 
 interface OutletContext {
-  onLogin: (formData: LoginFormData) => void;
+  onLogin: (formData: LoginFormData) => Promise<void>;
   isLoggedIn: boolean;
   onAddToCart: (product: Product) => void;
 }

@@ -4,11 +4,11 @@ import { ProductGrid } from "../components/ProductGrid";
 import {
   getCategoryNameBySlug,
   getProductsByCategorySlug,
-} from "../services/productService";
+} from "../services/products";
 import type { LoginFormData, Product } from "../types/shop";
 
 interface OutletContext {
-  onLogin: (formData: LoginFormData) => void;
+  onLogin: (formData: LoginFormData) => Promise<void>;
   isLoggedIn: boolean;
   onAddToCart: (product: Product) => void;
 }

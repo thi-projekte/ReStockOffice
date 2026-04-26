@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import {Link, Navigate, useOutletContext, useParams} from "react-router-dom";
 import logoColored from "../assets/logos/logo_colored.png";
 import { ProductCarousel } from "../components/ProductCarousel";
-import { getProductById, getProducts } from "../services/productService";
+import { getProductById, getProducts } from "../services/products";
 import type { Product } from "../types/shop";
 
 interface ProductDetailProps {
   onAddToCart: (product: Product) => void;
   isLoggedIn: boolean;
-  onLogin: (formData: any) => void;
+  onLogin: (formData: any) => Promise<void>;
 }
 
 function formatPrice(value: number) {

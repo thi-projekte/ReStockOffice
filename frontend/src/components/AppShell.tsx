@@ -1,23 +1,30 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import {
+  FaBars,
+  FaChevronRight,
+  FaHome,
+  FaMoon,
+  FaSearch,
+  FaShoppingCart,
+  FaSlidersH,
+  FaSun,
+  FaTimes,
+  FaUser,
+} from "react-icons/fa";
+import { MdLogin, MdLogout } from "react-icons/md";
 import iconColored from "../assets/logos/icon_colored.png";
+import { useCart } from "../hooks/useCart";
+import { getProducts } from "../services/products";
+import { authenticateUser } from "../services/users";
+import type { LoginFormData, Product } from "../types/shop";
 import { CartDrawer } from "./CartDrawer";
 import { ProductGrid } from "./ProductGrid";
-import { useCart } from "../hooks/useCart";
-import type { LoginFormData, Product } from "../types/shop";
-import { authenticateUser } from "../services/authService";
-import { productMocks } from "../services/productService";
-
-// Icons
-import { FaHome, FaShoppingCart, FaSearch, FaUser, FaBars, FaTimes, FaMoon, FaSun, FaSlidersH, FaChevronRight } from "react-icons/fa";
-import { MdLogin, MdLogout } from "react-icons/md";
-
-
 
 interface AppShellProps {
   children: (context: {
     isLoggedIn: boolean;
-    onLogin: (formData: LoginFormData) => void;
+    onLogin: (formData: LoginFormData) => Promise<void>;
     onAddToCart: (product: Product) => void;
   }) => ReactNode;
 }
@@ -32,25 +39,26 @@ export function AppShell({ children }: AppShellProps) {
   const [selectedArticleType, setSelectedArticleType] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
   const [isHeaderAssistOpen, setIsHeaderAssistOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
   const cart = useCart();
   const location = useLocation();
   const navigate = useNavigate();
   const headerSearchRef = useRef<HTMLDivElement | null>(null);
 
-  const articleTypeOptions = Array.from(new Set(productMocks.map((product) => product.article_type))).sort((a, b) =>
+  const articleTypeOptions = Array.from(new Set(products.map((product) => product.article_type))).sort((a, b) =>
     a.localeCompare(b, "de"),
   );
   const articleTypeBrandMap = new Map(
     articleTypeOptions.map((articleType) => [
       articleType,
-      Array.from(new Set(productMocks.filter((product) => product.article_type === articleType).map((product) => product.brand))).sort((a, b) =>
+      Array.from(new Set(products.filter((product) => product.article_type === articleType).map((product) => product.brand))).sort((a, b) =>
         a.localeCompare(b, "de"),
       ),
     ]),
   );
   const brandOptions = Array.from(
     new Set(
-      productMocks
+      products
         .filter((product) => !selectedArticleType || product.article_type === selectedArticleType)
         .map((product) => product.brand),
     ),
@@ -67,7 +75,7 @@ export function AppShell({ children }: AppShellProps) {
   const quickBrandMatches = activeAssistArticleType
     ? (articleTypeBrandMap.get(activeAssistArticleType) ?? []).slice(0, 6)
     : [];
-  const filteredProducts = productMocks.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     const matchesText =
       !normalizedQuery ||
       [product.name, product.description, product.article_type, product.brand]
@@ -80,11 +88,11 @@ export function AppShell({ children }: AppShellProps) {
     return matchesText && matchesArticleType && matchesBrand;
   });
 
-  function handleLogin(formData: LoginFormData) {
-    const user = authenticateUser(formData);
+  async function handleLogin(formData: LoginFormData) {
+    const user = await authenticateUser(formData);
 
     if (!user) {
-      throw new Error("Ungültige Zugangsdaten.");
+      throw new Error("Ungueltige Zugangsdaten.");
     }
 
     setIsLoggedIn(true);
@@ -122,6 +130,15 @@ export function AppShell({ children }: AppShellProps) {
       return next;
     });
   }
+
+  useEffect(() => {
+    async function loadProducts() {
+      const loadedProducts = await getProducts();
+      setProducts(loadedProducts);
+    }
+
+    void loadProducts();
+  }, []);
 
   useEffect(() => {
     if (!isLoggedIn && location.pathname !== "/login") {
@@ -241,8 +258,8 @@ export function AppShell({ children }: AppShellProps) {
               className={`button button--ghost search-toggle ${isAdvancedSearch ? "active" : ""}`}
               type="button"
               onClick={handleSearchToggle}
-              aria-label={isAdvancedSearch ? "Erweiterte Suche schließen" : "Erweiterte Suche öffnen"}
-              title={isAdvancedSearch ? "Erweiterte Suche schließen" : "Erweiterte Suche öffnen"}
+              aria-label={isAdvancedSearch ? "Erweiterte Suche schliessen" : "Erweiterte Suche oeffnen"}
+              title={isAdvancedSearch ? "Erweiterte Suche schliessen" : "Erweiterte Suche oeffnen"}
             >
               <FaSlidersH />
               <span>Erweitert</span>
@@ -306,7 +323,7 @@ export function AppShell({ children }: AppShellProps) {
               className="search-select"
               value={selectedArticleType}
               onChange={(event) => handleArticleTypeChange(event.target.value)}
-              aria-label="Kategorie auswählen"
+              aria-label="Kategorie auswaehlen"
             >
               <option value="">Alle Kategorien</option>
               {articleTypeOptions.map((articleType) => (
@@ -320,7 +337,7 @@ export function AppShell({ children }: AppShellProps) {
               className="search-select"
               value={selectedBrand}
               onChange={(event) => handleBrandChange(event.target.value)}
-              aria-label="Unterkategorie auswählen"
+              aria-label="Unterkategorie auswaehlen"
             >
               <option value="">Alle Unterkategorien</option>
               {brandOptions.map((brand) => (
@@ -373,9 +390,7 @@ export function AppShell({ children }: AppShellProps) {
                 title="Warenkorb"
               >
                 <FaShoppingCart />
-                {cart.totalItems > 0 && (
-                  <span className="cart-badge">{cart.totalItems}</span>
-                )}
+                {cart.totalItems > 0 && <span className="cart-badge">{cart.totalItems}</span>}
               </button>
             ) : null}
 
@@ -410,7 +425,7 @@ export function AppShell({ children }: AppShellProps) {
                 className="button button--ghost hamburger-btn"
                 type="button"
                 onClick={() => setMenuOpen(!menuOpen)}
-                aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
+                aria-label={menuOpen ? "Menue schliessen" : "Menue oeffnen"}
               >
                 {menuOpen ? <FaTimes /> : <FaBars />}
               </button>
@@ -437,11 +452,7 @@ export function AppShell({ children }: AppShellProps) {
                 {isDarkMode ? <FaSun /> : <FaMoon />}
                 {isDarkMode ? "Hellmodus" : "Dunkelmodus"}
               </button>
-              <button
-                className="mobile-nav__link mobile-nav__btn"
-                type="button"
-                onClick={handleLogout}
-              >
+              <button className="mobile-nav__link mobile-nav__btn" type="button" onClick={handleLogout}>
                 <MdLogout /> Abmelden
               </button>
             </div>
@@ -454,7 +465,7 @@ export function AppShell({ children }: AppShellProps) {
           className="mobile-nav-backdrop"
           type="button"
           onClick={() => setMenuOpen(false)}
-          aria-label="Menü schließen"
+          aria-label="Menue schliessen"
         />
       ) : null}
 
@@ -467,7 +478,7 @@ export function AppShell({ children }: AppShellProps) {
               <div className="section-head">
                 <div>
                   <h2>Artikel</h2>
-                  <p>Alle verfügbaren Produkte</p>
+                  <p>Alle verfuegbaren Produkte</p>
                 </div>
 
                 {renderSearchControls("page")}

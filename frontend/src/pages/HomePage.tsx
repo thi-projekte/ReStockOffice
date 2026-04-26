@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { Link } from "react-router-dom";
 import logoColored from "../assets/logos/logo_colored.png";
-import { getCategorySlug, getProducts } from "../services/productService";
+import { getCategorySlug, getProducts } from "../services/products";
 import type { Product } from "../types/shop";
 import {ProductCarousel} from "../components/ProductCarousel";
 
