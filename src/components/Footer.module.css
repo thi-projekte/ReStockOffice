@@ -9,15 +9,33 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
-.logo {
-  height: 32px;
-  width: auto;
+.payments {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.paymentBadge {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(31, 42, 46, 0.14);
+  transition: transform 0.15s;
+}
+
+.paymentBadge:hover {
+  transform: translateY(-2px);
 }
 
 .copy {
   font-size: 0.875rem;
   color: var(--color-text-muted);
+}
+
+@media (max-width: 560px) {
+  .inner { flex-direction: column; align-items: flex-start; }
 }

@@ -10,7 +10,7 @@
 
 .label {
   display: inline-block;
-  background: rgba(43, 122, 106, 0.1);
+  background: rgba(59, 107, 97, 0.1);
   color: var(--color-primary);
   font-weight: 600;
   font-size: 0.8125rem;
@@ -68,8 +68,6 @@
   height: 2px;
   background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-border) 100%);
 }
-
-.stepContent {}
 
 .stepTitle {
   font-size: 1rem;

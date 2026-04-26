@@ -1,8 +1,15 @@
+import type { ComponentType } from 'react'
 import styles from './FeaturesSection.module.css'
 
-const features = [
+type Feature = {
+  icon: ComponentType
+  title: string
+  points: string[]
+}
+
+const features: Feature[] = [
   {
-    icon: <AutoIcon />,
+    icon: AutoIcon,
     title: 'Automatische Nachbestellung',
     points: [
       'Lagerstand wird laufend überwacht',
@@ -11,7 +18,7 @@ const features = [
     ],
   },
   {
-    icon: <DashboardIcon />,
+    icon: DashboardIcon,
     title: 'Übersichtliches Dashboard',
     points: [
       'Alle Artikel auf einen Blick',
@@ -20,7 +27,7 @@ const features = [
     ],
   },
   {
-    icon: <SupplierIcon />,
+    icon: SupplierIcon,
     title: 'Flexible Lieferantenanbindung',
     points: [
       'Mehrere Lieferanten gleichzeitig',
@@ -29,7 +36,7 @@ const features = [
     ],
   },
   {
-    icon: <TeamIcon />,
+    icon: TeamIcon,
     title: 'Teamverwaltung',
     points: [
       'Rollen & Berechtigungen',
@@ -52,12 +59,12 @@ export default function FeaturesSection() {
           </p>
         </div>
         <ul className={styles.grid}>
-          {features.map((f) => (
-            <li key={f.title} className={styles.card}>
-              <div className={styles.iconWrap}>{f.icon}</div>
-              <h3 className={styles.cardTitle}>{f.title}</h3>
+          {features.map(({ icon: Icon, title, points }) => (
+            <li key={title} className={styles.card}>
+              <div className={styles.iconWrap}><Icon /></div>
+              <h3 className={styles.cardTitle}>{title}</h3>
               <ul className={styles.points}>
-                {f.points.map((p) => (
+                {points.map((p) => (
                   <li key={p} className={styles.point}>
                     <span className={styles.dot} />
                     {p}

@@ -1,6 +1,12 @@
 import styles from './HowItWorksSection.module.css'
 
-const steps = [
+type Step = {
+  number: string
+  title: string
+  description: string
+}
+
+const steps: Step[] = [
   {
     number: '01',
     title: 'Konto erstellen',
@@ -23,6 +29,8 @@ const steps = [
   },
 ]
 
+const lastIndex = steps.length - 1
+
 export default function HowItWorksSection() {
   return (
     <section id="how-it-works" className={styles.section}>
@@ -35,8 +43,8 @@ export default function HowItWorksSection() {
           {steps.map((step, i) => (
             <li key={step.number} className={styles.step}>
               <div className={styles.stepNumber}>{step.number}</div>
-              {i < steps.length - 1 && <div className={styles.connector} aria-hidden />}
-              <div className={styles.stepContent}>
+              {i < lastIndex && <div className={styles.connector} aria-hidden />}
+              <div>
                 <h3 className={styles.stepTitle}>{step.title}</h3>
                 <p className={styles.stepDesc}>{step.description}</p>
               </div>

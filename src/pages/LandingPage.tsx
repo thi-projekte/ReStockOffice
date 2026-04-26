@@ -1,9 +1,10 @@
+import { lazy, Suspense } from 'react'
 import Header from '../components/Header'
 import HeroSection from '../components/HeroSection'
-import FeaturesSection from '../components/FeaturesSection'
-import HowItWorksSection from '../components/HowItWorksSection'
-import CtaSection from '../components/CtaSection'
-import Footer from '../components/Footer'
+
+const FeaturesSection   = lazy(() => import('../components/FeaturesSection'))
+const HowItWorksSection = lazy(() => import('../components/HowItWorksSection'))
+const Footer            = lazy(() => import('../components/Footer'))
 
 export default function LandingPage() {
   return (
@@ -11,11 +12,14 @@ export default function LandingPage() {
       <Header />
       <main>
         <HeroSection />
-        <FeaturesSection />
-        <HowItWorksSection />
-        <CtaSection />
+        <Suspense fallback={null}>
+          <FeaturesSection />
+          <HowItWorksSection />
+        </Suspense>
       </main>
-      <Footer />
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
     </>
   )
 }

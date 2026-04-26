@@ -1,28 +1,26 @@
-import Keycloak from 'keycloak-js'
+import type KeycloakType from 'keycloak-js'
 
-const keycloak = new Keycloak({
-  url: import.meta.env.VITE_KEYCLOAK_URL as string,
-  realm: import.meta.env.VITE_KEYCLOAK_REALM as string,
-  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID as string,
-})
+let instance: KeycloakType | null = null
 
-let initPromise: Promise<boolean> | null = null
-
-function ensureInitialized(): Promise<boolean> {
-  if (!initPromise) {
-    initPromise = keycloak.init({ checkLoginIframe: false })
+async function getKeycloak(): Promise<KeycloakType> {
+  if (!instance) {
+    const { default: Keycloak } = await import('keycloak-js')
+    instance = new Keycloak({
+      url:      import.meta.env.VITE_KEYCLOAK_URL as string,
+      realm:    import.meta.env.VITE_KEYCLOAK_REALM as string,
+      clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID as string,
+    })
+    await instance.init({ checkLoginIframe: false })
   }
-  return initPromise
+  return instance
 }
 
 export async function redirectToRegister(): Promise<void> {
-  await ensureInitialized()
-  keycloak.register()
+  const kc = await getKeycloak()
+  kc.register()
 }
 
 export async function redirectToLogin(): Promise<void> {
-  await ensureInitialized()
-  keycloak.login()
+  const kc = await getKeycloak()
+  kc.login()
 }
-
-export default keycloak

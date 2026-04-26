@@ -9,3 +9,4 @@ services:
       - "8080:8080"
     volumes:
       - ./keycloak:/opt/keycloak/data/import
+      - ./keycloak/theme:/opt/keycloak/themes

@@ -10,7 +10,7 @@
 
 .label {
   display: inline-block;
-  background: rgba(43, 122, 106, 0.1);
+  background: rgba(59, 107, 97, 0.1);
   color: var(--color-primary);
   font-weight: 600;
   font-size: 0.8125rem;
@@ -58,7 +58,7 @@
 .iconWrap {
   width: 52px;
   height: 52px;
-  background: rgba(43, 122, 106, 0.1);
+  background: rgba(59, 107, 97, 0.1);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;

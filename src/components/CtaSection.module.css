@@ -8,15 +8,6 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0;
-}
-
-.logo {
-  height: 48px;
-  width: auto;
-  margin-bottom: 28px;
-  filter: brightness(0) invert(1);
-  opacity: 0.9;
 }
 
 .title {

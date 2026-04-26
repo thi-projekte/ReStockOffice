@@ -1,62 +1,62 @@
 .hero {
-  padding: 64px 24px 80px;
+  padding: 80px 24px;
   background: var(--color-bg);
+  overflow: hidden;
 }
 
 .inner {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  text-align: center;
+  gap: 72px;
   max-width: var(--max-width);
   margin-inline: auto;
+  position: relative;
 }
 
-.headline {
-  font-size: clamp(1.75rem, 4vw, 2.75rem);
-  font-weight: 800;
-  color: var(--color-primary);
-  line-height: 1.2;
-  margin-bottom: 48px;
-  max-width: 700px;
-}
 
-.accent {
-  color: var(--color-accent);
-}
-
-/* ── Scene: building + bird ─────────────────────────────────────── */
 .scene {
   position: relative;
-  width: 100%;
-  max-width: 420px;
-  margin-bottom: 40px;
+  flex: 0 0 auto;
+  width: 460px;
 }
 
 .building {
   width: 100%;
   height: auto;
-  filter: drop-shadow(0 8px 32px rgba(43, 122, 106, 0.15));
+  filter: drop-shadow(0 8px 32px rgba(43, 122, 106, 0.18));
 }
 
+/* Vogel sitzt auf dem Dach des Hauptturms */
 .bird {
   position: absolute;
-  width: 72px;
+  width: 90px;
   height: auto;
-  /* start near roof of building */
-  top: 12%;
-  right: 8%;
-  animation: birdFly 3s ease-in-out infinite;
+  top: -3%;
+  left: 44%;
   transform-origin: center center;
 }
 
-@keyframes birdFly {
-  0%   { transform: translate(0, 0) rotate(0deg); }
-  30%  { transform: translate(18px, -12px) rotate(-6deg); }
-  55%  { transform: translate(44px, 30px) rotate(4deg); }
-  75%  { transform: translate(52px, 72px) rotate(2deg); }
-  85%  { transform: translate(48px, 82px) rotate(-2deg) scale(0.92); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.headline {
+  font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.2;
+  margin-bottom: 36px;
+  margin-top: -60px;
+}
+
+.accent {
+  color: var(--color-accent);
 }
 
 /* ── CTA button ─────────────────────────────────────────────────── */
@@ -75,7 +75,6 @@
   cursor: pointer;
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
   margin-bottom: 20px;
-  /* bird "targets" this button */
   position: relative;
   z-index: 1;
 }
@@ -92,7 +91,32 @@
   letter-spacing: 0.01em;
 }
 
-@media (max-width: 600px) {
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .inner {
+    flex-direction: column;
+    gap: 40px;
+    text-align: center;
+  }
+  .scene {
+    width: 100%;
+    max-width: 380px;
+  }
+  .content {
+    align-items: center;
+    text-align: center;
+  }
+
+  @keyframes birdFly {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    30%  { transform: translate(20px, -15px) rotate(-8deg); }
+    60%  { transform: translate(40px, 25px) rotate(4deg); }
+    80%  { transform: translate(38px, 35px) rotate(0deg) scale(0.92); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+  }
+}
+
+@media (max-width: 480px) {
+  .bird { width: 68px; }
   .headline { font-size: 1.5rem; }
-  .bird { width: 52px; }
 }
