@@ -1,4 +1,4 @@
-name: Build and Push SPA Image
+name: Build and Push Frontend Image
 
 on:
   push:
