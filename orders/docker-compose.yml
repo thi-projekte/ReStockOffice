@@ -1,4 +1,4 @@
 services:
   mein-service:
 
-    image: ghcr.io/org/orders:2.0.0
+    image: ghcr.io/thi-projekte/restockoffice-orders:2.0.0
