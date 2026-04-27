@@ -26,6 +26,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
+        working-directory: orders
         run: mvn -B package -DskipTests
 
       - name: Log in to GHCR

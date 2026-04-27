@@ -17,7 +17,6 @@ import java.util.Map;
 //@RolesAllowed("user")
 public class OrderResource {
 
-
     @GET
     public List<Order> getAll() {
         return Order.listAll();
