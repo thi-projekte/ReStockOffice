@@ -1,10 +1,11 @@
-name: CI build articles
+name: Build and Push articles-Service Image
 
 on:
   push:
-    branches: [ main, feature/articleservice ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
+    tags:
+      - 'articles-v*'
 
 permissions:
   contents: read
@@ -13,8 +14,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Set up GraalVM
         uses: graalvm/setup-graalvm@v1
@@ -23,7 +26,7 @@ jobs:
           distribution: graalvm-community
           cache: maven
 
-      - name: Articles
+      - name: articles build
         working-directory: articles
         run: |
           chmod +x mvnw
@@ -50,5 +53,5 @@ jobs:
           file: ./articles/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/restockoffice-articles:latest
+            ghcr.io/${{ github.repository_owner }}/restockoffice-articles:1.0.0
             ghcr.io/${{ github.repository_owner }}/restockoffice-articles:${{ github.sha }}
