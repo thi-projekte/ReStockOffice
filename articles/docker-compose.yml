@@ -9,6 +9,7 @@ services:
       QUARKUS_DATASOURCE_USERNAME: reStockOffice
       QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
       QUARKUS_OIDC_ENABLED: "false"
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://localhost:8081/realms/quarkus
     depends_on:
       - db-container
 
