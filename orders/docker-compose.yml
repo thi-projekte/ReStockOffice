@@ -1,4 +1,27 @@
 services:
-  mein-service:
+  orders:
 
-    image: ghcr.io/thi-projekte/restockoffice-orders:2.0.0
+    image: ghcr.io/thi-projekte/restockoffice-orders:2.0.1
+    ports:
+      - "8080:8080"
+    environment:
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db-container:5432/articles_db
+      QUARKUS_DATASOURCE_USERNAME: reStockOffice
+      QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
+      QUARKUS_OIDC_ENABLED: "false"
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://localhost:8081/realms/quarkus
+    depends_on:
+      - db-container
+
+  db-container:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: reStockOffice
+      POSTGRES_PASSWORD: reStockOffice123$
+      POSTGRES_DB: articles_db
+
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
