@@ -11,7 +11,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 80px;
+  height: 168px;
+  max-width: 100%;
+  padding-inline: 40px;
 }
 
 .logo {
@@ -32,7 +34,22 @@
 }
 .navLink:hover { color: var(--color-primary); }
 
+.authPlaceholder {
+  width: 200px;
+  height: 40px;
+}
+
+.userName {
+  font-weight: 500;
+  color: var(--color-primary);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 680px) {
   .navLink { display: none; }
   .nav { gap: 12px; }
+  .userName { display: none; }
 }

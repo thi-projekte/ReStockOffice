@@ -87,7 +87,7 @@ export default function HeroSection() {
             </svg>
           </button>
 
-          <p className={styles.trust}>Kostenlos testen · Keine Kreditkarte · DSGVO-konform</p>
+          <p className={styles.trust}>Kostenlos testen · DSGVO-konform</p>
         </div>
 
       </div>
