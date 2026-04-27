@@ -1,0 +1,91 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.cibseven.bpm.getstarted</groupId>
+  <artifactId>cibseven-spring-boot-oidc</artifactId>
+  <version>1.0.0</version>
+
+  <properties>
+    <cibseven.version.enterprise>2.1.4-ee</cibseven.version.enterprise>
+    <cibseven.version.extension>2.1.0</cibseven.version.extension>
+    <spring-boot.version>3.5.6</spring-boot.version>
+    <maven.compiler.release>17</maven.compiler.release>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.cibseven.bpm.springboot</groupId>
+      <artifactId>cibseven-bpm-spring-boot-starter-webapp</artifactId>
+      <version>${cibseven.version.enterprise}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.cibseven.bpm.springboot</groupId>
+      <artifactId>cibseven-bpm-spring-boot-starter-rest</artifactId>
+      <version>${cibseven.version.enterprise}</version>
+    </dependency>    
+    <dependency>
+      <groupId>org.cibseven.bpm.springboot</groupId>
+      <artifactId>cibseven-bpm-spring-boot-starter-security</artifactId>
+      <version>${cibseven.version.enterprise}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.cibseven.bpm.extension</groupId>
+      <artifactId>cibseven-keycloak</artifactId>
+      <version>${cibseven.version.extension}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.xml.bind</groupId>
+      <artifactId>jaxb-impl</artifactId>
+      <version>4.0.3</version>
+    </dependency>
+  </dependencies>
+
+   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot.version}</version>
+        <configuration>
+          <layout>ZIP</layout>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+      </plugin>
+    </plugins>
+  </build>
+
+  <repositories>
+    <repository>
+      <id>mvn-cibseven-enterprise</id>
+      <name>CIB seven EE repository</name>
+      <url>https://artifacts.cibseven.org/repository/enterprise-group/</url>
+    </repository>
+  </repositories>
+  
+</project>
