@@ -53,7 +53,9 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./orders
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+            context: ./orders
+            file: ./orders/src/main/docker/Dockerfile.native-micro
+            push: ${{ github.event_name == 'push' }}
+            tags: |
+              ghcr.io/${{ github.repository_owner }}/restockoffice-articles:latest
+              ghcr.io/${{ github.repository_owner }}/restockoffice-articles:${{ github.sha }}
