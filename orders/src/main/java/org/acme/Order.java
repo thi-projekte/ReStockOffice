@@ -15,6 +15,7 @@ public class Order extends PanacheEntity {
     @NotNull
     public Integer kundenummer;
 
+
     @NotNull
     public Integer produktnummer;
 
