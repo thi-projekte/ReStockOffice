@@ -31,6 +31,7 @@ jobs:
         run: mvn -B package -DskipTests
 
 
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
