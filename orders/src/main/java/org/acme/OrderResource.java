@@ -14,7 +14,7 @@ import java.util.Map;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-@RolesAllowed("user") //dem user wird in keycloak console rolle und rechte zugewiesen
+//@RolesAllowed("user")
 public class OrderResource {
 
     @GET
