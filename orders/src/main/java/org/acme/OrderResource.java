@@ -39,6 +39,49 @@ public class OrderResource {
         );
         order.persist();
 
+        // Erst Token von Keycloak holen
+        Client authClient = ClientBuilder.newClient();
+        String tokenResponse = authClient
+                .target("http://localhost:8180/realms/cib-seven/protocol/openid-connect/token")
+                .request(MediaType.APPLICATION_FORM_URLENCODED)
+                .post(Entity.form(new jakarta.ws.rs.core.Form()
+                        .param("client_id", "cib-seven-local")
+                        .param("client_secret", "cib-seven-secret")
+                        .param("username", "demo")
+                        .param("password", "demo")
+                        .param("grant_type", "password")))
+                .readEntity(String.class);
+        authClient.close();
+
+        // Token aus Response extrahieren
+        String accessToken = tokenResponse
+                .split("\"access_token\":\"")[1]
+                .split("\"")[0];
+
+        // Camunda Prozess mit Token starten
+        Client client = ClientBuilder.newClient();
+        String camundaUrl =
+                "http://localhost:8080/engine-rest/process-definition/key/Process_0ltcqh0/start";
+
+        Map<String, Object> body = Map.of(
+                "businessKey", order.id.toString(),
+                "variables", Map.of(
+                        "orderId", Map.of("value", order.id, "type", "Long"),
+                        "kundenummer", Map.of("value", order.kundenummer, "type", "Integer"),
+                        "produktnummer", Map.of("value", order.produktnummer, "type", "Integer"),
+                        "menge", Map.of("value", order.menge, "type", "Integer")
+                )
+        );
+
+        client
+                .target(camundaUrl)
+                .request(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .post(Entity.json(body));
+
+        client.close();
+
+        /*
         //Camunda Prozess starten
         Client client = ClientBuilder.newClient();
 
@@ -61,6 +104,7 @@ public class OrderResource {
                 .post(Entity.json(body));
 
         client.close();
+        */
 
         return order;
     }
