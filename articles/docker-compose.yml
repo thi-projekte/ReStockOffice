@@ -1,13 +1,14 @@
 services:
 
   articles:
-    image: ghcr.io/thi-projekte/restockoffice-articles:1.0.2
+    image: ghcr.io/thi-projekte/restockoffice-articles:1.0.3
     ports:
       - "8080:8080"
     environment:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db-container:5432/articles_db
       QUARKUS_DATASOURCE_USERNAME: reStockOffice
       QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
+      QUARKUS_OIDC_ENABLED: "false"
     depends_on:
       - db-container
 
