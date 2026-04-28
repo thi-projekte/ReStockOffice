@@ -1,0 +1,38 @@
+{
+  "realm": "restock-office",
+  "displayName": "ReStockOffice",
+  "enabled": true,
+  "loginTheme": "restock-office",
+  "accountTheme": "restock-office",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "clients": [
+    {
+      "clientId": "restock-office-web",
+      "name": "ReStockOffice Web",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "rootUrl": "http://localhost:5173",
+      "baseUrl": "http://localhost:5173",
+      "redirectUris": [
+        "http://localhost:5173",
+        "http://localhost:5173/",
+        "http://localhost:5173/*",
+        "http://localhost:5174",
+        "http://localhost:5174/",
+        "http://localhost:5174/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "+"
+      ]
+    }
+  ]
+}

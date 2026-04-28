@@ -1,0 +1,238 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── Patternfly 5 token overrides ───────────────────────────────── */
+:root {
+  --pf-v5-global--primary-color--100: #3b6b61;
+  --pf-v5-global--primary-color--200: #264037;
+  --pf-v5-global--link--Color:        #3b6b61;
+  --pf-v5-global--link--Color--hover: #264037;
+  --pf-v5-global--active-color--100:  #66bda4;
+  --pf-v5-global--BackgroundColor--100: #f2f8f6;
+  --pf-v5-global--BorderColor--100:   #c8e0d9;
+  --pf-v5-global--Color--100:         #152e28;
+  --pf-v5-global--FontFamily--sans-serif: 'Inter', system-ui, sans-serif;
+  --pf-v5-c-button--m-primary--BackgroundColor:        #3b6b61;
+  --pf-v5-c-button--m-primary--hover--BackgroundColor: #264037;
+}
+
+/* ── Reset / Base ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  background-color: #f4f7f2 !important;
+  color: #1f2a2e;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Lücke oben entfernen */
+#kc-container-wrapper,
+.login-pf-page,
+.pf-v5-c-page,
+.pf-v5-c-page__main {
+  margin: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* ── HEADER — gleich wie Hauptseite ─────────────────────────────── */
+#kc-header,
+.login-pf-header {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid #c8e0d9 !important;
+  padding: 0 40px !important;
+  height: 80px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+}
+
+/* Logo im Header */
+#kc-header-wrapper {
+  background-image: url('../img/logo.svg') !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  background-position: left center !important;
+  width: 200px !important;
+  height: 52px !important;
+  text-indent: -9999px !important;
+  overflow: hidden !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  display: block !important;
+}
+
+/* ── Seiten-Layout ──────────────────────────────────────────────── */
+.login-pf-page,
+#kc-container-wrapper,
+body.login-pf {
+  background-color: #f2f8f6 !important;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Formular-Karte ─────────────────────────────────────────────── */
+.card-pf,
+.login-pf .card-pf,
+#kc-content,
+.pf-v5-c-card {
+  background: #ffffff !important;
+  border: 1px solid #c8e0d9 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 32px rgba(21, 46, 40, 0.10) !important;
+  padding: 40px !important;
+  max-width: 480px !important;
+  width: 100% !important;
+  margin: 40px auto !important;
+}
+
+/* ── Seitentitel ────────────────────────────────────────────────── */
+#kc-page-title,
+h1#kc-page-title {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 1.5rem !important;
+  font-weight: 800 !important;
+  color: #3b6b61 !important;
+  text-align: center !important;
+  margin-bottom: 28px !important;
+}
+
+/* ── Labels ─────────────────────────────────────────────────────── */
+label, .control-label, .pf-v5-c-form__label {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: 600 !important;
+  color: #152e28 !important;
+  font-size: 0.875rem !important;
+  margin-bottom: 6px !important;
+  display: block;
+}
+
+/* ── Eingabefelder ──────────────────────────────────────────────── */
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+.pf-v5-c-form-control {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  border: 1.5px solid #c8e0d9 !important;
+  border-radius: 10px !important;
+  padding: 12px 16px !important;
+  font-size: 1rem !important;
+  color: #152e28 !important;
+  background: #fff !important;
+  width: 100% !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  outline: none !important;
+}
+
+.form-control:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+.pf-v5-c-form-control:focus {
+  border-color: #3b6b61 !important;
+  box-shadow: 0 0 0 3px rgba(62, 184, 154, 0.22) !important;
+}
+
+/* ── Primär-Button ──────────────────────────────────────────────── */
+.btn.btn-primary,
+.btn-primary,
+input[type="submit"],
+.pf-v5-c-button.pf-m-primary,
+#kc-login,
+#kc-register,
+#kc-form-buttons input,
+#kc-form-buttons button[type="submit"] {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  background-color: #3b6b61 !important;
+  background-image: none !important;
+  border: none !important;
+  border-radius: 999px !important;
+  padding: 14px 28px !important;
+  color: #fff !important;
+  cursor: pointer !important;
+  width: 100% !important;
+  text-align: center !important;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s !important;
+  margin-top: 8px;
+}
+
+.btn.btn-primary:hover,
+.btn-primary:hover,
+input[type="submit"].btn-primary:hover,
+.pf-v5-c-button.pf-m-primary:hover {
+  background-color: #264037 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(43, 122, 106, 0.35) !important;
+}
+
+/* ── Passwort-Toggle zurücksetzen ───────────────────────────────── */
+.pf-v5-c-button.pf-m-plain,
+.pf-v5-c-input-group__item button,
+button.pf-v5-c-button:not([type="submit"]) {
+  background-color: transparent !important;
+  background-image: none !important;
+  border-radius: 0 !important;
+  padding: 6px 10px !important;
+  color: #527268 !important;
+  width: auto !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Links & Sekundär-Buttons ───────────────────────────────────── */
+a, .pf-v5-c-button.pf-m-link {
+  color: #3b6b61 !important;
+  text-decoration: none;
+}
+a:hover, .pf-v5-c-button.pf-m-link:hover {
+  color: #264037 !important;
+  text-decoration: underline;
+}
+
+.btn.btn-default {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  color: #3b6b61 !important;
+  border-color: #c8e0d9 !important;
+  border-radius: 999px !important;
+}
+
+/* ── "Required fields" Hinweis ──────────────────────────────────── */
+.required-field-note,
+#kc-registration .required-field-note,
+span.required {
+  color: #527268 !important;
+  font-size: 0.85rem !important;
+}
+
+/* ── Trennlinien ────────────────────────────────────────────────── */
+hr, .pf-v5-c-divider { border-color: #c8e0d9 !important; }
+
+/* ── Fehler-/Erfolgs-Meldungen ──────────────────────────────────── */
+.alert.alert-error, .pf-v5-c-alert.pf-m-danger {
+  border-left: 4px solid #c0392b !important;
+  border-radius: 10px !important;
+  background: #fdf2f2 !important;
+  padding: 12px 16px !important;
+}
+.alert.alert-success, .pf-v5-c-alert.pf-m-success {
+  border-left: 4px solid #66bda4 !important;
+  border-radius: 10px !important;
+  background: #f2f8f6 !important;
+  padding: 12px 16px !important;
+}
+
+/* ── Footer-Info ────────────────────────────────────────────────── */
+#kc-info, .login-pf-signup {
+  text-align: center;
+  margin-top: 16px;
+  color: #527268 !important;
+  font-size: 0.875rem;
+}
