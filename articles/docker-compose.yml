@@ -1,7 +1,7 @@
 services:
 
   articles:
-    image: ghcr.io/thi-projekte/restockoffice-articles:1.0.4
+    image: ghcr.io/thi-projekte/restockoffice-articles:1.0.6
     ports:
       - "8080:8080"
     environment:
