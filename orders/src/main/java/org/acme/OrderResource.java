@@ -16,7 +16,8 @@ import java.util.Map;
 @RolesAllowed("camunda-admin")
 
 public class OrderResource {
-
+    @Inject
+    SecurityIdentity securityIdentity;
     @GET
     public List<Order> getAll() {
         return Order.listAll();
@@ -31,9 +32,9 @@ public class OrderResource {
     @POST
     @Transactional
     public Order bestellen(Order input) {
-
+        String username = securityIdentity.getPrincipal().getName();
         Order order = Order.bestellen(
-                input.kundenummer,
+                username,
                 input.produktnummer,
                 input.menge
         );

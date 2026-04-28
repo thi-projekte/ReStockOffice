@@ -11,7 +11,7 @@
     <bpmn:messageFlow id="Flow_0efrvoi" name="Ware" sourceRef="Activity_11swjln" targetRef="Activity_16ls4cx" />
     <bpmn:messageFlow id="Flow_1hlaneq" sourceRef="Event_0ncifyx" targetRef="Event_0np98o1" />
   </bpmn:collaboration>
-  <bpmn:process id="Process_0ltcqh0" isExecutable="true" camunda:historyTimeToLive="30">
+  <bpmn:process id="loanApproval" isExecutable="true" camunda:historyTimeToLive="30">
     <bpmn:laneSet id="LaneSet_071df6i">
       <bpmn:lane id="Lane_1jzw7bv" name="Lager">
         <bpmn:flowNodeRef>Activity_1p881fm</bpmn:flowNodeRef>
