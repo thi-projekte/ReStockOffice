@@ -10,7 +10,7 @@ public class Article extends PanacheEntity {
     public String description;
     public Double price;
     public String brand;
-    public String article_type;
+    public String articleType;
     public int units;
     public String imageUrl;
 }

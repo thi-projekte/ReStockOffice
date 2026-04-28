@@ -32,12 +32,13 @@ public class ArticleRessource {
     // Rückgabe aller Artikel mit /articleByCategory?article-type=xxxxxx
     @GET
     @Path("articleByCategory")
-    public Article getArticleByCategory(@QueryParam("article-type") String articleType){
-        Article article = Article.find("article-type", articleType).firstResult();
+    public List<Article> getArticleByCategory(@QueryParam("articleType") String articleType){
+        List<Article> articleList = Article.find("LOWER(articleType) = LOWER(?1)", articleType.toLowerCase()).list();
 
-        if(article == null){
-            throw new WebApplicationException("Artikel mit ID " + articleType + " nicht gefunden");
+        if (articleList.isEmpty()) {
+            throw new WebApplicationException("Keine Artikel für den Typ '" + articleType + "' gefunden", 404);
         }
-        return article;
+
+        return articleList;
     }
 }
