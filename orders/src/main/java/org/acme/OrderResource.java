@@ -13,8 +13,8 @@ import java.util.Map;
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed("camunda-admin")
 
-//@RolesAllowed("user")
 public class OrderResource {
 
     @GET
@@ -38,6 +38,7 @@ public class OrderResource {
                 input.menge
         );
         order.persist();
+
 
         // Erst Token von Keycloak holen
         Client authClient = ClientBuilder.newClient();
