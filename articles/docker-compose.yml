@@ -1,7 +1,7 @@
 services:
 
   articles:
-    image: ghcr.io/thi-projekte/restockoffice-articles:1.0.7
+    image: ghcr.io/thi-projekte/restockoffice-articles:latest
     networks:
       - nginx-proxy-manager
     environment:

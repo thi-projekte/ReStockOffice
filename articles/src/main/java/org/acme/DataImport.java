@@ -24,7 +24,7 @@ public class DataImport {
             TypeReference<List<Article>> typeReference = new TypeReference<List<Article>>(){};
 
             // Datei aus resources laden
-            InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("products.json");
+            InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("/products.json");
             List<Article> articles = mapper.readValue(inputStream, typeReference);
 
 
