@@ -12,5 +12,11 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
     networks:
-      - restockoffice-network
+      - nginx-proxy-manager
 
+volumes:
+  keycloak_data:
+
+networks:
+  nginx-proxy-manager:
+    external: true
