@@ -17,7 +17,7 @@ public class DataImport {
     public void loadInitialData(@Observes StartupEvent ev) {
         if (Article.count() > 0) return;
 
-        try (InputStream is = getClass().getResourceAsStream("/products.json")) {
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("products.json")) {
             if (is == null) {
                 throw new RuntimeException("products.json nicht im Classpath gefunden!");
             }
