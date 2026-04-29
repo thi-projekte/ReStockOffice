@@ -53,6 +53,6 @@ jobs:
           file: ./articles/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/restockoffice-articles:1.0.8
+            ghcr.io/${{ github.repository_owner }}/restockoffice-articles:1.0.9
             ghcr.io/${{ github.repository_owner }}/restockoffice-articles:latest
             ghcr.io/${{ github.repository_owner }}/restockoffice-articles:${{ github.sha }}

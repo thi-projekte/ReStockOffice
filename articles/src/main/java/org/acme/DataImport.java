@@ -14,24 +14,20 @@ import java.util.List;
 public class DataImport {
 
     @Transactional
-    public void loadInitialData(@Observes StartupEvent ev){
-        if(Article.count() > 0){
-            return;
-        }
+    public void loadInitialData(@Observes StartupEvent ev) {
+        if (Article.count() > 0) return;
 
-        try {
+        try (InputStream is = getClass().getResourceAsStream("/products.json")) {
+            if (is == null) {
+                throw new RuntimeException("products.json nicht im Classpath gefunden!");
+            }
+
             ObjectMapper mapper = new ObjectMapper();
-            TypeReference<List<Article>> typeReference = new TypeReference<List<Article>>(){};
-
-            // Datei aus resources laden
-            InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("/products.json");
-            List<Article> articles = mapper.readValue(inputStream, typeReference);
-
-
-            // In die DB speichern
+            List<Article> articles = mapper.readValue(is, new TypeReference<List<Article>>(){});
             Article.persist(articles);
+            System.out.println("Erfolgreich importiert!");
         } catch (Exception e) {
-            System.out.println("Fehler beim JSON-Import: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
