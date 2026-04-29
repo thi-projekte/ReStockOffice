@@ -77,7 +77,7 @@
       <bpmn:incoming>Flow_1ssx9me</bpmn:incoming>
       <bpmn:outgoing>Flow_02xgu02</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_0giboel">
-        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT1S</bpmn:timeDuration>
+        <bpmn:timeDate xsi:type="bpmn:tFormalExpression" />
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
     <bpmn:userTask id="Activity_1sfv88t" name="Ware bereitstellen" camunda:candidateGroups="lager">
@@ -92,7 +92,7 @@
       <bpmn:incoming>Flow_0jkq5y6</bpmn:incoming>
       <bpmn:messageEventDefinition id="MessageEventDefinition_16z5kck" />
     </bpmn:endEvent>
-    <bpmn:userTask id="Activity_1lnhr9j" name="Lieferung bestätigen" camunda:candidateGroups="vertrieb">
+    <bpmn:userTask id="Activity_1lnhr9j" name="Lieferung bestätigen" camunda:candidateUsers="{orderperson}" camunda:candidateGroups="vertrieb,admins">
       <bpmn:incoming>Flow_02kka3q</bpmn:incoming>
       <bpmn:outgoing>Flow_0jkq5y6</bpmn:outgoing>
     </bpmn:userTask>

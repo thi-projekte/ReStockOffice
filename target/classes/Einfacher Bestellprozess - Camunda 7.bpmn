@@ -77,7 +77,7 @@
       <bpmn:incoming>Flow_1ssx9me</bpmn:incoming>
       <bpmn:outgoing>Flow_02xgu02</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_0giboel">
-        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT10S</bpmn:timeDuration>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT1S</bpmn:timeDuration>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
     <bpmn:userTask id="Activity_1sfv88t" name="Ware bereitstellen" camunda:candidateGroups="lager">
