@@ -15,6 +15,8 @@ public class Order extends PanacheEntity {
     @NotNull
     public Integer kundenummer;
 
+    @NotNull
+    public Integer frequency;
 
     @NotNull
     public Integer produktnummer;
@@ -23,14 +25,14 @@ public class Order extends PanacheEntity {
     public Integer menge;
 
     public String status = "ERSTELLT";
-
     public LocalDateTime createdAt = LocalDateTime.now();
 
-    public static Order bestellen(int kundenummer, int produktnummer, int menge) {
+    public static Order bestellen(int kundenummer, int produktnummer, int menge, int frequency) {
         Order bestellung = new Order();
         bestellung.kundenummer = kundenummer;
         bestellung.produktnummer = produktnummer;
         bestellung.menge = menge;
+        bestellung.frequency = frequency;
         bestellung.createdAt = LocalDateTime.now();
         return bestellung;
     }
