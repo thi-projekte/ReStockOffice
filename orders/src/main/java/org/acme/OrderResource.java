@@ -9,11 +9,13 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import java.util.Map;
+import jakarta.inject.Inject;
+import io.quarkus.security.identity.SecurityIdentity;
 
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed("camunda-admin")
+//@RolesAllowed("camunda-admin")
 
 public class OrderResource {
     @Inject
@@ -36,7 +38,8 @@ public class OrderResource {
         Order order = Order.bestellen(
                 username,
                 input.produktnummer,
-                input.menge
+                input.menge,
+                input.frequency
         );
         order.persist();
 
@@ -69,7 +72,7 @@ public class OrderResource {
                 "businessKey", order.id.toString(),
                 "variables", Map.of(
                         "orderId", Map.of("value", order.id, "type", "Long"),
-                        "kundenummer", Map.of("value", order.kundenummer, "type", "Integer"),
+                        "username", Map.of("value", order.username, "type", "String"),
                         "produktnummer", Map.of("value", order.produktnummer, "type", "Integer"),
                         "menge", Map.of("value", order.menge, "type", "Integer")
                 )

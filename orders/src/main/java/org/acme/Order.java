@@ -8,12 +8,13 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+
 @Entity
 @Table(name = "orders")
 public class Order extends PanacheEntity {
 
     @NotNull
-    public Integer kundenummer;
+    public String username;
 
     @NotNull
     public Integer frequency;
@@ -27,9 +28,9 @@ public class Order extends PanacheEntity {
     public String status = "ERSTELLT";
     public LocalDateTime createdAt = LocalDateTime.now();
 
-    public static Order bestellen(int kundenummer, int produktnummer, int menge, int frequency) {
+    public static Order bestellen(String username, int produktnummer, int menge, int frequency) {
         Order bestellung = new Order();
-        bestellung.kundenummer = kundenummer;
+        bestellung.username = username;
         bestellung.produktnummer = produktnummer;
         bestellung.menge = menge;
         bestellung.frequency = frequency;
