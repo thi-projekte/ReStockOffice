@@ -23,18 +23,18 @@ spring.security:
     client:
       registration:
         keycloak:
-          clientId: cib-seven-local
-          clientSecret: cib-seven-secret
+          clientId: ${KEYCLOAK_CLIENT_ID:cib-seven-local}
+          clientSecret: ${KEYCLOAK_CLIENT_SECRET:cib-seven-secret}
           scope: openid,profile,email,offline_access,roles # 4
           authorization-grant-type: authorization_code
           redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
       provider:
         keycloak:
-          issuer-uri: http://localhost:8180/realms/cib-seven
-          authorization-uri: http://localhost:8180/realms/cib-seven/protocol/openid-connect/auth
-          token-uri: http://localhost:8180/realms/cib-seven/protocol/openid-connect/token
-          user-info-uri: http://localhost:8180/realms/cib-seven/protocol/openid-connect/userinfo
-          jwk-set-uri: http://localhost:8180/realms/cib-seven/protocol/openid-connect/certs
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}
+          authorization-uri: ${KEYCLOAK_AUTHORIZATION_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}/protocol/openid-connect/auth}
+          token-uri: ${KEYCLOAK_TOKEN_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}/protocol/openid-connect/token}
+          user-info-uri: ${KEYCLOAK_USER_INFO_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}/protocol/openid-connect/userinfo}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}/protocol/openid-connect/certs}
           # set user-name-attribute one of: 
           # - sub                -> default; using keycloak ID as CIB seven user ID
           # - email              -> useEmailAsCamundaUserId=true
@@ -43,7 +43,7 @@ spring.security:
     resourceserver:
       jwt:
         principal-claim-name: preferred_username
-        jwk-set-uri: http://localhost:8180/realms/cib-seven/protocol/openid-connect/certs
+        jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}/protocol/openid-connect/certs}
         #audiences: camunda-rest-api
 
 
@@ -53,10 +53,10 @@ logging:
 
 # CIB seven Keycloak Identity Provider Plugin
 plugin.identity.keycloak:
-  keycloakIssuerUrl: http://localhost:8180/realms/cib-seven
-  keycloakAdminUrl: http://localhost:8180/admin/realms/cib-seven
-  clientId: cib-seven-local
-  clientSecret: cib-seven-secret
+  keycloakIssuerUrl: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}
+  keycloakAdminUrl: ${KEYCLOAK_ADMIN_URL:http://localhost:8180/admin/realms/cib-seven}
+  clientId: ${KEYCLOAK_CLIENT_ID:cib-seven-local}
+  clientSecret: ${KEYCLOAK_CLIENT_SECRET:cib-seven-secret}
   useEmailAsCamundaUserId: false
   useUsernameAsCamundaUserId: true
   useGroupPathAsCamundaGroupId: true
@@ -73,19 +73,19 @@ cibseven:
         group-name-attribute: 
   webclient:
     engineRest:
-      url: http://localhost:8080
+      url: ${ENGINE_REST_BASE_URL:http://localhost:8080}
     authentication:
       tokenValidMinutes: 30
       tokenProlongMinutes: 10
     sso:
       active: true
       endpoints:
-        authorization: http://localhost:8180/realms/cib-seven/protocol/openid-connect/auth
-        token: http://localhost:8180/realms/cib-seven/protocol/openid-connect/token
-        jwks: http://localhost:8180/realms/cib-seven/protocol/openid-connect/certs
-        user: http://localhost:8180/realms/cib-seven/protocol/openid-connect/userinfo
-      clientId: cib-seven-local
-      clientSecret: cib-seven-secret
+        authorization: ${KEYCLOAK_AUTHORIZATION_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}/protocol/openid-connect/auth}
+        token: ${KEYCLOAK_TOKEN_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}/protocol/openid-connect/token}
+        jwks: ${KEYCLOAK_JWK_SET_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}/protocol/openid-connect/certs}
+        user: ${KEYCLOAK_USER_INFO_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/cib-seven}/protocol/openid-connect/userinfo}
+      clientId: ${KEYCLOAK_CLIENT_ID:cib-seven-local}
+      clientSecret: ${KEYCLOAK_CLIENT_SECRET:cib-seven-secret}
       scopes: openid email profile
       userIdProperty: preferred_username
       userNameProperty: name

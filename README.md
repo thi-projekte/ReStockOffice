@@ -42,14 +42,14 @@ Falls noch keine `settings.xml` vorhanden ist, muss die Datei neu angelegt werde
 <activeProfile>cibseven-ee</activeProfile>
 ```
 
-## Starten
+## Lokaler Start
 
 ### 1. Keycloak starten
 
 Keycloak wird über Docker Compose gestartet und ist vorkonfiguriert (Realm, Client, Benutzer werden automatisch importiert):
 
 ```bash
-docker compose up -d
+docker compose up -d keycloak
 ```
 
 Keycloak ist anschließend unter `http://localhost:8180` erreichbar.
@@ -63,6 +63,7 @@ mvn spring-boot:run
 ```
 
 Die Anwendung ist unter `http://localhost:8080` erreichbar.
+Die REST API ist unter `http://localhost:8080/engine-rest` erreichbar.
 
 ### Einloggen
 
@@ -125,3 +126,40 @@ Da Keycloak den Realm nur beim ersten Start importiert, muss für einen Neuimpor
 docker compose down -v
 docker compose up -d
 ```
+
+## Deployment
+
+Das Docker-Image wird per GitHub Actions gebaut und in GHCR veröffentlicht:
+
+```text
+ghcr.io/thi-projekte/restockoffice-processengine
+```
+
+Die Action läuft bei Pushes auf `main`, bei Git-Tags mit `v`-Präfix und manuell über `workflow_dispatch`. Für den Maven-Zugriff auf das CIB-seven Enterprise Repository müssen im GitHub-Repository diese Secrets gesetzt sein:
+
+- `CIBSEVEN_MAVEN_USERNAME`
+- `CIBSEVEN_MAVEN_PASSWORD`
+
+Portainer kann den Stack direkt aus dem Repository lesen. Die `docker-compose.yml` startet die Process Engine als Container und stellt sie standardmäßig auf Port `8080` bereit. Nginx kann dann auf diesen Port weiterleiten:
+
+```text
+https://pe.ReStockOffice.de -> http://<docker-host>:8080
+```
+
+Die REST API liegt nach dem Deployment unter:
+
+```text
+https://pe.ReStockOffice.de/engine-rest
+```
+
+Wichtige Umgebungsvariablen für Portainer:
+
+| Variable | Standardwert | Zweck |
+| --- | --- | --- |
+| `PROCESSENGINE_HTTP_PORT` | `8080` | Host-Port der Process Engine |
+| `KEYCLOAK_HTTP_PORT` | `8180` | Host-Port von Keycloak |
+| `KEYCLOAK_ISSUER_URI` | `http://keycloak:8080/realms/cib-seven` | Issuer-URL für OAuth2/OIDC |
+| `KEYCLOAK_ADMIN_URL` | `http://keycloak:8080/admin/realms/cib-seven` | Keycloak Admin-URL |
+| `KEYCLOAK_CLIENT_ID` | `cib-seven-local` | OIDC Client-ID |
+| `KEYCLOAK_CLIENT_SECRET` | `cib-seven-secret` | OIDC Client-Secret |
+| `ENGINE_REST_BASE_URL` | `https://pe.ReStockOffice.de` | Öffentliche Basis-URL der Process Engine |
