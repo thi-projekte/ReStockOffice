@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-
+//test
 @Entity
 @Table(name = "orders")
 public class Order extends PanacheEntity {
