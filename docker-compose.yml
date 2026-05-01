@@ -4,11 +4,6 @@ services:
     restart: unless-stopped
     environment:
       SERVER_FORWARD_HEADERS_STRATEGY: framework
-      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-http://restockoffice-keycloak:8080/realms/cib-seven}
-      KEYCLOAK_ADMIN_URL: ${KEYCLOAK_ADMIN_URL:-http://restockoffice-keycloak:8080/admin/realms/cib-seven}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-cib-seven-local}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-cib-seven-secret}
-      ENGINE_REST_BASE_URL: ${ENGINE_REST_BASE_URL:-https://pe.ReStockOffice.de}
     ports:
       - "${PROCESSENGINE_HTTP_PORT:-8080}:8080"
     networks:
