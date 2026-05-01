@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 11-bestellprozess-ausführbar-in-cib-seven
     tags:
       - "v*"
   workflow_dispatch:
@@ -52,6 +53,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=raw,value=1.0.0
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}

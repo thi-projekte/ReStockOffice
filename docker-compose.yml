@@ -1,6 +1,6 @@
 services:
   processengine:
-    image: ghcr.io/thi-projekte/restockoffice-processengine:main
+    image: ghcr.io/thi-projekte/restockoffice-processengine:1.0.0
     restart: unless-stopped
     depends_on:
       - keycloak
