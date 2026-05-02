@@ -15,7 +15,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-//@RolesAllowed("camunda-admin")
+@RolesAllowed("camunda-admin")
 
 public class OrderResource {
     @Inject
@@ -47,7 +47,8 @@ public class OrderResource {
         // Erst Token von Keycloak holen
         Client authClient = ClientBuilder.newClient();
         String tokenResponse = authClient
-                .target("http://localhost:8180/realms/cib-seven/protocol/openid-connect/token")
+                .target("http://restockoffice-keycloak:8080/realms/cib-seven/protocol/openid-connect/token")
+                //.target("http://localhost:8180/realms/cib-seven/protocol/openid-connect/token")
                 .request(MediaType.APPLICATION_FORM_URLENCODED)
                 .post(Entity.form(new jakarta.ws.rs.core.Form()
                         .param("client_id", "cib-seven-local")
@@ -62,6 +63,7 @@ public class OrderResource {
         String accessToken = tokenResponse
                 .split("\"access_token\":\"")[1]
                 .split("\"")[0];
+        System.out.println("TOKEN RESPONSE: " + tokenResponse);
 
         // Camunda Prozess mit Token starten
         Client client = ClientBuilder.newClient();
@@ -79,7 +81,8 @@ public class OrderResource {
         );
 
         client
-                .target(camundaUrl)
+                //.target(camundaUrl)
+                .target("http://processengine-processengine-1:8080/engine-rest/process-definition/key/Process_0ltcqh0/start")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + accessToken)
                 .post(Entity.json(body));
