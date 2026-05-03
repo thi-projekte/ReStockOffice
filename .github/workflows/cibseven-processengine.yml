@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push CIB seven Process Engine Image
 
 on:
   push:
@@ -34,7 +34,8 @@ jobs:
           server-username: CIBSEVEN_MAVEN_USERNAME
           server-password: CIBSEVEN_MAVEN_PASSWORD
 
-      - name: Build with Maven
+      - name: Build CIB seven process engine with Maven
+        working-directory: processengine
         run: mvn -B -ntp package -DskipTests
         env:
           CIBSEVEN_MAVEN_USERNAME: ${{ secrets.CIBSEVEN_MAVEN_USERNAME }}
@@ -62,7 +63,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./processengine
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
