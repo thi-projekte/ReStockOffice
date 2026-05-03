@@ -15,7 +15,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed("camunda-admin")
+//@RolesAllowed("camunda-admin")
 
 public class OrderResource {
     @Inject
