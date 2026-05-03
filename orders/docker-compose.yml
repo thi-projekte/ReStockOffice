@@ -10,7 +10,7 @@ services:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db-container:5432/orders_db
       QUARKUS_DATASOURCE_USERNAME: reStockOffice
       QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
-      QUARKUS_OIDC_ENABLED: "true"
+      QUARKUS_OIDC_ENABLED: "false"
       QUARKUS_OIDC_AUTH_SERVER_URL: http://restockoffice-keycloak:8180/realms/cib-seven
     depends_on:
       - db-container
