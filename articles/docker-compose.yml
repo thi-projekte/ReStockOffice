@@ -14,6 +14,7 @@ services:
       QUARKUS_OIDC_AUTH_SERVER_URL: http://restockoffice-keycloak:8180/realms/cib-seven
       QUARKUS_OIDC_APPLICATION_TYPE: "service"
       QUARKUS_HTTP_AUTH_PERMISSION_AUTHENTICATED_POLICY: "permit"
+      QUARKUS_OIDC_TENANT_ENABLED: "false"
     depends_on:
       - db-container
 
