@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - confirmationMails
+      - feature/confirmationMails
     tags:
       - "confirmation-mails-v*"
   workflow_dispatch:
