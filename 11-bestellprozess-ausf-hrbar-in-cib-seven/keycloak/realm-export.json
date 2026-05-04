@@ -13,7 +13,7 @@
       "serviceAccountsEnabled": true,
       "publicClient": false,
       "redirectUris": [
-        "http://localhost:8080/*"
+        "http://localhost:*"
       ],
       "webOrigins": [
         "http://localhost:8080"
@@ -40,6 +40,13 @@
       "path": "/camunda-admin"
     }
   ],
+  "roles": {
+    "realm": [
+      {
+        "name": "camunda-admin"
+      }
+    ]
+  },
   "users": [
     {
       "username": "demo",
@@ -47,6 +54,7 @@
       "email": "demo@example.com",
       "firstName": "Demo",
       "lastName": "User",
+      "realmRoles": ["camunda-admin"],
       "credentials": [
         {
           "type": "password",
