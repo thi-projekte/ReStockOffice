@@ -1,0 +1,51 @@
+name: Publish SPA Container Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'spa-v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        working-directory: ./spa
+        run: npm install
+
+      - name: Build SPA
+        working-directory: ./spa
+        run: npm run build
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./spa
+          file: ./spa/Dockerfile
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+              ghcr.io/${{ github.repository_owner }}/restockoffice-spa:1.0.4
+              ghcr.io/${{ github.repository_owner }}/restockoffice-spa:${{ github.sha }}

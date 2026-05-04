@@ -1,0 +1,23 @@
+{
+  "subscriptionId": "sub_12345",
+  "customerId": "cust_67890",
+  "status": "ACTIVE",
+  "startDate": "2026-04-01",
+  "endDate": null,
+  "items": [
+    {
+      "itemId": "item_1",
+      "productId": "001",
+      "quantity": 2,
+      "intervalCount": 1
+    },
+    {
+      "itemId": "item_2",
+      "productId": "002",
+      "quantity": 1,
+      "intervalCount": 4
+    }
+  ],
+  "createdAt": "2026-04-01",
+  "updatedAt": "2026-04-30"
+}
