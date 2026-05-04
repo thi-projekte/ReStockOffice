@@ -1,0 +1,15 @@
+services:
+  processengine:
+    image: ghcr.io/thi-projekte/restockoffice-processengine:1.0.0
+    restart: unless-stopped
+    environment:
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+    ports:
+      - "${PROCESSENGINE_HTTP_PORT:-8080}:8080"
+    networks:
+      - default
+      - nginx-proxy-manager
+
+networks:
+  nginx-proxy-manager:
+    external: true
