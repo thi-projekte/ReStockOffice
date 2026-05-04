@@ -29,12 +29,15 @@ public class Order extends PanacheEntity {
     public LocalDateTime createdAt = LocalDateTime.now();
 
     public static Order bestellen(String username, int produktnummer, int menge, int frequency) {
+        System.out.println("🔥 STATIC bestellen() CALLED");
         Order bestellung = new Order();
+        System.out.println("🧩 BUILDING ORDER OBJECT");
         bestellung.username = username;
         bestellung.produktnummer = produktnummer;
         bestellung.menge = menge;
         bestellung.frequency = frequency;
         bestellung.createdAt = LocalDateTime.now();
+        System.out.println("✅ ORDER READY (NOT SAVED YET)");
         return bestellung;
     }
 }
