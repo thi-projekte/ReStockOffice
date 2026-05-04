@@ -1,9 +1,9 @@
 services:
   orders:
-    image: ghcr.io/thi-projekte/restockoffice-orders:2.0.5
+    image: ghcr.io/thi-projekte/restockoffice-orders:2.0.6
     container_name: orders
-    #ports:
-    #  - "8081:8080"
+    ports:
+      - "8081:8080"
     networks:
       - nginx-proxy-manager
     environment:
@@ -22,9 +22,9 @@ services:
   db-container:
     image: postgres:15
     environment:
+      POSTGRES_DB: orders_db
       POSTGRES_USER: reStockOffice
       POSTGRES_PASSWORD: reStockOffice123$
-      POSTGRES_DB: orders_db
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:
