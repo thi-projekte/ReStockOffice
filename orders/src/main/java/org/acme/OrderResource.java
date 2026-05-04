@@ -12,6 +12,7 @@ import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
 
+
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -47,8 +48,7 @@ public class OrderResource {
         // Erst Token von Keycloak holen
         Client authClient = ClientBuilder.newClient();
         String tokenResponse = authClient
-                .target("http://restockoffice-keycloak:8080/realms/cib-seven/protocol/openid-connect/token")
-                //.target("http://localhost:8180/realms/cib-seven/protocol/openid-connect/token")
+                .target("http://keycloak:8080/realms/cib-seven/protocol/openid-connect/token")
                 .request(MediaType.APPLICATION_FORM_URLENCODED)
                 .post(Entity.form(new jakarta.ws.rs.core.Form()
                         .param("client_id", "cib-seven-local")
@@ -65,6 +65,11 @@ public class OrderResource {
                 .split("\"")[0];
         System.out.println("TOKEN RESPONSE: " + tokenResponse);
 
+        System.out.println("🔥 ORDER ENDPOINT HIT");
+        System.out.println("ROLES: " + securityIdentity.getRoles());
+
+
+/*
         // Camunda Prozess mit Token starten
         Client client = ClientBuilder.newClient();
         String camundaUrl =
@@ -81,10 +86,9 @@ public class OrderResource {
         );
 
         client
-                //.target(camundaUrl)
-                .target("http://processengine-processengine-1:8080/engine-rest/process-definition/key/Process_0ltcqh0/start")
+                .target(camundaUrl)
                 .request(MediaType.APPLICATION_JSON)
-                .header("Authorization", "Bearer " + accessToken)
+                //.header("Authorization", "Bearer " + accessToken)
                 .post(Entity.json(body));
 
         client.close();
@@ -111,8 +115,8 @@ public class OrderResource {
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(body));
 
-        client.close();
-        */
+        client.close();*/
+
 
         return order;
     }
