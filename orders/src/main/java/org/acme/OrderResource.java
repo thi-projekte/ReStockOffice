@@ -11,12 +11,14 @@ import jakarta.ws.rs.client.Entity;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
+import jakarta.annotation.security.PermitAll;
 
 
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed("camunda-admin")
+//@RolesAllowed("camunda-admin")
+@PermitAll
 
 public class OrderResource {
     @Inject
