@@ -23,6 +23,8 @@ public class OrderResource {
     SecurityIdentity securityIdentity;
     @GET
     public List<Order> getAll() {
+
+        System.out.println("🔥 GET /orders HIT");
         return Order.listAll();
     }
 
@@ -35,6 +37,13 @@ public class OrderResource {
     @POST
     @Transactional
     public Order bestellen(Order input) {
+        System.out.println("🚪 POST /orders ENTERED RESOURCE");
+        // 🔐 debug auth
+        try {
+            System.out.println("👤 USER: " + securityIdentity.getPrincipal().getName());
+        } catch (Exception e) {
+            System.out.println("❌ NO SECURITY IDENTITY (token issue?)");
+        }
         String username = securityIdentity.getPrincipal().getName();
         Order order = Order.bestellen(
                 username,
@@ -42,7 +51,9 @@ public class OrderResource {
                 input.menge,
                 input.frequency
         );
+        System.out.println("⚙️ ORDER CREATED IN RESOURCE");
         order.persist();
+        System.out.println("💾 ORDER PERSISTED: ID = " + order.id);
 
 /*
         // Erst Token von Keycloak holen
