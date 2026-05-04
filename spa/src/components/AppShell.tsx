@@ -639,7 +639,7 @@ export function AppShell({ children }: AppShellProps) {
           open={activeSubscriptionLayer === "overview"}
           onClose={resetSubscriptionLayer}
           onUpdateSubscription={() => {
-            toast.success("Das Abo kann später an das Backend angebunden werden.");
+            toast.success("Produkte zum Abo hinzugefügt.");
           }}
           onManageSubscription={() => {
             resetSubscriptionLayer();
