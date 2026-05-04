@@ -44,7 +44,7 @@ public class OrderResource {
         );
         order.persist();
 
-
+/*
         // Erst Token von Keycloak holen
         Client authClient = ClientBuilder.newClient();
         String tokenResponse = authClient
@@ -63,10 +63,8 @@ public class OrderResource {
         String accessToken = tokenResponse
                 .split("\"access_token\":\"")[1]
                 .split("\"")[0];
-        System.out.println("TOKEN RESPONSE: " + tokenResponse);
+        System.out.println("TOKEN RESPONSE: " + tokenResponse);*/
 
-        System.out.println("🔥 ORDER ENDPOINT HIT");
-        System.out.println("ROLES: " + securityIdentity.getRoles());
 
 
 /*

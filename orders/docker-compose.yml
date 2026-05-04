@@ -10,17 +10,19 @@ services:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db-container:5432/orders_db
       QUARKUS_DATASOURCE_USERNAME: reStockOffice
       QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
+      QUARKUS_DATASOURCE_DB_KIND: postgresql
+      QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
       QUARKUS_OIDC_ENABLED: "true"
       QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/cib-seven
-      QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
-    #depends_on:
-    #  - db-container
+      QUARKUS_LOG_LEVEL: DEBUG
+      QUARKUS_LOG_CATEGORY_"io.quarkus.datasource": DEBUG
+      QUARKUS_LOG_CATEGORY_"io.quarkus.hibernate": DEBUG
     depends_on:
-      db-container:
-        condition: service_healthy
+      - db-container
 
   db-container:
     image: postgres:15
+    container_name: db-container
     environment:
       POSTGRES_DB: orders_db
       POSTGRES_USER: reStockOffice
