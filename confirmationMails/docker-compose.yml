@@ -1,0 +1,17 @@
+services:
+  confirmation-mails:
+    image: ghcr.io/thi-projekte/restockoffice-confirmation-mails:latest
+    restart: unless-stopped
+    networks:
+      - nginx-proxy-manager
+    environment:
+      RESTOCK_MAIL_SENDER: noreply@restockoffice.de
+      RESTOCK_MAIL_REPLY_TO: support@restockoffice.de
+      RESTOCK_MAIL_SUPPORT_EMAIL: support@restockoffice.de
+      RESTOCK_MAIL_LOGO_URL: https://restockoffice.de/assets/logo_colored.png
+      RESTOCK_MAIL_RESEND_API_KEY: ${RESTOCK_MAIL_RESEND_API_KEY}
+      RESTOCK_MAIL_RESEND_BASE_URL: https://api.resend.com
+
+networks:
+  nginx-proxy-manager:
+    external: true

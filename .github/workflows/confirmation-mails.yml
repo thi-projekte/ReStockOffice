@@ -1,0 +1,87 @@
+name: Build and Push Confirmation Mails Image
+
+on:
+  push:
+    branches:
+      - main
+      - confirmationMails
+    tags:
+      - "confirmation-mails-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: "21"
+          distribution: graalvm-community
+          cache: maven
+
+      - name: Build with Maven
+        working-directory: confirmationMails
+        run: |
+          chmod +x mvnw
+          ./mvnw -B verify
+
+      - name: Package native
+        working-directory: confirmationMails
+        run: |
+          chmod +x mvnw
+          ./mvnw -B package -Dnative -DskipTests
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: image_tags
+        run: |
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/restockoffice-confirmation-mails"
+          REF_NAME="${GITHUB_REF_NAME}"
+          SAFE_REF=$(echo "${REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9._-]#-#g')
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            {
+              echo "tags<<EOF"
+              echo "${IMAGE_NAME}:${REF_NAME}"
+              echo "${IMAGE_NAME}:${GITHUB_SHA}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+          elif [ "${REF_NAME}" = "main" ]; then
+            {
+              echo "tags<<EOF"
+              echo "${IMAGE_NAME}:1.0.0"
+              echo "${IMAGE_NAME}:latest"
+              echo "${IMAGE_NAME}:${GITHUB_SHA}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+          else
+            {
+              echo "tags<<EOF"
+              echo "${IMAGE_NAME}:${SAFE_REF}"
+              echo "${IMAGE_NAME}:${SAFE_REF}-${GITHUB_SHA}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./confirmationMails
+          file: ./confirmationMails/src/main/docker/Dockerfile.native-micro
+          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+          tags: ${{ steps.image_tags.outputs.tags }}
