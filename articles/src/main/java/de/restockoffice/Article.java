@@ -1,4 +1,4 @@
-package org.acme;
+package de.restockoffice;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;

@@ -1,4 +1,4 @@
-package org.acme;
+package de.restockoffice;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;

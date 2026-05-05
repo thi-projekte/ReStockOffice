@@ -1,4 +1,4 @@
-package org.acme;
+package de.restockoffice;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
