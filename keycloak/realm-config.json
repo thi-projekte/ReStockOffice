@@ -19,15 +19,18 @@
       "publicClient": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
-      "rootUrl": "http://localhost:5173/landing",
-      "baseUrl": "http://localhost:5173/landing",
+      "rootUrl": "https://restockoffice.com/landing",
+      "baseUrl": "https://restockoffice.com/landing",
       "redirectUris": [
+        "https://restockoffice.com/landing",
+        "https://restockoffice.com/landing/*",
         "http://localhost:5173/landing",
         "http://localhost:5173/landing/*",
         "http://localhost:5174/landing",
         "http://localhost:5174/landing/*"
       ],
       "webOrigins": [
+        "https://restockoffice.com",
         "http://localhost:5173",
         "http://localhost:5174",
         "+"
