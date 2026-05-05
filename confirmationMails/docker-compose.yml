@@ -2,10 +2,10 @@ services:
   confirmation-mails:
     image: ghcr.io/thi-projekte/restockoffice-confirmation-mails:feature-confirmationmails
     restart: unless-stopped
-    ports:
-      - "8088:8080"
+
     networks:
       - nginx-proxy-manager
+      - mailer
     environment:
       RESTOCK_MAIL_SENDER: noreply@restockoffice.de
       RESTOCK_MAIL_REPLY_TO: support@restockoffice.de
@@ -16,4 +16,6 @@ services:
 
 networks:
   nginx-proxy-manager:
+    external: true
+  mailer:
     external: true
