@@ -40,5 +40,5 @@ export async function redirectToLogin(): Promise<void> {
 
 export async function logout(): Promise<void> {
   await init()
-  keycloak.logout({ redirectUri: window.location.origin })
+  keycloak.logout({ redirectUri: window.location.origin + '/landing' })
 }

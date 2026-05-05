@@ -10,6 +10,7 @@
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
+  "verifyEmail": false,
   "clients": [
     {
       "clientId": "restock-office-web",
@@ -18,15 +19,13 @@
       "publicClient": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
-      "rootUrl": "http://localhost:5173",
-      "baseUrl": "http://localhost:5173",
+      "rootUrl": "http://localhost:5173/landing",
+      "baseUrl": "http://localhost:5173/landing",
       "redirectUris": [
-        "http://localhost:5173",
-        "http://localhost:5173/",
-        "http://localhost:5173/*",
-        "http://localhost:5174",
-        "http://localhost:5174/",
-        "http://localhost:5174/*"
+        "http://localhost:5173/landing",
+        "http://localhost:5173/landing/*",
+        "http://localhost:5174/landing",
+        "http://localhost:5174/landing/*"
       ],
       "webOrigins": [
         "http://localhost:5173",

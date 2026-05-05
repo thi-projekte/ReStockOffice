@@ -23,7 +23,7 @@ export default function Header() {
     <header className={styles.header}>
       <div className={styles.inner}>
         <a href="/" className={styles.logo}>
-          <img src="/logo.svg" alt="ReStockOffice" height={160} />
+          <img src={`${import.meta.env.BASE_URL}/logo.svg`} alt="ReStockOffice" height={160} />
         </a>
         <nav className={styles.nav}>
           {NAV_LINKS.map(({ href, label }) => (
