@@ -7,6 +7,8 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -15,6 +17,7 @@ import java.util.List;
 public class MailResource {
 
     private static final String PREVIEW_LOGO_URL = "http://localhost:8080/assets/logo_colored.png";
+    private static final Logger log = LoggerFactory.getLogger(MailResource.class);
 
     @Inject
     NotificationMailService notificationMailService;
@@ -23,8 +26,14 @@ public class MailResource {
     @Path("/order-confirmation")
     @Produces(MediaType.APPLICATION_JSON)
     public SendMailResponse sendOrderConfirmation(OrderConfirmationRequest request) {
+        log.info("Sending order confirmation to {}", request.recipientEmail());
+
         RenderedMail renderedMail = notificationMailService.renderOrderConfirmation(request);
         String messageId = notificationMailService.sendOrderConfirmation(request);
+
+        log.info("Order confirmation sent successfully - messageId={}, recipient={}",
+                messageId, request.recipientEmail());
+
         return new SendMailResponse("order-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, "queued");
     }
 
@@ -46,8 +55,14 @@ public class MailResource {
     @Path("/delivery-announcement")
     @Produces(MediaType.APPLICATION_JSON)
     public SendMailResponse sendDeliveryAnnouncement(DeliveryAnnouncementRequest request) {
+        log.info("Sending delivery announcement to {}", request.recipientEmail());
+
         RenderedMail renderedMail = notificationMailService.renderDeliveryAnnouncement(request);
         String messageId = notificationMailService.sendDeliveryAnnouncement(request);
+
+        log.info("Delivery announcement sent successfully - messageId={}, recipient={}",
+                messageId, request.recipientEmail());
+
         return new SendMailResponse("delivery-announcement", request.recipientEmail(), renderedMail.subject(), messageId, "queued");
     }
 
