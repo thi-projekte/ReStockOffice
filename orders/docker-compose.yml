@@ -14,7 +14,8 @@ services:
       QUARKUS_DATASOURCE_DB_KIND: postgresql
       QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
       QUARKUS_OIDC_ENABLED: "true"
-      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/cib-seven
+      #QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/cib-seven
+      #QUARKUS_OIDC_AUTH_SERVER_URL: QUARKUS_OIDC_AUTH_SERVER_URL
       QUARKUS_LOG_LEVEL: DEBUG
       QUARKUS_LOG_CATEGORY_"io.quarkus.datasource": DEBUG
       QUARKUS_LOG_CATEGORY_"io.quarkus.hibernate": DEBUG
