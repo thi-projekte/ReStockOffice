@@ -1,0 +1,22 @@
+services:
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5
+    container_name: restockoffice-keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - nginx-proxy-manager
+
+volumes:
+  keycloak_data:
+
+networks:
+  nginx-proxy-manager:
+    external: true
