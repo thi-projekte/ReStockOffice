@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReStockOffice Lieferankündigung</title>
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
+  <style>{{inlineStyles}}</style>
+</head>
+<body class="email-body">
+  <div class="email-preheader">Deine ReStockOffice Lieferung ist angekündigt. Hier findest du Termin, Lieferort und alle Artikel dieser Lieferung.</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-page">
+    <tr><td align="center" class="email-page-padding">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-shell">
+        <tr><td class="email-header-spacing"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-header-card"><tr><td class="email-header-inner"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td valign="middle"><img src="{{logoUrl}}" alt="ReStockOffice" class="email-logo" /></td><td align="right" valign="middle"><span class="email-badge">Lieferung geplant</span></td></tr></table></td></tr></table></td></tr>
+        <tr><td><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-main-card">
+        <tr><td class="email-hero email-hero-padding"><div class="email-eyebrow">Lieferankündigung</div><div class="email-hero-title">Deine Lieferung kommt in {{daysUntilDelivery}} Tagen.</div><div class="email-hero-copy email-hero-copy-delivery">Hallo {{customerName}}, deine nächste ReStockOffice Lieferung ist für {{deliveryDate}} geplant. Hier siehst du den Lieferort und alle Artikel, die geliefert werden.</div></td></tr>
+          <tr><td class="email-summary-row"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td width="50%" valign="top" class="email-col-left"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-summary-card"><tr><td class="email-summary-inner"><div class="email-kicker">Lieferdatum</div><div class="email-metric">{{deliveryDate}}</div><div class="email-copy-tight email-copy-tight-top-md"><span class="email-info-strong">Lieferfenster:</span> {{deliveryWindow}}</div><div class="email-copy-tight email-copy-tight-top-sm"><span class="email-info-strong">Bürostandort:</span> {{officeLocation}}</div></td></tr></table></td><td width="50%" valign="top" class="email-col-right"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-summary-card"><tr><td class="email-summary-inner"><div class="email-kicker">Lieferung</div><div class="email-metric">{{orderNumber}}</div><div class="email-copy-tight email-copy-tight-top-sm"><span class="email-info-strong">Restocker:</span> {{supplierName}}</div></td></tr></table></td></tr></table></td></tr>
+          <tr><td class="email-section-wrap"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-section-card">
+            <tr><td class="email-section-head-loose"><div class="email-section-title">Wohin geliefert wird</div><div class="email-section-copy email-section-copy-delivery">Alle Artikel dieser Lieferung werden an den unten hinterlegten Ort geliefert.</div></td></tr>
+            <tr><td class="email-soft-row"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card"><tr><td class="email-soft-inner"><div class="email-kicker">Lieferort im Büro</div><div class="email-copy email-preline">{{deliveryLocation}}</div></td></tr></table></td></tr>
+            <tr><td class="email-soft-row-loose"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card"><tr><td class="email-soft-inner"><div class="email-kicker">Zielplatz</div><div class="email-copy"><span class="email-info-strong">Platz:</span> {{deskDetails}}<br /><span class="email-info-strong">Kontakt vor Ort:</span> {{onSiteContact}}</div></td></tr></table></td></tr>
+            <tr><td class="email-soft-row-end"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td class="email-table-heading">Artikel dieser Lieferung</td></tr>{{deliveryItemsHtml}}</table></td></tr>
+            <tr><td class="email-soft-row-end"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card"><tr><td class="email-soft-inner-note"><div class="email-kicker">Lieferhinweis</div><div class="email-copy-tight">Unser Restocker <span class="email-info-strong">{{supplierName}}</span> liefert die Artikel direkt an den hinterlegten Platz. Hinweise zur Lieferung: {{deliveryInstructions}}</div></td></tr></table></td></tr>
+          </table></td></tr>
+          <tr><td class="email-cta-wrap"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" class="email-center-bottom-gap"><a href="{{deliveryDetailsUrl}}" class="email-button email-button-primary">Lieferdetails ansehen</a></td></tr><tr><td align="center" class="email-support">Falls sich Lieferort, Platz oder Erreichbarkeit ändern, melde dich bitte frühzeitig unter <a href="mailto:{{supportEmail}}" class="email-support-link">{{supportEmail}}</a>.</td></tr></table></td></tr>
+        </table></td></tr>
+        <tr><td align="center" class="email-footer email-footer-wrap">ReStockOffice verschickt diese E-Mail automatisch zur Vorbereitung deiner anstehenden Buerolieferung.</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
