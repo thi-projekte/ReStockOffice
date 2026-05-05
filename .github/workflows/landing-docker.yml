@@ -35,3 +35,7 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/restockoffice-landing:latest
             ghcr.io/${{ github.repository_owner }}/restockoffice-landing:${{ github.sha }}
+          build-args: |
+            VITE_KEYCLOAK_URL=https://auth.restockoffice.com
+            VITE_KEYCLOAK_REALM=restock-office
+            VITE_KEYCLOAK_CLIENT_ID=restock-office-web

@@ -3,7 +3,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.5
     container_name: restockoffice-keycloak
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -11,6 +11,7 @@ services:
       - "8180:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
+      - ./realm-config.json:/opt/keycloak/data/import/realm-config.json
     networks:
       - nginx-proxy-manager
 
