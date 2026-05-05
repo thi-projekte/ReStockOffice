@@ -1,5 +1,6 @@
 package org.acme;
 
+import io.quarkus.security.Authenticated;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -17,9 +18,8 @@ import jakarta.annotation.security.PermitAll;
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-//@RolesAllowed("camunda-admin")
-@PermitAll
-
+//@RolesAllowed("camunda-admin") admin || user
+@Authenticated
 public class OrderResource {
     @Inject
     SecurityIdentity securityIdentity;
