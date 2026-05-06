@@ -2,8 +2,8 @@ services:
   orders:
     image: ghcr.io/thi-projekte/restockoffice-orders:2.0.7
     container_name: orders
-    ports:
-      - "8081:8081"
+    #ports:
+    #  - "8081:8081"
     networks:
       - nginx-proxy-manager
       - orders
@@ -13,7 +13,7 @@ services:
       QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
       QUARKUS_DATASOURCE_DB_KIND: postgresql
       QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
-      QUARKUS_OIDC_ENABLED: "true"
+      QUARKUS_OIDC_ENABLED: "false"
       #QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/cib-seven
     depends_on:
       - db-container
@@ -35,11 +35,14 @@ services:
       timeout: 3s
       retries: 5
 
+#volumes:
+#  db_data:
 volumes:
-  db_data:
+    orders:
 
 networks:
   nginx-proxy-manager:
     external: true
   orders:
     external: false
+    driver: bridge

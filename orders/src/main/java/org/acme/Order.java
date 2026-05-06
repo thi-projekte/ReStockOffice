@@ -30,7 +30,6 @@ public class Order extends PanacheEntity {
     public static Order bestellen(String username, int produktnummer, int menge, int frequency) {
         System.out.println("🔥 STATIC bestellen() CALLED");
         Order bestellung = new Order();
-        System.out.println("🧩 BUILDING ORDER OBJECT");
         bestellung.username = username;
         bestellung.produktnummer = produktnummer;
         bestellung.menge = menge;

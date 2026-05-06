@@ -12,7 +12,6 @@ import jakarta.ws.rs.client.Entity;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
-import jakarta.annotation.security.PermitAll;
 
 
 @Path("/orders")
@@ -25,7 +24,6 @@ public class OrderResource {
     SecurityIdentity securityIdentity;
     @GET
     public List<Order> getAll() {
-
         System.out.println("🔥 GET /orders HIT");
         return Order.listAll();
     }
@@ -79,8 +77,6 @@ public class OrderResource {
         System.out.println("TOKEN RESPONSE: " + tokenResponse);*/
 
 
-
-/*
         // Camunda Prozess mit Token starten
         Client client = ClientBuilder.newClient();
         String camundaUrl =
@@ -103,31 +99,6 @@ public class OrderResource {
                 .post(Entity.json(body));
 
         client.close();
-
-        /*
-        //Camunda Prozess starten
-        Client client = ClientBuilder.newClient();
-
-        String camundaUrl =
-                "http://localhost:8080/engine-rest/process-definition/key/Process_0ltcqh0/start";
-
-        Map<String, Object> body = Map.of(
-                "businessKey", order.id.toString(),
-                "variables", Map.of(
-                        "orderId", Map.of("value", order.id, "type", "Long"),
-                        "kundenummer", Map.of("value", order.kundenummer, "type", "Integer"),
-                        "produktnummer", Map.of("value", order.produktnummer, "type", "Integer"),
-                        "menge", Map.of("value", order.menge, "type", "Integer")
-                )
-        );
-
-        client
-                .target(camundaUrl)
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(body));
-
-        client.close();*/
-
 
         return order;
     }
