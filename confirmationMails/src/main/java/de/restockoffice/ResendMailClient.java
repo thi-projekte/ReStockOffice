@@ -23,7 +23,7 @@ public class ResendMailClient {
 
     public String send(String recipientEmail, String subject, String html) {
         if (mailSettings.resendApiKey().isBlank()) {
-            throw new MailValidationException("RESTOCK_MAIL_RESEND_API_KEY is missing");
+            throw new MailValidationException("RESTOCK_MAIL_RESEND_API_KEY or QUARKUS_MAILER_PASSWORD is missing");
         }
 
         Map<String, Object> payload = new LinkedHashMap<>();
