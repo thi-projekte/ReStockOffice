@@ -11,6 +11,10 @@ interface ProductDetailProps {
   subscriptionItems: SubscriptionProductItem[];
   isLoggedIn: boolean;
   onLogin: (formData: unknown) => Promise<void>;
+  onLogout: () => void;
+  theme: "light" | "dark" | "auto";
+  onToggleTheme: () => void;
+  onSetTheme: (theme: "light" | "dark" | "auto") => void;
 }
 
 function formatPrice(value: number) {

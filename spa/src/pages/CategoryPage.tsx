@@ -14,6 +14,10 @@ interface OutletContext {
   onOpenSubscriptionOverview: () => void;
   onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
   subscriptionItems: SubscriptionProductItem[];
+  onLogout: () => void;
+  theme: "light" | "dark" | "auto";
+  onToggleTheme: () => void;
+  onSetTheme: (theme: "light" | "dark" | "auto") => void;
 }
 
 export function CategoryPage() {

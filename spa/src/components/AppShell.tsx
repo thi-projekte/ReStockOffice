@@ -4,12 +4,10 @@ import {
   FaBars,
   FaChevronRight,
   FaHome,
-  FaMoon,
   FaSearch,
   FaShoppingCart,
   FaSlidersH,
-  FaSun,
-  FaTimes,
+    FaTimes,
   FaUser,
   FaCalendarAlt
 } from "react-icons/fa";
@@ -35,6 +33,10 @@ interface AppShellProps {
     onOpenSubscriptionOverview: () => void;
     onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
     subscriptionItems: SubscriptionProductItem[];
+    onLogout: () => void;
+    theme: "light" | "dark";
+    onToggleTheme: () => void;
+    onSetTheme: (theme: "light" | "dark") => void;
   }) => ReactNode;
 }
 
@@ -501,30 +503,6 @@ export function AppShell({ children }: AppShellProps) {
 
             {isLoggedIn ? (
               <button
-                className="button button--ghost nav-btn"
-                type="button"
-                onClick={handleLogout}
-                title="Abmelden"
-                aria-label="Abmelden"
-              >
-                <MdLogout />
-              </button>
-            ) : null}
-
-            <button
-              className="button button--ghost theme-toggle nav-btn"
-              type="button"
-              onClick={() => setTheme(isDarkMode ? "light" : "dark")}
-              aria-label={
-                isDarkMode ? "Hellmodus aktivieren" : "Dunkelmodus aktivieren"
-              }
-              title={isDarkMode ? "Hellmodus" : "Dunkelmodus"}
-            >
-              {isDarkMode ? <FaSun /> : <FaMoon />}
-            </button>
-
-            {isLoggedIn ? (
-              <button
                 className="button button--ghost hamburger-btn"
                 type="button"
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -554,10 +532,10 @@ export function AppShell({ children }: AppShellProps) {
               </NavLink>
               <NavLink
                 className="mobile-nav__link"
-                to="/account#orders"
+                to="/subscription"
                 onClick={() => setMenuOpen(false)}
               >
-                <FaShoppingCart /> Aboverwaltung
+                <FaCalendarAlt /> Aboverwaltung
               </NavLink>
               <NavLink
                 className="mobile-nav__link"
@@ -566,21 +544,6 @@ export function AppShell({ children }: AppShellProps) {
               >
                 <FaUser /> Konto
               </NavLink>
-              <button
-                className="mobile-nav__link mobile-nav__btn"
-                type="button"
-                onClick={() => setTheme(isDarkMode ? "light" : "dark")}
-              >
-                {isDarkMode ? <FaSun /> : <FaMoon />}
-                {isDarkMode ? "Hellmodus" : "Dunkelmodus"}
-              </button>
-              <button
-                className="mobile-nav__link mobile-nav__btn"
-                type="button"
-                onClick={handleLogout}
-              >
-                <MdLogout /> Abmelden
-              </button>
             </div>
           </nav>
         ) : null}
@@ -597,14 +560,18 @@ export function AppShell({ children }: AppShellProps) {
 
       <main className="site-main">
         <div className="container">
-          {children({
-            isLoggedIn,
-            onLogin: handleLogin,
-            onAddToSubscription: handleAddToSubscription,
-            onOpenSubscriptionOverview: openSubscriptionOverview,
-            onEditSubscriptionItem: handleEditSubscriptionItem,
-            subscriptionItems: subscriptionCart.items,
-          })}
+           {children({
+             isLoggedIn,
+             onLogin: handleLogin,
+             onAddToSubscription: handleAddToSubscription,
+             onOpenSubscriptionOverview: openSubscriptionOverview,
+             onEditSubscriptionItem: handleEditSubscriptionItem,
+             subscriptionItems: subscriptionCart.items,
+             onLogout: handleLogout,
+             theme,
+             onToggleTheme: () => setTheme(isDarkMode ? "light" : "dark"),
+             onSetTheme: (newTheme) => setTheme(newTheme),
+           })}
 
           {isLoggedIn && onSearchPage ? (
             <section className="page-card section-space">

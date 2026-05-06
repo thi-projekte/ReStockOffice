@@ -1,4 +1,6 @@
 import { Navigate, useOutletContext } from "react-router-dom";
+import { MdLogout } from "react-icons/md";
+import {FaMoon, FaSun} from "react-icons/fa";
 import type {
   LoginFormData,
   Product,
@@ -12,10 +14,14 @@ interface OutletContext {
   onOpenSubscriptionOverview: () => void;
   onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
   subscriptionItems: SubscriptionProductItem[];
+  onLogout: () => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+  onSetTheme: (theme: "light" | "dark") => void;
 }
 
 export function AccountPage() {
-  const { isLoggedIn } = useOutletContext<OutletContext>();
+  const { isLoggedIn, onLogout, theme, onSetTheme } = useOutletContext<OutletContext>();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
@@ -70,11 +76,11 @@ export function AccountPage() {
                 <strong>ReStockOffice GmbH</strong>
               </article>
               <article className="product-specs__item">
-                <span>Straße &amp; Hausnummer</span>
+                <span>Straße & Hausnummer</span>
                 <strong>Musterstraße 100</strong>
               </article>
               <article className="product-specs__item">
-                <span>PLZ &amp; Ort</span>
+                <span>PLZ & Ort</span>
                 <strong>85049 Ingolstadt</strong>
               </article>
               <article className="product-specs__item">
@@ -90,7 +96,7 @@ export function AccountPage() {
           <div className="section-head">
             <div>
               <span className="eyebrow">Einstellungen</span>
-              <h2>Darstellung &amp; Benachrichtigungen</h2>
+              <h2>Darstellung & Benachrichtigungen</h2>
               <p className="section-copy">
                 Passe die Oberfläche und deine Benachrichtigungsoptionen nach deinen Wünschen an.
               </p>
@@ -101,8 +107,15 @@ export function AccountPage() {
             <h3>Darstellung</h3>
             <div className="product-specs__grid">
               <article className="product-specs__item">
-                <span>Dark Mode</span>
-                <strong>Systemstandard</strong>
+                <span>Farbschema</span>
+                <div className="product-specs__grid">
+                  <button className="button" type="button" onClick={() => onSetTheme("light")}>
+                    <FaSun /> Hellmodus
+                  </button>
+                  <button className="button" type="button" onClick={() => onSetTheme("dark")}>
+                    <FaMoon /> Dunkelmodus
+                  </button>
+                </div>
               </article>
               <article className="product-specs__item">
                 <span>Sprache</span>
@@ -135,7 +148,7 @@ export function AccountPage() {
           <div className="section-head">
             <div>
               <span className="eyebrow">Konto-Verwaltung</span>
-              <h2>Sicherheit &amp; Konto</h2>
+              <h2>Sicherheit & Konto</h2>
               <p className="section-copy">
                 Verwalte deine Anmeldedaten oder beende dein Konto dauerhaft.
               </p>
@@ -150,8 +163,8 @@ export function AccountPage() {
                   </button>
               </strong>
               <strong>
-                  <button className="button" type="button">
-                    Abmelden
+                  <button className="button" type="button" onClick={onLogout}>
+                    <MdLogout /> Abmelden
                   </button>
               </strong>
             </div>

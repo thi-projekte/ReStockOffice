@@ -1,10 +1,18 @@
 import { useState, type FormEvent } from "react";
 import { useOutletContext } from "react-router-dom";
-import type { LoginFormData } from "../types/shop";
+import type { LoginFormData, Product, SubscriptionProductItem } from "../types/shop";
 
 interface OutletContext {
   onLogin: (formData: LoginFormData) => Promise<void>;
   isLoggedIn: boolean;
+  onAddToSubscription: (product: Product) => void;
+  onOpenSubscriptionOverview: () => void;
+  onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
+  subscriptionItems: SubscriptionProductItem[];
+  onLogout: () => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+  onSetTheme: (theme: "light" | "dark") => void;
 }
 
 export function LoginPage() {

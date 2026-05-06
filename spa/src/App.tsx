@@ -11,6 +11,10 @@ export function App() {
         onOpenSubscriptionOverview,
         onEditSubscriptionItem,
         subscriptionItems,
+        onLogout,
+        theme,
+        onToggleTheme,
+        onSetTheme,
       }) => (
         <Outlet
           context={{
@@ -20,6 +24,10 @@ export function App() {
             onOpenSubscriptionOverview,
             onEditSubscriptionItem,
             subscriptionItems,
+            onLogout,
+            theme,
+            onToggleTheme,
+            onSetTheme,
           }}
         />
       )}
