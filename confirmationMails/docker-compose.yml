@@ -2,8 +2,6 @@ services:
   confirmation-mails:
     image: ghcr.io/thi-projekte/restockoffice-confirmation-mails:feature-confirmationmails
     restart: unless-stopped
-    ports:
-      - "8088:8080"
 
     networks:
       - nginx-proxy-manager
