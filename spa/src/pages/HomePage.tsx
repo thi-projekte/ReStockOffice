@@ -95,12 +95,12 @@ export function HomePage() {
               <small>Geplante Ankunft zwischen 09:00 und 12:00 Uhr</small>
             </article>
 
-            <article className="dashboard-stat dashboard-stat--action">
+            <article className="dashboard-stat">
               <span className="dashboard-stat__label">ReStockOffice Abonnement</span>
-              <Link className="button" to="/account#sub">
+              <Link className="button dashboard-btn" to="/subscription">
                 Dein Abo verwalten
               </Link>
-              <small>Status und Details ansehen</small>
+              <small>Produktmenge und -intervall anpassen</small>
             </article>
 
             <article className="dashboard-stat">

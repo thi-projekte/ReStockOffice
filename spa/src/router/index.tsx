@@ -6,6 +6,7 @@ import { CategoryPage } from "../pages/CategoryPage";
 import { ProductDetailPage } from "../pages/ProductDetailPage";
 import { SearchPage } from "../pages/SearchPage";
 import { AccountPage } from "../pages/AccountPage";
+import {SubscriptionPage} from "../pages/SubscriptionPage";
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
         path: "products/:itemId",
         element: <ProductDetailPage />,
       },
+      {
+        path: "subscription",
+        element: <SubscriptionPage />,
+      }
     ],
   },
 ]);

@@ -237,6 +237,10 @@
   display: none;
 }
 
+.dashboard-btn {
+  margin: 13px 13px;
+}
+
 .cart-btn {
   position: relative;
 }

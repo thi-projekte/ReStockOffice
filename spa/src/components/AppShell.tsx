@@ -25,7 +25,6 @@ import type {
 } from "../types/shop";
 import { ProductGrid } from "./ProductGrid";
 import { SubscriptionDialog } from "./SubscriptionDialog";
-import { SubscriptionOverview } from "./SubscriptionOverview";
 
 interface AppShellProps {
   children: (context: {
@@ -324,17 +323,17 @@ export function AppShell({ children }: AppShellProps) {
               onClick={handleSearchToggle}
               aria-label={
                 isAdvancedSearch
-                  ? "Erweiterte Suche schließen"
-                  : "Erweiterte Suche öffnen"
+                  ? "Filter schließen"
+                  : "Filter öffnen"
               }
               title={
                 isAdvancedSearch
-                  ? "Erweiterte Suche schließen"
-                  : "Erweiterte Suche öffnen"
+                  ? "Filter schließen"
+                  : "Filter öffnen"
               }
             >
               <FaSlidersH />
-              <span>Erweitert</span>
+              <span>Filter</span>
             </button>
           ) : null}
         </div>
@@ -418,7 +417,7 @@ export function AppShell({ children }: AppShellProps) {
               onChange={(event) => handleBrandChange(event.target.value)}
               aria-label="Unterkategorie auswählen"
             >
-              <option value="">Alle Unterkategorien</option>
+              <option value="">Alle Marken</option>
               {brandOptions.map((brand) => (
                 <option key={brand} value={brand}>
                   {brand}
@@ -474,17 +473,14 @@ export function AppShell({ children }: AppShellProps) {
             ) : null}
 
             {isLoggedIn ? (
-              <button
-                className="button button--ghost cart-btn"
-                type="button"
-                onClick={openSubscriptionOverview}
+              <NavLink
+                className="button button--ghost nav-btn"
+                to="/subscription"
                 title="Abo-Übersicht"
+                aria-label="Abo-Übersicht"
               >
                 <FaShoppingCart />
-                {subscriptionCart.totalItems > 0 ? (
-                  <span className="cart-badge">{subscriptionCart.totalItems}</span>
-                ) : null}
-              </button>
+              </NavLink>
             ) : null}
 
             {isLoggedIn ? (
@@ -632,21 +628,6 @@ export function AppShell({ children }: AppShellProps) {
       <footer className="site-footer">
         <div className="container">ReStockOffice - Simple in Stock</div>
       </footer>
-
-      {isLoggedIn ? (
-        <SubscriptionOverview
-          items={subscriptionCart.items}
-          open={activeSubscriptionLayer === "overview"}
-          onClose={resetSubscriptionLayer}
-          onUpdateSubscription={() => {
-            toast.success("Produkte zum Abo hinzugefügt.");
-          }}
-          onManageSubscription={() => {
-            resetSubscriptionLayer();
-            navigate("/account#orders");
-          }}
-        />
-      ) : null}
 
       {isLoggedIn ? (
         <SubscriptionDialog
