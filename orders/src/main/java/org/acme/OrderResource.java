@@ -44,7 +44,10 @@ public class OrderResource {
         } catch (Exception e) {
             System.out.println("❌ NO SECURITY IDENTITY (token issue?)");
         }
-        String username = securityIdentity.getPrincipal().getName();
+        String username = (securityIdentity != null &&
+                securityIdentity.getPrincipal() != null)
+                ? securityIdentity.getPrincipal().getName()
+                : "anonymous";
         Order order = Order.bestellen(
                 username,
                 input.produktnummer,
