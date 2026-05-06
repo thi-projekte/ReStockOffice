@@ -35,10 +35,8 @@ services:
       timeout: 3s
       retries: 5
 
-#volumes:
-#  db_data:
 volumes:
-    orders:
+  db_data:
 
 networks:
   nginx-proxy-manager:
