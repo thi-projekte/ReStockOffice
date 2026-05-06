@@ -1,7 +1,7 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-ARG VITE_KEYCLOAK_URL=https://auth.restockoffice.com
+ARG VITE_KEYCLOAK_URL=https://id.restockoffice.de
 ARG VITE_KEYCLOAK_REALM=restock-office
 ARG VITE_KEYCLOAK_CLIENT_ID=restock-office-web
 ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL
