@@ -22,8 +22,28 @@ public class ResendMailClient {
     MailSettings mailSettings;
 
     public String send(String recipientEmail, String subject, String html) {
-        if (mailSettings.resendApiKey().isBlank()) {
-            throw new MailValidationException("RESTOCK_MAIL_RESEND_API_KEY or QUARKUS_MAILER_PASSWORD is missing");
+        String resendApiKey = mailSettings.resendApiKey()
+                .filter(value -> !value.isBlank())
+                .orElseThrow(() -> new MailValidationException("QUARKUS_MAILER_PASSWORD is missing"));
+
+        if (mailSettings.sender().isBlank()) {
+            throw new MailValidationException("RESTOCK_MAIL_SENDER is missing");
+        }
+
+        if (mailSettings.resendBaseUrl().isBlank()) {
+            throw new MailValidationException("RESTOCK_MAIL_RESEND_BASE_URL is missing");
+        }
+
+        if (recipientEmail == null || recipientEmail.isBlank()) {
+            throw new MailValidationException("recipientEmail must not be blank");
+        }
+
+        if (subject == null || subject.isBlank()) {
+            throw new MailValidationException("subject must not be blank");
+        }
+
+        if (html == null || html.isBlank()) {
+            throw new MailValidationException("html must not be blank");
         }
 
         Map<String, Object> payload = new LinkedHashMap<>();
@@ -37,7 +57,7 @@ public class ResendMailClient {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(mailSettings.resendBaseUrl() + "/emails"))
-                .header("Authorization", "Bearer " + mailSettings.resendApiKey())
+                .header("Authorization", "Bearer " + resendApiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(toJson(payload)))
                 .build();

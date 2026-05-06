@@ -11,7 +11,6 @@ services:
       RESTOCK_MAIL_REPLY_TO: support@restockoffice.de
       RESTOCK_MAIL_SUPPORT_EMAIL: support@restockoffice.de
       RESTOCK_MAIL_LOGO_URL: https://restockoffice.de/assets/logo_colored.png
-      RESTOCK_MAIL_RESEND_API_KEY: ${RESTOCK_MAIL_RESEND_API_KEY}
       QUARKUS_MAILER_PASSWORD: ${QUARKUS_MAILER_PASSWORD}
       RESTOCK_MAIL_RESEND_BASE_URL: https://api.resend.com
 
