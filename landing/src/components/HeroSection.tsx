@@ -65,7 +65,7 @@ export default function HeroSection() {
           <BuildingIllustration />
           <img
             ref={birdRef}
-            src={`${import.meta.env.BASE_URL}/logo-icon.svg`}
+            src={`${import.meta.env.BASE_URL}logo-icon.svg`}
             alt=""
             className={styles.bird}
             aria-hidden
