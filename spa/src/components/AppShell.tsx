@@ -11,6 +11,7 @@ import {
   FaSun,
   FaTimes,
   FaUser,
+  FaCalendarAlt
 } from "react-icons/fa";
 import { MdLogin, MdLogout } from "react-icons/md";
 import toast, { Toaster } from "react-hot-toast";
@@ -479,7 +480,7 @@ export function AppShell({ children }: AppShellProps) {
                 title="Abo-Übersicht"
                 aria-label="Abo-Übersicht"
               >
-                <FaShoppingCart />
+                <FaCalendarAlt  />
               </NavLink>
             ) : null}
 

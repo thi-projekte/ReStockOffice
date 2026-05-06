@@ -241,6 +241,10 @@
   margin: 13px 13px;
 }
 
+.danger-btn {
+  background-color: var(--color-danger);
+}
+
 .cart-btn {
   position: relative;
 }
