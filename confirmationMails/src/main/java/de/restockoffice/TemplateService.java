@@ -18,10 +18,6 @@ public class TemplateService {
         return rendered;
     }
 
-    public String loadStyles() {
-        return loadResource("templates/email.css");
-    }
-
     private String loadResource(String resourcePath) {
         try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)) {
             if (inputStream == null) {

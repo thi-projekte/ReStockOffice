@@ -6,7 +6,346 @@
   <title>ReStockOffice Lieferankündigung</title>
   <meta name="color-scheme" content="light" />
   <meta name="supported-color-schemes" content="light" />
-  <style>{{inlineStyles}}</style>
+  <style>
+body.email-body {
+  margin: 0;
+  padding: 0;
+  background-color: #edf4ef;
+  font-family: "IBM Plex Sans Condensed", Arial, sans-serif;
+  color: #1f2a2e;
+}
+
+.email-preheader {
+  display: none;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.email-page {
+  background:
+    radial-gradient(circle at top right, rgba(102, 189, 164, 0.18), transparent 28%),
+    linear-gradient(180deg, #f4f7f2 0%, #edf4ef 100%);
+  background-color: #edf4ef;
+}
+
+.email-shell {
+  max-width: 720px;
+}
+
+.email-page-padding {
+  padding: 32px 16px;
+}
+
+.email-header-spacing {
+  padding-bottom: 18px;
+}
+
+.email-header-inner {
+  padding: 18px 22px;
+}
+
+.email-header-card {
+  background-color: #f4f7f2;
+  border: 1px solid #dbe5de;
+  border-radius: 24px;
+}
+
+.email-logo {
+  display: block;
+  width: auto;
+  height: 52px;
+  border: 0;
+}
+
+.email-badge {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background-color: #d8eee6;
+  color: #2c4e45;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.email-main-card {
+  background-color: #ffffff;
+  border: 1px solid #dbe5de;
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+.email-hero {
+  background: linear-gradient(135deg, #355f56 0%, #3b6b61 60%, #5aa691 100%);
+}
+
+.email-hero-padding {
+  padding: 34px;
+}
+
+.email-eyebrow {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #d6efe5;
+}
+
+.email-hero-title {
+  padding-top: 10px;
+  font-size: 34px;
+  line-height: 1.1;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.email-hero-copy {
+  padding-top: 14px;
+  max-width: 560px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #ecf7f2;
+}
+
+.email-summary-card {
+  background-color: #eef5ef;
+  border: 1px solid #dfe9e1;
+  border-radius: 20px;
+}
+
+.email-summary-row {
+  padding: 28px 28px 8px;
+}
+
+.email-col-left {
+  padding: 0 10px 16px 0;
+}
+
+.email-col-right {
+  padding: 0 0 16px 10px;
+}
+
+.email-summary-inner {
+  padding: 18px 18px 16px;
+}
+
+.email-section-card {
+  background-color: #ffffff;
+  border: 1px solid #dfe9e1;
+  border-radius: 24px;
+}
+
+.email-section-wrap {
+  padding: 0 28px 22px;
+}
+
+.email-section-head {
+  padding: 24px 24px 12px;
+}
+
+.email-section-head-loose {
+  padding: 24px 24px 14px;
+}
+
+.email-soft-card {
+  background-color: #f4f7f2;
+  border-radius: 18px;
+}
+
+.email-soft-row {
+  padding: 0 24px 14px;
+}
+
+.email-soft-row-loose {
+  padding: 0 24px 22px;
+}
+
+.email-soft-row-end {
+  padding: 0 24px 24px;
+}
+
+.email-soft-inner {
+  padding: 18px 20px;
+}
+
+.email-soft-inner-tight {
+  padding: 18px;
+}
+
+.email-soft-inner-note {
+  padding: 16px 18px;
+}
+
+.email-section-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #264037;
+}
+
+.email-section-copy {
+  padding-top: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #51655e;
+}
+
+.email-kicker {
+  font-size: 12px;
+  color: #6b7c75;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.email-metric {
+  padding-top: 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #264037;
+}
+
+.email-copy {
+  padding-top: 10px;
+  font-size: 16px;
+  line-height: 1.9;
+  color: #445851;
+}
+
+.email-copy-tight {
+  padding-top: 8px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #445851;
+}
+
+.email-copy-tight-top-md {
+  padding-top: 12px;
+}
+
+.email-copy-tight-top-sm {
+  padding-top: 4px;
+}
+
+.email-info-strong {
+  font-weight: 700;
+}
+
+.email-preline {
+  white-space: pre-line;
+}
+
+.email-table-heading {
+  padding-bottom: 12px;
+  font-size: 13px;
+  color: #6b7c75;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.email-item-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #264037;
+}
+
+.email-item-copy {
+  font-size: 13px;
+  color: #5f726b;
+}
+
+.email-cta-card {
+  background: linear-gradient(135deg, #355f56 0%, #3b6b61 60%, #5aa691 100%);
+  border-radius: 24px;
+}
+
+.email-cta-wrap {
+  padding: 0 28px 28px;
+}
+
+.email-cta-inner {
+  padding: 26px 24px;
+}
+
+.email-cta-button-row {
+  padding-top: 20px;
+}
+
+.email-cta-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.email-cta-copy {
+  padding-top: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #d6efe5;
+}
+
+.email-button {
+  display: inline-block;
+  padding: 14px 28px;
+  border-radius: 999px;
+  background-color: #66bda4;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.email-button-primary {
+  background-color: #3b6b61;
+}
+
+.email-support {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #5d7169;
+}
+
+.email-support-wrap {
+  padding: 0 28px 32px;
+}
+
+.email-footer-wrap {
+  padding: 16px 24px 0;
+}
+
+.email-support-link {
+  color: #3b6b61;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.email-footer {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #7a8a83;
+}
+
+.email-heading-inline {
+  font-size: 18px;
+  font-weight: 700;
+  color: #264037;
+}
+
+.email-hero-copy-delivery {
+  max-width: 520px;
+  font-size: 18px;
+}
+
+.email-section-copy-delivery {
+  font-size: 16px;
+}
+
+.email-center-bottom-gap {
+  padding-bottom: 12px;
+}
+  </style>
 </head>
 <body class="email-body">
   <div class="email-preheader">Deine ReStockOffice Lieferung ist angekündigt. Hier findest du Termin, Lieferort und alle Artikel dieser Lieferung.</div>

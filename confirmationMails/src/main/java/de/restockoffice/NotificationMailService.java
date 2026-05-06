@@ -27,7 +27,6 @@ public class NotificationMailService {
         validateOrderConfirmation(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("inlineStyles", templateService.loadStyles());
         values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
         values.put("customerName", escapeHtml(request.customerName()));
         values.put("orderNumber", escapeHtml(request.orderNumber()));
@@ -51,7 +50,6 @@ public class NotificationMailService {
         validateDeliveryAnnouncement(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("inlineStyles", templateService.loadStyles());
         values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
         values.put("customerName", escapeHtml(request.customerName()));
         values.put("daysUntilDelivery", escapeHtml(request.daysUntilDelivery()));
