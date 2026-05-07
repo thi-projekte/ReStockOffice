@@ -6,6 +6,8 @@ services:
     command: start-dev
     environment:
       KC_HOSTNAME: id.restockoffice.de
+      KC_HOSTNAME_URL: https://id.restockoffice.de        # ← Neu
+      KC_HOSTNAME_ADMIN_URL: https://id.restockoffice.de
       KC_HOSTNAME_STRICT: false
       KC_HOSTNAME_STRICT_HTTPS: false
       KC_HTTP_ENABLED: true
