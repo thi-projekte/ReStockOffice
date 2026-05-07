@@ -1,11 +1,10 @@
 package org.acme;
 
-import io.quarkus.security.Authenticated;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import java.time.LocalDateTime;
 import java.util.List;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
@@ -22,6 +21,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 public class OrderResource {
     @Inject
     SecurityIdentity securityIdentity;
+
     @GET
     public List<Order> getAll() {
         System.out.println("🔥 GET /orders HIT");
@@ -34,25 +34,66 @@ public class OrderResource {
         return Order.findById(id);
     }
 
+    //==== Update-Endpoint ==== //
+    @PUT
+    @Path("/{id}")
+    @Transactional
+    public Order updateOrder(@PathParam("id") Long id, Order input) {
+        Order order = Order.findById(id);
+        if (order == null) {
+            throw new NotFoundException("Order nicht gefunden: " + id);
+        }
+        order.quantity = input.quantity;
+        order.interval = input.interval;
+        order.updatedAt = LocalDateTime.now();
+
+        // Camunda Prozess mit Token starten
+        Client client = ClientBuilder.newClient();
+        String camundaUrl =
+                "http://localhost:8080/engine-rest/process-definition/key/Process_0ltcqh0/start";
+
+        Map<String, Object> body = Map.of(
+                "businessKey", order.id.toString(),
+                "variables", Map.of(
+                        "orderId", Map.of("value", order.id, "type", "Long"),
+                        "customerId", Map.of("value", order.customerId, "type", "String"),
+                        "productId", Map.of("value", order.productId, "type", "Integer"),
+                        "quantity", Map.of("value", order.quantity, "type", "Integer"),
+                        "interval", Map.of("value", order.interval, "type", "Integer"),
+                        "updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String")
+                )
+        );
+
+        client
+                .target(camundaUrl)
+                .request(MediaType.APPLICATION_JSON)
+                //.header("Authorization", "Bearer " + accessToken)
+                .post(Entity.json(body));
+
+        client.close();
+
+        return order;
+    }
+
     @POST
     @Transactional
-    public Order bestellen(Order input) {
+    public Order order(Order input) {
         System.out.println("🚪 POST /orders ENTERED RESOURCE");
-        // 🔐 debug auth
         try {
-            System.out.println("👤 USER: " + securityIdentity.getPrincipal().getName());
+            System.out.println("👤 customerId: " + securityIdentity.getPrincipal().getName());
         } catch (Exception e) {
             System.out.println("❌ NO SECURITY IDENTITY (token issue?)");
         }
-        String username = (securityIdentity != null &&
+        String customerId = (securityIdentity != null &&
                 securityIdentity.getPrincipal() != null)
                 ? securityIdentity.getPrincipal().getName()
                 : "anonymous";
-        Order order = Order.bestellen(
-                username,
-                input.produktnummer,
-                input.menge,
-                input.frequency
+        Order order = Order.order(
+                customerId,
+                input.productId,
+                input.status,
+                input.quantity,
+                input.interval
         );
         System.out.println("⚙️ ORDER CREATED IN RESOURCE");
         order.persist();
@@ -89,9 +130,10 @@ public class OrderResource {
                 "businessKey", order.id.toString(),
                 "variables", Map.of(
                         "orderId", Map.of("value", order.id, "type", "Long"),
-                        "username", Map.of("value", order.username, "type", "String"),
-                        "produktnummer", Map.of("value", order.produktnummer, "type", "Integer"),
-                        "menge", Map.of("value", order.menge, "type", "Integer")
+                        "customerId", Map.of("value", order.customerId, "type", "String"),
+                        "productId", Map.of("value", order.productId, "type", "Integer"),
+                        "quantity", Map.of("value", order.quantity, "type", "Integer"),
+                        "interval", Map.of("value", order.interval, "type", "Integer")
                 )
         );
 
