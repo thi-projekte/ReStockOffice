@@ -1,7 +1,7 @@
 package org.acme;
 
 import java.time.LocalDateTime;
-import java.util.*;
+
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -13,27 +13,31 @@ import jakarta.validation.constraints.NotNull;
 public class Order extends PanacheEntity {
 
     @NotNull
-    public String username;
+    public String customerId;
 
     @NotNull
-    public Integer frequency;
+    public Integer productId;
 
     @NotNull
-    public Integer produktnummer;
+    public String status = "ACTIVE";
 
     @Min(1)
-    public Integer menge;
+    public Integer quantity;
 
-    public String status = "ERSTELLT";
+    @NotNull
+    public Integer interval;
+
     public LocalDateTime createdAt = LocalDateTime.now();
+    public LocalDateTime updatedAt;
 
-    public static Order bestellen(String username, int produktnummer, int menge, int frequency) {
+    public static Order order(String customerId, int productId, String status, int quantity, int interval) {
         System.out.println("🔥 STATIC bestellen() CALLED");
         Order bestellung = new Order();
-        bestellung.username = username;
-        bestellung.produktnummer = produktnummer;
-        bestellung.menge = menge;
-        bestellung.frequency = frequency;
+        bestellung.customerId = customerId;
+        bestellung.productId = productId;
+        bestellung.status = status;
+        bestellung.quantity = quantity;
+        bestellung.interval = interval;
         bestellung.createdAt = LocalDateTime.now();
         System.out.println("✅ ORDER READY (NOT SAVED YET)");
         return bestellung;
