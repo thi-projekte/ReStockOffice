@@ -5,6 +5,11 @@ services:
     container_name: restockoffice-keycloak
     command: start-dev
     environment:
+      KC_HOSTNAME: id.restockoffice.de
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: true
+      KC_PROXY: edge
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
