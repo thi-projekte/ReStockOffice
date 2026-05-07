@@ -21,16 +21,19 @@ function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-export function useSubscriptionCart() {
-  const [subscription, setSubscription] = useState<Subscription>(createSubscription);
+export function useSubscriptionCart(customerId?: string) {
+  const [subscription, setSubscription] = useState<Subscription>(() =>
+    createSubscription(customerId),
+  );
   const [isLoaded, setIsLoaded] = useState(false);
   const [productsById, setProductsById] = useState<Record<string, Product>>({});
 
   useEffect(() => {
     let ignoreResult = false;
+    setIsLoaded(false);
 
     async function loadCurrentSubscription() {
-      const loadedSubscription = await loadSubscription();
+      const loadedSubscription = await loadSubscription(customerId);
 
       if (!ignoreResult) {
         setSubscription(loadedSubscription);
@@ -43,7 +46,7 @@ export function useSubscriptionCart() {
     return () => {
       ignoreResult = true;
     };
-  }, []);
+  }, [customerId]);
 
   useEffect(() => {
     if (isLoaded) {

@@ -2,7 +2,7 @@ import type { RestockOrder, Subscription, SubscriptionItem } from "../types/shop
 
 export const useAPI = false;
 
-const CUSTOMER_ID = "123";
+export const FALLBACK_CUSTOMER_ID = "100";
 const ORDERS_API_URL = "https://orders.restockoffice.de/orders";
 const STORAGE_KEY = "restockoffice-subscription";
 
@@ -10,12 +10,12 @@ function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-export function createSubscription(): Subscription {
+export function createSubscription(customerId = FALLBACK_CUSTOMER_ID): Subscription {
   const today = formatDate(new Date());
 
   return {
     subscriptionId: `sub_${crypto.randomUUID()}`,
-    customerId: CUSTOMER_ID,
+    customerId,
     status: "ACTIVE",
     startDate: today,
     endDate: null,
@@ -58,14 +58,17 @@ function createSubscriptionItem(order: RestockOrder): SubscriptionItem {
   };
 }
 
-function createSubscriptionFromOrders(orders: RestockOrder[]): Subscription {
-  const customerOrders = orders.filter((order) => order.customerId === CUSTOMER_ID);
+function createSubscriptionFromOrders(
+  orders: RestockOrder[],
+  customerId = FALLBACK_CUSTOMER_ID,
+): Subscription {
+  const customerOrders = orders.filter((order) => order.customerId === customerId);
   const firstOrder = customerOrders[0];
   const today = formatDate(new Date());
 
   return {
-    subscriptionId: `sub_${CUSTOMER_ID}`,
-    customerId: CUSTOMER_ID,
+    subscriptionId: `sub_${customerId}`,
+    customerId,
     status: "ACTIVE",
     startDate: firstOrder?.createdAt ?? today,
     endDate: null,
@@ -75,24 +78,24 @@ function createSubscriptionFromOrders(orders: RestockOrder[]): Subscription {
   };
 }
 
-function loadSubscriptionFromLocalStorage(): Subscription {
+function loadSubscriptionFromLocalStorage(customerId = FALLBACK_CUSTOMER_ID): Subscription {
   try {
-    const rawValue = localStorage.getItem(STORAGE_KEY);
+    const rawValue = localStorage.getItem(`${STORAGE_KEY}-${customerId}`);
 
     if (!rawValue) {
-      return createSubscription();
+      return createSubscription(customerId);
     }
 
     const parsedValue = JSON.parse(rawValue) as unknown;
-    return isSubscription(parsedValue) ? parsedValue : createSubscription();
+    return isSubscription(parsedValue) ? parsedValue : createSubscription(customerId);
   } catch {
-    return createSubscription();
+    return createSubscription(customerId);
   }
 }
 
-async function loadSubscriptionFromApi(): Promise<Subscription> {
+async function loadSubscriptionFromApi(customerId = FALLBACK_CUSTOMER_ID): Promise<Subscription> {
   const response = await fetch(
-    `${ORDERS_API_URL}?customerId=${encodeURIComponent(CUSTOMER_ID)}`,
+    `${ORDERS_API_URL}?customerId=${encodeURIComponent(customerId)}`,
   );
 
   if (!response.ok) {
@@ -105,19 +108,19 @@ async function loadSubscriptionFromApi(): Promise<Subscription> {
     throw new Error("RestockOrders haben ein unerwartetes Format.");
   }
 
-  return createSubscriptionFromOrders(payload.map(normalizeRestockOrder));
+  return createSubscriptionFromOrders(payload.map(normalizeRestockOrder), customerId);
 }
 
-export async function loadSubscription(): Promise<Subscription> {
+export async function loadSubscription(customerId = FALLBACK_CUSTOMER_ID): Promise<Subscription> {
   if (!useAPI) {
-    return loadSubscriptionFromLocalStorage();
+    return loadSubscriptionFromLocalStorage(customerId);
   }
 
   try {
-    return await loadSubscriptionFromApi();
+    return await loadSubscriptionFromApi(customerId);
   } catch (error) {
     console.error(error);
-    return createSubscription();
+    return createSubscription(customerId);
   }
 }
 
@@ -126,7 +129,7 @@ export function saveSubscription(subscription: Subscription) {
     return;
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
+  localStorage.setItem(`${STORAGE_KEY}-${subscription.customerId}`, JSON.stringify(subscription));
 }
 
 export function isOrdersApiEnabled() {

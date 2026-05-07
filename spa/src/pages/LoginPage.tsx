@@ -1,91 +1,31 @@
-import { useState, type FormEvent } from "react";
-import { useOutletContext } from "react-router-dom";
-import type { LoginFormData, Product, SubscriptionProductItem } from "../types/shop";
-
-interface OutletContext {
-  onLogin: (formData: LoginFormData) => Promise<void>;
-  isLoggedIn: boolean;
-  onAddToSubscription: (product: Product) => void;
-  onOpenSubscriptionOverview: () => void;
-  onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
-  subscriptionItems: SubscriptionProductItem[];
-  onLogout: () => void;
-  theme: "light" | "dark";
-  onToggleTheme: () => void;
-  onSetTheme: (theme: "light" | "dark") => void;
-}
+import { useAuth } from "../auth/AuthProvider";
 
 export function LoginPage() {
-  const { onLogin, isLoggedIn } = useOutletContext<OutletContext>();
-  const [formData, setFormData] = useState<LoginFormData>({
-    username: "",
-    password: "",
-  });
-  const [error, setError] = useState("");
+    const { login, isInitializing, error } = useAuth();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    return (
+        <section className="page-card auth-card">
+            <h1>Login</h1>
 
-    if (!formData.username.trim() || !formData.password.trim()) {
-      setError("Bitte Benutzername und Passwort eingeben.");
-      return;
-    }
+            {isInitializing ? (
+                <div className="status-box">Anmeldung wird geprüft...</div>
+            ) : (
+                <div className="auth-form">
+                    <p>
+                        Melde dich an, um dein Konto, dein Abo und die Produktsuche zu verwenden.
+                    </p>
 
-    try {
-      setError("");
-      await onLogin(formData);
-    } catch (caughtError) {
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Login fehlgeschlagen.",
-      );
-    }
-  }
+                    {error ? <div className="error-box">{error}</div> : null}
 
-  return (
-    <section className="page-card auth-card">
-      <h1>{isLoggedIn ? "Angemeldet" : "Login"}</h1>
-
-      {isLoggedIn ? (
-        <div className="status-box">Du bist nun eingeloggt.</div>
-      ) : (
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label>
-            Benutzername
-            <input
-              type="text"
-              value={formData.username}
-              onChange={(event) =>
-                setFormData((current) => ({
-                  ...current,
-                  username: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            Passwort
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(event) =>
-                setFormData((current) => ({
-                  ...current,
-                  password: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          {error ? <div className="error-box">{error}</div> : null}
-
-          <button className="button" type="submit">
-            Anmelden
-          </button>
-        </form>
-      )}
-    </section>
-  );
+                    <button
+                        className="button"
+                        type="button"
+                        onClick={() => void login()}
+                    >
+                        Anmelden
+                    </button>
+                </div>
+            )}
+        </section>
+    );
 }

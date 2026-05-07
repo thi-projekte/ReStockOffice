@@ -43,11 +43,4 @@ export interface SubscriptionProductItem extends SubscriptionItem {
   product: Product;
 }
 
-export interface LoginFormData {
-  username: string;
-  password: string;
-}
 
-export interface LoginCredentials extends LoginFormData {
-  role: string;
-}

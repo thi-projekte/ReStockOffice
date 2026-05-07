@@ -9,3 +9,4 @@ target/
 /spa/dist/
 /spa/build/
 /spa/.env
+/spa/.env.example

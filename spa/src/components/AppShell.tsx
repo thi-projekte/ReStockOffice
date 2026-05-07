@@ -13,9 +13,9 @@ import {
 import { MdLogin, MdLogout } from "react-icons/md";
 import toast, { Toaster } from "react-hot-toast";
 import iconColored from "../assets/logos/icon_colored.png";
+import { useAuth } from "../auth/AuthProvider";
 import { useSubscriptionCart } from "../hooks/useSubscriptionCart";
 import { getProducts } from "../services/products";
-import { authenticateUser } from "../services/users";
 import type {
   LoginFormData,
   Product,
@@ -42,7 +42,6 @@ interface AppShellProps {
 type ActiveSubscriptionLayer = "overview" | "dialog" | null;
 
 export function AppShell({ children }: AppShellProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [query, setQuery] = useState("");
@@ -56,7 +55,9 @@ export function AppShell({ children }: AppShellProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedSubscriptionItem, setSelectedSubscriptionItem] =
     useState<SubscriptionProductItem | undefined>(undefined);
-  const subscriptionCart = useSubscriptionCart();
+  const auth = useAuth();
+  const isLoggedIn = auth.isAuthenticated;
+  const subscriptionCart = useSubscriptionCart(auth.getCustomerId());
   const location = useLocation();
   const navigate = useNavigate();
   const headerSearchRef = useRef<HTMLDivElement | null>(null);
@@ -119,14 +120,7 @@ export function AppShell({ children }: AppShellProps) {
   });
 
   async function handleLogin(formData: LoginFormData) {
-    const user = await authenticateUser(formData);
-
-    if (!user) {
-      throw new Error("Ungültige Zugangsdaten.");
-    }
-
-    setIsLoggedIn(true);
-    navigate("/");
+    await auth.login();
   }
 
   function resetSubscriptionLayer() {
@@ -136,9 +130,8 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   function handleLogout() {
-    setIsLoggedIn(false);
     resetSubscriptionLayer();
-    navigate("/login");
+    void auth.logout();
   }
 
   function handleAddToSubscription(product: Product) {
@@ -196,15 +189,14 @@ export function AppShell({ children }: AppShellProps) {
   }, []);
 
   useEffect(() => {
-    if (!isLoggedIn && location.pathname !== "/login") {
-      navigate("/login", { replace: true });
+    if (auth.isInitializing) {
       return;
     }
 
     if (isLoggedIn && location.pathname === "/login") {
       navigate("/", { replace: true });
     }
-  }, [isLoggedIn, location.pathname, navigate]);
+  }, [auth.isInitializing, isLoggedIn, location.pathname, navigate]);
 
   useEffect(() => {
     setMenuOpen(false);

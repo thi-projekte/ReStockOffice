@@ -7,6 +7,7 @@ import { ProductDetailPage } from "../pages/ProductDetailPage";
 import { SearchPage } from "../pages/SearchPage";
 import { AccountPage } from "../pages/AccountPage";
 import {SubscriptionPage} from "../pages/SubscriptionPage";
+import { ProtectedRoute } from "../auth/ProtectedRoute";
 
 export const router = createBrowserRouter([
   {
@@ -15,7 +16,11 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: (
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "login",
@@ -23,23 +28,43 @@ export const router = createBrowserRouter([
       },
       {
         path: "search",
-        element: <SearchPage />,
+        element: (
+          <ProtectedRoute>
+            <SearchPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "account",
-        element: <AccountPage />,
+        element: (
+          <ProtectedRoute>
+            <AccountPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "categories/:categorySlug",
-        element: <CategoryPage />,
+        element: (
+          <ProtectedRoute>
+            <CategoryPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "products/:productId",
-        element: <ProductDetailPage />,
+        element: (
+          <ProtectedRoute>
+            <ProductDetailPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "subscription",
-        element: <SubscriptionPage />,
+        element: (
+          <ProtectedRoute>
+            <SubscriptionPage />
+          </ProtectedRoute>
+        ),
       }
     ],
   },
