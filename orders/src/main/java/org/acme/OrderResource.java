@@ -57,7 +57,7 @@ public class OrderResource {
                 "variables", Map.of(
                         "orderId", Map.of("value", order.id, "type", "Long"),
                         "customerId", Map.of("value", order.customerId, "type", "String"),
-                        "productId", Map.of("value", order.productId, "type", "Integer"),
+                        "productId", Map.of("value", order.productId, "type", "String"),
                         "quantity", Map.of("value", order.quantity, "type", "Integer"),
                         "interval", Map.of("value", order.interval, "type", "Integer"),
                         "updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String")
@@ -131,7 +131,7 @@ public class OrderResource {
                 "variables", Map.of(
                         "orderId", Map.of("value", order.id, "type", "Long"),
                         "customerId", Map.of("value", order.customerId, "type", "String"),
-                        "productId", Map.of("value", order.productId, "type", "Integer"),
+                        "productId", Map.of("value", order.productId, "type", "String"),
                         "quantity", Map.of("value", order.quantity, "type", "Integer"),
                         "interval", Map.of("value", order.interval, "type", "Integer")
                 )

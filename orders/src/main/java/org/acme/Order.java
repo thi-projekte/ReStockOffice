@@ -1,14 +1,13 @@
 package org.acme;
 
 import java.time.LocalDateTime;
-
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-//test
+
 @Entity
 @Table(name = "orders_tb")
 public class Order extends PanacheEntity {
@@ -17,7 +16,7 @@ public class Order extends PanacheEntity {
     public String customerId;
 
     @NotNull
-    public Integer productId;
+    public String productId;
 
     @NotNull
     public String status = "ACTIVE";
@@ -31,7 +30,7 @@ public class Order extends PanacheEntity {
     public LocalDateTime createdAt = LocalDateTime.now();
     public LocalDateTime updatedAt;
 
-    public static Order order(String customerId, int productId, String status, int quantity, int interval) {
+    public static Order order(String customerId, String productId, String status, int quantity, int interval) {
         System.out.println("🔥 STATIC bestellen() CALLED");
         Order bestellung = new Order();
         bestellung.customerId = customerId;
