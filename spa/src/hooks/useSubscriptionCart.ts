@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import type {
   Product,
-  SubscriptionCart,
+  Subscription,
   SubscriptionItem,
   SubscriptionProductItem,
 } from "../types/shop";
-
-const STORAGE_KEY = "restockoffice_subscription_cart";
+import {
+  createSubscription,
+  loadSubscription,
+  saveSubscription,
+} from "../services/orders";
 
 interface AddSubscriptionPayload {
   product: Product;
@@ -18,63 +21,42 @@ function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function createSubscriptionCart(): SubscriptionCart {
-  const today = formatDate(new Date());
-
-  return {
-    subscriptionId: `sub_${crypto.randomUUID()}`,
-    customerId: "cust_local",
-    status: "ACTIVE",
-    startDate: today,
-    endDate: null,
-    items: [],
-    createdAt: today,
-    updatedAt: today,
-  };
-}
-
-function isSubscriptionCart(value: unknown): value is SubscriptionCart {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const cart = value as SubscriptionCart;
-  return (
-    typeof cart.subscriptionId === "string" &&
-    typeof cart.customerId === "string" &&
-    Array.isArray(cart.items)
-  );
-}
-
-function loadSubscriptionCart(): SubscriptionCart {
-  try {
-    const rawValue = localStorage.getItem(STORAGE_KEY);
-
-    if (!rawValue) {
-      return createSubscriptionCart();
-    }
-
-    const parsedValue = JSON.parse(rawValue) as unknown;
-    return isSubscriptionCart(parsedValue) ? parsedValue : createSubscriptionCart();
-  } catch {
-    return createSubscriptionCart();
-  }
-}
-
 export function useSubscriptionCart() {
-  const [subscription, setSubscription] = useState<SubscriptionCart>(loadSubscriptionCart);
+  const [subscription, setSubscription] = useState<Subscription>(createSubscription);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [productsById, setProductsById] = useState<Record<string, Product>>({});
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
-  }, [subscription]);
+    let ignoreResult = false;
+
+    async function loadCurrentSubscription() {
+      const loadedSubscription = await loadSubscription();
+
+      if (!ignoreResult) {
+        setSubscription(loadedSubscription);
+        setIsLoaded(true);
+      }
+    }
+
+    void loadCurrentSubscription();
+
+    return () => {
+      ignoreResult = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+      saveSubscription(subscription);
+    }
+  }, [isLoaded, subscription]);
 
   function registerProducts(products: Product[]) {
     setProductsById((previousProducts) => {
       const nextProducts = { ...previousProducts };
 
       for (const product of products) {
-        nextProducts[String(product.itemId)] = product;
+        nextProducts[String(product.productId)] = product;
       }
 
       return nextProducts;
@@ -88,22 +70,22 @@ export function useSubscriptionCart() {
   }: AddSubscriptionPayload): "created" | "updated" {
     const today = formatDate(new Date());
     const hasExistingItem = subscription.items.some(
-      (item) => item.productId === String(product.itemId),
+      (item) => item.productId === String(product.productId),
     );
 
     setProductsById((previousProducts) => ({
       ...previousProducts,
-      [String(product.itemId)]: product,
+      [String(product.productId)]: product,
     }));
 
     setSubscription((previousSubscription) => {
       const existingItem = previousSubscription.items.find(
-        (item) => item.productId === String(product.itemId),
+        (item) => item.productId === String(product.productId),
       );
 
       const nextItems: SubscriptionItem[] = existingItem
         ? previousSubscription.items.map((item) =>
-            item.productId === String(product.itemId)
+            item.productId === String(product.productId)
               ? { ...item, quantity, intervalCount }
               : item,
           )
@@ -111,7 +93,7 @@ export function useSubscriptionCart() {
             ...previousSubscription.items,
             {
               itemId: `item_${crypto.randomUUID()}`,
-              productId: String(product.itemId),
+              productId: String(product.productId),
               quantity,
               intervalCount,
             },

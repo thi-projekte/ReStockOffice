@@ -25,10 +25,14 @@ function resolveMockImageUrl(imageUrl: string) {
   return imageUrl;
 }
 
-const productMocks = (products as Product[]).map((product) => ({
-  ...product,
-  imageUrl: resolveMockImageUrl(product.imageUrl),
-}));
+const productMocks = (products as unknown[]).map((product) => {
+  const normalizedProduct = normalizeProduct(product);
+
+  return {
+    ...normalizedProduct,
+    imageUrl: resolveMockImageUrl(normalizedProduct.imageUrl),
+  };
+});
 const productsCache = new Map<number, Product>();
 const categoryNameCache = new Map<string, string>();
 let allProductsCache: Product[] | null = null;
@@ -37,28 +41,30 @@ function seedCaches(loadedProducts: Product[]) {
   allProductsCache = loadedProducts;
 
   for (const product of loadedProducts) {
-    productsCache.set(product.itemId, product);
-    categoryNameCache.set(getCategorySlug(product.article_type), product.article_type);
+    productsCache.set(product.productId, product);
+    categoryNameCache.set(getCategorySlug(product.category), product.category);
   }
 }
 
 function normalizeProduct(rawProduct: unknown): Product {
   const source = rawProduct as Record<string, unknown>;
-  const itemIdValue = source.itemId ?? source.productId ?? source.articleId ?? source.id;
-  const unitsValue = source.units ?? source.unit ?? source.packagingUnit ?? source.quantityUnit ?? 1;
+  const productIdValue = source.productId ?? source.articleId ?? source.id;
+  const unitValue = source.unit ?? source.quantityUnit ?? source.packagingUnit ?? "Einheit";
+  const unitCountValue = source.unitCount ?? source.quantity ?? 1;
   const priceValue = source.price ?? source.unitPrice ?? source.salesPrice ?? 0;
-  const articleTypeValue = source.article_type ?? source.articleType ?? source.category ?? "";
+  const categoryValue = source.category ?? source.articleType ?? "";
   const descriptionValue = source.description ?? source.articleDescription ?? source.shortDescription ?? "";
   const imageUrlValue = source.imageUrl ?? source.imageURL ?? source.image ?? source.pictureUrl ?? "";
 
   return {
-    itemId: Number(itemIdValue),
+    productId: Number(productIdValue),
     name: String(source.name ?? source.articleName ?? source.title ?? ""),
     description: String(descriptionValue),
     price: Number(priceValue),
     brand: String(source.brand ?? source.manufacturer ?? ""),
-    article_type: String(articleTypeValue),
-    units: Number(unitsValue),
+    category: String(categoryValue),
+    unit: String(unitValue),
+    unitCount: String(unitCountValue),
     imageUrl: String(imageUrlValue),
   };
 }
@@ -81,8 +87,8 @@ async function loadProductsFromApi(): Promise<Product[]> {
   return normalizedProducts;
 }
 
-async function loadProductByIdFromApi(itemId: number): Promise<Product | undefined> {
-  const response = await fetch(`${PRODUCT_API_URL}?itemId=${encodeURIComponent(itemId)}`);
+async function loadProductByIdFromApi(productId: number): Promise<Product | undefined> {
+  const response = await fetch(`${PRODUCT_API_URL}?productId=${encodeURIComponent(productId)}`);
 
   if (!response.ok) {
     throw new Error("Produkt konnte nicht geladen werden.");
@@ -90,18 +96,18 @@ async function loadProductByIdFromApi(itemId: number): Promise<Product | undefin
 
   const payload = (await response.json()) as unknown;
   const normalizedProduct = normalizeProduct(payload);
-  productsCache.set(normalizedProduct.itemId, normalizedProduct);
+  productsCache.set(normalizedProduct.productId, normalizedProduct);
   categoryNameCache.set(
-    getCategorySlug(normalizedProduct.article_type),
-    normalizedProduct.article_type,
+    getCategorySlug(normalizedProduct.category),
+    normalizedProduct.category,
   );
 
   return normalizedProduct;
 }
 
-async function loadProductsByCategoryFromApi(articleType: string): Promise<Product[]> {
+async function loadProductsByCategoryFromApi(category: string): Promise<Product[]> {
   const response = await fetch(
-    `${PRODUCTS_BY_CATEGORY_API_URL}?articleType=${encodeURIComponent(articleType)}`,
+    `${PRODUCTS_BY_CATEGORY_API_URL}?category=${encodeURIComponent(category)}`,
   );
 
   if (!response.ok) {
@@ -112,10 +118,10 @@ async function loadProductsByCategoryFromApi(articleType: string): Promise<Produ
   const normalizedProducts = payload.map(normalizeProduct);
 
   for (const product of normalizedProducts) {
-    productsCache.set(product.itemId, product);
+    productsCache.set(product.productId, product);
   }
 
-  categoryNameCache.set(getCategorySlug(articleType), articleType);
+  categoryNameCache.set(getCategorySlug(category), category);
   return normalizedProducts;
 }
 
@@ -131,22 +137,22 @@ export async function getProducts(): Promise<Product[]> {
   return loadProductsFromMock();
 }
 
-export async function getProductById(itemId: number): Promise<Product | undefined> {
-  const cachedProduct = productsCache.get(itemId);
+export async function getProductById(productId: number): Promise<Product | undefined> {
+  const cachedProduct = productsCache.get(productId);
 
   if (cachedProduct) {
     return cachedProduct;
   }
 
   if (allProductsCache) {
-    return allProductsCache.find((product) => product.itemId === itemId);
+    return allProductsCache.find((product) => product.productId === productId);
   }
 
   if (useAPI) {
-    return loadProductByIdFromApi(itemId);
+    return loadProductByIdFromApi(productId);
   }
 
-  return productMocks.find((product) => product.itemId === itemId);
+  return productMocks.find((product) => product.productId === productId);
 }
 
 export function getCategorySlug(category: string) {
@@ -158,7 +164,7 @@ export async function getProductsByCategorySlug(categorySlug: string): Promise<P
 
   if (allProductsCache) {
     return allProductsCache.filter(
-      (product) => getCategorySlug(product.article_type) === normalizedSlug,
+      (product) => getCategorySlug(product.category) === normalizedSlug,
     );
   }
 
@@ -173,7 +179,7 @@ export async function getProductsByCategorySlug(categorySlug: string): Promise<P
   }
 
   return productMocks.filter(
-    (product) => getCategorySlug(product.article_type) === normalizedSlug,
+    (product) => getCategorySlug(product.category) === normalizedSlug,
   );
 }
 
@@ -187,18 +193,18 @@ export async function getCategoryNameBySlug(categorySlug: string): Promise<strin
 
   if (allProductsCache) {
     const matchingProduct = allProductsCache.find(
-      (product) => getCategorySlug(product.article_type) === normalizedSlug,
+      (product) => getCategorySlug(product.category) === normalizedSlug,
     );
 
-    return matchingProduct?.article_type;
+    return matchingProduct?.category;
   }
 
   const availableProducts = await getProducts();
   const matchingProduct = availableProducts.find(
-    (product) => getCategorySlug(product.article_type) === normalizedSlug,
+    (product) => getCategorySlug(product.category) === normalizedSlug,
   );
 
-  return matchingProduct?.article_type;
+  return matchingProduct?.category;
 }
 
 export function getProductsApiUrl() {

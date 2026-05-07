@@ -27,8 +27,8 @@ function formatPrice(value: number) {
 function getSimilarProducts(products: Product[], currentProduct: Product) {
   const sameCategory = products.filter(
     (product) =>
-      product.itemId !== currentProduct.itemId &&
-      product.article_type === currentProduct.article_type,
+      product.productId !== currentProduct.productId &&
+      product.category === currentProduct.category,
   );
 
   if (sameCategory.length >= 3) {
@@ -37,8 +37,8 @@ function getSimilarProducts(products: Product[], currentProduct: Product) {
 
   const fallbackProducts = products.filter(
     (product) =>
-      product.itemId !== currentProduct.itemId &&
-      product.article_type !== currentProduct.article_type,
+      product.productId !== currentProduct.productId &&
+      product.category !== currentProduct.category,
   );
 
   return [...sameCategory, ...fallbackProducts].slice(0, 6);
@@ -46,7 +46,7 @@ function getSimilarProducts(products: Product[], currentProduct: Product) {
 
 export function ProductDetailPage() {
   const params = useParams();
-  const itemId = Number(params.itemId);
+  const productId = Number(params.productId);
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,13 +54,13 @@ export function ProductDetailPage() {
 
   useEffect(() => {
     async function loadProduct() {
-      if (Number.isNaN(itemId)) {
+      if (Number.isNaN(productId)) {
         setIsLoading(false);
         return;
       }
 
       const [currentProduct, allProducts] = await Promise.all([
-        getProductById(itemId),
+        getProductById(productId),
         getProducts(),
       ]);
 
@@ -70,9 +70,9 @@ export function ProductDetailPage() {
     }
 
     void loadProduct();
-  }, [itemId]);
+  }, [productId]);
 
-  if (Number.isNaN(itemId)) {
+  if (Number.isNaN(productId)) {
     return <Navigate to="/search" replace />;
   }
 
@@ -81,7 +81,7 @@ export function ProductDetailPage() {
   }
 
   const isInSub = product ? subscriptionItems.some(
-      (item) => item.productId === product.itemId.toString(),
+      (item) => item.productId === product.productId.toString(),
   ) : false;
 
   if (!product) {
@@ -106,7 +106,7 @@ export function ProductDetailPage() {
           <span className="eyebrow">Zurück zur Artikelsuche</span>
         </Link>
         <div>
-          <span className="eyebrow">{product.article_type}</span>
+          <span className="eyebrow">{product.category}</span>
         </div>
         <div className="product-detail__media">
           <img src={product.imageUrl} alt={product.name} />
@@ -123,11 +123,13 @@ export function ProductDetailPage() {
           <dl className="product-detail__facts">
             <div>
               <dt>Artikelnummer</dt>
-              <dd>{product.itemId}</dd>
+              <dd>{product.productId}</dd>
             </div>
             <div>
               <dt>Verpackung</dt>
-              <dd>{product.units} Einheit(en)</dd>
+              <dd>
+                {product.unitCount} {product.unit}
+              </dd>
             </div>
             <div>
               <dt>Marke</dt>
@@ -135,7 +137,7 @@ export function ProductDetailPage() {
             </div>
             <div>
               <dt>Kategorie</dt>
-              <dd>{product.article_type}</dd>
+              <dd>{product.category}</dd>
             </div>
           </dl>
 
@@ -186,7 +188,7 @@ export function ProductDetailPage() {
         <div className="product-specs__grid">
           <article className="product-specs__item">
             <span>Artikelnummer</span>
-            <strong>{product.itemId}</strong>
+            <strong>{product.productId}</strong>
           </article>
           <article className="product-specs__item">
             <span>Marke</span>
@@ -194,11 +196,13 @@ export function ProductDetailPage() {
           </article>
           <article className="product-specs__item">
             <span>Kategorie</span>
-            <strong>{product.article_type}</strong>
+            <strong>{product.category}</strong>
           </article>
           <article className="product-specs__item">
             <span>Einheiten pro Packung</span>
-            <strong>{product.units}</strong>
+            <strong>
+              {product.unitCount} {product.unit}
+            </strong>
           </article>
           <article className="product-specs__item">
             <span>Preis</span>

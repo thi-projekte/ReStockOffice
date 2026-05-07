@@ -14,7 +14,7 @@ export function ProductGrid({ products }: ProductGridProps) {
   return (
     <div className="product-grid">
       {products.map((product) => (
-        <ProductCard key={product.itemId} product={product} />
+        <ProductCard key={product.productId} product={product} />
       ))}
     </div>
   );
@@ -28,7 +28,7 @@ function ProductCard({ product }: ProductCardProps) {
   const navigate = useNavigate();
 
   function openDetails() {
-    navigate(`/products/${product.itemId}`);
+    navigate(`/products/${product.productId}`);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
@@ -52,7 +52,7 @@ function ProductCard({ product }: ProductCardProps) {
         alt={product.name}
       />
       <div className="product-card__content">
-        <div className="product-card__category">{product.article_type}</div>
+        <div className="product-card__category">{product.category}</div>
         <h3>{product.name}</h3>
         <p>{product.description}</p>
         <dl className="product-card__meta">
@@ -61,8 +61,10 @@ function ProductCard({ product }: ProductCardProps) {
             <dd>{product.brand}</dd>
           </div>
           <div>
-            <dt>Einheiten</dt>
-            <dd>{product.units}</dd>
+            <dt>Verpackung</dt>
+            <dd>
+              {product.unitCount} {product.unit}
+            </dd>
           </div>
         </dl>
         <div className="product-card__footer">

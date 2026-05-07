@@ -62,7 +62,7 @@ export function AppShell({ children }: AppShellProps) {
   const headerSearchRef = useRef<HTMLDivElement | null>(null);
 
   const articleTypeOptions = Array.from(
-    new Set(products.map((product) => product.article_type)),
+    new Set(products.map((product) => product.category)),
   ).sort((a, b) => a.localeCompare(b, "de"));
   const articleTypeBrandMap = new Map(
     articleTypeOptions.map((articleType) => [
@@ -70,7 +70,7 @@ export function AppShell({ children }: AppShellProps) {
       Array.from(
         new Set(
           products
-            .filter((product) => product.article_type === articleType)
+            .filter((product) => product.category === articleType)
             .map((product) => product.brand),
         ),
       ).sort((a, b) => a.localeCompare(b, "de")),
@@ -81,7 +81,7 @@ export function AppShell({ children }: AppShellProps) {
       products
         .filter(
           (product) =>
-            !selectedArticleType || product.article_type === selectedArticleType,
+            !selectedArticleType || product.category === selectedArticleType,
         )
         .map((product) => product.brand),
     ),
@@ -107,12 +107,12 @@ export function AppShell({ children }: AppShellProps) {
   const filteredProducts = products.filter((product) => {
     const matchesText =
       !normalizedQuery ||
-      [product.name, product.description, product.article_type, product.brand]
+      [product.name, product.description, product.category, product.brand]
         .join(" ")
         .toLowerCase()
         .includes(normalizedQuery);
     const matchesArticleType =
-      !selectedArticleType || product.article_type === selectedArticleType;
+      !selectedArticleType || product.category === selectedArticleType;
     const matchesBrand = !selectedBrand || product.brand === selectedBrand;
 
     return matchesText && matchesArticleType && matchesBrand;

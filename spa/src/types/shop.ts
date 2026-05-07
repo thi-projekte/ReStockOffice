@@ -1,11 +1,12 @@
 export interface Product {
-  itemId: number;
+  productId: number;
   name: string;
   description: string;
   price: number;
   brand: string;
-  article_type: string;
-  units: number;
+  category: string;
+  unit: string;
+  unitCount: string;
   imageUrl: string;
 }
 
@@ -17,7 +18,17 @@ export interface SubscriptionItem {
   intervalCount: number;
 }
 
-export interface SubscriptionCart {
+export interface RestockOrder {
+  customerId: string;
+  productId: string;
+  status: "ACTIVE" | "PAUSED" | "CANCELLED" | string;
+  quantity: number;
+  interval: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Subscription {
   subscriptionId: string;
   customerId: string;
   status: "ACTIVE";

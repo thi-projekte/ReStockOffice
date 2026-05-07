@@ -68,9 +68,9 @@ export function ProductCarousel({
           <div ref={carouselRef} className="carousel-row">
             {products.map((product, index) => (
               <Link
-                key={`${title}-${product.itemId}`}
+                key={`${title}-${product.productId}`}
                 className="product-card product-card--link carousel-card"
-                to={`/products/${product.itemId}`}
+                to={`/products/${product.productId}`}
                 onClick={() => window.scrollTo(0, 0)}
               >
                 <div className="carousel-card__media">
@@ -85,7 +85,7 @@ export function ProductCarousel({
                 </div>
 
                 <div className="product-card__content">
-                  <div className="product-card__category">{product.article_type}</div>
+                  <div className="product-card__category">{product.category}</div>
                   <h3>{product.name}</h3>
                   <p>{product.description}</p>
 
@@ -95,8 +95,10 @@ export function ProductCarousel({
                       <dd>{product.brand}</dd>
                     </div>
                     <div>
-                      <dt>Einheiten</dt>
-                      <dd>{product.units}</dd>
+                      <dt>Verpackung</dt>
+                      <dd>
+                        {product.unitCount} {product.unit}
+                      </dd>
                     </div>
                   </dl>
 

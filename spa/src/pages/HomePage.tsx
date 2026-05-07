@@ -25,7 +25,7 @@ function rotateProducts(products: Product[], offset: number): Product[] {
 
 function createCategoryTiles(products: Product[]): CategoryTile[] {
   const groupedCategories = products.reduce<Record<string, number>>((accumulator, product) => {
-    const category = product.article_type;
+    const category = product.category;
     accumulator[category] = (accumulator[category] ?? 0) + 1;
     return accumulator;
   }, {});

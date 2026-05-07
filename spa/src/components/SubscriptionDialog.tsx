@@ -69,7 +69,7 @@ export function SubscriptionDialog({
         <div className="subscription-modal__body">
           <div className="subscription-modal__product">
             <strong>{product.name}</strong>
-            <span>{product.article_type}</span>
+            <span>{product.category}</span>
           </div>
 
           {selectedItem ? (
