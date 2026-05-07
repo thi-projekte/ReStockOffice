@@ -33,13 +33,13 @@ jobs:
         working-directory: orders
         run: |
           chmod +x mvnw
-          ./mvnw verify -B
+          ./mvnw clean verify -B
 
       - name: Package native
         working-directory: orders
         run: |
           chmod +x mvnw
-          ./mvnw package -Dnative -DskipTests
+          ./mvnw clean package -Pnative -DskipTests
 
       - name: Log in to GHCR
         if: github.event_name == 'push'
@@ -55,6 +55,12 @@ jobs:
           context: ./orders
           file: ./orders/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
+          no-cache: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/restockoffice-orders:2.0.7
+            ghcr.io/${{ github.repository_owner }}/restockoffice-orders:2.0.8
             ghcr.io/${{ github.repository_owner }}/restockoffice-orders:${{ github.sha }}
+            
+
+      - name: Check native binary exists
+        working-directory: orders
+        run: ls -lah target

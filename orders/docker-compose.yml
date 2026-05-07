@@ -1,6 +1,6 @@
 services:
   orders:
-    image: ghcr.io/thi-projekte/restockoffice-orders:2.0.7
+    image: ghcr.io/thi-projekte/restockoffice-orders:2.0.8
     container_name: orders
     #ports:
     #  - "8081:8081"
