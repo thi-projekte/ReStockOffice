@@ -4,10 +4,9 @@ import type { Product } from "../types/shop";
 
 interface ProductGridProps {
   products: Product[];
-  onAdd: (product: Product) => void;
 }
 
-export function ProductGrid({ products, onAdd }: ProductGridProps) {
+export function ProductGrid({ products }: ProductGridProps) {
   if (products.length === 0) {
     return <p className="empty-state">Keine Artikel für die Suche gefunden.</p>;
   }
@@ -15,7 +14,7 @@ export function ProductGrid({ products, onAdd }: ProductGridProps) {
   return (
     <div className="product-grid">
       {products.map((product) => (
-        <ProductCard key={product.itemId} product={product} onAdd={onAdd} />
+        <ProductCard key={product.itemId} product={product} />
       ))}
     </div>
   );
@@ -23,10 +22,9 @@ export function ProductGrid({ products, onAdd }: ProductGridProps) {
 
 interface ProductCardProps {
   product: Product;
-  onAdd: (product: Product) => void;
 }
 
-function ProductCard({ product, onAdd }: ProductCardProps) {
+function ProductCard({ product }: ProductCardProps) {
   const navigate = useNavigate();
 
   function openDetails() {
@@ -74,16 +72,6 @@ function ProductCard({ product, onAdd }: ProductCardProps) {
               currency: "EUR",
             })}
           </strong>
-          <button
-            className="button"
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onAdd(product);
-            }}
-          >
-            Zum Abo
-          </button>
         </div>
       </div>
     </article>

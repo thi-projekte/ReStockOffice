@@ -253,23 +253,20 @@
   white-space: nowrap;
 }
 
-.cart-badge {
-  position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  min-width: 1.1rem;
-  height: 1.1rem;
-  padding: 0 0.2rem;
-  border-radius: 999px;
-  background: var(--color-primary);
-  color: var(--color-background);
-  font-size: 0.6rem;
-  font-weight: 700;
-  display: flex;
+.small-link-text {
+  color: var(--color-primary);
+  font-weight: 600;
+  align-self: center;
   align-items: center;
   justify-content: center;
-  line-height: 1;
-  pointer-events: none;
+  text-align: center;
+}
+
+.small-link-text:hover {
+  border-color: rgba(59, 107, 97, 0.22);
+  box-shadow: var(--shadow-soft);
+  background: rgba(244, 247, 242, 0.98);
+  text-decoration: underline;
 }
 
 .section-head {

@@ -21,7 +21,7 @@ interface OutletContext {
 }
 
 export function CategoryPage() {
-  const { isLoggedIn, onAddToSubscription } = useOutletContext<OutletContext>();
+  const { isLoggedIn } = useOutletContext<OutletContext>();
   const { categorySlug } = useParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryName, setCategoryName] = useState("");
@@ -91,7 +91,7 @@ export function CategoryPage() {
           </Link>
         </div>
 
-        <ProductGrid products={products} onAdd={onAddToSubscription} />
+        <ProductGrid products={products} />
       </section>
     </div>
   );

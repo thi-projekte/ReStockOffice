@@ -9,10 +9,6 @@ export interface Product {
   imageUrl: string;
 }
 
-export interface CartItem {
-  product: Product;
-  quantity: number;
-}
 
 export interface SubscriptionItem {
   itemId: string;

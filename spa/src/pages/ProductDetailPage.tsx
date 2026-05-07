@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useOutletContext, useParams } from "react-router-dom";
+import {Link, Navigate, NavLink, useOutletContext, useParams} from "react-router-dom";
 import { ProductCarousel } from "../components/ProductCarousel";
 import { getProductById, getProducts } from "../services/products";
 import type { Product, SubscriptionProductItem } from "../types/shop";
@@ -50,7 +50,7 @@ export function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { onAddToSubscription } = useOutletContext<ProductDetailProps>();
+  const { onAddToSubscription,subscriptionItems } = useOutletContext<ProductDetailProps>();
 
   useEffect(() => {
     async function loadProduct() {
@@ -79,6 +79,10 @@ export function ProductDetailPage() {
   if (isLoading) {
     return <section className="page-card">Produkt wird geladen...</section>;
   }
+
+  const isInSub = product ? subscriptionItems.some(
+      (item) => item.productId === product.itemId.toString(),
+  ) : false;
 
   if (!product) {
     return (
@@ -136,16 +140,36 @@ export function ProductDetailPage() {
           </dl>
 
           <div className="product-detail__actions">
-            <button
-              className="button"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onAddToSubscription(product);
-              }}
-            >
-              Zum Abo hinzufügen
-            </button>
+            {isInSub ? (
+              <div style={{display: "flex", alignItems: "center", width: "100%"}}>
+                <button
+                    className="button button--ghost"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                    }}
+                >
+                  Produkt bereits im Abo
+                </button>
+                <NavLink to={"/subscription"} style={{marginLeft: "auto", paddingRight: "0.5rem"}}>
+                  <small className="small-link-text">
+                    Zur Abo-Verwaltung
+                  </small>
+                </NavLink>
+              </div>
+            ) :
+              <div>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onAddToSubscription(product);
+                  }}
+                  >
+                  Zum Abo hinzufügen
+                </button>
+              </div>}
           </div>
         </div>
       </section>
@@ -186,7 +210,7 @@ export function ProductDetailPage() {
       <ProductCarousel
         anchorId="similar-products"
         eyebrow="Mehr entdecken"
-        title="Aehnliche Produkte"
+        title="Ähnliche Produkte"
         description="Weitere Artikel, die zu diesem Produkt und seiner Kategorie passen."
         products={similarProducts}
       />

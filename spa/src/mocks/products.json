@@ -1,12 +1,13 @@
 [
   {
-    "itemId": 10001,
+    "productId": 10001,
     "name": "Kopierpapier A4 Standard",
     "description": "Hochweißes Multifunktionspapier für Laser- und Tintenstrahldrucker, 80g/m².",
     "price": 5.99,
     "brand": "PaperPro",
-    "article_type": "Papierprodukte",
-    "units": 500,
+    "category": "Papierprodukte",
+    "unit": "Blatt",
+    "unitCount": "500",
     "imageUrl": "../assets/logos/logo_colored.png"
   },
   {

@@ -5,9 +5,8 @@ import {
   FaChevronRight,
   FaHome,
   FaSearch,
-  FaShoppingCart,
   FaSlidersH,
-    FaTimes,
+  FaTimes,
   FaUser,
   FaCalendarAlt
 } from "react-icons/fa";
@@ -586,7 +585,6 @@ export function AppShell({ children }: AppShellProps) {
 
               <ProductGrid
                 products={filteredProducts}
-                onAdd={handleAddToSubscription}
               />
             </section>
           ) : null}
