@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotNull;
 
 //test
 @Entity
-@Table(name = "orders")
+@Table(name = "orders_tb")
 public class Order extends PanacheEntity {
 
     @NotNull
