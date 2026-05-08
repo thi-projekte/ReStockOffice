@@ -97,11 +97,11 @@ public class OrderResource {
         } catch (Exception e) {
             System.out.println("❌ NO SECURITY IDENTITY (token issue?)");
         }
-        /*String customerId = (securityIdentity != null &&
+        String customerId = (securityIdentity != null &&
                 securityIdentity.getPrincipal() != null)
                 ? securityIdentity.getPrincipal().getName()
-                : "anonymous";*/
-        String customerId = jwt.getClaim("preferred_username");
+                : "anonymous";
+        //String customerId = jwt.getClaim("preferred_username");
 
         System.out.println(jwt.getName());
 
