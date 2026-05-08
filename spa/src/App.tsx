@@ -6,7 +6,6 @@ export function App() {
     <AppShell>
       {({
         isLoggedIn,
-        onLogin,
         onAddToSubscription,
         onOpenSubscriptionOverview,
         onEditSubscriptionItem,
@@ -19,7 +18,6 @@ export function App() {
         <Outlet
           context={{
             isLoggedIn,
-            onLogin,
             onAddToSubscription,
             onOpenSubscriptionOverview,
             onEditSubscriptionItem,
