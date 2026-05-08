@@ -5,6 +5,7 @@ import type {
   Product,
   SubscriptionProductItem,
 } from "../types/shop";
+import keycloak from "../auth/keycloak";
 
 interface OutletContext {
   isLoggedIn: boolean;
@@ -19,7 +20,11 @@ interface OutletContext {
 }
 
 export function AccountPage() {
-  const { isLoggedIn, onLogout, theme, onSetTheme } = useOutletContext<OutletContext>();
+  const { isLoggedIn, onLogout, onSetTheme } = useOutletContext<OutletContext>();
+  const username = keycloak.tokenParsed?.preferred_username;
+  const email = keycloak.tokenParsed?.email;
+  const firstName = keycloak.tokenParsed?.given_name;
+  const lastName = keycloak.tokenParsed?.family_name;
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
@@ -46,11 +51,15 @@ export function AccountPage() {
           <div className="product-detail__facts">
             <div>
               <dt>Benutzername</dt>
-              <dd>max.mustermann</dd>
+              <dd>{username}</dd>
             </div>
             <div>
               <dt>E-Mail-Adresse</dt>
-              <dd>max.mustermann@firma.de</dd>
+              <dd>{email}</dd>
+            </div>
+            <div>
+              <dt>Name</dt>
+              <dd>{lastName}, {firstName}</dd>
             </div>
             <div>
               <dt>Telefonnummer</dt>

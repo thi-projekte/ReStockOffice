@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import type { RefObject } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import logoColored from "../assets/logos/logo_colored.png";
 import { getCategorySlug, getProducts } from "../services/products";
 import type { Product } from "../types/shop";
 import {ProductCarousel} from "../components/ProductCarousel";
+import keycloak from "../auth/keycloak";
 
 interface CategoryTile {
   id: string;
@@ -43,7 +42,6 @@ export function HomePage() {
 
   useEffect(() => {
     async function loadProducts() {
-      // TODO: Später Produkte und daraus abgeleitete Kategorien über Quarkus REST Services laden
       const loadedProducts = await getProducts();
       setProducts(loadedProducts);
       setIsLoading(false);
@@ -56,6 +54,7 @@ export function HomePage() {
   const saleProducts = rotateProducts(products, 0);
   const reorderProducts = rotateProducts(products, 1);
   const officeProducts = rotateProducts(products, 2);
+  const username = keycloak.tokenParsed?.preferred_username;
 
   return (
     <div className="home-showcase">
@@ -67,7 +66,7 @@ export function HomePage() {
         <div className="hero-copy">
           <h1>Alles für den Büroalltag an einem Ort</h1>
           <p>
-            Hallo [Nutzer], lass uns direkt loslegen ...
+            Hallo {username}, lass uns direkt loslegen ...
           </p>
 
           <div className="hero-highlights" aria-label="Schnelle Übersicht">

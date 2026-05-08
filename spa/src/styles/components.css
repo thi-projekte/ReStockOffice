@@ -238,7 +238,7 @@
 }
 
 .dashboard-btn {
-  margin: 13px 13px;
+  margin: 12px 12px;
 }
 
 .danger-btn {
@@ -588,14 +588,23 @@
 
 .product-card__image {
   width: 100%;
-  height: 150px;
-  object-fit: contain;
-  padding: 1rem;
-  background: linear-gradient(180deg, rgba(102, 189, 164, 0.14), rgba(255, 255, 255, 0.2));
+  aspect-ratio: 0.8 / 0.8;
+  object-fit: cover;
+
+  display: block;
+  background: linear-gradient(
+          180deg,
+          rgba(102, 189, 164, 0.14),
+          rgba(255, 255, 255, 0.2)
+  );
+}
+
+.carousel-card {
+  overflow: hidden;
+  border-radius: 1rem;
 }
 
 .carousel-card .product-card__image {
-  display: block;
   background: transparent;
 }
 
@@ -713,23 +722,24 @@
 }
 
 .product-detail__media {
+  overflow: hidden;
+  border-radius: 1rem;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   min-height: 360px;
-  padding: 1.5rem;
-  border: 1px solid rgba(38, 64, 55, 0.1);
-  border-radius: 1rem;
-  background:
-    radial-gradient(circle at top left, rgba(102, 189, 164, 0.2), transparent 42%),
-    linear-gradient(180deg, rgba(244, 247, 242, 0.98), rgba(230, 230, 230, 0.94));
+
+  border: 1px solid rgba(38, 64, 55, 0.08);
+
 }
 
 .product-detail__media img {
   width: 100%;
-  max-width: 420px;
-  max-height: 360px;
+  height: 100%;
   object-fit: contain;
+  display: block;
 }
 
 .product-detail__summary {
