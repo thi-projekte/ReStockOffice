@@ -14,6 +14,7 @@ import jakarta.ws.rs.client.Entity;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 
 @Path("/orders")
@@ -24,6 +25,9 @@ import io.quarkus.security.identity.SecurityIdentity;
 public class OrderResource {
     @Inject
     SecurityIdentity securityIdentity;
+
+    @Inject
+    JsonWebToken jwt;
 
     @Context
     HttpHeaders headers;
@@ -93,10 +97,14 @@ public class OrderResource {
         } catch (Exception e) {
             System.out.println("❌ NO SECURITY IDENTITY (token issue?)");
         }
-        String customerId = (securityIdentity != null &&
+        /*String customerId = (securityIdentity != null &&
                 securityIdentity.getPrincipal() != null)
                 ? securityIdentity.getPrincipal().getName()
-                : "anonymous";
+                : "anonymous";*/
+        String customerId = jwt.getClaim("preferred_username");
+
+        System.out.println(jwt.getName());
+
         Order order = Order.order(
                 customerId,
                 input.productId,
