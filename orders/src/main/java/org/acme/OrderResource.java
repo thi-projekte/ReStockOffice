@@ -123,35 +123,11 @@ public class OrderResource {
         order.persist();
         System.out.println("💾 ORDER PERSISTED: ID = " + order.id);
 
-/*
-        // Erst Token von Keycloak holen
-        Client authClient = ClientBuilder.newClient();
-        String tokenResponse = authClient
-                .target("http://keycloak:8080/realms/cib-seven/protocol/openid-connect/token")
-                .request(MediaType.APPLICATION_FORM_URLENCODED)
-                .post(Entity.form(new jakarta.ws.rs.core.Form()
-                        .param("client_id", "cib-seven-local")
-                        .param("client_secret", "cib-seven-secret")
-                        .param("username", "demo")
-                        .param("password", "demo")
-                        .param("grant_type", "password")))
-                .readEntity(String.class);
-        authClient.close();
-
-        // Token aus Response extrahieren
-        String accessToken = tokenResponse
-                .split("\"access_token\":\"")[1]
-                .split("\"")[0];
-        System.out.println("TOKEN RESPONSE: " + tokenResponse);*/
-
-
         // Camunda Prozess mit Token starten
         String authHeader = headers.getHeaderString("Authorization");
 
         Client client = ClientBuilder.newClient();
         String camundaUrl =
-                //
-                //ttp://localhost:8080/engine-rest/process-definition/key/Process_0ltcqh0/start
                 "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_0ltcqh0/start";
 
         Map<String, Object> body = Map.of(
