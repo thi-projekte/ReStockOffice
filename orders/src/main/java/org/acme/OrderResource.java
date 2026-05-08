@@ -14,7 +14,6 @@ import jakarta.ws.rs.client.Entity;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 
 @Path("/orders")
@@ -26,9 +25,6 @@ public class OrderResource {
     @Inject
     SecurityIdentity securityIdentity;
 
-    @Inject
-    JsonWebToken jwt;
-
     @Context
     HttpHeaders headers;
 
@@ -38,10 +34,22 @@ public class OrderResource {
         return Order.listAll();
     }
 
+    //==== Get a certain order ==== //
     @GET
     @Path("/{id}")
     public Order getById(@PathParam("id") Long id) {
         return Order.findById(id);
+    }
+    //==== Get all orders from certain customer ==== //
+    @GET
+    @Path("/my")
+    @Authenticated
+    public List<Order> getMyOrders() {
+        String customerId = (securityIdentity != null &&
+                securityIdentity.getPrincipal() != null)
+                ? securityIdentity.getPrincipal().getName()
+                : "anonymous";
+        return Order.list("customerId", customerId);
     }
 
     //==== Update-Endpoint ==== //
@@ -101,9 +109,8 @@ public class OrderResource {
                 securityIdentity.getPrincipal() != null)
                 ? securityIdentity.getPrincipal().getName()
                 : "anonymous";
-        //String customerId = jwt.getClaim("preferred_username");
 
-        System.out.println(jwt.getName());
+        //System.out.println(jwt.getName());
 
         Order order = Order.order(
                 customerId,

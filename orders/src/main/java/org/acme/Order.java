@@ -39,7 +39,6 @@ public class Order extends PanacheEntity {
         bestellung.quantity = quantity;
         bestellung.interval = interval;
         bestellung.createdAt = LocalDateTime.now();
-        System.out.println("✅ ORDER READY (NOT SAVED YET)");
         return bestellung;
     }
 }
