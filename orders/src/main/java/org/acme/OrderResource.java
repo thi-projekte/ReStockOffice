@@ -1,7 +1,10 @@
 package org.acme;
 
+import io.quarkus.security.Authenticated;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,10 +20,13 @@ import io.quarkus.security.identity.SecurityIdentity;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 //@RolesAllowed("camunda-admin") admin || user
-//@Authenticated
+@Authenticated
 public class OrderResource {
     @Inject
     SecurityIdentity securityIdentity;
+
+    @Context
+    HttpHeaders headers;
 
     @GET
     public List<Order> getAll() {
@@ -48,9 +54,10 @@ public class OrderResource {
         order.updatedAt = LocalDateTime.now();
 
         // Camunda Prozess mit Token starten
+        String authHeader = headers.getHeaderString("Authorization");
         Client client = ClientBuilder.newClient();
         String camundaUrl =
-                "http://localhost:8080/engine-rest/process-definition/key/Process_0ltcqh0/start";
+                "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_0ltcqh0/start";
 
         Map<String, Object> body = Map.of(
                 "businessKey", order.id.toString(),
@@ -68,6 +75,8 @@ public class OrderResource {
                 .target(camundaUrl)
                 .request(MediaType.APPLICATION_JSON)
                 //.header("Authorization", "Bearer " + accessToken)
+                //ist optional, da service öffentlich erreichbar ist, falls Authentifizierung in Camunda aktiviert ist, wird dann benötigt
+                .header("Authorization", authHeader)
                 .post(Entity.json(body));
 
         client.close();
@@ -122,9 +131,13 @@ public class OrderResource {
 
 
         // Camunda Prozess mit Token starten
+        String authHeader = headers.getHeaderString("Authorization");
+
         Client client = ClientBuilder.newClient();
         String camundaUrl =
-                "http://localhost:8080/engine-rest/process-definition/key/Process_0ltcqh0/start";
+                //
+                //ttp://localhost:8080/engine-rest/process-definition/key/Process_0ltcqh0/start
+                "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_0ltcqh0/start";
 
         Map<String, Object> body = Map.of(
                 "businessKey", order.id.toString(),
@@ -140,7 +153,7 @@ public class OrderResource {
         client
                 .target(camundaUrl)
                 .request(MediaType.APPLICATION_JSON)
-                //.header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", authHeader)
                 .post(Entity.json(body));
 
         client.close();
