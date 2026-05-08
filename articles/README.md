@@ -28,9 +28,9 @@ localhost:8080/article?productId=10001
 Um eine JSON mit mehreren Artikel per Kategorie der DB zu bekommen, verwende Folgendes:
 
 ```shell script
-[url]/articleByCategory?article-type=[article-type]
+[url]/articleByCategory?category=[category]
 ```
 Bsp.:
 ```shell script
-localhost:8080/articleByCategory?article-type=Schreibwaren
+localhost:8080/articleByCategory?category=Schreibwaren
 ```
