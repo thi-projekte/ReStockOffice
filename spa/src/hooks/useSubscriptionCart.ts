@@ -23,10 +23,11 @@ function formatDate(date: Date) {
 
 export function useSubscriptionCart(customerId?: string) {
   const [subscription, setSubscription] = useState<Subscription>(() =>
-    createSubscription(customerId),
+      createSubscription(customerId),
   );
   const [isLoaded, setIsLoaded] = useState(false);
   const [productsById, setProductsById] = useState<Record<string, Product>>({});
+  const [nextItemId, setNextItemId] = useState(1);
 
   useEffect(() => {
     let ignoreResult = false;
@@ -37,6 +38,15 @@ export function useSubscriptionCart(customerId?: string) {
 
       if (!ignoreResult) {
         setSubscription(loadedSubscription);
+        // Berechne die nächste Item-ID basierend auf existierenden Items
+        const maxId = Math.max(
+            0,
+            ...loadedSubscription.items.map((item) => {
+              const match = item.itemId.match(/\d+/);
+              return match ? parseInt(match[0], 10) : 0;
+            })
+        );
+        setNextItemId(maxId + 1);
         setIsLoaded(true);
       }
     }
@@ -67,13 +77,13 @@ export function useSubscriptionCart(customerId?: string) {
   }
 
   function addOrUpdateItem({
-    product,
-    quantity,
-    intervalCount,
-  }: AddSubscriptionPayload): "created" | "updated" {
+                             product,
+                             quantity,
+                             intervalCount,
+                           }: AddSubscriptionPayload): "created" | "updated" {
     const today = formatDate(new Date());
     const hasExistingItem = subscription.items.some(
-      (item) => item.productId === String(product.productId),
+        (item) => item.productId === String(product.productId),
     );
 
     setProductsById((previousProducts) => ({
@@ -83,19 +93,19 @@ export function useSubscriptionCart(customerId?: string) {
 
     setSubscription((previousSubscription) => {
       const existingItem = previousSubscription.items.find(
-        (item) => item.productId === String(product.productId),
+          (item) => item.productId === String(product.productId),
       );
 
       const nextItems: SubscriptionItem[] = existingItem
-        ? previousSubscription.items.map((item) =>
-            item.productId === String(product.productId)
-              ? { ...item, quantity, intervalCount }
-              : item,
+          ? previousSubscription.items.map((item) =>
+              item.productId === String(product.productId)
+                  ? { ...item, quantity, intervalCount }
+                  : item,
           )
-        : [
+          : [
             ...previousSubscription.items,
             {
-              itemId: `item_${crypto.randomUUID()}`,
+              itemId: `item_${nextItemId}`,
               productId: String(product.productId),
               quantity,
               intervalCount,
@@ -108,6 +118,10 @@ export function useSubscriptionCart(customerId?: string) {
         updatedAt: today,
       };
     });
+
+    if (!hasExistingItem) {
+      setNextItemId((prev) => prev + 1);
+    }
 
     return hasExistingItem ? "updated" : "created";
   }
@@ -123,28 +137,28 @@ export function useSubscriptionCart(customerId?: string) {
   }
 
   const items = useMemo<SubscriptionProductItem[]>(
-    () =>
-      subscription.items
-        .map((item) => {
-          const product = productsById[item.productId];
+      () =>
+          subscription.items
+              .map((item) => {
+                const product = productsById[item.productId];
 
-          if (!product) {
-            return null;
-          }
+                if (!product) {
+                  return null;
+                }
 
-          return {
-            ...item,
-            product,
-          };
-        })
-        .filter((item): item is SubscriptionProductItem => item !== null),
-    [productsById, subscription.items],
+                return {
+                  ...item,
+                  product,
+                };
+              })
+              .filter((item): item is SubscriptionProductItem => item !== null),
+      [productsById, subscription.items],
   );
 
   const totalItems = subscription.items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0,
+      (sum, item) => sum + item.product.price * item.quantity,
+      0,
   );
 
   function getExistingItem(productId: number) {
