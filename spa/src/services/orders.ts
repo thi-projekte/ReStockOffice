@@ -1,6 +1,6 @@
 import type { RestockOrder, Subscription, SubscriptionItem } from "../types/shop";
 
-export const useAPI = false;
+export const useAPI = true;
 
 export const FALLBACK_CUSTOMER_ID = "100";
 const ORDERS_API_URL = "https://orders.restockoffice.de/orders";
