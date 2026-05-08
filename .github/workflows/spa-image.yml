@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - 'spa-v*'
+      - "spa-v*"
 
 jobs:
   build:
@@ -19,20 +19,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        working-directory: ./spa
-        run: npm install
-
-      - name: Build SPA
-        working-directory: ./spa
-        run: npm run build
-
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -45,7 +31,7 @@ jobs:
         with:
           context: ./spa
           file: ./spa/Dockerfile
-          push: ${{ github.event_name == 'push' }}
+          push: true
           tags: |
-              ghcr.io/${{ github.repository_owner }}/restockoffice-spa:1.0.4
-              ghcr.io/${{ github.repository_owner }}/restockoffice-spa:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/restockoffice-spa:latest
+            ghcr.io/${{ github.repository_owner }}/restockoffice-spa:${{ github.sha }}
