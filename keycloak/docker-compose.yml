@@ -2,24 +2,22 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.5
-    container_name: keycloak
+    container_name: restockoffice-keycloak
     command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-
+      KC_HOSTNAME: https://id.restockoffice.de
+      KC_HOSTNAME_STRICT: "true"
+      KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: "true"
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
     ports:
       - "8180:8080"
     volumes:
-      #- keycloak_data:/opt/keycloak/data
-      - ./keycloak:/opt/keycloak/data/import
+      - keycloak_data:/opt/keycloak/data
+      - ./realm-config.json:/opt/keycloak/data/import/realm-config.json
     networks:
-      nginx-proxy-manager:
-        aliases:
-          - keycloak
+      - nginx-proxy-manager
 
 volumes:
   keycloak_data:

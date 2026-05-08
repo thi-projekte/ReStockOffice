@@ -1,4 +1,9 @@
+node_modules/
+dist/
+.env
+*.local
 .idea/
-**/target/
-11-bestellprozess-ausf-hrbar-in-cib-seven/target/
+target/
+*.iml
 
+.DS_Store
