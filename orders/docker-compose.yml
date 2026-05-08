@@ -15,9 +15,6 @@ services:
       QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
       QUARKUS_OIDC_ENABLED: "true"
       QUARKUS_OIDC_TOKEN_AUDIENCE: account
-      #QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/cib-seven
-      #kein secret
-      #nicht für backend gedacht, technisch ok für token validation, aber semantisch falsch
       QUARKUS_OIDC_AUTH_SERVER_URL: https://id.restockoffice.de/realms/restockoffice
       QUARKUS_OIDC_CLIENT_ID: restock-orders
       QUARKUS_OIDC_CREDENTIALS_SECRET: "restock-secret"
