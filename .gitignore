@@ -5,5 +5,16 @@ dist/
 .idea/
 target/
 *.iml
-
 .DS_Store
+
+
+articles
+bestellungsservice
+frontend
+keycloak
+landing
+processengine
+.dockerignore
+docker-compose.yml
+package-lock.json
+
