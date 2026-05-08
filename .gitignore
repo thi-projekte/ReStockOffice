@@ -17,4 +17,8 @@ processengine
 .dockerignore
 docker-compose.yml
 package-lock.json
+.github/workflows/articles.yml
+.github/workflows/cibseven-processengine.yml
+.github/workflows/frontend-docker.yml
+.github/workflows/landing-docker.yml
 
