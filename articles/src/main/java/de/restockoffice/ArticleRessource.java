@@ -20,11 +20,11 @@ public class ArticleRessource {
     // Rückgabe aller Artikel mit /article?itemId=xxxxx
     @GET
     @Path("article")
-    public Article getArticleByItemId(@QueryParam("itemId") String itemId){
-        Article article = Article.find("itemId", itemId).firstResult();
+    public Article getArticleByItemId(@QueryParam("productId") String productId){
+        Article article = Article.find("productId", productId).firstResult();
 
         if(article == null){
-            throw new WebApplicationException("Artikel mit ID " + itemId + " nicht gefunden");
+            throw new WebApplicationException("Artikel mit ID " + productId + " nicht gefunden");
         }
         return article;
     }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.io.InputStream;
@@ -12,6 +13,9 @@ import java.util.List;
 
 @ApplicationScoped
 public class DataImport {
+
+    @Inject
+    ObjectMapper mapper;
 
     @Transactional
     public void loadInitialData(@Observes StartupEvent ev) {
@@ -22,11 +26,11 @@ public class DataImport {
                 throw new RuntimeException("products.json nicht im Classpath gefunden!");
             }
 
-            ObjectMapper mapper = new ObjectMapper();
             List<Article> articles = mapper.readValue(is, new TypeReference<List<Article>>(){});
             Article.persist(articles);
-            System.out.println("Erfolgreich importiert!");
+            System.out.println(articles.size() + " Artikel erfolgreich importiert!");
         } catch (Exception e) {
+            System.err.println("Fehler beim Datenimport: " + e.getMessage());
             e.printStackTrace();
         }
     }

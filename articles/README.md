@@ -16,11 +16,11 @@ localhost:8080/articles
 Um eine JSON mit einem Artikel per Artikelnummer der DB zu bekommen, verwende Folgendes:
 
 ```shell script
-[url]/article?itemId=[itemId]
+[url]/article?productId=[productId]
 ```
 Bsp.:
 ```shell script
-localhost:8080/article?itemId=10001
+localhost:8080/article?productId=10001
 ```
 
 ## Zugriff auf mehrere Artikel nach Kategorie als JSON
