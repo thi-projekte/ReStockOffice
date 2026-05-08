@@ -5,10 +5,9 @@ import {
   getCategoryNameBySlug,
   getProductsByCategorySlug,
 } from "../services/products";
-import type { LoginFormData, Product, SubscriptionProductItem } from "../types/shop";
+import type { Product, SubscriptionProductItem } from "../types/shop";
 
 interface OutletContext {
-  onLogin: (formData: LoginFormData) => Promise<void>;
   isLoggedIn: boolean;
   onAddToSubscription: (product: Product) => void;
   onOpenSubscriptionOverview: () => void;

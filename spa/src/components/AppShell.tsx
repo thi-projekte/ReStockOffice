@@ -10,14 +10,13 @@ import {
   FaUser,
   FaCalendarAlt
 } from "react-icons/fa";
-import { MdLogin, MdLogout } from "react-icons/md";
+import { MdLogin } from "react-icons/md";
 import toast, { Toaster } from "react-hot-toast";
 import iconColored from "../assets/logos/icon_colored.png";
 import { useAuth } from "../auth/AuthProvider";
 import { useSubscriptionCart } from "../hooks/useSubscriptionCart";
 import { getProducts } from "../services/products";
 import type {
-  LoginFormData,
   Product,
   SubscriptionProductItem,
 } from "../types/shop";
@@ -27,7 +26,6 @@ import { SubscriptionDialog } from "./SubscriptionDialog";
 interface AppShellProps {
   children: (context: {
     isLoggedIn: boolean;
-    onLogin: (formData: LoginFormData) => Promise<void>;
     onAddToSubscription: (product: Product) => void;
     onOpenSubscriptionOverview: () => void;
     onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
@@ -119,9 +117,6 @@ export function AppShell({ children }: AppShellProps) {
     return matchesText && matchesArticleType && matchesBrand;
   });
 
-  async function handleLogin(formData: LoginFormData) {
-    await auth.login();
-  }
 
   function resetSubscriptionLayer() {
     setActiveSubscriptionLayer(null);
@@ -553,7 +548,6 @@ export function AppShell({ children }: AppShellProps) {
         <div className="container">
            {children({
              isLoggedIn,
-             onLogin: handleLogin,
              onAddToSubscription: handleAddToSubscription,
              onOpenSubscriptionOverview: openSubscriptionOverview,
              onEditSubscriptionItem: handleEditSubscriptionItem,

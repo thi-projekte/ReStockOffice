@@ -2,13 +2,11 @@ import { Navigate, useOutletContext } from "react-router-dom";
 import { MdLogout } from "react-icons/md";
 import {FaMoon, FaSun} from "react-icons/fa";
 import type {
-  LoginFormData,
   Product,
   SubscriptionProductItem,
 } from "../types/shop";
 
 interface OutletContext {
-  onLogin: (formData: LoginFormData) => Promise<void>;
   isLoggedIn: boolean;
   onAddToSubscription: (product: Product) => void;
   onOpenSubscriptionOverview: () => void;
