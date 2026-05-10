@@ -18,3 +18,6 @@ management:
   endpoint.health.probes.enabled: true
   endpoints:
     web.exposure.include: env,health,info,metrics
+
+mailservice:
+  base-url: http://localhost:8081
