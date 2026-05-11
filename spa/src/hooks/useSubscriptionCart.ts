@@ -85,8 +85,8 @@ export function useSubscriptionCart({
     quantity,
     intervalCount,
   }: AddSubscriptionPayload): Promise<"created" | "updated"> {
-    if (!customerId || !token) {
-      throw new Error("Abo kann ohne angemeldeten Kunden nicht gespeichert werden.");
+    if (!token) {
+      throw new Error("Abo kann ohne Keycloak-Token nicht gespeichert werden.");
     }
 
     const hasExistingItem = subscription.items.some(

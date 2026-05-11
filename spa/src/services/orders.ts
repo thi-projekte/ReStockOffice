@@ -1,6 +1,7 @@
 import type { RestockOrder, Subscription } from "../types/shop";
 
 const ORDERS_API_URL = "https://orders.restockoffice.de/orders";
+const TEMPORARY_CUSTOMER_ID = "100";
 
 interface OrdersRequestContext {
   customerId?: string;
@@ -20,7 +21,7 @@ function formatDate(date: Date) {
 
 function resolveToken(token?: string) {
   if (!token) {
-    throw new Error("Kein Keycloak-Token fuer Orders-Requests verfuegbar.");
+    throw new Error("Kein Keycloak-Token für Orders-Requests verfügbar.");
   }
 
   return token;
@@ -43,6 +44,10 @@ function createHeaders(token: string) {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   };
+}
+
+function resolveCustomerId(customerId?: string) {
+  return customerId ?? TEMPORARY_CUSTOMER_ID;
 }
 
 export function createSubscription(customerId = ""): Subscription {
@@ -107,6 +112,7 @@ export async function loadSubscription({
   token,
 }: OrdersRequestContext): Promise<Subscription> {
   const resolvedToken = resolveToken(token);
+  const resolvedCustomerId = resolveCustomerId(customerId);
 
   const response = await fetch(ORDERS_API_URL, {
     method: "GET",
@@ -127,7 +133,7 @@ export async function loadSubscription({
 
   return createSubscriptionFromOrders(
     normalizedOrders,
-    customerId ?? normalizedOrders[0]?.customerId ?? "",
+    resolvedCustomerId,
   );
 }
 
@@ -139,11 +145,12 @@ export async function upsertSubscriptionOrder({
   intervalCount,
   existingItem,
 }: UpsertOrderPayload): Promise<RestockOrder> {
-  const resolvedContext = resolveOrdersContext({ customerId, token });
+  const resolvedToken = resolveToken(token);
+  const resolvedCustomerId = resolveCustomerId(customerId);
 
   const today = formatDate(new Date());
   const orderPayload: RestockOrder = {
-    customerId: resolvedContext.customerId,
+    customerId: resolvedCustomerId,
     productId,
     status: existingItem?.status ?? "ACTIVE",
     quantity,
@@ -154,7 +161,7 @@ export async function upsertSubscriptionOrder({
 
   const response = await fetch(ORDERS_API_URL, {
     method: "POST",
-    headers: createHeaders(resolvedContext.token),
+    headers: createHeaders(resolvedToken),
     body: JSON.stringify(orderPayload),
   });
 
