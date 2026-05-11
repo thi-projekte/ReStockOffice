@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 168px;
+  height: 80px;
   max-width: 100%;
   padding-inline: 40px;
 }
@@ -19,6 +19,7 @@
 .logo {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .nav {
@@ -48,8 +49,20 @@
   white-space: nowrap;
 }
 
+.logoImg {
+  height: 90px;
+  width: auto;
+}
+
+@media (max-width: 860px) {
+  .inner { padding-inline: 24px; }
+}
+
 @media (max-width: 680px) {
+  .inner { height: 84px; padding-inline: 16px; }
+  .logoImg { height: 76px; width: auto; }
   .navLink { display: none; }
-  .nav { gap: 12px; }
+  .nav { gap: 8px; }
   .userName { display: none; }
+  .authPlaceholder { width: 100px; height: 32px; }
 }

@@ -35,6 +35,14 @@
   --section-padding: 96px 24px;
 }
 
+@media (max-width: 860px) {
+  :root { --section-padding: 64px 20px; }
+}
+
+@media (max-width: 480px) {
+  :root { --section-padding: 48px 16px; }
+}
+
 /* ── Reset ──────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -101,4 +109,18 @@ a { color: inherit; text-decoration: none; }
 .btn-outline:hover {
   background: var(--color-primary);
   color: #fff;
+}
+
+@media (max-width: 860px) {
+  .btn-primary, .btn-outline {
+    font-size: 0.8rem;
+    padding: 7px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-primary, .btn-outline {
+    font-size: 0.72rem;
+    padding: 5px 9px;
+  }
 }

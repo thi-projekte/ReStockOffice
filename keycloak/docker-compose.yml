@@ -1,7 +1,7 @@
 services:
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.5
+    image: ghcr.io/thi-projekte/restockoffice-keycloak:latest
     container_name: restockoffice-keycloak
     command: start-dev --import-realm
     environment:
@@ -16,7 +16,6 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./realm-config.json:/opt/keycloak/data/import/realm-config.json
-      - ./theme:/opt/keycloak/themes
     networks:
       - nginx-proxy-manager
 

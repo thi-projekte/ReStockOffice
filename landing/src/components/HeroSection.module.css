@@ -1,5 +1,5 @@
 .hero {
-  padding: 80px 24px;
+  padding: 60px 24px;
   background: var(--color-bg);
   overflow: hidden;
 }
@@ -95,17 +95,18 @@
 @media (max-width: 860px) {
   .inner {
     flex-direction: column;
-    gap: 40px;
+    gap: 32px;
     text-align: center;
   }
   .scene {
     width: 100%;
-    max-width: 380px;
+    max-width: 320px;
   }
   .content {
     align-items: center;
     text-align: center;
   }
+  .headline { margin-top: 0; }
 
   @keyframes birdFly {
     0%   { transform: translate(0, 0) rotate(0deg); }
@@ -116,7 +117,10 @@
   }
 }
 
+
 @media (max-width: 480px) {
-  .bird { width: 68px; }
-  .headline { font-size: 1.5rem; }
+  .hero { padding: 40px 16px; }
+  .headline { font-size: 1.4rem; }
+  .scene { max-width: 260px; }
+  .cta { font-size: 1rem; padding: 14px 28px; }
 }
