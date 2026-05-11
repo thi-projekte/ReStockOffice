@@ -4,7 +4,7 @@ import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { CategoryPage } from "../pages/CategoryPage";
 import { ProductDetailPage } from "../pages/ProductDetailPage";
-import { SearchPage } from "../pages/SearchPage";
+import { ProductsPage } from "../pages/ProductsPage";
 import { AccountPage } from "../pages/AccountPage";
 import {SubscriptionPage} from "../pages/SubscriptionPage";
 import { ProtectedRoute } from "../auth/ProtectedRoute";
@@ -27,10 +27,10 @@ export const router = createBrowserRouter([
         element: <LoginPage />,
       },
       {
-        path: "search",
+        path: "products",
         element: (
           <ProtectedRoute>
-            <SearchPage />
+            <ProductsPage />
           </ProtectedRoute>
         ),
       },

@@ -51,10 +51,17 @@ export function HomePage() {
   }, []);
 
   const topCategories = createCategoryTiles(products);
-  const saleProducts = rotateProducts(products, 0);
-  const reorderProducts = rotateProducts(products, 1);
-  const officeProducts = rotateProducts(products, 2);
   const username = keycloak.tokenParsed?.preferred_username;
+
+  const getRandomProducts = (products: Product[], max: number) =>
+      [...products]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, max);
+
+  const saleProducts = getRandomProducts(products, 12);
+  const reorderProducts = getRandomProducts(products, 12);
+  const officeProducts = getRandomProducts(products, 12);
+
 
   return (
     <div className="home-showcase">

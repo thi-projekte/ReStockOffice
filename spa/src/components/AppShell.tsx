@@ -8,9 +8,9 @@ import {
   FaSlidersH,
   FaTimes,
   FaUser,
-  FaCalendarAlt
+  FaCalendarAlt,
+  FaArchive
 } from "react-icons/fa";
-import { MdLogin } from "react-icons/md";
 import toast, { Toaster } from "react-hot-toast";
 import iconColored from "../assets/logos/icon_colored.png";
 import { useAuth } from "../auth/AuthProvider";
@@ -243,7 +243,7 @@ export function AppShell({ children }: AppShellProps) {
     window.localStorage.setItem("restockoffice-theme", theme);
   }, [theme]);
 
-  const onSearchPage = location.pathname === "/search";
+  const onSearchPage = location.pathname === "/products";
   const isDarkMode = theme === "dark";
 
   function renderSearchControls(source: "header" | "page") {
@@ -286,9 +286,9 @@ export function AppShell({ children }: AppShellProps) {
                 if (
                   event.key === "Enter" &&
                   queryLength >= 2 &&
-                  location.pathname !== "/search"
+                  location.pathname !== "/products"
                 ) {
-                  navigate("/search");
+                  navigate("/products");
                 }
               }}
               aria-label="Artikel oder Kategorie suchen"
@@ -298,8 +298,8 @@ export function AppShell({ children }: AppShellProps) {
               className="search-inline-button"
               type="button"
               onClick={() => {
-                if (location.pathname !== "/search") {
-                  navigate("/search");
+                if (location.pathname !== "/products") {
+                  navigate("/products");
                 }
               }}
               aria-label="Suche starten"
@@ -348,8 +348,8 @@ export function AppShell({ children }: AppShellProps) {
                     setSelectedBrand("");
                     setIsHeaderAssistOpen(false);
 
-                    if (location.pathname !== "/search") {
-                      navigate("/search");
+                    if (location.pathname !== "/products") {
+                      navigate("/products");
                     }
                   }}
                 >
@@ -375,8 +375,8 @@ export function AppShell({ children }: AppShellProps) {
                       setSelectedBrand(brand);
                       setIsHeaderAssistOpen(false);
 
-                      if (location.pathname !== "/search") {
-                        navigate("/search");
+                      if (location.pathname !== "/products") {
+                        navigate("/products");
                       }
                     }}
                   >
@@ -448,61 +448,58 @@ export function AppShell({ children }: AppShellProps) {
             </nav>
           </div>
 
-          {isLoggedIn ? (
-            <div className="header-search" ref={headerSearchRef}>
-              {renderSearchControls("header")}
-            </div>
-          ) : null}
+          <div className="header-search"  />
 
           <div className="header-actions">
             {isLoggedIn ? (
-              <NavLink
-                className="button button--ghost nav-btn"
-                to="/"
-                title="Startseite"
-              >
-                <FaHome />
-              </NavLink>
-            ) : null}
+                <>
+                  <NavLink
+                      className="button button--ghost nav-btn"
+                      to="/"
+                      title="Startseite"
+                  >
+                    <FaHome />
+                  </NavLink>
 
-            {isLoggedIn ? (
-              <NavLink
-                className="button button--ghost nav-btn"
-                to="/subscription"
-                title="Abo-Übersicht"
-                aria-label="Abo-Übersicht"
-              >
-                <FaCalendarAlt  />
-              </NavLink>
-            ) : null}
+                  <NavLink
+                      className="button button--ghost nav-btn"
+                      to="/products"
+                      title="Alle Produkte"
+                  >
+                    <FaArchive />
+                  </NavLink>
 
-            {isLoggedIn ? (
-              <NavLink
-                className="button button--ghost nav-btn"
-                to="/account"
-                title="Konto"
-                aria-label="Konto"
-              >
-                <FaUser />
-              </NavLink>
-            ) : (
-              <NavLink className="button button--ghost" to="/login" title="Login">
-                <MdLogin />
-              </NavLink>
-            )}
+                  <NavLink
+                      className="button button--ghost nav-btn"
+                      to="/subscription"
+                      title="Abo-Übersicht"
+                      aria-label="Abo-Übersicht"
+                  >
+                    <FaCalendarAlt />
+                  </NavLink>
 
-            {isLoggedIn ? (
-              <button
-                className="button button--ghost hamburger-btn"
-                type="button"
-                onClick={() => setMenuOpen(!menuOpen)}
-                aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
-              >
-                {menuOpen ? <FaTimes /> : <FaBars />}
-              </button>
+                  <NavLink
+                      className="button button--ghost nav-btn"
+                      to="/account"
+                      title="Konto"
+                      aria-label="Konto"
+                  >
+                    <FaUser />
+                  </NavLink>
+
+                  <button
+                      className="button button--ghost hamburger-btn"
+                      type="button"
+                      onClick={() => setMenuOpen((v) => !v)}
+                      aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
+                  >
+                    {menuOpen ? <FaTimes /> : <FaBars />}
+                  </button>
+                </>
             ) : null}
           </div>
         </div>
+
         {isLoggedIn && menuOpen ? (
           <nav className="mobile-nav" aria-label="Mobile Navigation">
             <div className="container mobile-nav__inner">
@@ -515,10 +512,10 @@ export function AppShell({ children }: AppShellProps) {
               </NavLink>
               <NavLink
                 className="mobile-nav__link"
-                to="/search"
+                to="/products"
                 onClick={() => setMenuOpen(false)}
               >
-                <FaSearch /> Suche
+                <FaArchive /> Alle Produkte
               </NavLink>
               <NavLink
                 className="mobile-nav__link"
@@ -566,13 +563,11 @@ export function AppShell({ children }: AppShellProps) {
             <section className="page-card section-space">
               <div className="section-head">
                 <div>
-                  <h2>Artikel</h2>
-                  <p>Alle verfügbaren Produkte</p>
+                  <span className="eyebrow">Unser ReStockOrder Sortiment</span>
+                  <h2>Alle verfügbaren Produkte</h2>
                 </div>
-
-                {renderSearchControls("page")}
               </div>
-
+              {renderSearchControls("page")}
               <ProductGrid
                 products={filteredProducts}
               />
@@ -582,7 +577,7 @@ export function AppShell({ children }: AppShellProps) {
       </main>
 
       <footer className="site-footer">
-        <div className="container">ReStockOffice - Simple in Stock</div>
+        <div className="container">© 2026 ReStockOffice</div>
       </footer>
 
       {isLoggedIn ? (
