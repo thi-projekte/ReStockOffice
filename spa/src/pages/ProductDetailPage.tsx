@@ -73,7 +73,7 @@ export function ProductDetailPage() {
   }, [productId]);
 
   if (Number.isNaN(productId)) {
-    return <Navigate to="/search" replace />;
+    return <Navigate to="/products" replace />;
   }
 
   if (isLoading) {
@@ -91,7 +91,7 @@ export function ProductDetailPage() {
         <h1>Produkt nicht gefunden</h1>
         <p>Der ausgewählte Artikel ist aktuell nicht verfügbar.</p>
         <div className="product-detail__actions">
-          <Link className="button" to="/search">
+          <Link className="button" to="/products">
             Zur Produktsuche
           </Link>
         </div>
@@ -126,7 +126,7 @@ export function ProductDetailPage() {
               <dd>{product.productId}</dd>
             </div>
             <div>
-              <dt>Verpackung</dt>
+              <dt>Einheiten</dt>
               <dd>
                 {product.unitCount} {product.unit}
               </dd>

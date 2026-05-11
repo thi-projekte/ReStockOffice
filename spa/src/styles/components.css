@@ -768,6 +768,7 @@
   scrollbar-color: rgba(59, 107, 97, 0.35) transparent;
   overscroll-behavior-x: contain;
   align-items: stretch;
+  -webkit-line-clamp: 2;
 }
 
 .carousel-row::-webkit-scrollbar {
