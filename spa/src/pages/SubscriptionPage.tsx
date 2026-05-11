@@ -2,15 +2,15 @@ import { useState } from "react";
 import { Navigate, useOutletContext } from "react-router-dom";
 import type {
     Product,
-    SubscriptionProductItem,
+    RestockOrderWithProduct,
 } from "../types/shop";
 
 interface OutletContext {
     isLoggedIn: boolean;
     onAddToSubscription: (product: Product) => void;
     onOpenSubscriptionOverview: () => void;
-    onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
-    subscriptionItems: SubscriptionProductItem[];
+    onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+    subscriptionItems: RestockOrderWithProduct[];
     onLogout: () => void;
     theme: "light" | "dark" | "auto";
     onToggleTheme: () => void;
@@ -79,7 +79,7 @@ export function SubscriptionPage() {
                             <div className="subscription-account-list">
                                 {subscriptionItems.map((item) => (
                                     <button
-                                        key={item.itemId}
+                                        key={`${item.customerId}-${item.productId}-${item.createdAt}`}
                                         className={`subscription-account-item ${
                                             isEditMode ? "" : "subscription-account-item--disabled"
                                         }`.trim()}
@@ -91,7 +91,7 @@ export function SubscriptionPage() {
                                             <strong>{item.product.name}</strong>
                                             <div className="muted-text">Menge: {item.quantity}</div>
                                         </div>
-                                        <span>{formatInterval(item.intervalCount)}</span>
+                                        <span>{formatInterval(item.interval)}</span>
                                     </button>
                                 ))}
                             </div>

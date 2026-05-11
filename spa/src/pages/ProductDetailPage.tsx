@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import {Link, Navigate, NavLink, useOutletContext, useParams} from "react-router-dom";
 import { ProductCarousel } from "../components/ProductCarousel";
 import { getProductById, getProducts } from "../services/products";
-import type { Product, SubscriptionProductItem } from "../types/shop";
+import type { Product, RestockOrderWithProduct } from "../types/shop";
 
 interface ProductDetailProps {
   onAddToSubscription: (product: Product) => void;
   onOpenSubscriptionOverview: () => void;
-  onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
-  subscriptionItems: SubscriptionProductItem[];
+  onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+  subscriptionItems: RestockOrderWithProduct[];
   isLoggedIn: boolean;
   onLogin: (formData: unknown) => Promise<void>;
   onLogout: () => void;

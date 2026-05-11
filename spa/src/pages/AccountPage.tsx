@@ -3,7 +3,7 @@ import { MdLogout } from "react-icons/md";
 import {FaMoon, FaSun} from "react-icons/fa";
 import type {
   Product,
-  SubscriptionProductItem,
+  RestockOrderWithProduct,
 } from "../types/shop";
 import keycloak from "../auth/keycloak";
 
@@ -11,8 +11,8 @@ interface OutletContext {
   isLoggedIn: boolean;
   onAddToSubscription: (product: Product) => void;
   onOpenSubscriptionOverview: () => void;
-  onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
-  subscriptionItems: SubscriptionProductItem[];
+  onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+  subscriptionItems: RestockOrderWithProduct[];
   onLogout: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;

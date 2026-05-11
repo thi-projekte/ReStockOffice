@@ -1,20 +1,55 @@
-import type { RestockOrder, Subscription, SubscriptionItem } from "../types/shop";
+import type { RestockOrder, Subscription } from "../types/shop";
 
-export const useAPI = true;
-
-export const FALLBACK_CUSTOMER_ID = "100";
 const ORDERS_API_URL = "https://orders.restockoffice.de/orders";
-const STORAGE_KEY = "restockoffice-subscription";
+
+interface OrdersRequestContext {
+  customerId?: string;
+  token?: string;
+}
+
+interface UpsertOrderPayload extends OrdersRequestContext {
+  productId: string;
+  quantity: number;
+  intervalCount: number;
+  existingItem?: Pick<RestockOrder, "createdAt" | "status">;
+}
 
 function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-export function createSubscription(customerId = FALLBACK_CUSTOMER_ID): Subscription {
+function resolveToken(token?: string) {
+  if (!token) {
+    throw new Error("Kein Keycloak-Token fuer Orders-Requests verfuegbar.");
+  }
+
+  return token;
+}
+
+function resolveOrdersContext({ customerId, token }: OrdersRequestContext) {
+  if (!customerId) {
+    throw new Error("Keine Customer-ID im Keycloak-Token gefunden.");
+  }
+
+  if (!token) {
+    throw new Error("Kein Keycloak-Token für Orders-Requests verfügbar.");
+  }
+
+  return { customerId, token };
+}
+
+function createHeaders(token: string) {
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+}
+
+export function createSubscription(customerId = ""): Subscription {
   const today = formatDate(new Date());
 
   return {
-    subscriptionId: `sub_${crypto.randomUUID()}`,
+    subscriptionId: customerId ? `sub_${customerId}` : `sub_${crypto.randomUUID()}`,
     customerId,
     status: "ACTIVE",
     startDate: today,
@@ -23,16 +58,6 @@ export function createSubscription(customerId = FALLBACK_CUSTOMER_ID): Subscript
     createdAt: today,
     updatedAt: today,
   };
-}
-
-function isSubscription(value: unknown): value is Subscription {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  const sub = value as Subscription;
-  return (
-    Array.isArray(sub.items)
-  );
 }
 
 function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
@@ -49,18 +74,17 @@ function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   };
 }
 
-function createSubscriptionItem(order: RestockOrder): SubscriptionItem {
+function normalizeSubscriptionOrder(order: RestockOrder): RestockOrder {
   return {
-    itemId: `order_${order.customerId}_${order.productId}_${order.createdAt}`,
-    productId: order.productId,
+    ...order,
     quantity: Number.isFinite(order.quantity) && order.quantity > 0 ? order.quantity : 1,
-    intervalCount: Number.isFinite(order.interval) && order.interval > 0 ? order.interval : 1,
+    interval: Number.isFinite(order.interval) && order.interval > 0 ? order.interval : 1,
   };
 }
 
 function createSubscriptionFromOrders(
   orders: RestockOrder[],
-  customerId = FALLBACK_CUSTOMER_ID,
+  customerId: string,
 ): Subscription {
   const customerOrders = orders.filter((order) => order.customerId === customerId);
   const firstOrder = customerOrders[0];
@@ -72,31 +96,22 @@ function createSubscriptionFromOrders(
     status: "ACTIVE",
     startDate: firstOrder?.createdAt ?? today,
     endDate: null,
-    items: customerOrders.map(createSubscriptionItem),
+    items: customerOrders.map(normalizeSubscriptionOrder),
     createdAt: firstOrder?.createdAt ?? today,
     updatedAt: customerOrders[customerOrders.length - 1]?.updatedAt ?? today,
   };
 }
 
-function loadSubscriptionFromLocalStorage(customerId = FALLBACK_CUSTOMER_ID): Subscription {
-  try {
-    const rawValue = localStorage.getItem(`${STORAGE_KEY}-${customerId}`);
+export async function loadSubscription({
+  customerId,
+  token,
+}: OrdersRequestContext): Promise<Subscription> {
+  const resolvedToken = resolveToken(token);
 
-    if (!rawValue) {
-      return createSubscription(customerId);
-    }
-
-    const parsedValue = JSON.parse(rawValue) as unknown;
-    return isSubscription(parsedValue) ? parsedValue : createSubscription(customerId);
-  } catch {
-    return createSubscription(customerId);
-  }
-}
-
-async function loadSubscriptionFromApi(customerId = FALLBACK_CUSTOMER_ID): Promise<Subscription> {
-  const response = await fetch(
-    `${ORDERS_API_URL}?customerId=${encodeURIComponent(customerId)}`,
-  );
+  const response = await fetch(ORDERS_API_URL, {
+    method: "GET",
+    headers: createHeaders(resolvedToken),
+  });
 
   if (!response.ok) {
     throw new Error("RestockOrders konnten nicht geladen werden.");
@@ -108,34 +123,50 @@ async function loadSubscriptionFromApi(customerId = FALLBACK_CUSTOMER_ID): Promi
     throw new Error("RestockOrders haben ein unerwartetes Format.");
   }
 
-  return createSubscriptionFromOrders(payload.map(normalizeRestockOrder), customerId);
+  const normalizedOrders = payload.map(normalizeRestockOrder);
+
+  return createSubscriptionFromOrders(
+    normalizedOrders,
+    customerId ?? normalizedOrders[0]?.customerId ?? "",
+  );
 }
 
-export async function loadSubscription(customerId = FALLBACK_CUSTOMER_ID): Promise<Subscription> {
-  if (!useAPI) {
-    return loadSubscriptionFromLocalStorage(customerId);
+export async function upsertSubscriptionOrder({
+  customerId,
+  token,
+  productId,
+  quantity,
+  intervalCount,
+  existingItem,
+}: UpsertOrderPayload): Promise<RestockOrder> {
+  const resolvedContext = resolveOrdersContext({ customerId, token });
+
+  const today = formatDate(new Date());
+  const orderPayload: RestockOrder = {
+    customerId: resolvedContext.customerId,
+    productId,
+    status: existingItem?.status ?? "ACTIVE",
+    quantity,
+    interval: intervalCount,
+    createdAt: existingItem?.createdAt ?? today,
+    updatedAt: today,
+  };
+
+  const response = await fetch(ORDERS_API_URL, {
+    method: "POST",
+    headers: createHeaders(resolvedContext.token),
+    body: JSON.stringify(orderPayload),
+  });
+
+  if (!response.ok) {
+    throw new Error("RestockOrder konnte nicht gespeichert werden.");
   }
 
-  try {
-    return await loadSubscriptionFromApi(customerId);
-  } catch (error) {
-    console.error(error);
-    return createSubscription(customerId);
-  }
-}
+  const responseBody = (await response.json().catch(() => null)) as unknown;
 
-export function saveSubscription(subscription: Subscription) {
-  if (useAPI) {
-    return;
+  if (!responseBody || typeof responseBody !== "object") {
+    return orderPayload;
   }
 
-  localStorage.setItem(`${STORAGE_KEY}-${subscription.customerId}`, JSON.stringify(subscription));
-}
-
-export function isOrdersApiEnabled() {
-  return useAPI;
-}
-
-export function getOrdersApiUrl() {
-  return ORDERS_API_URL;
+  return normalizeRestockOrder(responseBody);
 }

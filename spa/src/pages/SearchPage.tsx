@@ -1,12 +1,12 @@
 import { Navigate, useOutletContext } from "react-router-dom";
-import type { Product, SubscriptionProductItem } from "../types/shop";
+import type { Product, RestockOrderWithProduct } from "../types/shop";
 
 interface OutletContext {
   isLoggedIn: boolean;
   onAddToSubscription: (product: Product) => void;
   onOpenSubscriptionOverview: () => void;
-  onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
-  subscriptionItems: SubscriptionProductItem[];
+  onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+  subscriptionItems: RestockOrderWithProduct[];
   onLogout: () => void;
   theme: "light" | "dark" | "auto";
   onToggleTheme: () => void;

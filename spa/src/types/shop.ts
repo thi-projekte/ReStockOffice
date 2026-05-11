@@ -11,13 +11,6 @@ export interface Product {
 }
 
 
-export interface SubscriptionItem {
-  itemId: string;
-  productId: string;
-  quantity: number;
-  intervalCount: number;
-}
-
 export interface RestockOrder {
   customerId: string;
   productId: string;
@@ -34,12 +27,12 @@ export interface Subscription {
   status: "ACTIVE";
   startDate: string;
   endDate: string | null;
-  items: SubscriptionItem[];
+  items: RestockOrder[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface SubscriptionProductItem extends SubscriptionItem {
+export interface RestockOrderWithProduct extends RestockOrder {
   product: Product;
 }
 

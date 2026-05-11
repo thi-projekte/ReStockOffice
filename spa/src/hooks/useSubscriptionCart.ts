@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import type {
   Product,
+  RestockOrder,
+  RestockOrderWithProduct,
   Subscription,
-  SubscriptionItem,
-  SubscriptionProductItem,
 } from "../types/shop";
 import {
   createSubscription,
   loadSubscription,
-  saveSubscription,
+  upsertSubscriptionOrder,
 } from "../services/orders";
 
 interface AddSubscriptionPayload {
@@ -17,52 +17,56 @@ interface AddSubscriptionPayload {
   intervalCount: number;
 }
 
-function formatDate(date: Date) {
-  return date.toISOString().slice(0, 10);
+interface UseSubscriptionCartOptions {
+  customerId?: string;
+  token?: string;
 }
 
-export function useSubscriptionCart(customerId?: string) {
+export function useSubscriptionCart({
+  customerId,
+  token,
+}: UseSubscriptionCartOptions) {
   const [subscription, setSubscription] = useState<Subscription>(() =>
-      createSubscription(customerId),
+    createSubscription(customerId),
   );
   const [isLoaded, setIsLoaded] = useState(false);
   const [productsById, setProductsById] = useState<Record<string, Product>>({});
-  const [nextItemId, setNextItemId] = useState(1);
 
   useEffect(() => {
     let ignoreResult = false;
+
     setIsLoaded(false);
 
     async function loadCurrentSubscription() {
-      const loadedSubscription = await loadSubscription(customerId);
+      if (!token) {
+        if (!ignoreResult) {
+          setSubscription(createSubscription(customerId));
+          setIsLoaded(true);
+        }
+        return;
+      }
+
+      const loadedSubscription = await loadSubscription({ customerId, token });
 
       if (!ignoreResult) {
         setSubscription(loadedSubscription);
-        // Berechne die nächste Item-ID basierend auf existierenden Items
-        const maxId = Math.max(
-            0,
-            ...loadedSubscription.items.map((item) => {
-              const match = item.itemId.match(/\d+/);
-              return match ? parseInt(match[0], 10) : 0;
-            })
-        );
-        setNextItemId(maxId + 1);
         setIsLoaded(true);
       }
     }
 
-    void loadCurrentSubscription();
+    void loadCurrentSubscription().catch((error: unknown) => {
+      console.error(error);
+
+      if (!ignoreResult) {
+        setSubscription(createSubscription(customerId));
+        setIsLoaded(true);
+      }
+    });
 
     return () => {
       ignoreResult = true;
     };
-  }, [customerId]);
-
-  useEffect(() => {
-    if (isLoaded) {
-      saveSubscription(subscription);
-    }
-  }, [isLoaded, subscription]);
+  }, [customerId, token]);
 
   function registerProducts(products: Product[]) {
     setProductsById((previousProducts) => {
@@ -76,15 +80,29 @@ export function useSubscriptionCart(customerId?: string) {
     });
   }
 
-  function addOrUpdateItem({
-                             product,
-                             quantity,
-                             intervalCount,
-                           }: AddSubscriptionPayload): "created" | "updated" {
-    const today = formatDate(new Date());
+  async function addOrUpdateItem({
+    product,
+    quantity,
+    intervalCount,
+  }: AddSubscriptionPayload): Promise<"created" | "updated"> {
+    if (!customerId || !token) {
+      throw new Error("Abo kann ohne angemeldeten Kunden nicht gespeichert werden.");
+    }
+
     const hasExistingItem = subscription.items.some(
-        (item) => item.productId === String(product.productId),
+      (item) => item.productId === String(product.productId),
     );
+    const existingItem = subscription.items.find(
+      (item) => item.productId === String(product.productId),
+    );
+    const savedOrder = await upsertSubscriptionOrder({
+      customerId,
+      token,
+      productId: String(product.productId),
+      quantity,
+      intervalCount,
+      existingItem,
+    });
 
     setProductsById((previousProducts) => ({
       ...previousProducts,
@@ -92,73 +110,70 @@ export function useSubscriptionCart(customerId?: string) {
     }));
 
     setSubscription((previousSubscription) => {
-      const existingItem = previousSubscription.items.find(
-          (item) => item.productId === String(product.productId),
+      const currentItem = previousSubscription.items.find(
+        (item) => item.productId === String(product.productId),
       );
 
-      const nextItems: SubscriptionItem[] = existingItem
-          ? previousSubscription.items.map((item) =>
-              item.productId === String(product.productId)
-                  ? { ...item, quantity, intervalCount }
-                  : item,
+      const nextItems: RestockOrder[] = currentItem
+        ? previousSubscription.items.map((item) =>
+            item.productId === String(product.productId)
+              ? {
+                  ...item,
+                  customerId: savedOrder.customerId,
+                  quantity: savedOrder.quantity,
+                  interval: savedOrder.interval,
+                  status: savedOrder.status,
+                  createdAt: savedOrder.createdAt,
+                  updatedAt: savedOrder.updatedAt,
+                }
+              : item,
           )
-          : [
+        : [
             ...previousSubscription.items,
             {
-              itemId: `item_${nextItemId}`,
+              customerId: savedOrder.customerId,
               productId: String(product.productId),
-              quantity,
-              intervalCount,
+              quantity: savedOrder.quantity,
+              interval: savedOrder.interval,
+              status: savedOrder.status,
+              createdAt: savedOrder.createdAt,
+              updatedAt: savedOrder.updatedAt,
             },
           ];
 
       return {
         ...previousSubscription,
         items: nextItems,
-        updatedAt: today,
+        updatedAt: savedOrder.updatedAt,
       };
     });
-
-    if (!hasExistingItem) {
-      setNextItemId((prev) => prev + 1);
-    }
 
     return hasExistingItem ? "updated" : "created";
   }
 
-  function removeItem(productId: string) {
-    const today = formatDate(new Date());
+  const items = useMemo<RestockOrderWithProduct[]>(
+    () =>
+      subscription.items
+        .map((item) => {
+          const product = productsById[item.productId];
 
-    setSubscription((previousSubscription) => ({
-      ...previousSubscription,
-      items: previousSubscription.items.filter((item) => item.productId !== productId),
-      updatedAt: today,
-    }));
-  }
+          if (!product) {
+            return null;
+          }
 
-  const items = useMemo<SubscriptionProductItem[]>(
-      () =>
-          subscription.items
-              .map((item) => {
-                const product = productsById[item.productId];
-
-                if (!product) {
-                  return null;
-                }
-
-                return {
-                  ...item,
-                  product,
-                };
-              })
-              .filter((item): item is SubscriptionProductItem => item !== null),
-      [productsById, subscription.items],
+          return {
+            ...item,
+            product,
+          };
+        })
+        .filter((item): item is RestockOrderWithProduct => item !== null),
+    [productsById, subscription.items],
   );
 
   const totalItems = subscription.items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
-      0,
+    (sum, item) => sum + item.product.price * item.quantity,
+    0,
   );
 
   function getExistingItem(productId: number) {
@@ -167,12 +182,12 @@ export function useSubscriptionCart(customerId?: string) {
 
   return {
     subscription,
+    isLoaded,
     items,
     totalItems,
     totalPrice,
     registerProducts,
     addOrUpdateItem,
-    removeItem,
     getExistingItem,
   };
 }

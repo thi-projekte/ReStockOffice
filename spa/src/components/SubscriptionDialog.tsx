@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import type { Product, SubscriptionProductItem } from "../types/shop";
+import type { Product, RestockOrderWithProduct } from "../types/shop";
 
 interface SubscriptionDialogProps {
-  items: SubscriptionProductItem[];
+  items: RestockOrderWithProduct[];
   product: Product | null;
-  selectedItem?: SubscriptionProductItem;
+  selectedItem?: RestockOrderWithProduct;
   open: boolean;
   onClose: () => void;
   onConfirm: (configuration: { quantity: number; intervalCount: number }) => void;
-  onSelectItem: (item: SubscriptionProductItem) => void;
+  onSelectItem: (item: RestockOrderWithProduct) => void;
   onOpenOverview: () => void;
 }
 
@@ -32,7 +32,7 @@ export function SubscriptionDialog({
     }
 
     setQuantity(selectedItem?.quantity ?? 1);
-    setIntervalCount(selectedItem?.intervalCount ?? 1);
+    setIntervalCount(selectedItem?.interval ?? 1);
   }, [open, product, selectedItem]);
 
   if (!open || !product) {

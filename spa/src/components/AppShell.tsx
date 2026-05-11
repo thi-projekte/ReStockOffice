@@ -18,7 +18,7 @@ import { useSubscriptionCart } from "../hooks/useSubscriptionCart";
 import { getProducts } from "../services/products";
 import type {
   Product,
-  SubscriptionProductItem,
+  RestockOrderWithProduct,
 } from "../types/shop";
 import { ProductGrid } from "./ProductGrid";
 import { SubscriptionDialog } from "./SubscriptionDialog";
@@ -28,8 +28,8 @@ interface AppShellProps {
     isLoggedIn: boolean;
     onAddToSubscription: (product: Product) => void;
     onOpenSubscriptionOverview: () => void;
-    onEditSubscriptionItem: (item: SubscriptionProductItem) => void;
-    subscriptionItems: SubscriptionProductItem[];
+    onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+    subscriptionItems: RestockOrderWithProduct[];
     onLogout: () => void;
     theme: "light" | "dark";
     onToggleTheme: () => void;
@@ -51,11 +51,15 @@ export function AppShell({ children }: AppShellProps) {
   const [activeSubscriptionLayer, setActiveSubscriptionLayer] =
     useState<ActiveSubscriptionLayer>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isSavingSubscription, setIsSavingSubscription] = useState(false);
   const [selectedSubscriptionItem, setSelectedSubscriptionItem] =
-    useState<SubscriptionProductItem | undefined>(undefined);
+    useState<RestockOrderWithProduct | undefined>(undefined);
   const auth = useAuth();
   const isLoggedIn = auth.isAuthenticated;
-  const subscriptionCart = useSubscriptionCart(auth.getCustomerId());
+  const subscriptionCart = useSubscriptionCart({
+    customerId: auth.getCustomerId(),
+    token: auth.token,
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const headerSearchRef = useRef<HTMLDivElement | null>(null);
@@ -141,7 +145,7 @@ export function AppShell({ children }: AppShellProps) {
     setActiveSubscriptionLayer("overview");
   }
 
-  function handleEditSubscriptionItem(item: SubscriptionProductItem) {
+  function handleEditSubscriptionItem(item: RestockOrderWithProduct) {
     setSelectedProduct(item.product);
     setSelectedSubscriptionItem(item);
     setActiveSubscriptionLayer("dialog");
@@ -221,13 +225,6 @@ export function AppShell({ children }: AppShellProps) {
   }, [query]);
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("restockoffice-theme");
-
-    if (savedTheme === "light" || savedTheme === "dark") {
-      setTheme(savedTheme);
-      return;
-    }
-
     const systemPrefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
@@ -236,7 +233,6 @@ export function AppShell({ children }: AppShellProps) {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem("restockoffice-theme", theme);
   }, [theme]);
 
   const onSearchPage = location.pathname === "/search";
@@ -590,12 +586,19 @@ export function AppShell({ children }: AppShellProps) {
           onClose={resetSubscriptionLayer}
           onSelectItem={handleEditSubscriptionItem}
           onOpenOverview={openSubscriptionOverview}
-          onConfirm={({ quantity, intervalCount }) => {
+          onConfirm={async ({ quantity, intervalCount }) => {
             if (!selectedProduct) {
               return;
             }
 
-            const action = subscriptionCart.addOrUpdateItem({
+            if (isSavingSubscription) {
+              return;
+            }
+
+            setIsSavingSubscription(true);
+
+            try {
+              const action = await subscriptionCart.addOrUpdateItem({
               product: selectedProduct,
               quantity,
               intervalCount,
@@ -607,7 +610,13 @@ export function AppShell({ children }: AppShellProps) {
                 : `${selectedProduct.name} wurde zum Abo hinzugefügt`,
             );
 
-            resetSubscriptionLayer()
+            resetSubscriptionLayer();
+            } catch (error) {
+              console.error(error);
+              toast.error("Das Abo konnte nicht gespeichert werden.");
+            } finally {
+              setIsSavingSubscription(false);
+            }
           }}
         />
       ) : null}
