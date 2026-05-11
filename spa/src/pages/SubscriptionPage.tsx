@@ -4,6 +4,7 @@ import type {
     Product,
     RestockOrderWithProduct,
 } from "../types/shop";
+import {MdEdit, MdSave} from "react-icons/md";
 
 interface OutletContext {
     isLoggedIn: boolean;
@@ -29,6 +30,7 @@ export function SubscriptionPage() {
     } = useOutletContext<OutletContext>();
     const [isEditMode, setIsEditMode] = useState(false);
 
+
     if (!isLoggedIn) {
         return <Navigate to="/login" replace />;
     }
@@ -45,33 +47,18 @@ export function SubscriptionPage() {
                         </p>
                     </div>
                     <button
-                        className="button"
+                        className={`button ${isEditMode ? "" : "button--ghost"}`.trim()}
                         type="button"
-                        onClick={() => setIsEditMode((current) => !current)}
+                        title={isEditMode ? "Änderungen speichern" : "Profil bearbeiten"}
+                        onClick={() => setIsEditMode((v) => !v)}
                     >
+                        {isEditMode ? <MdSave /> : <MdEdit />}
                         {isEditMode ? "Bearbeitung beenden" : "Abo bearbeiten"}
                     </button>
 
                 </div>
-                <div className="section-space">
-                    <div className="product-specs__grid">
-                        <article className="product-specs__item">
-                            <span>Bevorzugter Liefertermin</span>
-                            <strong>Montag, 09:00 bis 12:00 Uhr</strong>
-                        </article>
-                        <article className="product-specs__item">
-                            <span>Aktuelles Intervall</span>
-                            <strong>2 Wochen</strong>
-                        </article>
-                        <article className="product-specs__item">
-                            <span>Benachrichtigung</span>
-                            <strong>E-Mail bei Statuswechsel</strong>
-                        </article>
-                    </div>
-                </div>
 
                 <div className="section-space">
-                    <h3>Aktuelle ReStockOrders in deinem Abo</h3>
                     <div className="product-specs__grid">
                         {subscriptionItems.length === 0 ? (
                             <p className="empty-state">Du hast aktuell noch keine Artikel in deinem Abo.</p>

@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from "react";
+import {KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Product } from "../types/shop";
 
@@ -27,8 +27,10 @@ interface ProductCardProps {
 function ProductCard({ product }: ProductCardProps) {
   const navigate = useNavigate();
 
+
   function openDetails() {
     navigate(`/products/${product.productId}`);
+    window.scrollTo(0, 0);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {

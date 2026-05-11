@@ -225,6 +225,13 @@ export function AppShell({ children }: AppShellProps) {
   }, [query]);
 
   useEffect(() => {
+    const savedTheme = window.localStorage.getItem("restockoffice-theme");
+
+    if (savedTheme === "light" || savedTheme === "dark") {
+      setTheme(savedTheme);
+      return;
+    }
+
     const systemPrefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
@@ -233,6 +240,7 @@ export function AppShell({ children }: AppShellProps) {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    window.localStorage.setItem("restockoffice-theme", theme);
   }, [theme]);
 
   const onSearchPage = location.pathname === "/search";
@@ -613,7 +621,11 @@ export function AppShell({ children }: AppShellProps) {
             resetSubscriptionLayer();
             } catch (error) {
               console.error(error);
-              toast.error("Das Abo konnte nicht gespeichert werden.");
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Das Abo konnte nicht gespeichert werden.",
+              );
             } finally {
               setIsSavingSubscription(false);
             }

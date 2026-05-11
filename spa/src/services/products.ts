@@ -2,7 +2,7 @@ import products from "../mocks/products.json";
 import logoColored from "../assets/logos/logo_colored.png";
 import type { Product } from "../types/shop";
 
-const useAPI = true;
+const useAPI = false;
 
 const PRODUCTS_API_URL = "https://articles.restockoffice.de/articles";
 const PRODUCT_API_URL = "https://articles.restockoffice.de/article";
@@ -12,6 +12,10 @@ const mockAssetModules = import.meta.glob("../assets/**/*.{png,jpg,jpeg,svg}", {
   eager: true,
   import: "default",
 }) as Record<string, string>;
+
+function buildProductsNetworkErrorMessage(scope: "Produkte" | "Produkt" | "Kategorie") {
+  return `${scope} konnten nicht geladen werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration des Article-Service.`;
+}
 
 function resolveMockImageUrl(imageUrl: string) {
   if (!imageUrl) {
@@ -23,27 +27,6 @@ function resolveMockImageUrl(imageUrl: string) {
   }
 
   return imageUrl;
-}
-
-const productMocks = (products as unknown[]).map((product) => {
-  const normalizedProduct = normalizeProduct(product);
-
-  return {
-    ...normalizedProduct,
-    imageUrl: resolveMockImageUrl(normalizedProduct.imageUrl),
-  };
-});
-const productsCache = new Map<number, Product>();
-const categoryNameCache = new Map<string, string>();
-let allProductsCache: Product[] | null = null;
-
-function seedCaches(loadedProducts: Product[]) {
-  allProductsCache = loadedProducts;
-
-  for (const product of loadedProducts) {
-    productsCache.set(product.productId, product);
-    categoryNameCache.set(getCategorySlug(product.category), product.category);
-  }
 }
 
 function normalizeProduct(rawProduct: unknown): Product {
@@ -69,16 +52,43 @@ function normalizeProduct(rawProduct: unknown): Product {
   };
 }
 
+const productMocks = (products as unknown[]).map((product) => {
+  const normalizedProduct = normalizeProduct(product);
+
+  return {
+    ...normalizedProduct,
+    imageUrl: resolveMockImageUrl(normalizedProduct.imageUrl),
+  };
+});
+const productsCache = new Map<number, Product>();
+const categoryNameCache = new Map<string, string>();
+let allProductsCache: Product[] | null = null;
+
+function seedCaches(loadedProducts: Product[]) {
+  allProductsCache = loadedProducts;
+
+  for (const product of loadedProducts) {
+    productsCache.set(product.productId, product);
+    categoryNameCache.set(getCategorySlug(product.category), product.category);
+  }
+}
+
 async function loadProductsFromMock(): Promise<Product[]> {
   seedCaches(productMocks);
   return productMocks;
 }
 
 async function loadProductsFromApi(): Promise<Product[]> {
-  const response = await fetch(PRODUCTS_API_URL);
+  let response: Response;
+
+  try {
+    response = await fetch(PRODUCTS_API_URL);
+  } catch {
+    throw new Error(buildProductsNetworkErrorMessage("Produkte"));
+  }
 
   if (!response.ok) {
-    throw new Error("Produkte konnten nicht geladen werden.");
+    throw new Error(`Produkte konnten nicht geladen werden (HTTP ${response.status}).`);
   }
 
   const payload = (await response.json()) as unknown[];
@@ -88,10 +98,16 @@ async function loadProductsFromApi(): Promise<Product[]> {
 }
 
 async function loadProductByIdFromApi(productId: number): Promise<Product | undefined> {
-  const response = await fetch(`${PRODUCT_API_URL}?productId=${encodeURIComponent(productId)}`);
+  let response: Response;
+
+  try {
+    response = await fetch(`${PRODUCT_API_URL}?productId=${encodeURIComponent(productId)}`);
+  } catch {
+    throw new Error(buildProductsNetworkErrorMessage("Produkt"));
+  }
 
   if (!response.ok) {
-    throw new Error("Produkt konnte nicht geladen werden.");
+    throw new Error(`Produkt konnte nicht geladen werden (HTTP ${response.status}).`);
   }
 
   const payload = (await response.json()) as unknown;
@@ -106,12 +122,18 @@ async function loadProductByIdFromApi(productId: number): Promise<Product | unde
 }
 
 async function loadProductsByCategoryFromApi(category: string): Promise<Product[]> {
-  const response = await fetch(
-    `${PRODUCTS_BY_CATEGORY_API_URL}?category=${encodeURIComponent(category)}`,
-  );
+  let response: Response;
+
+  try {
+    response = await fetch(
+      `${PRODUCTS_BY_CATEGORY_API_URL}?category=${encodeURIComponent(category)}`,
+    );
+  } catch {
+    throw new Error(buildProductsNetworkErrorMessage("Kategorie"));
+  }
 
   if (!response.ok) {
-    throw new Error("Produkte der Kategorie konnten nicht geladen werden.");
+    throw new Error(`Produkte der Kategorie konnten nicht geladen werden (HTTP ${response.status}).`);
   }
 
   const payload = (await response.json()) as unknown[];

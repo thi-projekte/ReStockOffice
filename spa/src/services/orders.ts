@@ -19,24 +19,16 @@ function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert") {
+  return `Die Orders-API konnte nicht erreicht werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration, falls Orders nicht ${action} werden konnten.`;
+}
+
 function resolveToken(token?: string) {
   if (!token) {
     throw new Error("Kein Keycloak-Token für Orders-Requests verfügbar.");
   }
 
   return token;
-}
-
-function resolveOrdersContext({ customerId, token }: OrdersRequestContext) {
-  if (!customerId) {
-    throw new Error("Keine Customer-ID im Keycloak-Token gefunden.");
-  }
-
-  if (!token) {
-    throw new Error("Kein Keycloak-Token für Orders-Requests verfügbar.");
-  }
-
-  return { customerId, token };
 }
 
 function createHeaders(token: string) {
@@ -114,27 +106,34 @@ export async function loadSubscription({
   const resolvedToken = resolveToken(token);
   const resolvedCustomerId = resolveCustomerId(customerId);
 
-  const response = await fetch(ORDERS_API_URL, {
-    method: "GET",
-    headers: createHeaders(resolvedToken),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(ORDERS_API_URL, {
+      method: "GET",
+      headers: createHeaders(resolvedToken),
+    });
+  } catch {
+    throw new Error(buildOrdersNetworkErrorMessage("geladen"));
+  }
 
   if (!response.ok) {
-    throw new Error("RestockOrders konnten nicht geladen werden.");
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Die Orders-API hat den Request abgelehnt. Bitte prüfe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.");
+    }
+
+    throw new Error(`RestockOrders konnten nicht geladen werden (HTTP ${response.status}).`);
   }
 
   const payload = (await response.json()) as unknown;
 
   if (!Array.isArray(payload)) {
-    throw new Error("RestockOrders haben ein unerwartetes Format.");
+    throw new Error("Die Orders-API hat ein unerwartetes Antwortformat geliefert.");
   }
 
   const normalizedOrders = payload.map(normalizeRestockOrder);
 
-  return createSubscriptionFromOrders(
-    normalizedOrders,
-    resolvedCustomerId,
-  );
+  return createSubscriptionFromOrders(normalizedOrders, resolvedCustomerId);
 }
 
 export async function upsertSubscriptionOrder({
@@ -159,14 +158,24 @@ export async function upsertSubscriptionOrder({
     updatedAt: today,
   };
 
-  const response = await fetch(ORDERS_API_URL, {
-    method: "POST",
-    headers: createHeaders(resolvedToken),
-    body: JSON.stringify(orderPayload),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(ORDERS_API_URL, {
+      method: "POST",
+      headers: createHeaders(resolvedToken),
+      body: JSON.stringify(orderPayload),
+    });
+  } catch {
+    throw new Error(buildOrdersNetworkErrorMessage("gespeichert"));
+  }
 
   if (!response.ok) {
-    throw new Error("RestockOrder konnte nicht gespeichert werden.");
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Die Orders-API hat das Speichern abgelehnt. Bitte prüfe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.");
+    }
+
+    throw new Error(`RestockOrder konnte nicht gespeichert werden (HTTP ${response.status}).`);
   }
 
   const responseBody = (await response.json().catch(() => null)) as unknown;
