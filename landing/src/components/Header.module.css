@@ -59,8 +59,8 @@
 }
 
 @media (max-width: 680px) {
-  .inner { height: 84px; padding-inline: 16px; }
-  .logoImg { height: 76px; width: auto; }
+  .inner { height: 90px; padding-inline: 16px; }
+  .logoImg { height: 86px; width: auto; }
   .navLink { display: none; }
   .nav { gap: 8px; }
   .userName { display: none; }
