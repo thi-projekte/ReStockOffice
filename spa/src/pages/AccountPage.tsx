@@ -54,7 +54,7 @@ export function AccountPage() {
     lastName: keycloak.tokenParsed?.family_name ?? "",
     phone: "+49 152 89123123",
     birthDate: "2000-01-01",
-    role: "Einkauf / Operativer Mitarbeiter",
+    role: "Einkauf",
     company: "ReStockOffice GmbH",
     street: "Musterstraße 100",
     city: "85049 Ingolstadt",
