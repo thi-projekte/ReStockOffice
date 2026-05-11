@@ -19,5 +19,5 @@ management:
   endpoints:
     web.exposure.include: env,health,info,metrics
 
-mailservice:
+mail service:
   base-url: http://localhost:8081

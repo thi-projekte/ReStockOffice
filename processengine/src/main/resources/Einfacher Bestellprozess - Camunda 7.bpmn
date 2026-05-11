@@ -61,7 +61,7 @@
       <bpmn:incoming>Flow_1ssx9me</bpmn:incoming>
       <bpmn:outgoing>Flow_02xgu02</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_0giboel">
-        <bpmn:timeDate xsi:type="bpmn:tFormalExpression" />
+        <bpmn:timeDate xsi:type="bpmn:tFormalExpression">${deliveryDate}</bpmn:timeDate>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
     <bpmn:userTask id="Activity_1sfv88t" name="Ware bereitstellen" camunda:candidateGroups="lager">
@@ -109,7 +109,7 @@
       <bpmn:incoming>Flow_1o5opel</bpmn:incoming>
       <bpmn:outgoing>Flow_1yi1f0x</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_0pvn1x1" name="Bestell-bestätigung versenden">
+    <bpmn:serviceTask id="Activity_0pvn1x1" name="Bestell-bestätigung versenden" camunda:delegateExpression="${sendOrderConfirmationDelegate}">
       <bpmn:incoming>Flow_1yi1f0x</bpmn:incoming>
       <bpmn:outgoing>Flow_1qxfwa0</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -131,7 +131,7 @@
     <bpmn:sequenceFlow id="Flow_1083uxl" sourceRef="Activity_1lnhr9j" targetRef="Activity_186b9hk" />
     <bpmn:dataObjectReference id="DataObjectReference_0r30xar" name="Lieferbestätigung" dataObjectRef="DataObject_1hk2i92" />
     <bpmn:dataObject id="DataObject_1hk2i92" />
-    <bpmn:serviceTask id="Activity_186b9hk" name="Liefer-bestätigung versenden">
+    <bpmn:serviceTask id="Activity_186b9hk" name="Liefer-bestätigung versenden" camunda:delegateExpression="${sendDeliveryConfirmationDelegate}">
       <bpmn:incoming>Flow_1083uxl</bpmn:incoming>
       <bpmn:outgoing>Flow_0jkq5y6</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -175,12 +175,12 @@
         <dc:Bounds x="160" y="160" width="2540" height="340" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_101wwjf_di" bpmnElement="Lane_101wwjf" isHorizontal="true">
-        <dc:Bounds x="190" y="160" width="2510" height="191" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_1jzw7bv_di" bpmnElement="Lane_1jzw7bv" isHorizontal="true">
         <dc:Bounds x="190" y="351" width="2510" height="149" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_101wwjf_di" bpmnElement="Lane_101wwjf" isHorizontal="true">
+        <dc:Bounds x="190" y="160" width="2510" height="191" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1faqcv7_di" bpmnElement="Activity_1p881fm">
@@ -397,6 +397,18 @@
         <dc:Bounds x="160" y="80" width="2540" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_162zogb_di" bpmnElement="Flow_162zogb">
+        <di:waypoint x="260" y="140" />
+        <di:waypoint x="260" y="252" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1nr68ex_di" bpmnElement="Flow_1nr68ex">
+        <di:waypoint x="2160" y="630" />
+        <di:waypoint x="2160" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0v8e1x4_di" bpmnElement="Flow_0v8e1x4">
+        <di:waypoint x="2600" y="232" />
+        <di:waypoint x="2600" y="140" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0efrvoi_di" bpmnElement="Flow_0efrvoi">
         <di:waypoint x="1870" y="460" />
         <di:waypoint x="1870" y="610" />
@@ -404,21 +416,9 @@
           <dc:Bounds x="1873" y="532" width="26" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0v8e1x4_di" bpmnElement="Flow_0v8e1x4">
-        <di:waypoint x="2600" y="232" />
-        <di:waypoint x="2600" y="140" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1nr68ex_di" bpmnElement="Flow_1nr68ex">
-        <di:waypoint x="2160" y="630" />
-        <di:waypoint x="2160" y="268" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1hlaneq_di" bpmnElement="Flow_1hlaneq">
         <di:waypoint x="1590" y="278" />
         <di:waypoint x="1590" y="632" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_162zogb_di" bpmnElement="Flow_162zogb">
-        <di:waypoint x="260" y="140" />
-        <di:waypoint x="260" y="252" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
