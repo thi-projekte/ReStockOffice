@@ -75,8 +75,8 @@
   .inner { height: auto; padding: 8px 16px 6px; }
   .logoImg { height: 86px; width: auto; }
   .nav { flex-direction: column; align-items: center; gap: 4px; }
-  .navActions { gap: 6px; }
-  .navLinks { gap: 12px; }
+  .navActions { gap: 6px; order: -1; }
+  .navLinks { gap: 12px; order: 0; }
   .navLink { font-size: 0.7rem; }
   .userName { display: none; }
   .authPlaceholder { width: 100px; height: 32px; }
