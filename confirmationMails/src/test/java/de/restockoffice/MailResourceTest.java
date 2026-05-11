@@ -59,6 +59,7 @@ class MailResourceTest {
                   "recipientEmail": "max.mustermann@example.com",
                   "customerName": "Max Mustermann",
                   "daysUntilDelivery": "2",
+                  "deliveryDay": "Montag",
                   "deliveryDate": "04.05.2026",
                   "deliveryWindow": "08:30 bis 10:00 Uhr",
                   "officeLocation": "HQ Ingolstadt",
