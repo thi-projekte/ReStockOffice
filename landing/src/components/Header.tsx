@@ -26,24 +26,28 @@ export default function Header() {
           <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="ReStockOffice" className={styles.logoImg} />
         </a>
         <nav className={styles.nav}>
-          {NAV_LINKS.map(({ href, label }) => (
-            <a key={href} href={href} className={styles.navLink}>{label}</a>
-          ))}
-          {auth === null ? (
-            <div className={styles.authPlaceholder} />
-          ) : auth.authenticated ? (
-            <>
-              <span className={styles.userName}>
-                {auth.name ?? auth.email ?? 'Angemeldet'}
-              </span>
-              <button className="btn-outline" onClick={logout}>Abmelden</button>
-            </>
-          ) : (
-            <>
-              <button className="btn-outline" onClick={redirectToLogin}>Anmelden</button>
-              <button className="btn-primary" onClick={redirectToRegister}>Registrieren</button>
-            </>
-          )}
+          <div className={styles.navActions}>
+            {auth === null ? (
+              <div className={styles.authPlaceholder} />
+            ) : auth.authenticated ? (
+              <>
+                <span className={styles.userName}>
+                  {auth.name ?? auth.email ?? 'Angemeldet'}
+                </span>
+                <button className="btn-outline" onClick={logout}>Abmelden</button>
+              </>
+            ) : (
+              <>
+                <button className="btn-outline" onClick={redirectToLogin}>Anmelden</button>
+                <button className="btn-primary" onClick={redirectToRegister}>Registrieren</button>
+              </>
+            )}
+          </div>
+          <div className={styles.navLinks}>
+            {NAV_LINKS.map(({ href, label }) => (
+              <a key={href} href={href} className={styles.navLink}>{label}</a>
+            ))}
+          </div>
         </nav>
       </div>
     </header>
