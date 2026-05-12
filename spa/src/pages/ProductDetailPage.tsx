@@ -105,6 +105,7 @@ export function ProductDetailPage() {
         <Link to="/products" className="product-detail__backlink">
           <span className="eyebrow">Zurück zur Artikelsuche</span>
         </Link>
+
         <div>
           <span className="eyebrow">{product.category}</span>
         </div>
