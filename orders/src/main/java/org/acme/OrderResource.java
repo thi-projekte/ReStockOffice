@@ -28,27 +28,36 @@ public class OrderResource {
     @Context
     HttpHeaders headers;
 
+    String customerId = (securityIdentity != null &&
+            securityIdentity.getPrincipal() != null)
+            ? securityIdentity.getPrincipal().getName()
+            : "anonymous";
+
     @GET
     public List<Order> getAll() {
-        System.out.println("🔥 GET /orders HIT");
-        return Order.listAll();
+        if (securityIdentity == null || securityIdentity.isAnonymous() || !customerId.equals(securityIdentity.getPrincipal().getName())) {
+            throw new NotAuthorizedException("Nicht autorisiert");
+        }else{
+            System.out.println("👤 GET /orders REQUESTED BY: " + securityIdentity.getPrincipal().getName());
+            return Order.listAll();
+        }
     }
 
     //==== Get a certain order ==== //
     @GET
     @Path("/{id}")
     public Order getById(@PathParam("id") Long id) {
-        return Order.findById(id);
+        if (securityIdentity == null || securityIdentity.isAnonymous() || !customerId.equals(securityIdentity.getPrincipal().getName())) {
+            throw new NotAuthorizedException("Nicht autorisiert");
+        }else{
+            return Order.findById(id);
+        }
     }
     //==== Get all orders from certain customer ==== //
     @GET
     @Path("/my")
     @Authenticated
     public List<Order> getMyOrders() {
-        String customerId = (securityIdentity != null &&
-                securityIdentity.getPrincipal() != null)
-                ? securityIdentity.getPrincipal().getName()
-                : "anonymous";
         return Order.list("customerId", customerId);
     }
 
