@@ -102,7 +102,7 @@ export function ProductDetailPage() {
   return (
     <div className="home-showcase">
       <section className="page-card product-detail">
-        <Link to="/search" className="product-detail__backlink">
+        <Link to="/products" className="product-detail__backlink">
           <span className="eyebrow">Zurück zur Artikelsuche</span>
         </Link>
         <div>

@@ -145,6 +145,7 @@ export function HomePage() {
                     key={category.id}
                     className="category-tile highlight-tile highlight-tile--link"
                     to={`/categories/${getCategorySlug(category.title)}`}
+                    onClick={() => window.scrollTo(0, 0)}
                   >
                     <h3>{category.title}</h3>
                     <p>{category.description}</p>
