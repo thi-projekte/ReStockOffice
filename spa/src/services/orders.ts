@@ -137,25 +137,19 @@ export async function loadSubscription({
 }
 
 export async function upsertSubscriptionOrder({
-  customerId,
   token,
   productId,
   quantity,
   intervalCount,
   existingItem,
-}: UpsertOrderPayload): Promise<RestockOrder> {
+}: UpsertOrderPayload): Promise<{ productId: string; status: string; quantity: number; interval: number }> {
   const resolvedToken = resolveToken(token);
-  const resolvedCustomerId = resolveCustomerId(customerId);
 
-  const today = formatDate(new Date());
-  const orderPayload: RestockOrder = {
-    customerId: resolvedCustomerId,
+  const orderPayload = {
     productId,
     status: existingItem?.status ?? "ACTIVE",
     quantity,
     interval: intervalCount,
-    createdAt: existingItem?.createdAt ?? today,
-    updatedAt: today,
   };
 
   let response: Response;

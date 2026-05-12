@@ -14,7 +14,7 @@ export interface Product {
 export interface RestockOrder {
   customerId: string;
   productId: string;
-  status: "ACTIVE" | "PAUSED" | "CANCELLED" | string;
+  status:  string;
   quantity: number;
   interval: number;
   createdAt: string;
@@ -24,7 +24,7 @@ export interface RestockOrder {
 export interface Subscription {
   subscriptionId: string;
   customerId: string;
-  status: "ACTIVE";
+  status: string;
   startDate: string;
   endDate: string | null;
   items: RestockOrder[];
