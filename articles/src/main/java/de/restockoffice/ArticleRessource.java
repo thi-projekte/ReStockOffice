@@ -1,4 +1,4 @@
-package org.acme;
+package de.restockoffice;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -20,11 +20,11 @@ public class ArticleRessource {
     // Rückgabe aller Artikel mit /article?itemId=xxxxx
     @GET
     @Path("article")
-    public Article getArticleByItemId(@QueryParam("itemId") String itemId){
-        Article article = Article.find("itemId", itemId).firstResult();
+    public Article getArticleByItemId(@QueryParam("productId") String productId){
+        Article article = Article.find("productId", productId).firstResult();
 
         if(article == null){
-            throw new WebApplicationException("Artikel mit ID " + itemId + " nicht gefunden");
+            throw new WebApplicationException("Artikel mit ID " + productId + " nicht gefunden");
         }
         return article;
     }
@@ -32,11 +32,11 @@ public class ArticleRessource {
     // Rückgabe aller Artikel mit /articleByCategory?article-type=xxxxxx
     @GET
     @Path("articleByCategory")
-    public List<Article> getArticleByCategory(@QueryParam("articleType") String articleType){
-        List<Article> articleList = Article.find("LOWER(articleType) = LOWER(?1)", articleType.toLowerCase()).list();
+    public List<Article> getArticleByCategory(@QueryParam("category") String category){
+        List<Article> articleList = Article.find("LOWER(category) = LOWER(?1)", category.toLowerCase()).list();
 
         if (articleList.isEmpty()) {
-            throw new WebApplicationException("Keine Artikel für den Typ '" + articleType + "' gefunden", 404);
+            throw new WebApplicationException("Keine Artikel für den Typ '" + category + "' gefunden", 404);
         }
 
         return articleList;
