@@ -1,0 +1,15 @@
+services:
+  spa:
+    image: ghcr.io/thi-projekte/restockoffice-spa:latest
+    networks:
+      - nginx-proxy-manager
+    container_name: restockoffice-spa
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+
+networks:
+  nginx-proxy-manager:
+    external: true 
