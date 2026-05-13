@@ -50,6 +50,7 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest</artifactId>
+            <version>3.31.1</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
