@@ -1,0 +1,26 @@
+{
+  "variables": {
+    "recipientEmail": { "value": "corinna.niedermeier01@gmail.com", "type": "String" },
+    "customerName": { "value": "Amelie Daude", "type": "String" },
+    "orderNumber": { "value": "RSO-2026-004281", "type": "String" },
+    "orderDate": { "value": "11.05.2026, 09:31 Uhr", "type": "String" },
+    "orderedBy": { "value": "Corinna Niedermeier", "type": "String" },
+    "deliveryWindow": { "value": "08:30 bis 10:00 Uhr", "type": "String" },
+    "officeLocation": { "value": "HQ Ingolstadt", "type": "String" },
+    "deliveryLocation": { "value": "3. OG, Office West", "type": "String" },
+    "deskDetails": { "value": "Arbeitsplatz B-3-17", "type": "String" },
+    "onSiteContact": { "value": "Amelie Daude", "type": "String" },
+    "changeDeadline": { "value": "15.05.2026, 12:00 Uhr", "type": "String" },
+    "manageSubscriptionUrl": { "value": "https://restockoffice.example.com/account/orders/RSO-2026-004281", "type": "String" },
+    "deliveryDate": { "value": "2026-05-11T08:00:00", "type": "String" },
+    "daysUntilDelivery": { "value": "2", "type": "String" },
+    "supplierName": { "value": "Sabrina Keller", "type": "String" },
+    "deliveryInstructions": { "value": "Bitte am Sideboard abstellen.", "type": "String" },
+    "deliveryDetailsUrl": { "value": "https://restockoffice.example.com/account/deliveries/RSO-2026-004281", "type": "String" },
+    "itemName": { "value": "Kopierpapier A4 Premium", "type": "String" },
+    "itemArticleNumber": { "value": "RS-10023", "type": "String" },
+    "itemQuantity": { "value": "4 Pack", "type": "String" },
+    "itemIntervalDescription": { "value": "Montag alle 2 Wochen", "type": "String" },
+    "itemNextDeliveryDate": { "value": "04.05.2026", "type": "String" }
+  }
+}

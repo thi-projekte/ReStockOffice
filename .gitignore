@@ -5,6 +5,7 @@ dist/
 .idea/
 target/
 *.iml
+.env
 
 .DS_Store
 .vite/
