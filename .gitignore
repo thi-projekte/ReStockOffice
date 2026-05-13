@@ -1,8 +1,14 @@
+node_modules/
+dist/
+.env
+*.local
 .idea/
 target/
 *.iml
+.env
 
 .DS_Store
+.vite/
 
 ## Für SPA
 /spa/node_modules/

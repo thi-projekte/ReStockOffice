@@ -19,9 +19,15 @@ package org.cibseven.getstarted.loanapproval;
 import org.cibseven.bpm.spring.boot.starter.annotation.EnableProcessApplication;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @EnableProcessApplication
+@ComponentScan(basePackages = {
+        "org.cibseven.getstarted.loanapproval",
+        "de.restockoffice"
+})
+
 public class WebappExampleProcessApplication {
 
   public static void main(String... args) {
