@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReStockOffice Bestellbestätigung</title>
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
+  <style>{{inlineStyles}}</style>
+</head>
+<body class="email-body">
+  <div class="email-preheader">Deine ReStockOrder wurde bestätigt. Hier findest du Bestellung, Lieferort, Intervalle und Änderungsfrist.</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-page">
+    <tr><td align="center" class="email-page-padding">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-shell">
+        <tr><td class="email-header-spacing"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-header-card"><tr><td class="email-header-inner"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td valign="middle"><img src="{{logoUrl}}" alt="ReStockOffice" class="email-logo" /></td><td align="right" valign="middle"><span class="email-badge">Bestellung bestätigt</span></td></tr></table></td></tr></table></td></tr>
+        <tr><td><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-main-card">
+          <tr><td class="email-hero email-hero-padding"><div class="email-eyebrow">Bestellbestätigung</div><div class="email-hero-title">Deine ReStockOrder ist erfolgreich eingegangen.</div><div class="email-hero-copy">Hallo {{customerName}}, wir haben deine Bestellung angelegt. Unten findest du alle wichtigen Angaben zu Bestellung, Lieferort, Lieferintervallen und Änderungsmöglichkeiten.</div></td></tr>
+          <tr><td class="email-summary-row"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td width="50%" valign="top" class="email-col-left"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-summary-card"><tr><td class="email-summary-inner"><div class="email-kicker">Bestellnummer</div><div class="email-metric">{{orderNumber}}</div></td></tr></table></td><td width="50%" valign="top" class="email-col-right"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-summary-card"><tr><td class="email-summary-inner"><div class="email-kicker">Änderbar bis</div><div class="email-metric">{{changeDeadline}}</div></td></tr></table></td></tr></table></td></tr>
+          <tr><td class="email-section-wrap"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-section-card">
+            <tr><td class="email-section-head"><div class="email-section-title">Bestelldetails</div><div class="email-section-copy">Hier siehst du auf einen Blick, wohin geliefert wird und in welchem Rhythmus die einzelnen Artikel kuenftig geliefert werden.</div></td></tr>
+            <tr><td class="email-soft-row"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card"><tr><td class="email-soft-inner"><div class="email-kicker">Bestelldaten</div><div class="email-copy"><span class="email-info-strong">Bestellt am:</span> {{orderDate}}<br /><span class="email-info-strong">Ausgelöst von:</span> {{orderedBy}}<br /><span class="email-info-strong">Bürostandort:</span> {{officeLocation}}</div></td></tr></table></td></tr>
+            <tr><td class="email-soft-row"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card"><tr><td class="email-soft-inner"><div class="email-kicker">Lieferung</div><div class="email-copy"><span class="email-info-strong">Standard-Lieferfenster:</span> {{deliveryWindow}}<br /><span class="email-info-strong">Empfang am Platz:</span> {{deskDetails}}<br /><span class="email-info-strong">Kontakt vor Ort:</span> {{onSiteContact}}</div></td></tr></table></td></tr>
+            <tr><td class="email-soft-row-loose"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card"><tr><td class="email-soft-inner"><div class="email-kicker">Lieferadresse</div><div class="email-copy email-preline">{{deliveryLocation}}</div></td></tr></table></td></tr>
+            <tr><td class="email-soft-row-loose"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card"><tr><td class="email-soft-inner-tight"><div class="email-heading-inline">Was passiert als Nächstes?</div><div class="email-copy-tight">1. Deine Bestellung wird nun verarbeitet.<br />2. Jeder Artikel wird gemäß dem hinterlegten Intervall geliefert.<br />3. Zwei Tage vor einer anstehenden Lieferung erhältst du eine separate Benachrichtigung.<br />4. Änderungen an Menge, Intervall oder Lieferort sind bis {{changeDeadline}} möglich.</div></td></tr></table></td></tr>
+            <tr><td class="email-soft-row-end"><div class="email-table-heading">Bestellpositionen mit Lieferintervallen</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">{{orderItemsHtml}}</table></td></tr>
+          </table></td></tr>
+          <tr><td class="email-cta-wrap"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-cta-card"><tr><td align="center" class="email-cta-inner"><div class="email-cta-title">Bestellung prüfen oder anpassen</div><div class="email-cta-copy">Über den Button kannst du deine ReStockOrder einsehen, ändern oder einzelne Intervalle prüfen.</div><div class="email-cta-button-row"><a href="{{manageSubscriptionUrl}}" class="email-button">Bestellung verwalten</a></div></td></tr></table></td></tr>
+          <tr><td class="email-support-wrap"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" class="email-support">Fragen zu Bestellung, Lieferung oder Intervallen?<br />Schreib uns an <a href="mailto:{{supportEmail}}" class="email-support-link">{{supportEmail}}</a>.</td></tr></table></td></tr>
+        </table></td></tr>
+        <tr><td align="center" class="email-footer email-footer-wrap">ReStockOffice versendet diese E-Mail automatisch nach erfolgreicher Anlage deiner ReStockOrder.</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
