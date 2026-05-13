@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+    <head>
+        <style>
+            body { font-family: 'Arial', sans-serif; padding: 20px; }
+            .header { text-align: right; margin-bottom: 50px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border-bottom: 1px solid #ccc; padding: 8px; text-align: left; }
+        </style>
+        <title>Rechnung</title>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Rechnung Nr. {invoice.invoiceNumber}</h1>
+            <p>Datum: {invoice.issueDate}</p>
+        </div>
+
+        <h3>Empfänger:</h3>
+        <p>Name<br />
+            Straße<br />
+            PLZ Stadt</p>
+
+        <table>
+            <thead>
+            <tr>
+                <th>Position</th>
+                <th>Menge</th>
+                <th>Preis</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Artikelbeschreibung</td>
+                <td>Artikelmenge</td>
+                <td>Artikelpreis in €</td>
+            </tr>
+            </tbody>
+        </table>
+    </body>
+</html>
