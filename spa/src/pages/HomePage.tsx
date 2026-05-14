@@ -12,15 +12,6 @@ interface CategoryTile {
   count: number;
 }
 
-function rotateProducts(products: Product[], offset: number): Product[] {
-  if (products.length === 0) {
-    return [];
-  }
-
-  const normalizedOffset = offset % products.length;
-
-  return [...products.slice(normalizedOffset), ...products.slice(0, normalizedOffset)];
-}
 
 function createCategoryTiles(products: Product[]): CategoryTile[] {
   const groupedCategories = products.reduce<Record<string, number>>((accumulator, product) => {
@@ -51,7 +42,7 @@ export function HomePage() {
   }, []);
 
   const topCategories = createCategoryTiles(products);
-  const username = keycloak.tokenParsed?.preferred_username;
+  const firstName = keycloak.tokenParsed?.given_name ?? keycloak.tokenParsed?.preferred_username;
 
   const getRandomProducts = (products: Product[], max: number) =>
       [...products]
@@ -73,7 +64,7 @@ export function HomePage() {
         <div className="hero-copy">
           <h1>Alles für den Büroalltag an einem Ort</h1>
           <p>
-            Hallo {username}, lass uns direkt loslegen ...
+            Hallo {firstName}, lass uns direkt loslegen ...
           </p>
 
           <div className="hero-highlights" aria-label="Schnelle Übersicht">

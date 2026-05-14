@@ -7,6 +7,7 @@ import type {
   RestockOrderWithProduct,
 } from "../types/shop";
 import keycloak from "../auth/keycloak";
+import {useAuth} from "../auth/AuthProvider";
 
 interface OutletContext {
   isLoggedIn: boolean;
@@ -42,6 +43,7 @@ interface NotificationState {
 export function AccountPage() {
   const { isLoggedIn, onLogout, onSetTheme, theme } =
       useOutletContext<OutletContext>();
+  const { hasRole } = useAuth();
 
   const username =
       keycloak.tokenParsed?.preferred_username ?? "unbekannt";
@@ -66,6 +68,10 @@ export function AccountPage() {
     confirmations: true,
     reminders: true,
   });
+
+
+  // Boolean zum Überprüfen ob als Restocker eingeloggt oder nicht
+  const isRestocker = hasRole("Restocker");
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;

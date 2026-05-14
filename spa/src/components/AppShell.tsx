@@ -49,6 +49,7 @@ export function AppShell({ children }: AppShellProps) {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [isHeaderAssistOpen, setIsHeaderAssistOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const { hasRole } = useAuth();
   const [activeSubscriptionLayer, setActiveSubscriptionLayer] =
     useState<ActiveSubscriptionLayer>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -122,7 +123,7 @@ export function AppShell({ children }: AppShellProps) {
     return matchesText && matchesArticleType && matchesBrand;
   });
 
-  const isRestocker = keycloak.hasRealmRole("Restocker");
+  const isRestocker = hasRole("Restocker");
 
   function resetSubscriptionLayer() {
     setActiveSubscriptionLayer(null);
@@ -247,6 +248,7 @@ export function AppShell({ children }: AppShellProps) {
 
   const onSearchPage = location.pathname === "/products";
   const isDarkMode = theme === "dark";
+  const isHomeActive = isRestocker ? location.pathname === "/restocker" : location.pathname === "/home";
 
   function renderSearchControls(source: "header" | "page") {
     const isHeader = source === "header";
@@ -457,7 +459,7 @@ export function AppShell({ children }: AppShellProps) {
                 <>
                   {/* Startseite: Unterschiedliche Seiten für Customer bzw. Restocker  */}
                   <NavLink
-                      className="button button--ghost nav-btn"
+                      className={`button button--ghost nav-btn ${isHomeActive ? "active" : ""}`}
                       to={isRestocker ? "/restocker" : "/"}
                       title="Startseite"
                   >

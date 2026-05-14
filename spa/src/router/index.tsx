@@ -11,6 +11,8 @@ import { ProtectedRoute } from "../auth/ProtectedRoute";
 import { RestockerPage } from "../pages/restocker-view/RestockerPage";
 import { OrderPage} from "../pages/restocker-view/OrderPage";
 import { DeliveryPage } from "../pages/restocker-view/DeliveryPage";
+import {IndexPage} from "./IndexPage";
+
 
 export const router = createBrowserRouter([
   {
@@ -22,9 +24,9 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
+            <ProtectedRoute>
+              <IndexPage />
+            </ProtectedRoute>
         ),
       },
       {
@@ -42,6 +44,14 @@ export const router = createBrowserRouter([
       },
 
       // Customer spezifische Pages:
+      {
+        path: "home",
+        element: (
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+        ),
+      },
       {
         path: "products",
         element: (
