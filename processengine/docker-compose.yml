@@ -4,11 +4,33 @@ services:
     restart: unless-stopped
     environment:
       SERVER_FORWARD_HEADERS_STRATEGY: framework
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/processengine
+      SPRING_DATASOURCE_USERNAME: processengine
+      SPRING_DATASOURCE_PASSWORD: processengine
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
     ports:
       - "${PROCESSENGINE_HTTP_PORT:-8080}:8080"
     networks:
       - default
       - nginx-proxy-manager
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
+    container_name: restockoffice-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: processengine
+      POSTGRES_USER: processengine
+      POSTGRES_PASSWORD: processengine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - default
+
+volumes:
+  postgres_data:
 
 networks:
   nginx-proxy-manager:

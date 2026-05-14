@@ -1,4 +1,13 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/processengine}
+    username: ${SPRING_DATASOURCE_USERNAME:processengine}
+    password: ${SPRING_DATASOURCE_PASSWORD:processengine}
+    driver-class-name: org.postgresql.Driver
+
 camunda.bpm:
+  database:
+    schema-update: true
   history-level: audit
   authorization:
     enabled: false
