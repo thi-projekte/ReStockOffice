@@ -1,0 +1,34 @@
+services:
+
+  articles:
+    image: ghcr.io/thi-projekte/restockoffice-customers:latest
+    networks:
+      - nginx-proxy-manager
+      - customers-intern
+    environment:
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db-container:5432/customers_db
+      QUARKUS_DATASOURCE_USERNAME: reStockOffice
+      QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://localhost:8081/realms/quarkus
+    depends_on:
+      - db-container
+
+  db-container:
+    image: postgres:15
+    networks:
+      - customers-intern
+    environment:
+      POSTGRES_USER: reStockOffice
+      POSTGRES_PASSWORD: reStockOffice123$
+      POSTGRES_DB: customers_db
+
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+networks:
+  nginx-proxy-manager:
+    external: true
+  customers-intern:
+    driver: bridge
