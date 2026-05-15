@@ -51,7 +51,7 @@ https://users.restockoffice.de/users
 Um ein neues Profil in der Datenbank anzulegen, verwende Folgendes:
 
 **Methode:** ```POST``` <br>
-**Pfad:** ```shell script/user/create```
+**Pfad:** ```/user/create```
 
 ### Beispiel Body (JSON)
 
