@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - "orders-v*"
+      - "users-v*"
   workflow_dispatch:
 
 permissions:
@@ -28,13 +28,13 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        working-directory: orders
+        working-directory: users
         run: |
           chmod +x mvnw
           ./mvnw -B verify
 
       - name: Package native
-        working-directory: orders
+        working-directory: users
         run: |
           chmod +x mvnw
           ./mvnw -B package -Dnative -DskipTests
@@ -49,7 +49,7 @@ jobs:
       - name: Compute image tags
         id: image_tags
         run: |
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/restockoffice-orders"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/restockoffice-users"
           REF_NAME="${GITHUB_REF_NAME}"
           SAFE_REF=$(echo "${REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9._-]#-#g')
 
@@ -80,7 +80,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./orders
-          file: ./orders/src/main/docker/Dockerfile.native-micro
+          context: ./users
+          file: ./users/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
           tags: ${{ steps.image_tags.outputs.tags }}
