@@ -68,15 +68,30 @@
       <bpmn:incoming>Flow_0o9yyef</bpmn:incoming>
       <bpmn:outgoing>Flow_0qajena</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:serviceTask id="Activity_07g1dzi" name="In Bestell-übersicht ergänzen" camunda:expression="${true}">
+    <bpmn:serviceTask id="Activity_07g1dzi" name="In Bestell-übersicht ergänzen" camunda:delegateExpression="${true}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="Output_2lg5eql" />
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_0qajena</bpmn:incoming>
       <bpmn:outgoing>Flow_1o5opel</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_1tl4ojd" name="Bestellung persistieren" camunda:expression="${true}">
+    <bpmn:serviceTask id="Activity_1tl4ojd" name="Bestellung persistieren" camunda:delegateExpression="${ProcessOrderDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="orderID">${output.orderID}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1o5opel</bpmn:incoming>
       <bpmn:outgoing>Flow_1yi1f0x</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:serviceTask id="Activity_0pvn1x1" name="Bestell-bestätigung versenden" camunda:delegateExpression="${sendOrderConfirmationDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="orderID" />
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1yi1f0x</bpmn:incoming>
       <bpmn:outgoing>Flow_1qxfwa0</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -415,13 +430,13 @@
         <di:waypoint x="260" y="140" />
         <di:waypoint x="260" y="252" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1nr68ex_di" bpmnElement="Flow_1nr68ex">
+        <di:waypoint x="2270" y="632" />
+        <di:waypoint x="2270" y="268" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0v8e1x4_di" bpmnElement="Flow_0v8e1x4">
         <di:waypoint x="2770" y="232" />
         <di:waypoint x="2770" y="140" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1hlaneq_di" bpmnElement="Flow_1hlaneq">
-        <di:waypoint x="1510" y="278" />
-        <di:waypoint x="1510" y="632" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0efrvoi_di" bpmnElement="Flow_0efrvoi">
         <di:waypoint x="1980" y="460" />
@@ -430,9 +445,9 @@
           <dc:Bounds x="1983" y="533" width="26" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1nr68ex_di" bpmnElement="Flow_1nr68ex">
-        <di:waypoint x="2270" y="632" />
-        <di:waypoint x="2270" y="268" />
+      <bpmndi:BPMNEdge id="Flow_1hlaneq_di" bpmnElement="Flow_1hlaneq">
+        <di:waypoint x="1510" y="278" />
+        <di:waypoint x="1510" y="632" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
