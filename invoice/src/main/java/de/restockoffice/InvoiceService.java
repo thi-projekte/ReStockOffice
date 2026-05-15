@@ -19,6 +19,6 @@ public class InvoiceService {
         byte[] eBillingPdf = eBillingService.makeZUGFeRD(rawPdf, request);
 
         // Versenden der Mail
-        mailClient.sendInvoiceMail(request.recipientEmail(), eBillingPdf);
+        mailClient.sendInvoiceMail(request.recipientEmail(), eBillingPdf, request);
     }
 }

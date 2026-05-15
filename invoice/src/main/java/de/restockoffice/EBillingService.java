@@ -4,14 +4,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.mustangproject.Item;
 import org.mustangproject.Product;
 import org.mustangproject.TradeParty;
-import org.mustangproject.ZUGFeRD.IExportableTransaction;
-import org.mustangproject.ZUGFeRD.IZUGFeRDAllowanceCharge;
-import org.mustangproject.ZUGFeRD.IZUGFeRDExportableItem;
-import org.mustangproject.ZUGFeRD.IZUGFeRDExportableTradeParty;
-import org.mustangproject.ZUGFeRD.ZUGFeRDExporterFromA3;
+import org.mustangproject.ZUGFeRD.*;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -21,19 +16,25 @@ import java.util.Date;
 public class EBillingService {
 
     public byte[] makeZUGFeRD(byte[] pdf, InvoiceRequest request) {
-        try {
-            ZUGFeRDExporterFromA3 exporter = new ZUGFeRDExporterFromA3()
-                    .setProducer("ReStockOffice")
-                    .setCreator("ReStockOffice");
+        try{
+            ZUGFeRDExporterFromA3 exporter = new ZUGFeRDExporterFromA3();
 
             exporter.load(pdf);
+
+            exporter.setZUGFeRDVersion(2);
+
+            exporter.setProfile(Profiles.getByName("EN16931"));
+
+            exporter.setProducer("ReStockOffice")
+                    .setCreator("ReStockOffice");
+
             exporter.setTransaction(new InvoiceTransaction(request));
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             exporter.export(out);
             return out.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException("ZUGFeRD-Generierung fehlgeschlagen", e);
+        } catch (Exception e) {
+            throw new RuntimeException("ZUGFeRD-Generierung fehlgeschlagen: " + e.getMessage(), e);
         }
     }
 
@@ -53,7 +54,7 @@ public class EBillingService {
         @Override
         public Date getIssueDate() {
             try {
-                return new SimpleDateFormat("yyyy-MM-dd").parse(request.issueDate());
+                return new SimpleDateFormat("dd.MM.yyyy").parse(request.issueDate());
             } catch (ParseException e) {
                 return new Date();
             }
@@ -111,5 +112,7 @@ public class EBillingService {
         public String getPaymentTermDescription() {
             return "Zahlbar innerhalb von 14 Tagen ohne Abzug.";
         }
+
+        public String getCurrency() { return "EUR"; }
     }
 }
