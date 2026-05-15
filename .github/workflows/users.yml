@@ -57,6 +57,7 @@ jobs:
             {
               echo "tags<<EOF"
               echo "${IMAGE_NAME}:${REF_NAME}"
+              echo "${IMAGE_NAME}:latest"
               echo "${IMAGE_NAME}:${GITHUB_SHA}"
               echo "EOF"
             } >> "${GITHUB_OUTPUT}"
