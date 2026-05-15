@@ -2,6 +2,8 @@ package de.restockoffice;
 
 import io.smallrye.config.ConfigMapping;
 
+import java.util.Optional;
+
 @ConfigMapping(prefix = "restock.mail")
 public interface MailSettings {
 
@@ -13,7 +15,7 @@ public interface MailSettings {
 
     String logoUrl();
 
-    String resendApiKey();
+    Optional<String> resendApiKey();
 
     String resendBaseUrl();
 }

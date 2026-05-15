@@ -13,6 +13,7 @@ public class NotificationMailService {
 
     private static final String ORDER_TEMPLATE = "templates/order-confirmation.html";
     private static final String DELIVERY_TEMPLATE = "templates/delivery-announcement.html";
+    private static final String SUBSCRIPTION_URL = "https://app.restockoffice.de/subscription";
 
     @Inject
     TemplateService templateService;
@@ -27,7 +28,6 @@ public class NotificationMailService {
         validateOrderConfirmation(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("inlineStyles", templateService.loadStyles());
         values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
         values.put("customerName", escapeHtml(request.customerName()));
         values.put("orderNumber", escapeHtml(request.orderNumber()));
@@ -40,7 +40,7 @@ public class NotificationMailService {
         values.put("onSiteContact", escapeHtml(request.onSiteContact()));
         values.put("changeDeadline", escapeHtml(request.changeDeadline()));
         values.put("supportEmail", escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
-        values.put("manageSubscriptionUrl", escapeHtml(defaultIfBlank(request.manageSubscriptionUrl(), "#")));
+        values.put("manageSubscriptionUrl", SUBSCRIPTION_URL);
         values.put("orderItemsHtml", buildOrderItemsHtml(request.orderItems()));
 
         String subject = defaultIfBlank(request.subject(), "Deine ReStockOrder " + request.orderNumber() + " wurde bestätigt");
@@ -51,10 +51,10 @@ public class NotificationMailService {
         validateDeliveryAnnouncement(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("inlineStyles", templateService.loadStyles());
         values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
         values.put("customerName", escapeHtml(request.customerName()));
         values.put("daysUntilDelivery", escapeHtml(request.daysUntilDelivery()));
+        values.put("deliveryDay", escapeHtml(request.deliveryDay()));
         values.put("deliveryDate", escapeHtml(request.deliveryDate()));
         values.put("deliveryWindow", escapeHtml(request.deliveryWindow()));
         values.put("officeLocation", escapeHtml(request.officeLocation()));
@@ -90,25 +90,27 @@ public class NotificationMailService {
         for (int index = 0; index < items.size(); index++) {
             OrderItem item = Objects.requireNonNull(items.get(index), "orderItems contains null");
             boolean isLast = index == items.size() - 1;
-            html.append("<tr><td style=\"padding: 14px 0;");
+            html.append("<tr class=\"item-row\"><td class=\"item-main\" style=\"padding:14px 0;vertical-align:top;");
             if (!isLast) {
-                html.append(" border-bottom: 1px solid #e3ebe5;");
+                html.append("border-bottom:1px solid #e3ebe5;");
             }
             html.append("\">")
-                    .append("<div class=\"email-item-title\">").append(escapeHtml(item.name())).append("</div>")
-                    .append("<div class=\"email-item-copy\">Artikel-Nr. ")
+                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">").append(escapeHtml(item.name())).append("</div>")
+                    .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Artikel-Nr. ")
                     .append(escapeHtml(item.articleNumber()))
-                    .append(" - Intervall: ")
+                    .append("</div>")
+                    .append("<div style=\"font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Intervall: ")
                     .append(escapeHtml(item.intervalDescription()))
-                    .append(" - Nächste Lieferung: ")
+                    .append("</div>")
+                    .append("<div style=\"font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Nächste Lieferung: ")
                     .append(escapeHtml(item.nextDeliveryDate()))
-                    .append("</div></td><td align=\"right\" style=\"padding: 14px 0;");
+                    .append("</div></td><td align=\"right\" class=\"qty-cell\" style=\"width:98px;padding:14px 0 14px 16px;vertical-align:top;text-align:right;");
             if (!isLast) {
-                html.append(" border-bottom: 1px solid #e3ebe5;");
+                html.append("border-bottom:1px solid #e3ebe5;");
             }
-            html.append(" font-size: 15px; color: #1f2a2e;\">")
+            html.append("\"><span class=\"qty-text\" style=\"display:inline-block;color:#264037;font-weight:700;font-size:18px;line-height:1.3;white-space:nowrap;\">")
                     .append(escapeHtml(item.quantity()))
-                    .append("</td></tr>");
+                    .append("</span></td></tr>");
         }
         return html.toString();
     }
@@ -121,21 +123,21 @@ public class NotificationMailService {
         for (int index = 0; index < items.size(); index++) {
             DeliveryItem item = Objects.requireNonNull(items.get(index), "deliveryItems contains null");
             boolean isLast = index == items.size() - 1;
-            html.append("<tr><td style=\"padding: 14px 0;");
+            html.append("<tr class=\"item-row\"><td class=\"item-main\" style=\"padding:14px 0;vertical-align:top;");
             if (!isLast) {
-                html.append(" border-bottom: 1px solid #e3ebe5;");
+                html.append("border-bottom:1px solid #e3ebe5;");
             }
             html.append("\">")
-                    .append("<div class=\"email-item-title\">").append(escapeHtml(item.name())).append("</div>")
-                    .append("<div class=\"email-item-copy\">Artikel-Nr. ")
+                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">").append(escapeHtml(item.name())).append("</div>")
+                    .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Artikel-Nr. ")
                     .append(escapeHtml(item.articleNumber()))
-                    .append("</div></td><td align=\"right\" style=\"padding: 14px 0;");
+                    .append("</div></td><td align=\"right\" class=\"qty-cell\" style=\"width:98px;padding:14px 0 14px 16px;vertical-align:top;text-align:right;");
             if (!isLast) {
-                html.append(" border-bottom: 1px solid #e3ebe5;");
+                html.append("border-bottom:1px solid #e3ebe5;");
             }
-            html.append(" font-size: 15px; color: #1f2a2e;\">")
+            html.append("\"><span class=\"qty-text\" style=\"display:inline-block;color:#264037;font-weight:700;font-size:18px;line-height:1.3;white-space:nowrap;\">")
                     .append(escapeHtml(item.quantity()))
-                    .append("</td></tr>");
+                    .append("</span></td></tr>");
         }
         return html.toString();
     }
@@ -160,6 +162,7 @@ public class NotificationMailService {
         requireNotBlank(request.recipientEmail(), "recipientEmail");
         requireNotBlank(request.customerName(), "customerName");
         requireNotBlank(request.daysUntilDelivery(), "daysUntilDelivery");
+        requireNotBlank(request.deliveryDay(), "deliveryDay");
         requireNotBlank(request.deliveryDate(), "deliveryDate");
         requireNotBlank(request.deliveryWindow(), "deliveryWindow");
         requireNotBlank(request.officeLocation(), "officeLocation");

@@ -6,6 +6,7 @@ public record DeliveryAnnouncementRequest(
         String recipientEmail,
         String customerName,
         String daysUntilDelivery,
+        String deliveryDay,
         String deliveryDate,
         String deliveryWindow,
         String officeLocation,

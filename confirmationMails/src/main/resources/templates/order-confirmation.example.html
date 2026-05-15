@@ -3,141 +3,115 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ReStockOffice Bestellbestaetigung Beispiel</title>
-  <meta name="color-scheme" content="light" />
-  <meta name="supported-color-schemes" content="light" />
-  <link rel="stylesheet" href="./email.css" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="supported-color-schemes" content="light dark" />
+  <title>ReStockOffice Abonnement-Bestätigung Beispiel</title>
+  <style>
+    body { margin:0; padding:0; background:#edf4ef; }
+    table { border-spacing:0; border-collapse:separate; mso-table-lspace:0; mso-table-rspace:0; }
+    td { padding:0; }
+    img { border:0; display:block; max-width:100%; height:auto; }
+    .preheader { display:none !important; visibility:hidden; opacity:0; color:transparent; height:0; width:0; overflow:hidden; mso-hide:all; }
+    @media only screen and (max-width:620px) {
+      .shell { width:100% !important; }
+      .pad-x { padding-left:14px !important; padding-right:14px !important; }
+      .hero-pad { padding:24px 18px !important; }
+      .hero-title { font-size:30px !important; line-height:1.12 !important; }
+      .section-title { font-size:26px !important; }
+      .body-copy { font-size:15px !important; line-height:1.65 !important; }
+      .metric { font-size:28px !important; }
+      .logo { height:40px !important; max-width:150px !important; }
+      tr.item-row { display:block !important; width:100% !important; }
+      td.item-main,
+      td.qty-cell { display:block !important; width:100% !important; box-sizing:border-box !important; }
+      td.item-main { padding-bottom:0 !important; }
+      td.item-main { border-bottom:none !important; }
+      .qty-cell { text-align:left !important; padding:8px 0 0 0 !important; }
+      .button { display:block !important; width:100% !important; box-sizing:border-box !important; text-align:center !important; }
+    }
+    @media (prefers-color-scheme: dark) {
+      body, .page-bg { background:#111513 !important; }
+      .card, .subcard { background:#18201c !important; border-color:#2d3833 !important; }
+      .headline, .strong, .metric, .qty-text, .badge-text { color:#ffffff !important; }
+      .copy, .support-copy, .footer-copy { color:#d7e2dc !important; }
+      .kicker, .footer-muted { color:#98a9a1 !important; }
+      .button-dark { background:#0d1512 !important; color:#ffffff !important; }
+      .hero-surface, .cta-surface { background-color:#2f5f54 !important; }
+    }
+  </style>
 </head>
-<body class="email-body">
-  <div class="email-preheader">Deine ReStockOrder wurde bestaetigt. Hier findest du Bestellung, Lieferort, Intervalle und Aenderungsfrist.</div>
-
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-page">
-    <tr>
-      <td align="center" class="email-page-padding">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-shell">
-          <tr>
-            <td class="email-header-spacing">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-header-card">
-                <tr>
-                  <td class="email-header-inner">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                      <tr>
-                        <td valign="middle"><img src="../../../../../frontend/src/assets/logos/logo_colored.png" alt="ReStockOffice" class="email-logo" /></td>
-                        <td align="right" valign="middle"><span class="email-badge">Bestellung bestaetigt</span></td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-main-card">
-                <tr>
-                  <td class="email-hero email-hero-padding">
-                    <div class="email-eyebrow">Bestellbestaetigung</div>
-                    <div class="email-hero-title">Deine ReStockOrder ist erfolgreich eingegangen.</div>
-                    <div class="email-hero-copy">Hallo Max Mustermann, wir haben deine Bestellung angelegt. Unten findest du alle wichtigen Angaben zu Bestellung, Lieferort, Lieferintervallen und Aenderungsmoeglichkeiten.</div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td class="email-summary-row">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                      <tr>
-                        <td width="50%" valign="top" class="email-col-left">
-                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-summary-card">
-                            <tr><td class="email-summary-inner"><div class="email-kicker">Bestellnummer</div><div class="email-metric">RSO-2026-004281</div></td></tr>
-                          </table>
-                        </td>
-                        <td width="50%" valign="top" class="email-col-right">
-                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-summary-card">
-                            <tr><td class="email-summary-inner"><div class="email-kicker">Aenderbar bis</div><div class="email-metric">02.05.2026, 12:00 Uhr</div></td></tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td class="email-section-wrap">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-section-card">
-                      <tr>
-                        <td class="email-section-head">
-                          <div class="email-section-title">Bestelldetails</div>
-                          <div class="email-section-copy">Hier siehst du auf einen Blick, wohin geliefert wird und in welchem Rhythmus die einzelnen Artikel kuenftig geliefert werden.</div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="email-soft-row">
-                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card">
-                            <tr><td class="email-soft-inner"><div class="email-kicker">Bestelldaten</div><div class="email-copy"><span class="email-info-strong">Bestellt am:</span> 29.04.2026, 10:42 Uhr<br /><span class="email-info-strong">Ausgeloest von:</span> Max Mustermann (Einkauf, Team Operations)<br /><span class="email-info-strong">Buerostandort:</span> HQ Ingolstadt</div></td></tr>
-                          </table>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="email-soft-row">
-                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card">
-                            <tr><td class="email-soft-inner"><div class="email-kicker">Lieferung</div><div class="email-copy"><span class="email-info-strong">Standard-Lieferfenster:</span> 08:30 bis 10:00 Uhr<br /><span class="email-info-strong">Empfang am Platz:</span> Arbeitsplatz B-3-17, Bereich Einkauf<br /><span class="email-info-strong">Kontakt vor Ort:</span> Max Mustermann, DW 214</div></td></tr>
-                          </table>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="email-soft-row-loose">
-                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card">
-                            <tr><td class="email-soft-inner"><div class="email-kicker">Lieferadresse</div><div class="email-copy email-preline">ReStockOffice GmbH
-3. OG, Office West
-Musterstrasse 100
-85049 Ingolstadt</div></td></tr>
-                          </table>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="email-soft-row-loose">
-                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-soft-card">
-                            <tr><td class="email-soft-inner-tight"><div class="email-heading-inline">Was passiert als Naechstes?</div><div class="email-copy-tight">1. Deine Bestellung wird nun verarbeitet.<br />2. Jeder Artikel wird gemaess dem hinterlegten Intervall geliefert.<br />3. Zwei Tage vor einer anstehenden Lieferung erhaeltst du eine separate Benachrichtigung.<br />4. Aenderungen an Menge, Intervall oder Lieferort sind bis 02.05.2026, 12:00 Uhr moeglich.</div></td></tr>
-                          </table>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="email-soft-row-end">
-                          <div class="email-table-heading">Bestellpositionen mit Lieferintervallen</div>
-                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                            <tr><td style="padding:14px 0; border-bottom:1px solid #e3ebe5;"><div class="email-item-title">Kopierpapier A4 Premium</div><div class="email-item-copy">Artikel-Nr. RS-10023 - Intervall: Montag alle 2 Wochen - Naechste Lieferung: 04.05.2026</div></td><td align="right" style="padding:14px 0; border-bottom:1px solid #e3ebe5;">4 Pack</td></tr>
-                            <tr><td style="padding:14px 0; border-bottom:1px solid #e3ebe5;"><div class="email-item-title">Kaffee Crema Office Blend</div><div class="email-item-copy">Artikel-Nr. RS-20411 - Intervall: Montag woechentlich - Naechste Lieferung: 04.05.2026</div></td><td align="right" style="padding:14px 0; border-bottom:1px solid #e3ebe5;">2 Kartons</td></tr>
-                            <tr><td style="padding:14px 0; border-bottom:1px solid #e3ebe5;"><div class="email-item-title">Whiteboard Marker Set</div><div class="email-item-copy">Artikel-Nr. RS-33108 - Intervall: Montag monatlich - Naechste Lieferung: 18.05.2026</div></td><td align="right" style="padding:14px 0; border-bottom:1px solid #e3ebe5;">1 Set</td></tr>
-                            <tr><td style="padding:14px 0;"><div class="email-item-title">Haferdrink Barista 1L</div><div class="email-item-copy">Artikel-Nr. RS-41277 - Intervall: Montag alle 3 Wochen - Naechste Lieferung: 11.05.2026</div></td><td align="right" style="padding:14px 0;">12 Stk</td></tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td class="email-cta-wrap">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="email-cta-card">
-                      <tr><td align="center" class="email-cta-inner"><div class="email-cta-title">Bestellung pruefen oder anpassen</div><div class="email-cta-copy">Ueber den Button kannst du deine ReStockOrder einsehen, aendern oder einzelne Intervalle pruefen.</div><div class="email-cta-button-row"><a href="https://restockoffice.example.com/account/orders/RSO-2026-004281" class="email-button">Bestellung verwalten</a></div></td></tr>
-                    </table>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td class="email-support-wrap">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" class="email-support">Fragen zu Bestellung, Lieferung oder Intervallen?<br />Schreib uns an <a href="mailto:support@restockoffice.de" class="email-support-link">support@restockoffice.de</a>.</td></tr></table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <tr><td align="center" class="email-footer email-footer-wrap">ReStockOffice versendet diese E-Mail automatisch nach erfolgreicher Anlage deiner ReStockOrder.</td></tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+<body style="margin:0; padding:0; background:#edf4ef; font-family:'IBM Plex Sans Condensed', Arial, sans-serif; color:#1f2a2e;">
+<div class="preheader">Dein Abonnement wurde bestätigt. Hier findest du Produkte, Lieferort und Intervalle.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; background:#edf4ef;" class="page-bg">
+  <tr>
+    <td align="center" style="padding:24px 10px;">
+      <table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:680px;" class="shell">
+        <tr>
+          <td style="padding-bottom:12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fbf8; border:1px solid #dbe5de; border-radius:24px;" class="card">
+              <tr>
+                <td style="padding:18px 20px;" class="pad-x">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td valign="middle"><img src="../../../../../frontend/src/assets/logos/logo_colored.png" alt="ReStockOffice" style="display:block; width:auto; height:48px; max-width:170px;" class="logo" /></td>
+                      <td valign="middle" align="right" style="text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:8px 14px; border-radius:999px; background:#294f45; color:#f3fbf7; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;" class="badge-text">Abonnement bestätigt</span></td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-bottom:12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border:1px solid #dbe5de; border-radius:24px; overflow:hidden;" class="card">
+              <tr>
+                <td style="padding:30px 24px; background-color:#4f9483;" class="hero-pad hero-surface">
+                  <div style="font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#d9f1e8;">Abonnement-Bestätigung</div>
+                  <div style="padding-top:10px; font-size:44px; line-height:1.04; font-weight:700; color:#ffffff;" class="hero-title">Dein Abonnement ist erfolgreich eingegangen.</div>
+                  <div style="padding-top:14px; max-width:540px; font-size:17px; line-height:1.65; color:#eff8f4;" class="body-copy">Hallo Max Mustermann, wir haben deine ReStockOrders angelegt. Unten findest du alle wichtigen Angaben zu den abonnierten Produkten, Lieferort und Lieferintervallen.</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-bottom:12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef5ef; border:1px solid #dfe9e1; border-radius:22px;" class="subcard">
+              <tr><td style="padding:18px 20px;" class="pad-x"><div style="font-size:12px; color:#6b7c75; text-transform:uppercase; letter-spacing:.08em; font-weight:700;" class="kicker">Abonnement-Nummer</div><div style="padding-top:8px; font-size:34px; line-height:1.1; font-weight:700; color:#264037;" class="metric strong">RSO-2026-004281</div></td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-bottom:12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border:1px solid #dfe9e1; border-radius:24px;" class="card">
+              <tr><td style="padding:24px 24px 12px;" class="pad-x"><div style="font-size:30px; font-weight:700; color:#264037;" class="section-title headline">Abonnement-Details</div><div style="padding-top:8px; font-size:15px; line-height:1.65; color:#51655e;" class="body-copy copy">Hier siehst du auf einen Blick, wohin geliefert wird und in welchem Rhythmus die einzelnen Artikel geliefert werden.</div></td></tr>
+              <tr><td style="padding:0 24px 14px;" class="pad-x"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f7f2; border:1px solid #dfe9e1; border-radius:18px;" class="subcard"><tr><td style="padding:18px;"><div style="font-size:12px; color:#6b7c75; text-transform:uppercase; letter-spacing:.08em; font-weight:700;" class="kicker">Abonnement-Daten</div><div style="padding-top:10px; font-size:15px; line-height:1.75; color:#445851;" class="copy"><span style="font-weight:700; color:#264037;" class="strong">Bestellt am:</span> 29.04.2026, 10:42 Uhr<br /><span style="font-weight:700; color:#264037;" class="strong">Ausgelöst von:</span> Max Mustermann (Einkauf, Team Operations)<br /><span style="font-weight:700; color:#264037;" class="strong">Bürostandort:</span> HQ Ingolstadt</div></td></tr></table></td></tr>
+              <tr><td style="padding:0 24px 14px;" class="pad-x"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f7f2; border:1px solid #dfe9e1; border-radius:18px;" class="subcard"><tr><td style="padding:18px;"><div style="font-size:12px; color:#6b7c75; text-transform:uppercase; letter-spacing:.08em; font-weight:700;" class="kicker">Lieferung</div><div style="padding-top:10px; font-size:15px; line-height:1.75; color:#445851;" class="copy"><span style="font-weight:700; color:#264037;" class="strong">Bevorzugter Liefertermin:</span> 08:30 bis 10:00 Uhr<br /><span style="font-weight:700; color:#264037;" class="strong">Lieferadresse:</span> 3. OG, Office West<br /><span style="font-weight:700; color:#264037;" class="strong">Empfang am Platz:</span> Arbeitsplatz B-3-17<br /><span style="font-weight:700; color:#264037;" class="strong">Kontakt vor Ort:</span> Max Mustermann, DW 214</div></td></tr></table></td></tr>
+              <tr><td style="padding:0 24px 18px;" class="pad-x"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f7f2; border:1px solid #dfe9e1; border-radius:18px;" class="subcard"><tr><td style="padding:18px;"><div style="font-size:12px; color:#6b7c75; text-transform:uppercase; letter-spacing:.08em; font-weight:700;" class="kicker">Was passiert als Nächstes?</div><div style="padding-top:10px; font-size:15px; line-height:1.75; color:#445851;" class="copy"><span style="font-weight:700; color:#264037;" class="strong">1.</span> Dein Abonnement wird nun verarbeitet.<br /><span style="font-weight:700; color:#264037;" class="strong">2.</span> Jeder Artikel wird gemäß dem hinterlegten Intervall geliefert.<br /><span style="font-weight:700; color:#264037;" class="strong">3.</span> Zwei Tage vor deiner anstehenden Lieferung erhältst du eine separate Benachrichtigung.</div></td></tr></table></td></tr>
+              <tr><td style="padding:0 24px 24px;" class="pad-x"><div style="padding-bottom:12px; font-size:12px; color:#6b7c75; text-transform:uppercase; letter-spacing:.09em; font-weight:700;" class="kicker">Deine Artikel</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr class="item-row"><td class="item-main" style="padding:14px 0; vertical-align:top; border-bottom:1px solid #e3ebe5;"><div style="font-size:22px; line-height:1.2; font-weight:700; color:#264037;">Kopierpapier A4 Premium</div><div style="padding-top:8px; font-size:14px; line-height:1.55; color:#5f726b;">Artikel-Nr. RS-10023</div><div style="font-size:14px; line-height:1.55; color:#5f726b;">Intervall: 2 Wochen</div><div style="font-size:14px; line-height:1.55; color:#5f726b;">Nächste Lieferung: 04.05.2026</div></td><td align="right" style="width:98px; padding:14px 0 14px 16px; vertical-align:top; text-align:right; border-bottom:1px solid #e3ebe5;" class="qty-cell"><span style="display:inline-block; color:#264037; font-weight:700; font-size:18px; line-height:1.3; white-space:nowrap;" class="qty-text">4 Pack</span></td></tr><tr class="item-row"><td class="item-main" style="padding:14px 0; vertical-align:top; border-bottom:1px solid #e3ebe5;"><div style="font-size:22px; line-height:1.2; font-weight:700; color:#264037;">Kaffee Crema Office Blend</div><div style="padding-top:8px; font-size:14px; line-height:1.55; color:#5f726b;">Artikel-Nr. RS-20411</div><div style="font-size:14px; line-height:1.55; color:#5f726b;">Intervall: 1 Woche</div><div style="font-size:14px; line-height:1.55; color:#5f726b;">Nächste Lieferung: 04.05.2026</div></td><td align="right" style="width:98px; padding:14px 0 14px 16px; vertical-align:top; text-align:right; border-bottom:1px solid #e3ebe5;" class="qty-cell"><span style="display:inline-block; color:#264037; font-weight:700; font-size:18px; line-height:1.3; white-space:nowrap;" class="qty-text">2 Kartons</span></td></tr><tr class="item-row"><td class="item-main" style="padding:14px 0; vertical-align:top; border-bottom:1px solid #e3ebe5;"><div style="font-size:22px; line-height:1.2; font-weight:700; color:#264037;">Whiteboard Marker Set</div><div style="padding-top:8px; font-size:14px; line-height:1.55; color:#5f726b;">Artikel-Nr. RS-33108</div><div style="font-size:14px; line-height:1.55; color:#5f726b;">Intervall: 4 Wochen</div><div style="font-size:14px; line-height:1.55; color:#5f726b;">Nächste Lieferung: 18.05.2026</div></td><td align="right" style="width:98px; padding:14px 0 14px 16px; vertical-align:top; text-align:right; border-bottom:1px solid #e3ebe5;" class="qty-cell"><span style="display:inline-block; color:#264037; font-weight:700; font-size:18px; line-height:1.3; white-space:nowrap;" class="qty-text">1 Set</span></td></tr><tr class="item-row"><td class="item-main" style="padding:14px 0; vertical-align:top;"><div style="font-size:22px; line-height:1.2; font-weight:700; color:#264037;">Haferdrink Barista 1L</div><div style="padding-top:8px; font-size:14px; line-height:1.55; color:#5f726b;">Artikel-Nr. RS-41277</div><div style="font-size:14px; line-height:1.55; color:#5f726b;">Intervall: 3 Wochen</div><div style="font-size:14px; line-height:1.55; color:#5f726b;">Nächste Lieferung: 11.05.2026</div></td><td align="right" style="width:98px; padding:14px 0 14px 16px; vertical-align:top; text-align:right;" class="qty-cell"><span style="display:inline-block; color:#264037; font-weight:700; font-size:18px; line-height:1.3; white-space:nowrap;" class="qty-text">12 Stk</span></td></tr></table></td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-bottom:12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#4f9483; border-radius:24px;" class="card cta-surface">
+              <tr><td style="padding:24px 24px 26px; text-align:center;" class="pad-x"><div style="font-size:32px; line-height:1.12; font-weight:700; color:#ffffff;" class="section-title">Abonnement prüfen oder anpassen</div><div style="padding-top:10px; font-size:15px; line-height:1.65; color:#edf8f4;" class="body-copy">Hier kannst du dein Abonnement einsehen, ändern oder einzelne Intervalle prüfen.</div><div style="padding-top:18px;"><a href="https://app.restockoffice.de/subscription" style="display:inline-block; padding:14px 28px; border-radius:999px; background:#15201b; color:#ffffff !important; text-decoration:none !important; font-size:16px; font-weight:700;" class="button button-dark">Abonnement verwalten</a></div></td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-bottom:8px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border:1px solid #dbe5de; border-radius:20px;" class="card">
+              <tr><td style="padding:22px 22px 24px; text-align:center; font-size:15px; line-height:1.7; color:#445851;" class="support-copy">Fragen zu Abonnement, Lieferung oder Intervallen?<br />Schreib uns an <a href="mailto:support@restockoffice.de" style="color:#3b6b61; font-weight:700; text-decoration:none;">support@restockoffice.de</a>.</td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr><td style="padding:6px 20px 0; font-size:12px; line-height:1.65; color:#7a8a83; text-align:center;" class="footer-copy footer-muted">ReStockOffice versendet diese E-Mail automatisch nach erfolgreichem Eingang deiner ReStockOrder.</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 </body>
 </html>
