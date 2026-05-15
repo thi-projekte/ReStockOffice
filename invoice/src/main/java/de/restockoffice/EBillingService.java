@@ -6,11 +6,14 @@ import org.mustangproject.Product;
 import org.mustangproject.TradeParty;
 import org.mustangproject.ZUGFeRD.*;
 
+import org.mustangproject.ZUGFeRD.PDFAConformanceLevel;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EBillingService {
@@ -20,6 +23,8 @@ public class EBillingService {
             ZUGFeRDExporterFromA3 exporter = new ZUGFeRDExporterFromA3();
 
             exporter.load(pdf);
+
+            exporter.setConformanceLevel(PDFAConformanceLevel.UNICODE);
 
             exporter.setZUGFeRDVersion(2);
 
@@ -53,6 +58,7 @@ public class EBillingService {
 
         @Override
         public Date getIssueDate() {
+
             try {
                 return new SimpleDateFormat("dd.MM.yyyy").parse(request.issueDate());
             } catch (ParseException e) {
@@ -72,7 +78,14 @@ public class EBillingService {
 
         @Override
         public IZUGFeRDExportableTradeParty getSender() {
-            return new TradeParty("ReStockOffice GmbH", "Musterstraße 1", "80333", "München", "DE");
+            TradeParty sender = new TradeParty("RestockOffice GmbH", "Musterstraße 1", "80333", "München", "DE");
+            sender.addVATID("DE123456789");
+            sender.addTaxID("115/123/45678");
+            sender.setID("HRB 123456");
+
+            sender.setID("HRB 123456");
+
+            return sender;
         }
 
         @Override
@@ -88,9 +101,19 @@ public class EBillingService {
 
         @Override
         public IZUGFeRDExportableItem[] getZFItems() {
-            Product product = new Product("Monatliche Büronutzung", "", "C62", new BigDecimal("19"));
-            Item item = new Item(product, request.netAmount(), BigDecimal.ONE);
-            return new IZUGFeRDExportableItem[]{item};
+            List<IZUGFeRDExportableItem> zfItems = request.orderItems().stream()
+                    .map(orderItem -> {
+                        String description = (orderItem.description() == null || orderItem.description().isBlank())
+                                ? "Position" : orderItem.description();
+
+                        Product product = new Product(description, "", "C62", new BigDecimal("19"));
+
+                        Item item = new Item(product, orderItem.price(), orderItem.quantity());
+                        return (IZUGFeRDExportableItem) item;
+                    })
+                    .collect(Collectors.toList());
+
+            return zfItems.toArray(new IZUGFeRDExportableItem[0]);
         }
 
         @Override
