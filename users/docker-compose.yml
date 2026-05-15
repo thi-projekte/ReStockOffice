@@ -1,6 +1,6 @@
 services:
 
-  articles:
+  users:
     image: ghcr.io/thi-projekte/restockoffice-users:latest
     networks:
       - nginx-proxy-manager
