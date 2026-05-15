@@ -33,3 +33,6 @@ Keycloak:
   - email*: string
   - password*: string
   - roles*: array of string
+
+## To-Do
+- Keycloak client in application properties
