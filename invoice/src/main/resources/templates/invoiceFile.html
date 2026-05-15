@@ -1,40 +1,211 @@
-<!DOCTYPE html>
-<html lang="de">
-    <head>
-        <style>
-            body { font-family: 'Arial', sans-serif; padding: 20px; }
-            .header { text-align: right; margin-bottom: 50px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border-bottom: 1px solid #ccc; padding: 8px; text-align: left; }
-        </style>
-        <title>Rechnung</title>
-    </head>
-    <body>
-        <div class="header">
-            <h1>Rechnung Nr. {invoice.invoiceNumber}</h1>
-            <p>Datum: {invoice.issueDate}</p>
-        </div>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Rechnung {invoice.invoiceNumber}</title>
+    <style type="text/css">
+        @page {
+            size: A4;
+            margin: 20mm 15mm 45mm 15mm;
+            @bottom-center { content: element(footer); }
+        }
 
-        <h3>Empfänger:</h3>
-        <p>Name<br />
-            Straße<br />
-            PLZ Stadt</p>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 10pt;
+            color: #1f2a2e;
+            line-height: 1.5;
+            margin: 0;
+            background-color: #ffffff;
+        }
 
-        <table>
-            <thead>
-            <tr>
-                <th>Position</th>
-                <th>Menge</th>
-                <th>Preis</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>Artikelbeschreibung</td>
-                <td>Artikelmenge</td>
-                <td>Artikelpreis in €</td>
-            </tr>
-            </tbody>
-        </table>
-    </body>
+        .text-right { text-align: right; }
+        .text-bold { font-weight: bold; }
+        .primary-color { color: #3b6b61; }
+
+        /* Kopfzeile: Logo links, Firmendaten rechts oben */
+        #header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20mm;
+        }
+        .logo { height: 50px; }
+        .header-company-data {
+            text-align: right;
+            font-size: 8pt;
+            color: #264037;
+            vertical-align: top;
+            line-height: 1.3;
+        }
+
+        /* Adressbereich nach DIN-Standard */
+        #address-block { width: 100%; border-collapse: collapse; margin-bottom: 25mm; }
+        .sender-line {
+            font-size: 7pt;
+            color: #3b6b61;
+            border-bottom: 0.5pt solid #66bda4;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+        .recipient { vertical-align: top; width: 60%; }
+        .invoice-meta { vertical-align: top; text-align: right; }
+        .invoice-title {
+            font-size: 22pt;
+            font-weight: bold;
+            color: #264037;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Artikeltabelle: Sehr dezent und professionell */
+        #items-table { width: 100%; border-collapse: collapse; margin-top: 5mm; }
+        #items-table th {
+            border-top: 1.5pt solid #3b6b61;
+            border-bottom: 1.5pt solid #3b6b61;
+            padding: 10px 5px;
+            text-align: left;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            color: #3b6b61;
+        }
+        #items-table td { padding: 10px 5px; border-bottom: 0.5pt solid #e6e6e6; }
+
+        /* Summenblock */
+        .totals-container { width: 100%; margin-top: 15px; }
+        .totals-table { width: 35%; margin-left: 65%; border-collapse: collapse; }
+        .totals-table td { padding: 5px; }
+        .grand-total {
+            border-top: 1pt solid #264037;
+            font-weight: bold;
+            font-size: 11pt;
+            color: #1f2a2e;
+        }
+
+        /* Fußzeile: Fest am Seitenende fixiert */
+        div.footer {
+            display: block;
+            position: running(footer);
+            width: 100%;
+            border-top: 1pt solid #e6e6e6;
+            padding-top: 15px;
+            font-size: 8pt;
+            color: #264037;
+        }
+        .footer-table { width: 100%; border-collapse: collapse; }
+        .footer-table td { width: 33.3%; vertical-align: top; }
+        .footer-label { font-weight: bold; color: #3b6b61; margin-bottom: 2px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="footer">
+    <table class="footer-table">
+        <tr>
+            <td>
+                <span class="footer-label">Sitz der Gesellschaft</span>
+                RestockOffice GmbH<br/>
+                Esplanade 10<br/>
+                80333 München
+            </td>
+            <td>
+                <span class="footer-label">Kontakt</span>
+                E-Mail: support@restockoffice.de<br/>
+                Web: www.restockoffice.de
+            </td>
+            <td>
+                <span class="footer-label">Bankverbindung</span>
+                Sparkasse Ingolstadt<br/>
+                IBAN: DE89 1234 5678 9012 3456 78
+            </td>
+        </tr>
+    </table>
+</div>
+
+<table id="header-table">
+    <tr>
+        <td>
+            <img src="{logoUrl}" class="logo" alt="Logo" />
+        </td>
+        <td class="header-company-data">
+            <strong>RestockOffice GmbH</strong><br/>
+            Esplanade 10 | 85049 Ingolstadt<br/>
+            Geschäftsführer: Max Mustermann<br/>
+            HRB 123456, München
+        </td>
+    </tr>
+</table>
+
+<table id="address-block">
+    <tr>
+        <td class="recipient">
+            <div class="sender-line">RestockOffice GmbH | Esplanade 10 | 85049 Ingolstadt</div>
+            <div style="margin-top: 15px;">
+                <strong>{invoice.recipientName}</strong><br/>
+                {invoice.recipientStreet}<br/>
+                {invoice.recipientZip} {invoice.recipientCity}<br/>
+                Deutschland
+            </div>
+        </td>
+        <td class="invoice-meta">
+            <div class="invoice-title">Rechnung</div>
+            <table align="right">
+                <tr>
+                    <td class="text-bold" style="padding-right: 10px;">Rechnungs-Nr:</td>
+                    <td>{invoice.invoiceNumber}</td>
+                </tr>
+                <tr>
+                    <td class="text-bold" style="padding-right: 10px;">Rechnungsdatum:</td>
+                    <td>{invoice.issueDate}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+<table id="items-table">
+    <thead>
+    <tr>
+        <th style="width: 40px;">Pos</th>
+        <th>Beschreibung</th>
+        <th class="text-right" style="width: 60px;">Menge</th>
+        <th class="text-right" style="width: 100px;">Einzelpreis</th>
+        <th class="text-right" style="width: 100px;">Gesamtpreis</th>
+    </tr>
+    </thead>
+    <tbody>
+    {#for item in invoice.orderItems}
+    <tr>
+        <td>{item_count}</td>
+        <td class="text-bold">{item.description}</td>
+        <td class="text-right">{item.quantity}</td>
+        <td class="text-right">{item.price} €</td>
+        <td class="text-right">{item.total} €</td>
+    </tr>
+    {/for}
+    </tbody>
+</table>
+
+<div class="totals-container">
+    <table class="totals-table">
+        <tr>
+            <td>Netto Gesamt:</td>
+            <td class="text-right">{invoice.netAmount} €</td>
+        </tr>
+        <tr>
+            <td>USt. 19%:</td>
+            <td class="text-right">{invoice.taxAmount} €</td>
+        </tr>
+        <tr class="grand-total">
+            <td>Gesamtbetrag:</td>
+            <td class="text-right">{invoice.grossAmount} €</td>
+        </tr>
+    </table>
+</div>
+
+<div style="margin-top: 25mm;">
+    <p>Wir bedanken uns für den Auftrag! Bitte überweisen Sie den Betrag innerhalb von 14 Tagen auf das unten angegebene Konto.</p>
+    <p>Freundliche Grüße,<br/><strong>Ihr Team von RestockOffice</strong></p>
+</div>
+
+</body>
 </html>
