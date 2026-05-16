@@ -3,6 +3,8 @@ package de.restockoffice;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.io.IOException;
+
 @ApplicationScoped
 public class InvoiceService {
 
@@ -11,7 +13,7 @@ public class InvoiceService {
     @Inject EBillingService eBillingService;
     @Inject ResendMailClient mailClient;
 
-    public void processInvoice(InvoiceRequest request){
+    public void processInvoice(InvoiceRequest request) throws IOException {
         // PDF Generieren
         byte[] rawPdf = pdfGenerator.createPDF(request);
 

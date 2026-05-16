@@ -20,7 +20,7 @@ public class EBillingService {
 
     public byte[] makeZUGFeRD(byte[] pdf, InvoiceRequest request) {
         try{
-            ZUGFeRDExporterFromA3 exporter = new ZUGFeRDExporterFromA3();
+            ZUGFeRDExporterFromPDFA exporter = new ZUGFeRDExporterFromPDFA();
 
             exporter.load(pdf);
 

@@ -10,6 +10,8 @@ import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 @Path("/emails")
 @Consumes(MediaType.APPLICATION_JSON)
 public class InvoiceResource {
@@ -21,7 +23,7 @@ public class InvoiceResource {
     @POST
     @Path("/invoice")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response sendInvoice(InvoiceRequest request){
+    public Response sendInvoice(InvoiceRequest request) throws IOException {
         log.info("Sending invoice-mail to {}", request.recipientEmail());
         invoiceService.processInvoice(request);
 

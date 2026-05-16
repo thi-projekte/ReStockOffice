@@ -16,7 +16,7 @@
         <quarkus.platform.version>3.15.1</quarkus.platform.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
-        <openhtml.version>1.0.10</openhtml.version>
+        <openhtml.version>1.1.37</openhtml.version>
     </properties>
 
     <dependencyManagement>
@@ -65,24 +65,31 @@
         <dependency>
             <groupId>org.mustangproject</groupId>
             <artifactId>library</artifactId>
-            <version>2.0.0</version>
+            <version>2.14.0</version>
         </dependency>
         <dependency>
             <groupId>io.quarkiverse.qute.web</groupId>
             <artifactId>quarkus-qute-web</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>com.openhtmltopdf</groupId>
+            <groupId>org.dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+            <version>2.1.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.openhtmltopdf</groupId>
             <artifactId>openhtmltopdf-core</artifactId>
             <version>${openhtml.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.openhtmltopdf</groupId>
+            <groupId>io.github.openhtmltopdf</groupId>
             <artifactId>openhtmltopdf-slf4j</artifactId>
             <version>${openhtml.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.openhtmltopdf</groupId>
+            <groupId>io.github.openhtmltopdf</groupId>
             <artifactId>openhtmltopdf-pdfbox</artifactId>
             <version>${openhtml.version}</version>
             <exclusions>
@@ -92,6 +99,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
@@ -129,7 +137,6 @@
                 <configuration>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <!--suppress UnresolvedMavenProperty -->
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
                 </configuration>
@@ -149,7 +156,6 @@
                     <systemPropertyVariables>
                         <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <!--suppress UnresolvedMavenProperty -->
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
                 </configuration>
