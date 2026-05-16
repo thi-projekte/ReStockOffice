@@ -121,6 +121,8 @@ public class UserResource {
         if (!Objects.equals(entity.phoneNumber, updated.phoneNumber)) { entity.phoneNumber = updated.phoneNumber; changed = true; }
         if (!Objects.equals(entity.roleInCompany, updated.roleInCompany)) { entity.roleInCompany = updated.roleInCompany; changed = true; }
         if (!Objects.equals(entity.birthDate, updated.birthDate)) { entity.birthDate = updated.birthDate; changed = true; }
+        if (!Objects.equals(entity.deliveryDay, updated.deliveryDay)) { entity.deliveryDay = updated.deliveryDay; changed = true; }
+        if (!Objects.equals(entity.deliveryTime, updated.deliveryTime)) { entity.deliveryTime = updated.deliveryTime; changed = true; }
         if (!Objects.equals(entity.deliveryHint, updated.deliveryHint)) { entity.deliveryHint = updated.deliveryHint; changed = true; }
         if (!Objects.equals(entity.IBAN, updated.IBAN)) { entity.IBAN = updated.IBAN; changed = true; }
         return changed;

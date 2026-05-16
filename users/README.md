@@ -65,7 +65,9 @@ Um ein neues Profil in der Datenbank anzulegen, verwende Folgendes:
     "companyName": "Beispiel GmbH",
     "phoneNumber": "0891234567",
     "roleInCompany": "Einkauf",
-    "birthDate": "1990-01-01T00:00:00Z"
+    "birthDate": "1990-01-01T00:00:00Z",
+    "deliveryDay": "Freitag"
+    "deliveryTime": "10"
 }
 ```
 Hinweis: Die ``` userId ```userId wird automatisch aus dem Token des Senders extrahiert.

@@ -5,6 +5,8 @@ import io.smallrye.common.constraint.NotNull;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -42,6 +44,12 @@ public class User extends PanacheEntityBase {
     public Date birthDate;
 
     public String deliveryHint;
+
+    public String deliveryDay;
+
+    @Min(value = 0, message = "Die Lieferzeit darf nicht kleiner als 0 sein")
+    @Max(value = 24, message = "Die Lieferzeit darf nicht größer als 24 sein")
+    public int deliveryTime;
 
     public String IBAN;
 
