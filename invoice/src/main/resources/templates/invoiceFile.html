@@ -103,19 +103,20 @@
         <tr>
             <td>
                 <span class="footer-label">Sitz der Gesellschaft</span>
-                RestockOffice GmbH<br/>
-                Esplanade 10<br/>
-                80333 München
+                {name}<br/>
+                {street}<br/>
+                {zip} {city}
             </td>
             <td>
                 <span class="footer-label">Kontakt</span>
-                E-Mail: support@restockoffice.de<br/>
-                Web: www.restockoffice.de
+                E-Mail: {email}<br/>
+                Web: {web}
             </td>
             <td>
                 <span class="footer-label">Bankverbindung</span>
-                Sparkasse Ingolstadt<br/>
-                IBAN: DE89 1234 5678 9012 3456 78
+                {bankName}<br/>
+                IBAN: {iban}<br/>
+                BIC: {bic}
             </td>
         </tr>
     </table>
@@ -127,10 +128,10 @@
             <img src="{logoUrl}" class="logo" alt="Logo" />
         </td>
         <td class="header-company-data">
-            <strong>RestockOffice GmbH</strong><br/>
-            Esplanade 10 | 85049 Ingolstadt<br/>
-            Geschäftsführer: Max Mustermann<br/>
-            HRB 123456, München
+            <strong>{name}</strong><br/>
+            {street} | {zip} {city}<br/>
+            Geschäftsführer: {ceo}<br/>
+            {hrb}
         </td>
     </tr>
 </table>
@@ -138,7 +139,7 @@
 <table id="address-block">
     <tr>
         <td class="recipient">
-            <div class="sender-line">RestockOffice GmbH | Esplanade 10 | 85049 Ingolstadt</div>
+            <div class="sender-line">{fullAddressLine}</div>
             <div style="margin-top: 15px;">
                 <strong>{invoice.recipientName}</strong><br/>
                 {invoice.recipientStreet}<br/>
