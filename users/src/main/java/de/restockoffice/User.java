@@ -7,6 +7,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -45,7 +47,8 @@ public class User extends PanacheEntityBase {
 
     public String deliveryHint;
 
-    public String deliveryDay;
+    @Enumerated(EnumType.STRING)
+    public DeliveryDay deliveryDay;
 
     @Min(value = 0, message = "Die Lieferzeit darf nicht kleiner als 0 sein")
     @Max(value = 24, message = "Die Lieferzeit darf nicht größer als 24 sein")
