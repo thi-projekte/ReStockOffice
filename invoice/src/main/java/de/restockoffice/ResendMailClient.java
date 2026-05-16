@@ -33,7 +33,12 @@ public class ResendMailClient {
         try{
             String pdfBase64 = Base64.getEncoder().encodeToString(pdf);
 
-            String renderedHtml = invoiceMail.data("invoice", data).render();
+            String logoUrl = mailSettings.logoUrl();
+
+            String renderedHtml = invoiceMail
+                    .data("invoice", data)
+                    .data("logoUrl", logoUrl)
+                    .render();
 
             Map<String, Object> payload = Map.of(
                 "from", mailSettings.sender(),
