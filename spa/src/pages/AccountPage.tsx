@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useOutletContext } from "react-router-dom";
 import { MdEdit, MdLogout, MdOutlineWarningAmber, MdSave } from "react-icons/md";
 import { FaBell, FaMoon, FaSun } from "react-icons/fa";
@@ -8,6 +8,7 @@ import type {
 } from "../types/shop";
 import keycloak from "../auth/keycloak";
 import {useAuth} from "../auth/AuthProvider";
+import { getUserbyId } from "../services/users";
 
 interface OutletContext {
   isLoggedIn: boolean;
@@ -43,7 +44,7 @@ interface NotificationState {
 export function AccountPage() {
   const { isLoggedIn, onLogout, onSetTheme, theme } =
       useOutletContext<OutletContext>();
-  const { hasRole } = useAuth();
+  const { hasRole, token, user } = useAuth();
 
   const username =
       keycloak.tokenParsed?.preferred_username ?? "unbekannt";
@@ -68,6 +69,25 @@ export function AccountPage() {
     confirmations: true,
     reminders: true,
   });
+
+  useEffect(() => {
+    const userId = user?.id ?? keycloak.tokenParsed?.sub;
+
+    if (!isLoggedIn || !userId) {
+      return;
+    }
+
+    getUserbyId(userId, { token })
+      .then((loadedUser) => {
+        setProfileForm((current) => ({
+          ...current,
+          phone: loadedUser.phoneNumber,
+        }));
+      })
+      .catch((error) => {
+        console.error("Benutzerdaten konnten nicht geladen werden.", error);
+      });
+  }, [isLoggedIn, token, user?.id]);
 
 
   // Boolean zum Überprüfen ob als Restocker eingeloggt oder nicht
