@@ -1,0 +1,69 @@
+name: CI build restocker-deliveries
+
+on:
+  push:
+    branches:
+      - main
+      - feature/55-restocker-deliveries-new
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build Backend (Quarkus Native)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: graalvm-community
+          cache: maven
+
+      - name: Build and verify
+        working-directory: restocker-deliveries
+        run: |
+          chmod +x mvnw
+          ./mvnw clean verify -B
+
+      - name: Package native
+        working-directory: restocker-deliveries
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -Pnative -DskipTests
+
+      - name: Check native binary exists
+        working-directory: restocker-deliveries
+        run: ls -lah target
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./restocker-deliveries
+          file: ./restocker-deliveries/src/main/docker/Dockerfile.native-micro
+          push: ${{ github.event_name != 'pull_request' }}
+          no-cache: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/restockoffice-restocker-deliveries:1.0.0
+            ghcr.io/${{ github.repository_owner }}/restockoffice-restocker-deliveries:${{ github.sha }}
+
+      - name: Check native binary exists
+        working-directory: restocker-deliveries
+        run: ls -lah target
