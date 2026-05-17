@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.List;
 
 public record InvoiceRequest(
+        String userId,
         String recipientEmail,
         String recipientName,
         String recipientStreet,
