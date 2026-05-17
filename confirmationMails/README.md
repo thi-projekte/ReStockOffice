@@ -4,6 +4,7 @@ Dieser Quarkus-Service verschickt die beiden E-Mails aus dem ReStockOrder-Prozes
 
 - Bestellbestaetigung direkt nach erfolgreicher Anlage der ReStockOrder
 - Lieferankuendigung vor der anstehenden Lieferung
+- Lieferbestaetigung nach erfolgreicher Zustellung
 
 Die Mail-Inhalte basieren auf den vorhandenen HTML- und CSS-Vorlagen und werden serverseitig mit Bestell- und Lieferdaten personalisiert. Der Versand erfolgt ueber die Resend-API.
 
@@ -12,6 +13,7 @@ Die Mail-Inhalte basieren auf den vorhandenen HTML- und CSS-Vorlagen und werden 
 ```text
 POST /emails/order-confirmation
 POST /emails/delivery-announcement
+POST /emails/delivery-confirmation
 ```
 
 Fuer Vorschau und Template-Tests:
@@ -19,6 +21,7 @@ Fuer Vorschau und Template-Tests:
 ```text
 POST /emails/order-confirmation/preview
 POST /emails/delivery-announcement/preview
+POST /emails/delivery-confirmation/preview
 ```
 
 ## Konfiguration

@@ -13,6 +13,7 @@ public class NotificationMailService {
 
     private static final String ORDER_TEMPLATE = "templates/order-confirmation.html";
     private static final String DELIVERY_TEMPLATE = "templates/delivery-announcement.html";
+    private static final String DELIVERY_CONFIRMATION_TEMPLATE = "templates/delivery-confirmation.html";
     private static final String SUBSCRIPTION_URL = "https://app.restockoffice.de/subscription";
 
     @Inject
@@ -72,6 +73,24 @@ public class NotificationMailService {
         return new RenderedMail(subject, templateService.render(DELIVERY_TEMPLATE, values));
     }
 
+    public RenderedMail renderDeliveryConfirmation(DeliveryConfirmationRequest request) {
+        validateDeliveryConfirmation(request);
+
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
+        values.put("customerName", escapeHtml(request.customerName()));
+        values.put("deliveryDate", escapeHtml(request.deliveryDate()));
+        values.put("deliveryWindow", escapeHtml(request.deliveryWindow()));
+        values.put("orderNumber", escapeHtml(request.orderNumber()));
+        values.put("supplierName", escapeHtml(request.supplierName()));
+        values.put("supportEmail", escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
+        values.put("deliveryDetailsUrl", escapeHtml(defaultIfBlank(request.deliveryDetailsUrl(), "#")));
+        values.put("deliveryItemsHtml", buildDeliveryItemsHtml(request.deliveryItems()));
+
+        String subject = defaultIfBlank(request.subject(), "Deine ReStockOffice Lieferung vom " + request.deliveryDate() + " ist angekommen");
+        return new RenderedMail(subject, templateService.render(DELIVERY_CONFIRMATION_TEMPLATE, values));
+    }
+
     public String sendOrderConfirmation(OrderConfirmationRequest request) {
         RenderedMail renderedMail = renderOrderConfirmation(request);
         return resendMailClient.send(request.recipientEmail(), renderedMail.subject(), renderedMail.html());
@@ -79,6 +98,11 @@ public class NotificationMailService {
 
     public String sendDeliveryAnnouncement(DeliveryAnnouncementRequest request) {
         RenderedMail renderedMail = renderDeliveryAnnouncement(request);
+        return resendMailClient.send(request.recipientEmail(), renderedMail.subject(), renderedMail.html());
+    }
+
+    public String sendDeliveryConfirmation(DeliveryConfirmationRequest request) {
+        RenderedMail renderedMail = renderDeliveryConfirmation(request);
         return resendMailClient.send(request.recipientEmail(), renderedMail.subject(), renderedMail.html());
     }
 
@@ -172,6 +196,16 @@ public class NotificationMailService {
         requireNotBlank(request.deskDetails(), "deskDetails");
         requireNotBlank(request.onSiteContact(), "onSiteContact");
         requireNotBlank(request.deliveryInstructions(), "deliveryInstructions");
+    }
+
+    private void validateDeliveryConfirmation(DeliveryConfirmationRequest request) {
+        require(request != null, "request must not be null");
+        requireNotBlank(request.recipientEmail(), "recipientEmail");
+        requireNotBlank(request.customerName(), "customerName");
+        requireNotBlank(request.deliveryDate(), "deliveryDate");
+        requireNotBlank(request.deliveryWindow(), "deliveryWindow");
+        requireNotBlank(request.orderNumber(), "orderNumber");
+        requireNotBlank(request.supplierName(), "supplierName");
     }
 
     private void require(boolean expression, String message) {
