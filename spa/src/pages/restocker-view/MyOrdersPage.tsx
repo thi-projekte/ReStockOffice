@@ -1,27 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { FaFilter, FaSearch, FaTruckLoading } from "react-icons/fa";
-import toast from "react-hot-toast";
+import { FaFilter, FaSearch, FaTruck } from "react-icons/fa";
 import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCard";
 import { RestockerOrderDetailDialog } from "../../components/restocker/RestockerOrderDetailDialog";
 import { useAuth } from "../../auth/AuthProvider";
-import { acceptRestockOrder, loadOpenRestockOrders } from "../../services/orders";
+import { loadAssignedRestockOrders } from "../../services/orders";
 import type {
   RestockMarketplaceLoadResult,
   RestockMarketplaceOrder,
 } from "../../types/shop";
 import {
   type DeliveryWindowOption,
+  type RelativeDayOption,
   type SortOption,
-  formatDeliveryWindow,
+  formatAcceptedAtDate,
+  formatAcceptedAtTime,
   formatDeliveryWindowOption,
+  getDaysUntilDelivery,
   getDeliveryWindowKey,
+  matchesRelativeDayFilter,
   sortOrders,
 } from "./restockerOrderUi";
 
-export function OrderPage() {
+function getGreetingName(user: ReturnType<typeof useAuth>["user"]) {
+  const preferredName =
+    user?.firstName ??
+    user?.username ??
+    user?.email?.split("@")[0];
+
+  return preferredName?.trim() || "Restocker";
+}
+
+export function MyOrdersPage() {
   const auth = useAuth();
-  const [marketplaceResult, setMarketplaceResult] =
+  const [assignedOrdersResult, setAssignedOrdersResult] =
     useState<RestockMarketplaceLoadResult>({
       orders: [],
       source: "live",
@@ -33,17 +45,17 @@ export function OrderPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedDeliveryWindow, setSelectedDeliveryWindow] = useState("");
+  const [selectedRelativeDay, setSelectedRelativeDay] = useState<"" | RelativeDayOption>("");
   const [sortOption, setSortOption] = useState<SortOption>("delivery-asc");
   const [selectedOrder, setSelectedOrder] = useState<RestockMarketplaceOrder | null>(null);
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
   useEffect(() => {
     let ignoreResult = false;
 
     async function loadOrders() {
-      if (!auth.token) {
+      if (!auth.token || !auth.user?.id) {
         if (!ignoreResult) {
-          setMarketplaceResult({
+          setAssignedOrdersResult({
             orders: [],
             source: "live",
             hasPlaceholderCustomerData: false,
@@ -57,19 +69,20 @@ export function OrderPage() {
       setError(null);
 
       try {
-        const loadedOrders = await loadOpenRestockOrders({
+        const loadedOrders = await loadAssignedRestockOrders({
           token: auth.token,
+          restockerId: auth.user.id,
         });
 
         if (!ignoreResult) {
-          setMarketplaceResult(loadedOrders);
+          setAssignedOrdersResult(loadedOrders);
         }
       } catch (loadError) {
         if (!ignoreResult) {
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Die offenen Aufträge konnten nicht geladen werden.",
+              : "Deine angenommenen Aufträge konnten nicht geladen werden.",
           );
         }
       } finally {
@@ -84,34 +97,34 @@ export function OrderPage() {
     return () => {
       ignoreResult = true;
     };
-  }, [auth.token]);
+  }, [auth.token, auth.user?.id]);
 
   const availableCities = useMemo(
     () =>
-      Array.from(new Set(marketplaceResult.orders.map((order) => order.city))).sort(
+      Array.from(new Set(assignedOrdersResult.orders.map((order) => order.city))).sort(
         (firstCity, secondCity) => firstCity.localeCompare(secondCity, "de"),
       ),
-    [marketplaceResult.orders],
+    [assignedOrdersResult.orders],
   );
 
   const availableDeliveryWindows = useMemo(
     () =>
       Array.from(
         new Set(
-          marketplaceResult.orders
+          assignedOrdersResult.orders
             .map((order) => getDeliveryWindowKey(order.deliveryDate))
             .filter(
               (windowKey): windowKey is DeliveryWindowOption => windowKey !== null,
             ),
         ),
       ).sort((firstWindow, secondWindow) => firstWindow.localeCompare(secondWindow, "de")),
-    [marketplaceResult.orders],
+    [assignedOrdersResult.orders],
   );
 
   const filteredOrders = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    const visibleOrders = marketplaceResult.orders.filter((order) => {
+    const visibleOrders = assignedOrdersResult.orders.filter((order) => {
       const matchesQuery =
         !normalizedQuery ||
         [order.companyName, order.city, order.addressLine1, order.orderId]
@@ -122,60 +135,72 @@ export function OrderPage() {
       const matchesDeliveryWindow =
         !selectedDeliveryWindow ||
         getDeliveryWindowKey(order.deliveryDate) === selectedDeliveryWindow;
+      const matchesRelativeDay = matchesRelativeDayFilter(
+        order.deliveryDate,
+        selectedRelativeDay,
+      );
 
-      return matchesQuery && matchesCity && matchesDeliveryWindow;
+      return matchesQuery && matchesCity && matchesDeliveryWindow && matchesRelativeDay;
     });
 
     return sortOrders(visibleOrders, sortOption);
-  }, [marketplaceResult.orders, searchQuery, selectedCity, selectedDeliveryWindow, sortOption]);
+  }, [
+    assignedOrdersResult.orders,
+    searchQuery,
+    selectedCity,
+    selectedDeliveryWindow,
+    selectedRelativeDay,
+    sortOption,
+  ]);
 
+  const greetingName = getGreetingName(auth.user);
   const totalArticleCount = filteredOrders.reduce(
     (sum, order) => sum + order.articleCount,
     0,
   );
+  const dueTodayCount = filteredOrders.filter(
+    (order) => getDaysUntilDelivery(order.deliveryDate) === 0,
+  ).length;
+  const dueTomorrowCount = filteredOrders.filter(
+    (order) => getDaysUntilDelivery(order.deliveryDate) === 1,
+  ).length;
+  const acceptedAtTimeLabel = formatAcceptedAtTime(selectedOrder?.assignment?.acceptedAt);
+  const priorityFilterOptions: Array<{
+    value: "" | RelativeDayOption;
+    label: string;
+    eyebrow: string;
+    count: number;
+  }> = [
+    {
+      value: "",
+      label: "Alle",
+      eyebrow: "Gesamter Überblick",
+      count: assignedOrdersResult.orders.length,
+    },
+    {
+      value: "today",
+      label: "Heute",
+      eyebrow: "Priorität heute",
+      count: assignedOrdersResult.orders.filter(
+        (order) => getDaysUntilDelivery(order.deliveryDate) === 0,
+      ).length,
+    },
+    {
+      value: "tomorrow",
+      label: "Morgen",
+      eyebrow: "Priorität morgen",
+      count: assignedOrdersResult.orders.filter(
+        (order) => getDaysUntilDelivery(order.deliveryDate) === 1,
+      ).length,
+    },
+  ];
 
   if (!auth.isInitializing && !auth.hasRole("Restocker")) {
     return <Navigate to="/" replace />;
   }
 
   if (auth.isInitializing || isLoading) {
-    return <section className="page-card">Aufträge werden geladen...</section>;
-  }
-
-  function handleCloseDetailDialog() {
-    setSelectedOrder(null);
-    setIsConfirmDialogOpen(false);
-  }
-
-  function handleAcceptSelectedOrder() {
-    if (!selectedOrder || !auth.user?.id) {
-      return;
-    }
-
-    try {
-      acceptRestockOrder({
-        orderKey: selectedOrder.orderKey,
-        restockerId: auth.user.id,
-      });
-
-      setMarketplaceResult((currentResult) => ({
-        ...currentResult,
-        orders: currentResult.orders.filter(
-          (order) => order.orderKey !== selectedOrder.orderKey,
-        ),
-      }));
-      setIsConfirmDialogOpen(false);
-      setSelectedOrder(null);
-      toast.success(
-        `Auftrag #${selectedOrder.orderId} wurde deinem Restocker-Konto zugeordnet.`,
-      );
-    } catch (acceptError) {
-      toast.error(
-        acceptError instanceof Error
-          ? acceptError.message
-          : "Der Auftrag konnte nicht übernommen werden.",
-      );
-    }
+    return <section className="page-card">Deine Aufträge werden geladen...</section>;
   }
 
   return (
@@ -186,26 +211,30 @@ export function OrderPage() {
         </div>
 
         <div className="hero-copy">
-          <h1>RESTOCKORDER - MARKTPLATZ</h1>
-          <p>Alle verfügbaren Aufträge</p>
+          <h1>MEINE AUFTRÄGE</h1>
+          <p className="section-copy">
+            Hallo {greetingName}, hier sind die Aufträge, die du dir gesichert hast.
+          </p>
 
-          <div className="dashboard-strip" aria-label="Marktplatz Übersicht">
+          <div className="dashboard-strip" aria-label="Meine Aufträge Übersicht">
             <article className="dashboard-stat">
-              <span className="dashboard-stat__label">Offene Aufträge</span>
+              <span className="dashboard-stat__label">Angenommene Aufträge</span>
               <strong>{filteredOrders.length}</strong>
-              <small>Fällig in den nächsten 4 Wochen</small>
+              <small>Nur deinem Restocker-Konto zugeordnet</small>
             </article>
 
             <article className="dashboard-stat">
-              <span className="dashboard-stat__label">Unternehmen</span>
-              <strong>{new Set(filteredOrders.map((order) => order.companyName)).size}</strong>
-              <small>Aktuell im Marktplatz verfügbar</small>
+              <span className="dashboard-stat__label">Heute / Morgen</span>
+              <strong>
+                {dueTodayCount} / {dueTomorrowCount}
+              </strong>
+              <small>Besonders zeitnahe Auslieferungen</small>
             </article>
 
             <article className="dashboard-stat">
               <span className="dashboard-stat__label">Artikel</span>
               <strong>{totalArticleCount}</strong>
-              <small>Summierte Lieferpositionen der aktuellen Treffer</small>
+              <small>Summierte Positionen deiner aktuellen Treffer</small>
             </article>
           </div>
         </div>
@@ -214,32 +243,31 @@ export function OrderPage() {
       <section className="page-card section-space">
         <div className="section-head">
           <div>
-            <span className="eyebrow">Offene Aufträge</span>
-            <h2>Alle verfügbaren Aufträge</h2>
+            <span className="eyebrow">Meine Aufträge</span>
+            <h2>Deine Übersicht</h2>
             <p className="section-copy">
-              Ein offener Lieferauftrag entsteht aus aktiven Bestellungen, deren
-              nächster Liefertermin innerhalb der kommenden 4 Wochen liegt.
+              Diese Ansicht zeigt nur Aufträge, die du bereits angenommen hast
+              und die noch nicht als abgeschlossen markiert sind.
             </p>
           </div>
         </div>
 
-        {marketplaceResult.source === "demo" ? (
+        {assignedOrdersResult.source === "demo" ? (
           <div className="mock-box">
             <strong>Demo-Daten aktiv</strong>
             <span>
-              Die Orders-API war nicht erreichbar. Deshalb wird der Marktplatz aktuell
-              mit klar gekennzeichneten Demo-Aufträgen gerendert.
+              Die Orders-API war nicht erreichbar. Deine angenommenen Aufträge
+              werden deshalb aktuell mit klar gekennzeichneten Demo-Daten gerendert.
             </span>
           </div>
         ) : null}
 
-        {marketplaceResult.hasPlaceholderCustomerData ? (
+        {assignedOrdersResult.hasPlaceholderCustomerData ? (
           <div className="mock-box">
             <strong>Vorläufige Customer-Stammdaten</strong>
             <span>
-              Firmenname, Adresse, Lieferzeit und Lieferhinweise werden derzeit
-              übergangsweise aus einer kleinen Placeholder-Directory abgeleitet,
-              weil diese Felder im aktuellen Order-Modell noch fehlen.
+              Firmenname, Adresse, Lieferfenster und Lieferhinweise werden derzeit
+              noch übergangsweise aus einer kleinen Placeholder-Directory abgeleitet.
             </span>
           </div>
         ) : null}
@@ -247,10 +275,10 @@ export function OrderPage() {
         {error ? <div className="error-box">{error}</div> : null}
 
         <div className="restocker-marketplace-toolbar">
-          <label className="restocker-marketplace-search" htmlFor="restocker-marketplace-search">
+          <label className="restocker-marketplace-search" htmlFor="restocker-my-orders-search">
             <FaSearch aria-hidden="true" />
             <input
-              id="restocker-marketplace-search"
+              id="restocker-my-orders-search"
               type="search"
               placeholder="Nach Unternehmen suchen ..."
               value={searchQuery}
@@ -266,6 +294,27 @@ export function OrderPage() {
             <FaFilter />
             Filter
           </button>
+        </div>
+
+        <div className="restocker-priority-filters" aria-label="Schnellfilter für Auslieferungen">
+          {priorityFilterOptions.map((filterOption) => {
+            const isActive = selectedRelativeDay === filterOption.value;
+
+            return (
+              <button
+                key={filterOption.value || "all"}
+                className={`restocker-priority-filter ${isActive ? "is-active" : ""}`.trim()}
+                type="button"
+                onClick={() => setSelectedRelativeDay(filterOption.value)}
+              >
+                <span className="restocker-priority-filter__eyebrow">
+                  {filterOption.eyebrow}
+                </span>
+                <strong>{filterOption.label}</strong>
+                <small>{filterOption.count} Aufträge</small>
+              </button>
+            );
+          })}
         </div>
 
         {isFilterOpen ? (
@@ -315,13 +364,13 @@ export function OrderPage() {
         ) : null}
 
         {filteredOrders.length === 0 ? (
-          <div className="restocker-empty-state">
-            <FaTruckLoading aria-hidden="true" />
+          <div className="restocker-empty-state restocker-empty-state--assigned">
+            <FaTruck aria-hidden="true" />
             <div>
-              <strong>Aktuell sind keine offenen Aufträge verfügbar.</strong>
+              <strong>Du hast aktuell keine Aufträge angenommen.</strong>
               <p className="muted-text">
-                Prüfe die Filter oder warte auf neue Liefertermine innerhalb des
-                4-Wochen-Fensters.
+                Sobald du im Marktplatz einen Auftrag übernimmst, erscheint er hier
+                in deiner persönlichen Übersicht.
               </p>
             </div>
           </div>
@@ -331,7 +380,8 @@ export function OrderPage() {
               <RestockerOrderCard
                 key={order.orderKey}
                 order={order}
-                detailLabel="Auftrag ansehen"
+                detailLabel="Details ansehen"
+                statusLabel="Angenommen"
                 onClick={() => setSelectedOrder(order)}
               />
             ))}
@@ -342,102 +392,39 @@ export function OrderPage() {
       {selectedOrder ? (
         <RestockerOrderDetailDialog
           order={selectedOrder}
-          backLabel="Zurück zu allen Aufträgen"
-          onClose={handleCloseDetailDialog}
+          backLabel="Zurück zu deinen Aufträgen"
+          onClose={() => setSelectedOrder(null)}
           actions={
-            <>
-              <button
-                className="button button--ghost"
-                type="button"
-                onClick={handleCloseDetailDialog}
-              >
-                Abbrechen
-              </button>
-
-              <button
-                className="button"
-                type="button"
-                onClick={() => setIsConfirmDialogOpen(true)}
-              >
-                Auftrag annehmen
-              </button>
-            </>
+            <button
+              className="button button--ghost"
+              type="button"
+              onClick={() => setSelectedOrder(null)}
+            >
+              Zurück zu deinen Aufträgen
+            </button>
           }
-        />
-      ) : null}
-
-      {selectedOrder && isConfirmDialogOpen ? (
-        <>
-          <button
-            className="subscription-modal__overlay"
-            type="button"
-            aria-label="Bestätigungsdialog schließen"
-            onClick={() => setIsConfirmDialogOpen(false)}
-          />
-
-          <section
-            className="subscription-modal restocker-confirm-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="restocker-confirm-dialog-title"
-          >
-            <div className="subscription-modal__header">
-              <div>
-                <span className="eyebrow">Bereit für deinen nächsten Einsatz?</span>
-                <h2 id="restocker-confirm-dialog-title">Auftrag wirklich übernehmen?</h2>
-              </div>
+        >
+          <div className="restocker-order-dialog__assignment">
+            <div className="restocker-order-dialog__summary">
+              <span className="eyebrow">Angenommen am</span>
+              <strong>{formatAcceptedAtDate(selectedOrder.assignment?.acceptedAt)}</strong>
             </div>
 
-            <div className="subscription-modal__body restocker-confirm-dialog__body">
-              <p>
-                Du bist dabei, die Lieferung für <strong>{selectedOrder.companyName}</strong>{" "}
-                am <strong>{selectedOrder.deliveryDate}</strong> zu übernehmen.
-              </p>
-
-              <p className="muted-text">
-                Sobald du bestätigst, taucht der Auftrag nicht mehr im Marktplatz auf.
-              </p>
-
-              <div className="restocker-confirm-dialog__facts">
-                <div>
-                  <span>Ziel</span>
-                  <strong>
-                    {selectedOrder.addressLine1}, {selectedOrder.postalCode}{" "}
-                    {selectedOrder.city}
-                  </strong>
-                </div>
-                <div>
-                  <span>Lieferfenster</span>
-                  <strong>{formatDeliveryWindow(selectedOrder.deliveryTime)}</strong>
-                </div>
-                <div>
-                  <span>Artikel</span>
-                  <strong>{selectedOrder.articleCount}</strong>
-                </div>
-              </div>
-
-              <p className="muted-text">
-                Nach der Bestätigung wird der Auftrag deinem eingeloggten
-                Restocker-Konto zugeordnet und nicht mehr im offenen Marktplatz
-                angezeigt.
-              </p>
+            <div className="restocker-order-dialog__summary">
+              <span className="eyebrow">Uhrzeit</span>
+              <strong>
+                {acceptedAtTimeLabel === "Nicht verfügbar"
+                  ? acceptedAtTimeLabel
+                  : `${acceptedAtTimeLabel} Uhr`}
+              </strong>
             </div>
 
-            <div className="subscription-modal__actions">
-              <button
-                className="button button--ghost"
-                type="button"
-                onClick={() => setIsConfirmDialogOpen(false)}
-              >
-                Abbrechen
-              </button>
-
-              <button className="button" type="button" onClick={handleAcceptSelectedOrder}>
-                Ja, Auftrag annehmen
-              </button>
+            <div className="restocker-order-dialog__summary">
+              <span className="eyebrow">Status</span>
+              <strong className="restocker-order-dialog__status-badge">ANGENOMMEN</strong>
             </div>
-          </section>
-        </>
+          </div>
+        </RestockerOrderDetailDialog>
       ) : null}
     </div>
   );

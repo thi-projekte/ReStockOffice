@@ -10,6 +10,7 @@ import {SubscriptionPage} from "../pages/SubscriptionPage";
 import { ProtectedRoute } from "../auth/ProtectedRoute";
 import { RestockerPage } from "../pages/restocker-view/RestockerPage";
 import { OrderPage} from "../pages/restocker-view/OrderPage";
+import { MyOrdersPage } from "../pages/restocker-view/MyOrdersPage";
 import { DeliveryPage } from "../pages/restocker-view/DeliveryPage";
 import {IndexPage} from "./IndexPage";
 
@@ -99,6 +100,14 @@ export const router = createBrowserRouter([
         element: (
             <ProtectedRoute>
               <OrderPage />
+            </ProtectedRoute>
+        ),
+      },
+      {
+        path: "restocker-my-orders",
+        element: (
+            <ProtectedRoute>
+              <MyOrdersPage />
             </ProtectedRoute>
         ),
       },
