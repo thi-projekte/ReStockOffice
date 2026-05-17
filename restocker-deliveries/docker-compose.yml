@@ -19,6 +19,8 @@ services:
       QUARKUS_OIDC_CREDENTIALS_SECRET: "restock-secret"
       QUARKUS_OIDC_APPLICATION_TYPE: service
       ORDERS_SERVICE_URL: http://orders:8080   # internal via nginx-proxy-manager network
+      USERS_SERVICE_URL: http://users:8080
+      CORS_ORIGINS: https://app.restockoffice.de
     depends_on:
       - restocker-deliveries-db
 

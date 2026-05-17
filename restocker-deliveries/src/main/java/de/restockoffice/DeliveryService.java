@@ -1,51 +1,46 @@
 package de.restockoffice;
 
-import de.restockoffice.Delivery;
-import de.restockoffice.DeliveryItem;
-import de.restockoffice.Tour;
-import de.restockoffice.WarehouseItem;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class DeliveryService {
 
+    @Inject
+    @RestClient
+    UserClient userClient;
+
+    @Inject
+    @RestClient
+    OrderClient orderClient;
+
     // ── Tour management ──────────────────────────
 
-    /**
-     * Creates a new tour with its deliveries for the day.
-     * Called when the restocker's day is planned.
-     */
     @Transactional
     public Tour createTour(Tour tour) {
         tour.persist();
         return tour;
     }
 
-    /**
-     * Restocker presses "TOUR BEGINNEN".
-     * Only allowed when all packages are collected from warehouse.
-     */
     @Transactional
     public Tour startTour(UUID tourId) {
         Tour tour = findTourOrThrow(tourId);
         if (!tour.allPackagesCollected()) {
-            throw new BadRequestException("Not all packages have been collected from the warehouse.");
+            throw new BadRequestException("Nicht alle Pakete wurden eingesammelt.");
         }
         tour.start();
         return tour;
     }
 
-    /**
-     * Restocker presses "TOUR BEENDEN" on the last stop.
-     * Records end time and total earnings.
-     */
     @Transactional
     public Tour endTour(UUID tourId, BigDecimal earnings) {
         Tour tour = findTourOrThrow(tourId);
@@ -60,78 +55,134 @@ public class DeliveryService {
     // ── Warehouse collection ─────────────────────
 
     /**
-     * Restocker checks off a package in the warehouse (EINGESAMMELT checkbox).
-     * This is the moment stock decreases.
+     * Restocker checks off a package in the warehouse.
+     * Reduces warehouse stock at this moment.
      */
     @Transactional
     public Delivery collectPackage(UUID deliveryId) {
         Delivery delivery = findDeliveryOrThrow(deliveryId);
-
         if (delivery.collected) {
-            throw new BadRequestException("Package already collected.");
+            throw new BadRequestException("Paket wurde bereits eingesammelt.");
         }
-
-        // Reduce warehouse stock for each item in this delivery
         for (DeliveryItem item : delivery.items) {
-            WarehouseItem warehouseItem = item.warehouseItem;
-            warehouseItem.reduceStock(item.quantity);  // throws if insufficient stock
+            item.warehouseItem.reduceStock(item.quantity);
         }
-
         delivery.markCollected();
         return delivery;
     }
 
-    // ── Delivery (einräumen) ─────────────────────
+    // ── Delivery confirmation ────────────────────
 
-    /**
-     * Restocker checks off a single item at the company (EINGERÄUMT checkbox).
-     */
     @Transactional
-    public DeliveryItem markItemDelivered(UUID deliveryItemId) {
-        DeliveryItem item = DeliveryItem.findById(deliveryItemId);
-        if (item == null) throw new NotFoundException("Delivery item not found: " + deliveryItemId);
+    public DeliveryItem markItemDelivered(UUID itemId) {
+        DeliveryItem item = DeliveryItem.findById(itemId);
+        if (item == null) throw new NotFoundException("Artikel nicht gefunden: " + itemId);
         item.markDelivered();
         return item;
     }
 
-    /**
-     * Restocker presses "NÄCHSTE ZUSTELLUNG" after checking all items.
-     * Records confirmation timestamp — sent to company.
-     * Only allowed when all items are checked off.
-     */
     @Transactional
     public Delivery confirmDelivery(UUID deliveryId) {
         Delivery delivery = findDeliveryOrThrow(deliveryId);
-
         if (!delivery.allItemsDelivered()) {
-            throw new BadRequestException("Not all items have been checked off (eingeräumt).");
+            throw new BadRequestException("Nicht alle Artikel wurden abgehakt.");
         }
-
         delivery.markDelivered();
         return delivery;
     }
 
-    // ── Queries ──────────────────────────────────
+    // ── Enriched detail — combines delivery + user + order ──
 
-    public List<Delivery> getTodayDeliveries(UUID tourId) {
-        return Delivery.findByTour(tourId);
+    /**
+     * Returns a delivery enriched with data from users and orders service.
+     * The frontend only needs to call this one endpoint.
+     */
+    public DeliveryDetailDto getDeliveryDetail(UUID deliveryId, String authorizationHeader) {
+        Delivery delivery = findDeliveryOrThrow(deliveryId);
+
+        UserDto user = userClient.getUserById(delivery.userId, authorizationHeader);
+        OrderDto order = orderClient.getOrderById(parseOrderId(delivery.orderId), authorizationHeader);
+
+        return toDetailDto(delivery, user, order);
     }
+
+    public List<DeliveryDetailDto> getTourDeliveryDetails(UUID tourId, String authorizationHeader) {
+        List<Delivery> deliveries = Delivery.findByTour(tourId);
+        return deliveries.stream()
+                .map(d -> {
+                    UserDto user = userClient.getUserById(d.userId, authorizationHeader);
+                    OrderDto order = orderClient.getOrderById(parseOrderId(d.orderId), authorizationHeader);
+                    return toDetailDto(d, user, order);
+                })
+                .collect(Collectors.toList());
+    }
+
+    // ── Warehouse items ──────────────────────────
 
     public List<WarehouseItem> getAllWarehouseItems() {
         return WarehouseItem.listAll();
+    }
+
+    // ── Mapping ──────────────────────────────────
+
+    private DeliveryDetailDto toDetailDto(Delivery delivery, UserDto user, OrderDto order) {
+        DeliveryDetailDto dto = new DeliveryDetailDto();
+        dto.id = delivery.id;
+        dto.orderId = delivery.orderId;
+        dto.userId = delivery.userId;
+        dto.stopOrder = delivery.stopOrder;
+        dto.collected = delivery.collected;
+        dto.collectedAt = delivery.collectedAt;
+        dto.deliveredAt = delivery.deliveredAt;
+
+        // From users service
+        dto.companyName = user.companyName;
+        dto.street = user.street + " " + user.houseNumber;
+        dto.postalCode = user.postalCode;
+        dto.city = user.city;
+        dto.phoneNumber = user.phoneNumber;
+        dto.contactPerson = user.roleInCompany;
+        dto.deliveryHint = user.deliveryHint;
+
+        // From orders service
+        dto.houseNumber = user.houseNumber;
+        dto.deliveryDate = delivery.tour != null && delivery.tour.tourDate != null
+                ? delivery.tour.tourDate.toString()
+                : null;
+        dto.items = delivery.items.stream().map(item -> {
+            DeliveryDetailDto.DeliveryItemDetailDto i = new DeliveryDetailDto.DeliveryItemDetailDto();
+            i.id = item.id;
+            i.articleNumber = item.articleNumber;
+            i.delivered = item.delivered;
+            // match warehouse item name with order item if available
+            i.name = item.warehouseItem.name;
+            i.quantity = item.quantity;
+            i.unit = item.warehouseItem.unit;
+            return i;
+        }).collect(Collectors.toList());
+
+        return dto;
     }
 
     // ── Helpers ──────────────────────────────────
 
     private Tour findTourOrThrow(UUID tourId) {
         Tour tour = Tour.findById(tourId);
-        if (tour == null) throw new NotFoundException("Tour not found: " + tourId);
+        if (tour == null) throw new NotFoundException("Tour nicht gefunden: " + tourId);
         return tour;
     }
 
     private Delivery findDeliveryOrThrow(UUID deliveryId) {
         Delivery delivery = Delivery.findById(deliveryId);
-        if (delivery == null) throw new NotFoundException("Delivery not found: " + deliveryId);
+        if (delivery == null) throw new NotFoundException("Lieferung nicht gefunden: " + deliveryId);
         return delivery;
+    }
+
+    private Long parseOrderId(String orderId) {
+        try {
+            return Long.valueOf(orderId);
+        } catch (NumberFormatException exception) {
+            throw new BadRequestException("Ungültige Order-ID: " + orderId);
+        }
     }
 }

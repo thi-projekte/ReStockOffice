@@ -1,6 +1,7 @@
 package de.restockoffice;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ public class DeliveryItem extends PanacheEntityBase {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delivery_id", nullable = false)
+    @JsonIgnore
     public Delivery delivery;
 
     @ManyToOne(fetch = FetchType.EAGER)

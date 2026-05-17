@@ -1,13 +1,9 @@
 package de.restockoffice;
 
-
-import de.restockoffice.Delivery;
-import de.restockoffice.DeliveryItem;
-import de.restockoffice.Tour;
-import de.restockoffice.WarehouseItem;
-import de.restockoffice.DeliveryService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -23,13 +19,11 @@ public class DeliveryResource {
     @Inject
     DeliveryService deliveryService;
 
-    // ── Warehouse items ──────────────────────────
+    @Context
+    HttpHeaders headers;
 
-    /**
-     * GET /api/deliveries/warehouse
-     * Returns all warehouse items with current stock.
-     * Used in Lager-Dashboard to show available items.
-     */
+    // ── Warehouse ────────────────────────────────
+
     @GET
     @Path("/warehouse")
     public List<WarehouseItem> getAllWarehouseItems() {
@@ -38,22 +32,12 @@ public class DeliveryResource {
 
     // ── Tours ────────────────────────────────────
 
-    /**
-     * GET /api/deliveries/tours/today?restocker=Max
-     * Returns today's tours for a restocker.
-     * Used on home screen: "Heutige Lieferungen".
-     */
     @GET
     @Path("/tours/today")
     public List<Tour> getTodayTours(@QueryParam("restocker") String restockerName) {
         return deliveryService.getTodayToursByRestocker(restockerName);
     }
 
-    /**
-     * POST /api/deliveries/tours
-     * Creates a new tour with its deliveries.
-     * Called when the day's route is planned.
-     */
     @POST
     @Path("/tours")
     public Response createTour(Tour tour) {
@@ -61,11 +45,6 @@ public class DeliveryResource {
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
-    /**
-     * POST /api/deliveries/tours/{tourId}/start
-     * Restocker presses "TOUR BEGINNEN".
-     * Only works when all packages are collected (all collected=true).
-     */
     @POST
     @Path("/tours/{tourId}/start")
     public Response startTour(@PathParam("tourId") UUID tourId) {
@@ -73,11 +52,6 @@ public class DeliveryResource {
         return Response.ok(tour).build();
     }
 
-    /**
-     * POST /api/deliveries/tours/{tourId}/end
-     * Restocker presses "TOUR BEENDEN" on last stop.
-     * Body: { "earnings": 45.70 }
-     */
     @POST
     @Path("/tours/{tourId}/end")
     public Response endTour(@PathParam("tourId") UUID tourId, EndTourRequest request) {
@@ -85,26 +59,27 @@ public class DeliveryResource {
         return Response.ok(tour).build();
     }
 
+    // ── Deliveries — enriched with user + order data ──
+
     /**
-     * GET /api/deliveries/tours/{tourId}/deliveries
-     * Returns all stops for a tour in order.
-     * Used in "Aktuelle Tour" to show stop list.
-     *
-     *  WHATS THAT???????
+     * GET /api/deliveries/tours/{tourId}/details
+     * Returns all stops for a tour, each enriched with company info and article list.
+     * Frontend only needs this one call — no separate user/order lookups needed.
      */
     @GET
-    @Path("/tours/{tourId}/deliveries")
-    public List<Delivery> getTourDeliveries(@PathParam("tourId") UUID tourId) {
-        return deliveryService.getTodayDeliveries(tourId);
+    @Path("/tours/{tourId}/details")
+    public List<DeliveryDetailDto> getTourDetails(@PathParam("tourId") UUID tourId) {
+        return deliveryService.getTourDeliveryDetails(tourId, authorizationHeader());
     }
 
-    // ── Warehouse collection (Lager-Dashboard) ───
+    @GET
+    @Path("/{deliveryId}/detail")
+    public DeliveryDetailDto getDeliveryDetail(@PathParam("deliveryId") UUID deliveryId) {
+        return deliveryService.getDeliveryDetail(deliveryId, authorizationHeader());
+    }
 
-    /**
-     * POST /api/deliveries/{deliveryId}/collect
-     * Restocker checks off a package in the warehouse (EINGESAMMELT).
-     * This is when stock decreases.
-     */
+    // ── Warehouse collection ─────────────────────
+
     @POST
     @Path("/{deliveryId}/collect")
     public Response collectPackage(@PathParam("deliveryId") UUID deliveryId) {
@@ -112,12 +87,8 @@ public class DeliveryResource {
         return Response.ok(delivery).build();
     }
 
-    // ── Delivery confirmation (Aktuelle Tour) ────
+    // ── Item confirmation ────────────────────────
 
-    /**
-     * POST /api/deliveries/{deliveryId}/items/{itemId}/delivered
-     * Restocker checks off a single article at the company (EINGERÄUMT checkbox).
-     */
     @POST
     @Path("/{deliveryId}/items/{itemId}/delivered")
     public Response markItemDelivered(
@@ -127,12 +98,6 @@ public class DeliveryResource {
         return Response.ok(item).build();
     }
 
-    /**
-     * POST /api/deliveries/{deliveryId}/confirm
-     * Restocker presses "NÄCHSTE ZUSTELLUNG" after checking all items.
-     * Sets deliveredAt timestamp — confirmation sent to company.
-     * Only works when all items are delivered (all delivered=true).
-     */
     @POST
     @Path("/{deliveryId}/confirm")
     public Response confirmDelivery(@PathParam("deliveryId") UUID deliveryId) {
@@ -140,9 +105,11 @@ public class DeliveryResource {
         return Response.ok(delivery).build();
     }
 
-    // ── Inner request classes ────────────────────
-
     public static class EndTourRequest {
         public BigDecimal earnings;
+    }
+
+    private String authorizationHeader() {
+        return headers.getHeaderString(HttpHeaders.AUTHORIZATION);
     }
 }
