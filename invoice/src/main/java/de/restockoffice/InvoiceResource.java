@@ -2,6 +2,8 @@ package de.restockoffice;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
@@ -37,6 +39,31 @@ public class InvoiceResource {
             return List.of();
         }
         return invoiceService.getInvoicesForAccount(userID);
+    }
+
+    @GET
+    @Path("invoices/download")
+    @Produces("application/pdf")
+    public Response downloadInvoicePdf(
+            @QueryParam("userId") String userId,
+            @QueryParam("invoiceNumber") String invoiceNumber){
+        log.info("Triggered PDF download for user {} and invoice number: {}", userId, invoiceNumber);
+        if (userId == null || userId.isBlank() || invoiceNumber == null || invoiceNumber.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        InvoiceEntity entity = InvoiceEntity
+                .find("userId = ?1 and invoiceNumber = ?2", userId, invoiceNumber)
+                .firstResult();
+
+        if (entity == null || entity.zugferdPdf == null) {
+            log.warn("No invoice found for user {} with invoice number {}", userId, invoiceNumber);
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        return Response.ok(entity.zugferdPdf)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"rechnung_" + entity.invoiceNumber + ".pdf\"")
+                .build();
     }
 
 
