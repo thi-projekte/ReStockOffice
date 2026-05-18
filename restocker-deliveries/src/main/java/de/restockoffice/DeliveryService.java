@@ -8,6 +8,8 @@ import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -50,6 +52,55 @@ public class DeliveryService {
 
     public List<Tour> getTodayToursByRestocker(String restockerName) {
         return Tour.findTodayByRestocker(restockerName);
+    }
+
+    @Transactional
+    public Tour syncTodayOrders(String restockerName, String authorizationHeader) {
+        if (restockerName == null || restockerName.isBlank()) {
+            throw new BadRequestException("Restocker fehlt.");
+        }
+
+        LocalDate today = LocalDate.now();
+        Tour tour = findTodayTour(restockerName);
+        int nextStopOrder = nextStopOrder(tour);
+
+        List<OrderDto> activeOrders = orderClient.getActiveOrders(authorizationHeader);
+        if (activeOrders == null || activeOrders.isEmpty()) {
+            return tour;
+        }
+
+        for (OrderDto order : activeOrders) {
+            if (!isActiveOrder(order) || order.id == null || order.customerId == null) {
+                continue;
+            }
+
+            UserDto user = tryLoadUser(order.customerId, authorizationHeader);
+            if (!isDueToday(order, user, today)) {
+                continue;
+            }
+
+            if (deliveryExistsForOrderToday(order.id.toString(), today)) {
+                continue;
+            }
+
+            if (tour == null) {
+                tour = new Tour();
+                tour.restockerName = restockerName;
+                tour.tourDate = today;
+                tour.persist();
+            }
+
+            Delivery delivery = new Delivery();
+            delivery.orderId = order.id.toString();
+            delivery.userId = order.customerId;
+            delivery.tour = tour;
+            delivery.stopOrder = nextStopOrder++;
+            delivery.addItem(createDeliveryItem(order));
+            delivery.persist();
+            tour.deliveries.add(delivery);
+        }
+
+        return tour;
     }
 
     // ── Warehouse collection ─────────────────────
@@ -100,8 +151,8 @@ public class DeliveryService {
     public DeliveryDetailDto getDeliveryDetail(UUID deliveryId, String authorizationHeader) {
         Delivery delivery = findDeliveryOrThrow(deliveryId);
 
-        UserDto user = userClient.getUserById(delivery.userId, authorizationHeader);
-        OrderDto order = orderClient.getOrderById(parseOrderId(delivery.orderId), authorizationHeader);
+        UserDto user = tryLoadUser(delivery.userId, authorizationHeader);
+        OrderDto order = tryLoadOrder(delivery.orderId, authorizationHeader);
 
         return toDetailDto(delivery, user, order);
     }
@@ -110,8 +161,8 @@ public class DeliveryService {
         List<Delivery> deliveries = Delivery.findByTour(tourId);
         return deliveries.stream()
                 .map(d -> {
-                    UserDto user = userClient.getUserById(d.userId, authorizationHeader);
-                    OrderDto order = orderClient.getOrderById(parseOrderId(d.orderId), authorizationHeader);
+                    UserDto user = tryLoadUser(d.userId, authorizationHeader);
+                    OrderDto order = tryLoadOrder(d.orderId, authorizationHeader);
                     return toDetailDto(d, user, order);
                 })
                 .collect(Collectors.toList());
@@ -135,17 +186,17 @@ public class DeliveryService {
         dto.collectedAt = delivery.collectedAt;
         dto.deliveredAt = delivery.deliveredAt;
 
-        // From users service
-        dto.companyName = user.companyName;
-        dto.street = user.street + " " + user.houseNumber;
-        dto.postalCode = user.postalCode;
-        dto.city = user.city;
-        dto.phoneNumber = user.phoneNumber;
-        dto.contactPerson = user.roleInCompany;
-        dto.deliveryHint = user.deliveryHint;
+        // From users service, with fallback for local tests without customer service.
+        dto.companyName = valueOrFallback(user != null ? user.companyName : null, "Kunde " + delivery.userId);
+        dto.street = user != null ? buildStreet(user) : "Adresse fehlt";
+        dto.postalCode = valueOrEmpty(user != null ? user.postalCode : null);
+        dto.city = valueOrEmpty(user != null ? user.city : null);
+        dto.phoneNumber = valueOrEmpty(user != null ? user.phoneNumber : null);
+        dto.contactPerson = valueOrFallback(user != null ? user.roleInCompany : null, "Vor Ort");
+        dto.deliveryHint = valueOrEmpty(user != null ? user.deliveryHint : null);
 
         // From orders service
-        dto.houseNumber = user.houseNumber;
+        dto.houseNumber = valueOrEmpty(user != null ? user.houseNumber : null);
         dto.deliveryDate = delivery.tour != null && delivery.tour.tourDate != null
                 ? delivery.tour.tourDate.toString()
                 : null;
@@ -176,6 +227,121 @@ public class DeliveryService {
         Delivery delivery = Delivery.findById(deliveryId);
         if (delivery == null) throw new NotFoundException("Lieferung nicht gefunden: " + deliveryId);
         return delivery;
+    }
+
+    private Tour findTodayTour(String restockerName) {
+        List<Tour> tours = Tour.findTodayByRestocker(restockerName);
+        return tours.isEmpty() ? null : tours.get(0);
+    }
+
+    private int nextStopOrder(Tour tour) {
+        if (tour == null) {
+            return 1;
+        }
+
+        return Delivery.findByTour(tour.id).stream()
+                .mapToInt(delivery -> delivery.stopOrder)
+                .max()
+                .orElse(0) + 1;
+    }
+
+    private boolean isActiveOrder(OrderDto order) {
+        return order != null && (order.status == null || "ACTIVE".equalsIgnoreCase(order.status));
+    }
+
+    private UserDto tryLoadUser(String userId, String authorizationHeader) {
+        try {
+            return userClient.getUserById(userId, authorizationHeader);
+        } catch (RuntimeException exception) {
+            return null;
+        }
+    }
+
+    private OrderDto tryLoadOrder(String orderId, String authorizationHeader) {
+        try {
+            return orderClient.getOrderById(parseOrderId(orderId), authorizationHeader);
+        } catch (RuntimeException exception) {
+            return null;
+        }
+    }
+
+    private boolean isDueToday(OrderDto order, UserDto user, LocalDate today) {
+        if (wasCreatedToday(order, today)) {
+            return true;
+        }
+
+        if (user != null && user.deliveryDay != null && !user.deliveryDay.isBlank()) {
+            return isGermanDeliveryDayToday(user.deliveryDay, today) && isIntervalDue(order, today);
+        }
+
+        return isIntervalDue(order, today);
+    }
+
+    private boolean isGermanDeliveryDayToday(String deliveryDay, LocalDate today) {
+        String normalized = deliveryDay.trim().toLowerCase();
+        return switch (today.getDayOfWeek()) {
+            case MONDAY -> normalized.equals("montag");
+            case TUESDAY -> normalized.equals("dienstag");
+            case WEDNESDAY -> normalized.equals("mittwoch");
+            case THURSDAY -> normalized.equals("donnerstag");
+            case FRIDAY -> normalized.equals("freitag");
+            case SATURDAY -> normalized.equals("samstag");
+            case SUNDAY -> normalized.equals("sonntag");
+        };
+    }
+
+    private boolean wasCreatedToday(OrderDto order, LocalDate today) {
+        return order.createdAt != null && order.createdAt.toLocalDate().isEqual(today);
+    }
+
+    private boolean isIntervalDue(OrderDto order, LocalDate today) {
+        if (order.createdAt == null || order.interval == null || order.interval <= 0) {
+            return true;
+        }
+
+        long daysSinceCreation = ChronoUnit.DAYS.between(order.createdAt.toLocalDate(), today);
+        return daysSinceCreation >= 0 && daysSinceCreation % order.interval == 0;
+    }
+
+    private boolean deliveryExistsForOrderToday(String orderId, LocalDate today) {
+        return Delivery.find("orderId = ?1 and tour.tourDate = ?2", orderId, today).firstResult() != null;
+    }
+
+    private DeliveryItem createDeliveryItem(OrderDto order) {
+        DeliveryItem item = new DeliveryItem();
+        item.articleNumber = order.productId;
+        item.quantity = order.quantity != null && order.quantity > 0 ? order.quantity : 1;
+        item.warehouseItem = findOrCreateWarehouseItem(order.productId);
+        return item;
+    }
+
+    private WarehouseItem findOrCreateWarehouseItem(String articleNumber) {
+        WarehouseItem warehouseItem = WarehouseItem.findByArticleNumber(articleNumber);
+        if (warehouseItem != null) {
+            return warehouseItem;
+        }
+
+        WarehouseItem created = new WarehouseItem();
+        created.articleNumber = articleNumber;
+        created.name = "Artikel " + articleNumber;
+        created.unit = "Stueck";
+        created.quantity = 1000;
+        created.persist();
+        return created;
+    }
+
+    private String buildStreet(UserDto user) {
+        String street = valueOrEmpty(user.street);
+        String houseNumber = valueOrEmpty(user.houseNumber);
+        return (street + " " + houseNumber).trim();
+    }
+
+    private String valueOrEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    private String valueOrFallback(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 
     private Long parseOrderId(String orderId) {

@@ -46,6 +46,17 @@ public class DeliveryResource {
     }
 
     @POST
+    @Path("/tours/today/sync")
+    public Response syncTodayOrders(@QueryParam("restocker") String restockerName) {
+        Tour tour = deliveryService.syncTodayOrders(restockerName, authorizationHeader());
+        if (tour == null) {
+            return Response.noContent().build();
+        }
+
+        return Response.ok(tour).build();
+    }
+
+    @POST
     @Path("/tours/{tourId}/start")
     public Response startTour(@PathParam("tourId") UUID tourId) {
         Tour tour = deliveryService.startTour(tourId);

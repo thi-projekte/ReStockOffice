@@ -1,5 +1,6 @@
 package de.restockoffice;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -36,6 +37,7 @@ public class Tour extends PanacheEntityBase {
 
     @OneToMany(mappedBy = "tour", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("stopOrder ASC")
+    @JsonIgnore
     public List<Delivery> deliveries = new ArrayList<>();
 
     // ── Convenience methods ──────────────────────
