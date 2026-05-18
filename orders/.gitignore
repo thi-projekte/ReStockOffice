@@ -55,6 +55,5 @@ bestellungsservice
 keycloak
 landing
 processengine
-docker-compose.yml
 package-lock.json
 .dockerignore
