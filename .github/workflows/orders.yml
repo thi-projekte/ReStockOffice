@@ -6,6 +6,7 @@ on:
       - main
       - feature/orders
       - feature/deployment-orders
+      - feature/55-restocker-deliveries-new
   pull_request:
     branches:
       - main

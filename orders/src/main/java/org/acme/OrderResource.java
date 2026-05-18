@@ -43,6 +43,23 @@ public class OrderResource {
         }
     }
 
+    @GET
+    @Path("/active")
+    public List<Order> getActiveOrders() {
+        return Order.list("status", "ACTIVE");
+    }
+
+    @GET
+    @Path("/delivery/{id}")
+    public Order getByIdForDelivery(@PathParam("id") Long id) {
+        Order order = Order.findById(id);
+        if (order == null) {
+            throw new NotFoundException("Order nicht gefunden: " + id);
+        }
+
+        return order;
+    }
+
     //==== Get a certain order ==== //
     @GET
     @Path("/{id}")
