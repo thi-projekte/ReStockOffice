@@ -16,3 +16,5 @@ target/
 /spa/build/
 /spa/.env
 /spa/.env.example
+
+*.tsbuildinfo

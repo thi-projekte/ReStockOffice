@@ -2,26 +2,23 @@
 
 Dieser Quarkus-Service verschickt die beiden E-Mails aus dem ReStockOrder-Prozess:
 
-- Bestellbestaetigung direkt nach erfolgreicher Anlage der ReStockOrder
-- Lieferankuendigung vor der anstehenden Lieferung
-- Lieferbestaetigung nach erfolgreicher Zustellung
+- Bestellbestätigung direkt nach erfolgreicher Anlage der ReStockOrder
+- Lieferankündigung vor der anstehenden Lieferung
 
-Die Mail-Inhalte basieren auf den vorhandenen HTML- und CSS-Vorlagen und werden serverseitig mit Bestell- und Lieferdaten personalisiert. Der Versand erfolgt ueber die Resend-API.
+Die Mail-Inhalte basieren auf den vorhandenen HTML- und CSS-Vorlagen und werden serverseitig mit Bestell- und Lieferdaten personalisiert. Der Versand erfolgt über die Resend-API.
 
 ## REST-Endpunkte
 
 ```text
 POST /emails/order-confirmation
 POST /emails/delivery-announcement
-POST /emails/delivery-confirmation
 ```
 
-Fuer Vorschau und Template-Tests:
+Für Vorschau und Template-Tests:
 
 ```text
 POST /emails/order-confirmation/preview
 POST /emails/delivery-announcement/preview
-POST /emails/delivery-confirmation/preview
 ```
 
 ## Konfiguration
@@ -50,4 +47,4 @@ RESTOCK_MAIL_RESEND_BASE_URL=https://api.resend.com
 
 ## Deployment
 
-Die GitHub Action unter `.github/workflows/confirmation-mails.yml` baut und publiziert das Image nach GHCR. Fuer Portainer liegt die Compose-Datei unter `confirmationMails/docker-compose.yml`.
+Die GitHub Action unter `.github/workflows/confirmation-mails.yml` baut und publiziert das Image nach GHCR. Für Portainer liegt die Compose-Datei unter `confirmationMails/docker-compose.yml`.
