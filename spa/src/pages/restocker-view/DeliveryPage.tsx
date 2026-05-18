@@ -17,6 +17,7 @@ import {
   loadTourDetails,
   markDeliveryItemDelivered,
   startTour,
+  syncTodayOrders,
   type DeliveryDetail,
   type Tour,
 } from "../../services/deliveries";
@@ -91,6 +92,11 @@ export function DeliveryPage() {
       setError(null);
 
       try {
+        await syncTodayOrders({
+          restockerName,
+          token: auth.token,
+        });
+
         const tours = await loadTodayTours({
           restockerName,
           token: auth.token,

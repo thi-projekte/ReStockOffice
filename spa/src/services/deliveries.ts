@@ -110,6 +110,37 @@ export async function loadTodayTours({
   );
 }
 
+export async function syncTodayOrders({
+  restockerName,
+  token,
+}: {
+  restockerName: string;
+  token?: string;
+}) {
+  const resolvedToken = resolveToken(token);
+  const query = new URLSearchParams({ restocker: restockerName });
+  const url = `${DELIVERIES_API_URL}/tours/today/sync?${query.toString()}`;
+
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: createHeaders(resolvedToken),
+    });
+  } catch {
+    throw new Error(
+      `Die Delivery-API konnte nicht erreicht werden: ${url}. Bitte pruefe, ob der Deliveries-Service laeuft und ob CORS/HTTPS fuer die SPA-Origin erlaubt ist.`,
+    );
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  return parseJsonResponse<Tour>(response, "Heutige Orders konnten nicht synchronisiert werden");
+}
+
 export async function loadTourDetails({
   tourId,
   token,
