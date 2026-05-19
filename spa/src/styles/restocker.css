@@ -543,12 +543,6 @@
     flex-direction: column;
   }
 
-  .restocker-order-card__head,
-  .restocker-order-card__footer {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .restocker-order-card__detail-link {
     width: 100%;
   }
