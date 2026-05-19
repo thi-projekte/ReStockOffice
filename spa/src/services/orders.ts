@@ -9,6 +9,12 @@ import type {
   RestockOrder,
   Subscription,
 } from "../types/shop";
+import {
+  loadTodayTours,
+  loadTourDetails,
+  syncTodayOrders,
+  type DeliveryDetail,
+} from "./deliveries";
 import { getProducts } from "./products";
 
 const ORDERS_API_URL = "https://orders.restockoffice.de/orders";
@@ -23,6 +29,7 @@ interface OrdersRequestContext {
 
 interface RestockerOrdersRequestContext {
   token?: string;
+  restockerName?: string;
 }
 
 interface RestockerOrderAssignment {
@@ -38,6 +45,18 @@ interface UpsertOrderPayload extends OrdersRequestContext {
   intervalCount: number;
   existingItem?: Pick<RestockOrder, "createdAt" | "status">;
 }
+
+interface MarketplaceCustomerData {
+  companyName: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  deliveryTime: string;
+  deliveryNotes: string;
+  isPlaceholder: boolean;
+}
+
+const MISSING_MARKETPLACE_VALUE = "Fehlt noch";
 
 function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -84,6 +103,17 @@ function formatDisplayDate(dateValue: Date) {
   });
 }
 
+function formatIsoDateForDisplay(dateValue?: string | null) {
+  if (!dateValue) {
+    return formatDisplayDate(new Date());
+  }
+
+  const parsedDate = new Date(`${dateValue}T00:00:00`);
+  return Number.isNaN(parsedDate.getTime())
+    ? formatDisplayDate(new Date())
+    : formatDisplayDate(parsedDate);
+}
+
 function createProductLookup(products: Product[]) {
   return products.reduce<Record<string, Product>>((lookup, product) => {
     lookup[String(product.productId)] = product;
@@ -125,6 +155,188 @@ function buildQuantityLabel(product: Product | undefined, quantity: number) {
   }
 
   return `${quantity} x ${product.unit}`;
+}
+
+function normalizeMarketplaceText(value: string | null | undefined) {
+  const normalizedValue = value?.trim();
+  return normalizedValue ? normalizedValue : MISSING_MARKETPLACE_VALUE;
+}
+
+function buildStreetLine(detail?: DeliveryDetail) {
+  if (!detail) {
+    return MISSING_MARKETPLACE_VALUE;
+  }
+
+  const streetParts = [detail.street, detail.houseNumber]
+    .map((part) => part?.trim())
+    .filter(Boolean);
+
+  return streetParts.length > 0
+    ? streetParts.join(" ")
+    : MISSING_MARKETPLACE_VALUE;
+}
+
+async function loadDeliveryDetailsByCustomerId(
+  token: string,
+  restockerName?: string,
+) {
+  if (!restockerName?.trim()) {
+    return new Map<string, DeliveryDetail>();
+  }
+
+  try {
+    await syncTodayOrders({ restockerName, token });
+    const todaysTours = await loadTodayTours({ restockerName, token });
+
+    if (todaysTours.length === 0) {
+      return new Map<string, DeliveryDetail>();
+    }
+
+    const deliveryDetailGroups = await Promise.all(
+      todaysTours.map((tour) =>
+        loadTourDetails({
+          tourId: tour.id,
+          token,
+        }),
+      ),
+    );
+
+    return deliveryDetailGroups.flat().reduce((lookup, detail) => {
+      if (!lookup.has(detail.userId)) {
+        lookup.set(detail.userId, detail);
+      }
+
+      return lookup;
+    }, new Map<string, DeliveryDetail>());
+  } catch {
+    return new Map<string, DeliveryDetail>();
+  }
+}
+
+async function loadDeliveryDetailsForRestocker(
+  token: string,
+  restockerName?: string,
+) {
+  if (!restockerName?.trim()) {
+    return [];
+  }
+
+  try {
+    await syncTodayOrders({ restockerName, token });
+    const todaysTours = await loadTodayTours({ restockerName, token });
+
+    if (todaysTours.length === 0) {
+      return [];
+    }
+
+    const deliveryDetailGroups = await Promise.all(
+      todaysTours.map((tour) =>
+        loadTourDetails({
+          tourId: tour.id,
+          token,
+        }),
+      ),
+    );
+
+    return deliveryDetailGroups.flat();
+  } catch {
+    return [];
+  }
+}
+
+function resolveMarketplaceCustomerData({
+  customerId,
+  deliveryDetail,
+  useMockFallback,
+}: {
+  customerId: string;
+  deliveryDetail?: DeliveryDetail;
+  useMockFallback: boolean;
+}): MarketplaceCustomerData {
+  if (deliveryDetail) {
+    // The delivery service does not expose a dedicated delivery window yet,
+    // so we keep a visible placeholder until the backend provides that field.
+    const customerData = {
+      companyName: normalizeMarketplaceText(deliveryDetail.companyName),
+      street: buildStreetLine(deliveryDetail),
+      postalCode: normalizeMarketplaceText(deliveryDetail.postalCode),
+      city: normalizeMarketplaceText(deliveryDetail.city),
+      deliveryTime: MISSING_MARKETPLACE_VALUE,
+      deliveryNotes: normalizeMarketplaceText(deliveryDetail.deliveryHint),
+    };
+
+    return {
+      ...customerData,
+      isPlaceholder: Object.values(customerData).some(
+        (value) => value === MISSING_MARKETPLACE_VALUE,
+      ),
+    };
+  }
+
+  if (useMockFallback) {
+    const mockProfile = getRestockerCustomerProfile(customerId);
+    return {
+      companyName: mockProfile.companyName,
+      street: mockProfile.street,
+      postalCode: mockProfile.postalCode,
+      city: mockProfile.city,
+      deliveryTime: mockProfile.deliveryTime,
+      deliveryNotes: mockProfile.deliveryNotes,
+      isPlaceholder: mockProfile.isPlaceholder,
+    };
+  }
+
+  return {
+    companyName: MISSING_MARKETPLACE_VALUE,
+    street: MISSING_MARKETPLACE_VALUE,
+    postalCode: MISSING_MARKETPLACE_VALUE,
+    city: MISSING_MARKETPLACE_VALUE,
+    deliveryTime: MISSING_MARKETPLACE_VALUE,
+    deliveryNotes: MISSING_MARKETPLACE_VALUE,
+    isPlaceholder: true,
+  };
+}
+
+function deriveMarketplaceOrdersFromDeliveryDetails(
+  deliveryDetails: DeliveryDetail[],
+): RestockMarketplaceOrder[] {
+  return deliveryDetails.map((detail) => {
+    // The delivery service currently exposes today's routed stops, not the full
+    // open-marketplace model for the next four weeks. We still render these
+    // live stops here as a fallback instead of dropping to demo cards.
+    const deliveryTime = MISSING_MARKETPLACE_VALUE;
+    const deliveryNotes = normalizeMarketplaceText(detail.deliveryHint);
+    const items = detail.items.map((item, index) => ({
+      position: index + 1,
+      articleNumber: item.articleNumber,
+      productId: item.articleNumber,
+      name: normalizeMarketplaceText(item.name),
+      quantity: item.quantity,
+      quantityLabel: `${item.quantity} ${normalizeMarketplaceText(item.unit)}`,
+      interval: 1,
+    }));
+
+    return {
+      orderId: detail.orderId,
+      orderKey: `delivery__${detail.id}`,
+      customerId: detail.userId,
+      companyName: normalizeMarketplaceText(detail.companyName),
+      addressLine1: buildStreetLine(detail),
+      postalCode: normalizeMarketplaceText(detail.postalCode),
+      city: normalizeMarketplaceText(detail.city),
+      deliveryDate: formatIsoDateForDisplay(detail.deliveryDate),
+      // TODO: Replace this placeholder once the delivery service exposes a delivery window.
+      deliveryTime,
+      deliveryNotes,
+      articleCount: detail.items.reduce((sum, item) => sum + item.quantity, 0),
+      items,
+      isPlaceholderCustomerData:
+        deliveryTime === MISSING_MARKETPLACE_VALUE ||
+        [detail.companyName, detail.street, detail.postalCode, detail.city].some(
+          (value) => !value?.trim(),
+        ),
+    };
+  });
 }
 
 function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
@@ -258,6 +470,8 @@ async function fetchAllOrders(token: string) {
 function deriveMarketplaceOrders(
   orders: RestockOrder[],
   productsById: Record<string, Product>,
+  deliveryDetailsByCustomerId?: Map<string, DeliveryDetail>,
+  useMockCustomerFallback = false,
   assignmentsByOrderKey?: Map<string, RestockMarketplaceAssignment>,
 ): RestockMarketplaceOrder[] {
   const today = new Date();
@@ -280,7 +494,11 @@ function deriveMarketplaceOrders(
     const deliveryDate = formatDisplayDate(nextDeliveryDate);
     const deliveryDateKey = nextDeliveryDate.toISOString().slice(0, 10);
     const groupKey = `${order.customerId}__${deliveryDateKey}`;
-    const customerProfile = getRestockerCustomerProfile(order.customerId);
+    const customerProfile = resolveMarketplaceCustomerData({
+      customerId: order.customerId,
+      deliveryDetail: deliveryDetailsByCustomerId?.get(order.customerId),
+      useMockFallback: useMockCustomerFallback,
+    });
     const product = productsById[order.productId];
     const currentOrder = groupedOrders.get(groupKey);
     const nextItem: RestockMarketplaceOrderItem = {
@@ -410,6 +628,7 @@ export async function upsertSubscriptionOrder({
 
 export async function loadOpenRestockOrders({
   token,
+  restockerName,
 }: RestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
   const resolvedToken = resolveToken(token);
   const assignments = readRestockerAssignments();
@@ -417,10 +636,16 @@ export async function loadOpenRestockOrders({
   const productsById = createProductLookup(products);
 
   try {
-    const orders = await fetchAllOrders(resolvedToken);
-    const marketplaceOrders = deriveMarketplaceOrders(orders, productsById).filter(
-      (order) => !assignments.some((assignment) => assignment.orderKey === order.orderKey),
+    const deliveryDetailsByCustomerId = await loadDeliveryDetailsByCustomerId(
+      resolvedToken,
+      restockerName,
     );
+    const orders = await fetchAllOrders(resolvedToken);
+    const marketplaceOrders = deriveMarketplaceOrders(
+      orders,
+      productsById,
+      deliveryDetailsByCustomerId,
+    ).filter((order) => !assignments.some((assignment) => assignment.orderKey === order.orderKey));
 
     return {
       orders: marketplaceOrders,
@@ -430,9 +655,25 @@ export async function loadOpenRestockOrders({
       ),
     };
   } catch {
+    const deliveryBackedOrders = deriveMarketplaceOrdersFromDeliveryDetails(
+      await loadDeliveryDetailsForRestocker(resolvedToken, restockerName),
+    ).filter(
+      (order) => !assignments.some((assignment) => assignment.orderKey === order.orderKey),
+    );
+
+    if (deliveryBackedOrders.length > 0) {
+      return {
+        orders: deliveryBackedOrders,
+        source: "live",
+        hasPlaceholderCustomerData: true,
+      };
+    }
+
     const demoOrders = deriveMarketplaceOrders(
       createDemoRestockOrders(),
       productsById,
+      undefined,
+      true,
     ).filter(
       (order) => !assignments.some((assignment) => assignment.orderKey === order.orderKey),
     );
@@ -473,6 +714,8 @@ export async function loadAssignedRestockOrders({
     const marketplaceOrders = deriveMarketplaceOrders(
       orders,
       productsById,
+      undefined,
+      false,
       assignmentsByOrderKey,
     ).filter((order) => assignmentsByOrderKey.has(order.orderKey));
 
@@ -487,6 +730,8 @@ export async function loadAssignedRestockOrders({
     const demoOrders = deriveMarketplaceOrders(
       createDemoRestockOrders(),
       productsById,
+      undefined,
+      true,
       assignmentsByOrderKey,
     ).filter((order) => assignmentsByOrderKey.has(order.orderKey));
 
