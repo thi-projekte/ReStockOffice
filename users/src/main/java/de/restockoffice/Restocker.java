@@ -32,6 +32,15 @@ public class Restocker extends PanacheEntityBase {
     @NotNull
     public String phoneNumber;
 
+    @NotNull
+    public String IBAN;
+
+    @NotNull
+    public String BIC;
+
+    @NotNull
+    public String accountHolder;
+
     public Date birthDate;
 
     public String profilePictureUrl;
