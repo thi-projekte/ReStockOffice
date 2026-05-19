@@ -1,5 +1,8 @@
 import keycloak from "../auth/keycloak";
+import mockRestockOrderTemplates from "../mocks/restockOrders.json";
+import mockUserTemplate from "../mocks/users.json";
 import type { RestockOrder } from "../types/shop";
+import { useAPIs } from "./products";
 
 const CUSTOMER_API_URL = "https://users.restockoffice.de/customer";
 const CREATE_CUSTOMER_API_URL = "https://users.restockoffice.de/customer/create";
@@ -8,7 +11,6 @@ const UPDATE_CUSTOMER_API_URL = "https://users.restockoffice.de/customer/update"
 const RESTOCKER_API_URL = "https://users.restockoffice.de/restocker";
 const CREATE_RESTOCKER_API_URL = "https://users.restockoffice.de/restocker/create";
 const UPDATE_RESTOCKER_API_URL = "https://users.restockoffice.de/restocker/update";
-
 
 export interface User {
   userId: string;
@@ -43,11 +45,18 @@ export interface UserRestockOrdersRequestContext extends UserRequestContext {
   userId: string;
 }
 
+const mockUsers: User[] = [];
+const mockUserRestockOrders: Record<string, RestockOrder[]> = {};
+
 function buildUsersNetworkErrorMessage(action: "geladen" | "erstellt" | "gespeichert") {
   return `Die Users-API konnte nicht erreicht werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration, falls Benutzerdaten nicht ${action} werden konnten.`;
 }
 
 async function resolveToken(token?: string) {
+  if (!useAPIs) {
+    return "";
+  }
+
   if (token) {
     return token;
   }
@@ -138,6 +147,31 @@ function normalizeUserRestockOrders(payload: unknown): RestockOrder[] {
   return rawOrders.map(normalizeRestockOrder);
 }
 
+function createMockUser(userId: string): User {
+  return {
+    ...mockUserTemplate,
+    userId,
+  };
+}
+
+function getMockUser(userId: string) {
+  let mockUser = mockUsers.find((user) => user.userId === userId);
+
+  if (!mockUser) {
+    mockUser = createMockUser(userId);
+    mockUsers.push(mockUser);
+  }
+
+  if (!mockUserRestockOrders[userId]) {
+    mockUserRestockOrders[userId] = mockRestockOrderTemplates.map((order) => ({
+      ...order,
+      customerId: userId,
+    }));
+  }
+
+  return mockUser;
+}
+
 async function readJsonResponse(response: Response) {
   return (await response.json().catch(() => null)) as unknown;
 }
@@ -158,6 +192,10 @@ async function fetchUserPayload(
   userId: string,
   context: UserRequestContext = {},
 ): Promise<unknown> {
+  if (!useAPIs) {
+    return getMockUser(userId);
+  }
+
   const resolvedToken = await resolveToken(context.token);
   let response: Response;
 
@@ -196,6 +234,16 @@ export async function createUser(
   user: CreateUserPayload,
   context: UserRequestContext = {},
 ): Promise<User> {
+  if (!useAPIs) {
+    const createdUser = normalizeUser({
+      ...user,
+      createdAt: user.createdAt ?? new Date().toISOString().slice(0, 10),
+    });
+
+    mockUsers.push(createdUser);
+    return createdUser;
+  }
+
   const resolvedToken = await resolveToken(context.token);
   let response: Response;
 
@@ -219,6 +267,22 @@ export async function updateUser(
   user: UpdateUserPayload,
   context: UserRequestContext = {},
 ): Promise<User> {
+  if (!useAPIs) {
+    const existingUser = getMockUser(user.userId);
+    const updatedUser = normalizeUser({
+      ...existingUser,
+      ...user,
+      updatedAt: new Date().toISOString().slice(0, 10),
+    });
+    const userIndex = mockUsers.findIndex((mockUser) => mockUser.userId === user.userId);
+
+    if (userIndex >= 0) {
+      mockUsers[userIndex] = updatedUser;
+    }
+
+    return updatedUser;
+  }
+
   const resolvedToken = await resolveToken(context.token);
   let response: Response;
 
@@ -242,6 +306,11 @@ export async function getUserRestockOrders({
   userId,
   token,
 }: UserRestockOrdersRequestContext): Promise<RestockOrder[]> {
+  if (!useAPIs) {
+    getMockUser(userId);
+    return mockUserRestockOrders[userId] ?? [];
+  }
+
   const payload = await fetchUserPayload(userId, { token });
 
   return normalizeUserRestockOrders(payload);

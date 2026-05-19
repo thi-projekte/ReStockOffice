@@ -1,7 +1,8 @@
 import type { RestockOrder, Subscription } from "../types/shop";
+import mockRestockOrderTemplates from "../mocks/restockOrders.json";
+import { useAPIs } from "./products";
 
 const ORDERS_API_URL = "https://orders.restockoffice.de/orders";
-const TEMPORARY_CUSTOMER_ID = "100";
 
 interface OrdersRequestContext {
   customerId?: string;
@@ -38,10 +39,6 @@ function createHeaders(token: string) {
   };
 }
 
-function resolveCustomerId(customerId?: string) {
-  return customerId ?? TEMPORARY_CUSTOMER_ID;
-}
-
 export function createSubscription(customerId = ""): Subscription {
   const today = formatDate(new Date());
 
@@ -55,6 +52,24 @@ export function createSubscription(customerId = ""): Subscription {
     createdAt: today,
     updatedAt: today,
   };
+}
+
+const mockRestockOrders: RestockOrder[] = [];
+
+function getMockOrdersForCustomer(customerId: string) {
+  const customerOrders = mockRestockOrders.filter((order) => order.customerId === customerId);
+
+  if (customerOrders.length > 0) {
+    return mockRestockOrders;
+  }
+
+  const seededOrders = mockRestockOrderTemplates.map((order) => ({
+    ...order,
+    customerId,
+  }));
+
+  mockRestockOrders.push(...seededOrders);
+  return mockRestockOrders;
 }
 
 function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
@@ -103,8 +118,15 @@ export async function loadSubscription({
   customerId,
   token,
 }: OrdersRequestContext): Promise<Subscription> {
+  if (!customerId) {
+    return createSubscription();
+  }
+
+  if (!useAPIs) {
+    return createSubscriptionFromOrders(getMockOrdersForCustomer(customerId), customerId);
+  }
+
   const resolvedToken = resolveToken(token);
-  const resolvedCustomerId = resolveCustomerId(customerId);
 
   let response: Response;
 
@@ -133,16 +155,45 @@ export async function loadSubscription({
 
   const normalizedOrders = payload.map(normalizeRestockOrder);
 
-  return createSubscriptionFromOrders(normalizedOrders, resolvedCustomerId);
+  return createSubscriptionFromOrders(normalizedOrders, customerId);
 }
 
 export async function upsertSubscriptionOrder({
+  customerId,
   token,
   productId,
   quantity,
   intervalCount,
   existingItem,
 }: UpsertOrderPayload): Promise<{ productId: string; status: string; quantity: number; interval: number }> {
+  if (!useAPIs) {
+    if (!customerId) {
+      throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
+    }
+
+    const existingMockOrder = mockRestockOrders.find(
+      (order) => order.customerId === customerId && order.productId === productId,
+    );
+    const updatedAt = formatDate(new Date());
+    const mockOrder: RestockOrder = {
+      customerId,
+      productId,
+      status: existingItem?.status ?? existingMockOrder?.status ?? "ACTIVE",
+      quantity,
+      interval: intervalCount,
+      createdAt: existingItem?.createdAt ?? existingMockOrder?.createdAt ?? updatedAt,
+      updatedAt,
+    };
+
+    if (existingMockOrder) {
+      Object.assign(existingMockOrder, mockOrder);
+    } else {
+      mockRestockOrders.push(mockOrder);
+    }
+
+    return mockOrder;
+  }
+
   const resolvedToken = resolveToken(token);
 
   const orderPayload = {

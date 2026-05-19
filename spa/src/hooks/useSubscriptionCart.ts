@@ -5,6 +5,7 @@ import type {
   RestockOrderWithProduct,
   Subscription,
 } from "../types/shop";
+import { useAPIs } from "../services/products";
 import {
   createSubscription,
   loadSubscription,
@@ -38,7 +39,7 @@ export function useSubscriptionCart({
     setIsLoaded(false);
 
     async function loadCurrentSubscription() {
-      if (!token) {
+      if (useAPIs && !token) {
         if (!ignoreResult) {
           setSubscription(createSubscription(customerId));
           setIsLoaded(true);
@@ -85,7 +86,7 @@ export function useSubscriptionCart({
                                    quantity,
                                    intervalCount,
                                  }: AddSubscriptionPayload): Promise<"created" | "updated"> {
-    if (!token) {
+    if (useAPIs && !token) {
       throw new Error("Abo kann ohne Keycloak-Token nicht gespeichert werden.");
     }
 

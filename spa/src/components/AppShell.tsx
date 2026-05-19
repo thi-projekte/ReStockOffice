@@ -59,7 +59,7 @@ export function AppShell({ children }: AppShellProps) {
   const auth = useAuth();
   const isLoggedIn = auth.isAuthenticated;
   const subscriptionCart = useSubscriptionCart({
-    customerId: auth.getCustomerId(),
+    customerId: auth.user?.id,
     token: auth.token,
   });
   const location = useLocation();

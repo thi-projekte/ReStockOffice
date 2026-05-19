@@ -2,7 +2,7 @@ import products from "../mocks/products.json";
 import logoColored from "../assets/logos/logo_colored.png";
 import type { Product } from "../types/shop";
 
-const useAPI = true;
+export const useAPIs = true;
 
 const PRODUCTS_API_URL = "https://articles.restockoffice.de/articles";
 const PRODUCT_API_URL = "https://articles.restockoffice.de/article";
@@ -152,7 +152,7 @@ export async function getProducts(): Promise<Product[]> {
     return allProductsCache;
   }
 
-  if (useAPI) {
+  if (useAPIs) {
     return loadProductsFromApi();
   }
 
@@ -170,7 +170,7 @@ export async function getProductById(productId: number): Promise<Product | undef
     return allProductsCache.find((product) => product.productId === productId);
   }
 
-  if (useAPI) {
+  if (useAPIs) {
     return loadProductByIdFromApi(productId);
   }
 
@@ -190,7 +190,7 @@ export async function getProductsByCategorySlug(categorySlug: string): Promise<P
     );
   }
 
-  if (useAPI) {
+  if (useAPIs) {
     const resolvedCategoryName = await getCategoryNameBySlug(categorySlug);
 
     if (!resolvedCategoryName) {

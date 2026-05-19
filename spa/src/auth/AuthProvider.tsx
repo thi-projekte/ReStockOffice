@@ -44,7 +44,6 @@ interface AuthContextValue {
   login: () => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (role: string) => boolean;
-  getCustomerId: () => string | undefined;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -177,7 +176,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         hasRole: (role) => user?.roles.includes(role) ?? false,
-        getCustomerId: () => user?.customerId,
       }),
       [isAuthenticated, isInitializing, error, token, user, login, logout],
   );

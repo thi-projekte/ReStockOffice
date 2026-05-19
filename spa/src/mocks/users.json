@@ -1,0 +1,17 @@
+{
+  "postalCode": "50667",
+  "city": "Köln",
+  "street": "Bürostraße",
+  "houseNumber": "12",
+  "country": "Deutschland",
+  "companyName": "ReStockOffice Demo GmbH",
+  "phoneNumber": "+49 221 123456",
+  "roleInCompany": "Office Manager",
+  "birthDate": "1995-05-19",
+  "deliveryHint": "Bitte am Empfang abgeben.",
+  "deliveryDay": "Dienstag",
+  "deliveryTime": 10,
+  "iban": "DE02120300000000202051",
+  "createdAt": "2026-05-19",
+  "updatedAt": "2026-05-19"
+}
