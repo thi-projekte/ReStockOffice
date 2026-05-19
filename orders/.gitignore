@@ -45,15 +45,4 @@ nb-configuration.xml
 .certs/
 
 #project files
-.github/workflows/articles.yml
-.github/workflows/cibseven-processengine.yml
 .github/workflows/frontend-docker.yml
-.github/workflows/landing-docker.yml
-
-articles
-bestellungsservice
-keycloak
-landing
-processengine
-package-lock.json
-.dockerignore
