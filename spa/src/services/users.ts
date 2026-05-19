@@ -1,9 +1,14 @@
 import keycloak from "../auth/keycloak";
 import type { RestockOrder } from "../types/shop";
 
-const USER_API_URL = "https://users.restockoffice.de/user";
-const CREATE_USER_API_URL = "https://users.restockoffice.de/user/create";
-const UPDATE_USER_API_URL = "https://users.restockoffice.de/user/update";
+const CUSTOMER_API_URL = "https://users.restockoffice.de/customer";
+const CREATE_CUSTOMER_API_URL = "https://users.restockoffice.de/customer/create";
+const UPDATE_CUSTOMER_API_URL = "https://users.restockoffice.de/customer/update";
+
+const RESTOCKER_API_URL = "https://users.restockoffice.de/restocker";
+const CREATE_RESTOCKER_API_URL = "https://users.restockoffice.de/restocker/create";
+const UPDATE_RESTOCKER_API_URL = "https://users.restockoffice.de/restocker/update";
+
 
 export interface User {
   userId: string;
@@ -157,7 +162,7 @@ async function fetchUserPayload(
   let response: Response;
 
   try {
-    response = await fetch(`${USER_API_URL}?userId=${encodeURIComponent(userId)}`, {
+    response = await fetch(`${CUSTOMER_API_URL}?userId=${encodeURIComponent(userId)}`, {
       method: "GET",
       headers: createHeaders(resolvedToken),
     });
@@ -195,7 +200,7 @@ export async function createUser(
   let response: Response;
 
   try {
-    response = await fetch(CREATE_USER_API_URL, {
+    response = await fetch(CREATE_CUSTOMER_API_URL, {
       method: "POST",
       headers: createHeaders(resolvedToken),
       body: JSON.stringify(user),
@@ -218,7 +223,7 @@ export async function updateUser(
   let response: Response;
 
   try {
-    response = await fetch(UPDATE_USER_API_URL, {
+    response = await fetch(UPDATE_CUSTOMER_API_URL, {
       method: "POST",
       headers: createHeaders(resolvedToken),
       body: JSON.stringify(user),
