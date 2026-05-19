@@ -6,13 +6,16 @@ on:
       - main
       - feature/orders
       - feature/deployment-orders
-      - feature/55-restocker-deliveries-new
     paths:
       - "orders/**"
       - ".github/workflows/orders.yml"
   pull_request:
     branches:
       - main
+    paths:
+      - "orders/**"
+      - ".github/workflows/orders.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
