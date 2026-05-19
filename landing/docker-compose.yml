@@ -1,0 +1,12 @@
+services:
+
+  landing:
+    image: ghcr.io/thi-projekte/restockoffice-landing:latest
+    container_name: restockoffice-landing
+    restart: unless-stopped
+    networks:
+      - nginx-proxy-manager
+
+networks:
+  nginx-proxy-manager:
+    external: true

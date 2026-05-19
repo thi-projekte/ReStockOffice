@@ -5,20 +5,14 @@ dist/
 .idea/
 target/
 *.iml
+.env
+
 .DS_Store
+.vite/
 
-
-articles
-bestellungsservice
-frontend
-keycloak
-landing
-processengine
-.dockerignore
-docker-compose.yml
-package-lock.json
-.github/workflows/articles.yml
-.github/workflows/cibseven-processengine.yml
-.github/workflows/frontend-docker.yml
-.github/workflows/landing-docker.yml
-
+## Für SPA
+/spa/node_modules/
+/spa/dist/
+/spa/build/
+/spa/.env
+/spa/.env.example
