@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import {
   FaBoxOpen,
   FaCheck,
@@ -49,6 +50,7 @@ function findNextOpenStopIndex(deliveries: DeliveryDetail[]) {
 
 export function DeliveryPage() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const [tour, setTour] = useState<Tour | null>(null);
   const [deliveries, setDeliveries] = useState<DeliveryDetail[]>([]);
   const [activeStopIndex, setActiveStopIndex] = useState(0);
@@ -444,7 +446,7 @@ export function DeliveryPage() {
             <button
               className="button"
               type="button"
-              onClick={() => setShowDoneDialog(false)}
+              onClick={() => navigate("/restocker")}
             >
               Zurueck zum Dashboard
             </button>
