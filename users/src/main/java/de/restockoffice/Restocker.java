@@ -1,0 +1,42 @@
+package de.restockoffice;
+
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import io.smallrye.common.constraint.NotNull;
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
+import java.util.Date;
+
+@Entity
+@Table(name = "restockers")
+public class Restocker extends PanacheEntityBase {
+
+    @Id
+    public String userId;
+
+    @NotNull
+    public String postalCode;
+
+    @NotNull
+    public String city;
+
+    @NotNull
+    public String street;
+
+    @NotNull
+    public String houseNumber;
+
+    @NotNull
+    public String country;
+
+    @NotNull
+    public String phoneNumber;
+
+    public Date birthDate;
+
+    public String profilePictureUrl;
+
+    public LocalDateTime createdAt = LocalDateTime.now();
+    public LocalDateTime updatedAt;
+
+}

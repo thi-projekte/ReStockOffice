@@ -35,63 +35,105 @@ public class UserResource {
 
     // logged-in User
     @GET
-    @Path("user/me")
-    public User getMyData() {
-        return findUserOrThrow(jwt.getSubject());
+    @Path("customer/me")
+    public Customer getMyCustomerData() {
+        return findCustomerOrThrow(jwt.getSubject());
     }
 
     @GET
-    @Path("user")
-    public User getUserById(@QueryParam("userId") String userId){
+    @Path("restocker/me")
+    public Restocker getMyRestockerData() {
+        return findRestockerOrThrow(jwt.getSubject());
+    }
+
+    @GET
+    @Path("customer")
+    public Customer getCustomerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
 
         if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin")) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
         }
-        return findUserOrThrow(userId);
+        return findCustomerOrThrow(userId);
     }
 
     @GET
-    @Path("users")
+    @Path("restocker")
+    public Restocker getRestockerById(@QueryParam("userId") String userId){
+        String loggedInId = jwt.getSubject();
+
+        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin")) {
+            throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
+        }
+        return findRestockerOrThrow(userId);
+    }
+
+    @GET
+    @Path("customers")
     @RolesAllowed("admin")
-    public List<User> getAllUsers(){
-        return User.listAll();
+    public List<Customer> getAllCustomers(){
+        return Customer.listAll();
+    }
+
+    @GET
+    @Path("restockers")
+    @RolesAllowed("admin")
+    public List<Restocker> getAllRestockers(){
+        return Restocker.listAll();
     }
 
     @POST
-    @Path("user/create")
+    @Path("customer/create")
     @Transactional
-    public Response createUser(User newUser){
+    public Response createCustomer(Customer newCustomer){
         String userId = jwt.getSubject();
 
-        if (User.findById(userId) != null) {
+        if (Customer.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
 
-        newUser.userId = userId;
+        newCustomer.userId = userId;
 
-        newUser.persist();
+        newCustomer.persist();
 
-        return Response.created(URI.create("user/me")).entity(newUser).build();
+        return Response.created(URI.create("customer/me")).entity(newCustomer).build();
     }
 
     @POST
-    @Path("user/update")
+    @Path("restocker/create")
+    @Transactional
+    public Response createRestocker(Restocker newRestocker){
+        String userId = jwt.getSubject();
+
+        if (Restocker.findById(userId) != null) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity("Profil existiert bereits.").build();
+        }
+
+        newRestocker.userId = userId;
+
+        newRestocker.persist();
+
+        return Response.created(URI.create("restocker/me")).entity(newRestocker).build();
+    }
+
+    @POST
+    @Path("customer/update")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response updateUser(
-            @RestForm("userData") @org.jboss.resteasy.reactive.PartType(MediaType.APPLICATION_JSON) User updatedData,
+    public Response updateCustomer(
+            @RestForm("userData") @org.jboss.resteasy.reactive.PartType(MediaType.APPLICATION_JSON) Customer updatedData,
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
     ){
 
         String userId = jwt.getSubject();
-        User entity = findUserOrThrow(userId);
+        Customer entity = findCustomerOrThrow(userId);
 
-        boolean hasChanged = applyChanges(entity, updatedData);
+        boolean hasChanged = applyCustomerChanges(entity, updatedData);
 
         if (file != null && file.uploadedFile() != null) {
-            uploadProfilePicture(entity, file);
+            entity.profilePictureUrl = uploadProfilePicture(userId, file);
             hasChanged = true;
         }
 
@@ -102,15 +144,49 @@ public class UserResource {
         return Response.ok(entity).build();
     }
 
-    private User findUserOrThrow(String userId) {
-        User user = User.findById(userId);
+    @POST
+    @Path("restocker/update")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Transactional
+    public Response updateRestocker(
+            @RestForm("userData") @org.jboss.resteasy.reactive.PartType(MediaType.APPLICATION_JSON) Restocker updatedData,
+            @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
+    ){
+
+        String userId = jwt.getSubject();
+        Restocker entity = findRestockerOrThrow(userId);
+
+        boolean hasChanged = applyRestockerChanges(entity, updatedData);
+
+        if (file != null && file.uploadedFile() != null) {
+            entity.profilePictureUrl =uploadProfilePicture(userId, file);
+            hasChanged = true;
+        }
+
+        if (hasChanged) {
+            entity.updatedAt = LocalDateTime.now();
+        }
+
+        return Response.ok(entity).build();
+    }
+
+    private Customer findCustomerOrThrow(String userId) {
+        Customer user = Customer.findById(userId);
         if (user == null) {
-            throw new WebApplicationException("User-Profil nicht gefunden.", 404);
+            throw new WebApplicationException("Customer-Profil nicht gefunden.", 404);
         }
         return user;
     }
 
-    private boolean applyChanges(User entity, User updated) {
+    private Restocker findRestockerOrThrow(String userId) {
+        Restocker user = Restocker.findById(userId);
+        if (user == null) {
+            throw new WebApplicationException("Restocker-Profil nicht gefunden.", 404);
+        }
+        return user;
+    }
+
+    private boolean applyCustomerChanges(Customer entity, Customer updated) {
         boolean changed = false;
         if (!Objects.equals(entity.postalCode, updated.postalCode)) { entity.postalCode = updated.postalCode; changed = true; }
         if (!Objects.equals(entity.city, updated.city)) { entity.city = updated.city; changed = true; }
@@ -128,18 +204,31 @@ public class UserResource {
         return changed;
     }
 
-    private void uploadProfilePicture(User entity, org.jboss.resteasy.reactive.multipart.FileUpload file) {
+    private boolean applyRestockerChanges(Restocker entity, Restocker updated) {
+        boolean changed = false;
+
+        if (!Objects.equals(entity.postalCode, updated.postalCode)) { entity.postalCode = updated.postalCode; changed = true; }
+        if (!Objects.equals(entity.city, updated.city)) { entity.city = updated.city; changed = true; }
+        if (!Objects.equals(entity.street, updated.street)) { entity.street = updated.street; changed = true; }
+        if (!Objects.equals(entity.houseNumber, updated.houseNumber)) { entity.houseNumber = updated.houseNumber; changed = true; }
+        if (!Objects.equals(entity.country, updated.country)) { entity.country = updated.country; changed = true; }
+        if (!Objects.equals(entity.phoneNumber, updated.phoneNumber)) { entity.phoneNumber = updated.phoneNumber; changed = true; }
+        if (!Objects.equals(entity.birthDate, updated.birthDate)) { entity.birthDate = updated.birthDate; changed = true; }
+        return changed;
+    }
+
+    private String uploadProfilePicture(String userId, org.jboss.resteasy.reactive.multipart.FileUpload file) {
         try {
             String bucketName = "restockoffice";
-            String fileName = "users/" + entity.userId + ".jpg";
+            String fileName = "users/" + userId + ".jpg";
             s3.putObject(software.amazon.awssdk.services.s3.model.PutObjectRequest.builder()
                             .bucket(bucketName).key(fileName)
                             .acl(software.amazon.awssdk.services.s3.model.ObjectCannedACL.PUBLIC_READ)
                             .contentType(file.contentType()).build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromFile(file.uploadedFile()));
-            entity.profilePictureUrl = "https://" + bucketName + ".nbg1.your-objectstorage.com/" + fileName;
+            return "https://" + bucketName + ".nbg1.your-objectstorage.com/" + fileName;
         } catch (Exception e) {
-            throw new WebApplicationException("S3 Fehler", 500);
+            throw new WebApplicationException("S3 Fehler beim Upload des Profilbilds", 500);
         }
     }
 
