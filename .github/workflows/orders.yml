@@ -4,18 +4,8 @@ on:
   push:
     branches:
       - main
-      - feature/orders
-      - feature/deployment-orders
-    paths:
-      - "orders/**"
-      - ".github/workflows/orders.yml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "orders/**"
-      - ".github/workflows/orders.yml"
-  workflow_dispatch:
+    tags:
+      - "orders-v*"
 
 permissions:
   contents: read
