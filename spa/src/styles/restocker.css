@@ -513,6 +513,10 @@
 }
 
 @media (max-width: 720px) {
+  .restocker-order-grid {
+    grid-template-columns: 1fr;
+  }
+
   .restocker-marketplace-toolbar {
     flex-direction: column;
     align-items: stretch;
