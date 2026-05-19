@@ -42,6 +42,11 @@ function sortDeliveries(deliveries: DeliveryDetail[]) {
   return [...deliveries].sort((a, b) => a.stopOrder - b.stopOrder);
 }
 
+function findNextOpenStopIndex(deliveries: DeliveryDetail[]) {
+  const nextOpenIndex = deliveries.findIndex((delivery) => !delivery.deliveredAt);
+  return nextOpenIndex >= 0 ? nextOpenIndex : Math.max(deliveries.length - 1, 0);
+}
+
 export function DeliveryPage() {
   const auth = useAuth();
   const [tour, setTour] = useState<Tour | null>(null);
@@ -76,8 +81,7 @@ export function DeliveryPage() {
     const sorted = sortDeliveries(details);
 
     setDeliveries(sorted);
-    const nextOpenIndex = sorted.findIndex((delivery) => !delivery.deliveredAt);
-    setActiveStopIndex(nextOpenIndex >= 0 ? nextOpenIndex : Math.max(sorted.length - 1, 0));
+    setActiveStopIndex(findNextOpenStopIndex(sorted));
   }
 
   useEffect(() => {
@@ -114,9 +118,12 @@ export function DeliveryPage() {
             token: auth.token,
           });
           if (!isMounted) return;
-          setDeliveries(sortDeliveries(details));
+          const sorted = sortDeliveries(details);
+          setDeliveries(sorted);
+          setActiveStopIndex(findNextOpenStopIndex(sorted));
         } else {
           setDeliveries([]);
+          setActiveStopIndex(0);
         }
       } catch (loadError) {
         if (!isMounted) return;
