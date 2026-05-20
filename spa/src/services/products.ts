@@ -2,11 +2,15 @@ import products from "../mocks/products.json";
 import logoColored from "../assets/logos/logo_colored.png";
 import type { Product } from "../types/shop";
 
-const useAPI = true;
+const useAPI = import.meta.env.VITE_PRODUCTS_USE_API !== "false";
 
-const PRODUCTS_API_URL = "https://articles.restockoffice.de/articles";
-const PRODUCT_API_URL = "https://articles.restockoffice.de/article";
-const PRODUCTS_BY_CATEGORY_API_URL = "https://articles.restockoffice.de/articleByCategory";
+const PRODUCTS_API_URL =
+  import.meta.env.VITE_PRODUCTS_API_URL ?? "https://articles.restockoffice.de/articles";
+const PRODUCT_API_URL =
+  import.meta.env.VITE_PRODUCT_API_URL ?? "https://articles.restockoffice.de/article";
+const PRODUCTS_BY_CATEGORY_API_URL =
+  import.meta.env.VITE_PRODUCTS_BY_CATEGORY_API_URL ??
+  "https://articles.restockoffice.de/articleByCategory";
 const LEGACY_MOCK_IMAGE_PREFIX = "../assets/";
 const mockAssetModules = import.meta.glob("../assets/**/*.{png,jpg,jpeg,svg}", {
   eager: true,

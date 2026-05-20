@@ -9,12 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "axios": "^1.16.1",
     "keycloak-js": "^26.2.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.6.0",
-    "react-router-dom": "^6.30.1"
+    "react-router-dom": "^6.30.3"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
