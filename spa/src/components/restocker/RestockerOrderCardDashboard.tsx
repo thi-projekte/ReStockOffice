@@ -43,9 +43,6 @@ export function RestockerOrderCard({
 
           <div className="restocker-order-card__delivery-main">
             <strong>{order.deliveryDate}</strong>
-            <span className="restocker-order-card__delivery-relative">
-              {formatRelativeDelivery(order.deliveryDate)}
-            </span>
           </div>
         </div>
 

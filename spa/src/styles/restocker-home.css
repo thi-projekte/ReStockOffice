@@ -162,6 +162,10 @@
     gap: 0.6rem;
 }
 
+.open-orders-carousel+.tour-btn {
+    margin-top: 1rem;
+}
+
 
 /* Responsive — mobile */
 @media (max-width: 768px) {
@@ -264,8 +268,13 @@
         scroll-snap-stop: always;
     }
 
-
-
+    .open-orders-carousel .restocker-order-card {
+        min-width: 300px;
+        width: 300px;
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
 }
 
 @media (min-width: 768px) {
