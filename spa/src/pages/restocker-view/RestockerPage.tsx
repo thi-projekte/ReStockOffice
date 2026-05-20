@@ -154,14 +154,27 @@ export function RestockerPage() {
                                     <>
                                         <p>Es gibt weitere Lieferungen in deiner Nähe. Beispielsweise:</p>
 
-                                        <ul>
-                                            {openOrders.slice(0, 3).map((order) => (
-                                                <li key={order.orderKey}>
-                                                    <strong>{order.companyName}</strong> – {order.city} –{" "}
-                                                    {order.articleCount} Artikel
-                                                </li>
+                                        <div className="open-orders-carousel">
+                                            {openOrders.slice(0, 5).map((order) => (
+                                                <div className="open-order-card" key={order.orderKey}>
+                                                    <div className="open-order-card__header">
+                                                        <h4>{order.companyName}</h4>
+                                                        <span>{order.city}</span>
+                                                    </div>
+
+                                                    <div className="open-order-card__body">
+                                                        <div className="open-order-card__fact">
+                                                            <span>Artikel</span>
+                                                            <strong>{order.articleCount}</strong>
+                                                        </div>
+                                                    </div>
+
+                                                    <button className="button button--ghost" type="button">
+                                                        Auftrag ansehen
+                                                    </button>
+                                                </div>
                                             ))}
-                                        </ul>
+                                        </div>
                                     </>
                                 )}
                             </div>

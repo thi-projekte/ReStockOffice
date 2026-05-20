@@ -148,6 +148,34 @@
     border-top: 0.5px solid var(--color-grey-300);
 }
 
+.open-orders-carousel {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+}
+
+.open-orders-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.open-order-card {
+    min-width: 280px;
+    flex: 0 0 auto;
+
+    background: white;
+    border-radius: 16px;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+
+    scroll-snap-align: start;
+}
+
 
 /* Responsive — mobile */
 @media (max-width: 768px) {
@@ -189,5 +217,15 @@
     .all-link {
         width: 100%;
         justify-content: center;
+    }
+
+    .open-orders-carousel {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        overflow: visible;
+    }
+
+    .open-order-card {
+        min-width: unset;
     }
 }
