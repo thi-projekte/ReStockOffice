@@ -7,6 +7,7 @@ import { loadAssignedRestockOrders } from "../../services/orders";
 import type { RestockMarketplaceLoadResult } from "../../types/shop";
 import { getDaysUntilDelivery } from "./restockerOrderUi";
 import { useNavigate } from "react-router-dom";
+import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCardDashboard";
 
 
 export function RestockerPage() {
@@ -150,40 +151,26 @@ export function RestockerPage() {
                             <div>
                                 <h4>Verfügbare Aufträge</h4>
                                 <h2>Offene Lieferungen in deiner Nähe</h2>
-                                {openLoading ? (
-                                    <p>Lade offene Aufträge...</p>
-                                ) : openError ? (
-                                    <p style={{ color: "red" }}>{openError}</p>
-                                ) : (
-                                    <>
-                                        <p>Es gibt weitere Lieferungen in deiner Nähe. Beispielsweise:</p>
-
-                                        <div className="open-orders-carousel">
-                                            {openOrders.slice(0, 5).map((order) => (
-                                                <div className="open-order-card" key={order.orderKey}>
-                                                    <div className="open-order-card__header">
-                                                        <h4>{order.companyName}</h4>
-                                                        <span>{order.city}</span>
-                                                    </div>
-
-                                                    <div className="open-order-card__body">
-                                                        <div className="open-order-card__fact">
-                                                            <span>Artikel</span>
-                                                            <strong>{order.articleCount}</strong>
-                                                        </div>
-                                                    </div>
-
-                                                    <button className="button button--ghost" type="button">
-                                                        Auftrag ansehen
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
                             </div>
                         </div>
 
+                        {openLoading ? (
+                            <p>Lade offene Aufträge...</p>
+                        ) : openError ? (
+                            <p style={{ color: "red" }}>{openError}</p>
+                        ) : (
+                            <>
+                                <p>Es gibt weitere Lieferungen in deiner Nähe. Beispielsweise:</p>
+                                <div className="open-orders-carousel">
+                                    {openOrders.slice(0, 6).map((order) => (
+                                        <RestockerOrderCard
+                                            key={order.orderId}
+                                            order={order}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
 
                         <button
                             className="tour-btn"
@@ -199,30 +186,28 @@ export function RestockerPage() {
                             <div>
                                 <h4>Deine Aufträge</h4>
                                 <h2>Deine Übersicht</h2>
-                                {assignedLoading ? (
-                                    <p>Lade deine Aufträge...</p>
-                                ) : assignedError ? (
-                                    <p style={{ color: "red" }}>{assignedError}</p>
-                                ) : assignedOrdersResult.orders.length === 0 ? (
-                                    <p>Du hast aktuell keine zugeordneten Aufträge.</p>
-                                ) : (
-                                    <>
-                                        <p>Du hast aktuell {assignedOrdersResult.orders.length} zugeordnete Aufträge.</p>
-
-                                        <ul>
-                                            {assignedOrdersResult.orders.slice(0, 3).map((order) => (
-                                                <li key={order.orderKey}>
-                                                    <strong>{order.companyName}</strong> – {order.city} –{" "}
-                                                    {order.articleCount} Artikel
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </>
-                                )}
                             </div>
                         </div>
 
-
+                        {assignedLoading ? (
+                            <p>Lade deine Aufträge...</p>
+                        ) : assignedError ? (
+                            <p style={{ color: "red" }}>{assignedError}</p>
+                        ) : assignedOrdersResult.orders.length === 0 ? (
+                            <p>Du hast aktuell keine zugeordneten Aufträge.</p>
+                        ) : (
+                            <>
+                                <p>Du hast aktuell {assignedOrdersResult.orders.length} zugeordnete Aufträge.</p>
+                                <div className="open-orders-carousel">
+                                    {assignedOrdersResult.orders.slice(0, 6).map((order) => (
+                                        <RestockerOrderCard
+                                            key={order.orderId}
+                                            order={order}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
 
                         <button
                             className="tour-btn"

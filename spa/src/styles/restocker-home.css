@@ -33,7 +33,6 @@
     border-radius: 16px;
     border: 0.5px solid var(--color-grey-200);
     padding: 24px;
-    overflow: hidden;
 }
 
 .card-header {
@@ -151,31 +150,16 @@
 .open-orders-carousel {
     display: flex;
     gap: 1rem;
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
-
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-
-    scrollbar-width: none;
-}
-
-.open-orders-carousel::-webkit-scrollbar {
-    display: none;
 }
 
 .open-order-card {
-    min-width: 280px;
-    flex: 0 0 auto;
-
-    background: white;
+    background: var(--color-grey-100);
     border-radius: 16px;
-    padding: 1rem;
-    border: 1px solid #e5e7eb;
-
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
+    padding: 1.25rem;
+    border: 1px solid var(--color-grey-200);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
 }
 
 
@@ -260,18 +244,40 @@
         color: rgba(31, 42, 46, 0.75);
     }
 
+    .open-orders-carousel {
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        padding-bottom: 0.5rem;
+    }
+
+    .open-orders-carousel::-webkit-scrollbar {
+        display: none;
+    }
+
+    .open-order-card {
+        min-width: 280px;
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
+
+
 
 }
 
 @media (min-width: 768px) {
-
     .open-orders-carousel {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
         overflow: visible;
     }
 
     .open-order-card {
         min-width: unset;
+        flex: unset;
+        width: 100%;
     }
 }
