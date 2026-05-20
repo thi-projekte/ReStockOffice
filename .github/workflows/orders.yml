@@ -4,15 +4,8 @@ on:
   push:
     branches:
       - main
-      - feature/orders
-      - feature/deployment-orders
-      - feature/55-restocker-deliveries-new
-    paths:
-      - "orders/**"
-      - ".github/workflows/orders.yml"
-  pull_request:
-    branches:
-      - main
+    tags:
+      - "orders-v*"
 
 permissions:
   contents: read

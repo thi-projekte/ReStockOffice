@@ -21,6 +21,7 @@ import {
 
 export function OrderPage() {
   const auth = useAuth();
+  const restockerName = auth.user?.username ?? auth.user?.id ?? "";
   const [marketplaceResult, setMarketplaceResult] =
     useState<RestockMarketplaceLoadResult>({
       orders: [],
@@ -59,6 +60,7 @@ export function OrderPage() {
       try {
         const loadedOrders = await loadOpenRestockOrders({
           token: auth.token,
+          restockerName,
         });
 
         if (!ignoreResult) {
@@ -84,7 +86,7 @@ export function OrderPage() {
     return () => {
       ignoreResult = true;
     };
-  }, [auth.token]);
+  }, [auth.token, restockerName]);
 
   const availableCities = useMemo(
     () =>
@@ -235,11 +237,11 @@ export function OrderPage() {
 
         {marketplaceResult.hasPlaceholderCustomerData ? (
           <div className="mock-box">
-            <strong>Vorläufige Customer-Stammdaten</strong>
+            <strong>Unvollständige Delivery-Service-Daten</strong>
             <span>
-              Firmenname, Adresse, Lieferzeit und Lieferhinweise werden derzeit
-              übergangsweise aus einer kleinen Placeholder-Directory abgeleitet,
-              weil diese Felder im aktuellen Order-Modell noch fehlen.
+              Verfügbare Firmen- und Adressdaten werden aus dem Delivery Service
+              angereichert. Felder, die dort aktuell noch fehlen, zeigen wir
+              sichtbar als "Fehlt noch" an.
             </span>
           </div>
         ) : null}

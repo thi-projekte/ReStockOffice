@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import {
   FaBoxOpen,
   FaCheck,
@@ -42,8 +43,14 @@ function sortDeliveries(deliveries: DeliveryDetail[]) {
   return [...deliveries].sort((a, b) => a.stopOrder - b.stopOrder);
 }
 
+function findNextOpenStopIndex(deliveries: DeliveryDetail[]) {
+  const nextOpenIndex = deliveries.findIndex((delivery) => !delivery.deliveredAt);
+  return nextOpenIndex >= 0 ? nextOpenIndex : Math.max(deliveries.length - 1, 0);
+}
+
 export function DeliveryPage() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const [tour, setTour] = useState<Tour | null>(null);
   const [deliveries, setDeliveries] = useState<DeliveryDetail[]>([]);
   const [activeStopIndex, setActiveStopIndex] = useState(0);
@@ -76,8 +83,7 @@ export function DeliveryPage() {
     const sorted = sortDeliveries(details);
 
     setDeliveries(sorted);
-    const nextOpenIndex = sorted.findIndex((delivery) => !delivery.deliveredAt);
-    setActiveStopIndex(nextOpenIndex >= 0 ? nextOpenIndex : Math.max(sorted.length - 1, 0));
+    setActiveStopIndex(findNextOpenStopIndex(sorted));
   }
 
   useEffect(() => {
@@ -114,9 +120,12 @@ export function DeliveryPage() {
             token: auth.token,
           });
           if (!isMounted) return;
-          setDeliveries(sortDeliveries(details));
+          const sorted = sortDeliveries(details);
+          setDeliveries(sorted);
+          setActiveStopIndex(findNextOpenStopIndex(sorted));
         } else {
           setDeliveries([]);
+          setActiveStopIndex(0);
         }
       } catch (loadError) {
         if (!isMounted) return;
@@ -437,7 +446,7 @@ export function DeliveryPage() {
             <button
               className="button"
               type="button"
-              onClick={() => setShowDoneDialog(false)}
+              onClick={() => navigate("/restocker")}
             >
               Zurueck zum Dashboard
             </button>
