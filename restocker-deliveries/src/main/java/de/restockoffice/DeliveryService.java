@@ -212,14 +212,17 @@ public class DeliveryService {
         dto.collectedAt = delivery.collectedAt;
         dto.deliveredAt = delivery.deliveredAt;
 
-        // From users service, with fallback for local tests without customer service.
-        dto.companyName = valueOrFallback(user != null ? user.companyName : null, "Kunde " + delivery.userId);
-        dto.street = user != null ? buildStreet(user) : "Adresse fehlt";
-        dto.postalCode = valueOrEmpty(user != null ? user.postalCode : null);
-        dto.city = valueOrEmpty(user != null ? user.city : null);
-        dto.phoneNumber = valueOrEmpty(user != null ? user.phoneNumber : null);
-        dto.contactPerson = valueOrFallback(user != null ? user.roleInCompany : null, "Vor Ort");
-        dto.deliveryHint = valueOrEmpty(user != null ? user.deliveryHint : null);
+        // From users service, with demo fallbacks for local tests without customer service data.
+        dto.companyName = valueOrFallback(user != null ? user.companyName : null, fallbackCompanyName(delivery.userId));
+        dto.street = valueOrFallback(user != null ? buildStreet(user) : null, "Esplanade 10");
+        dto.postalCode = valueOrFallback(user != null ? user.postalCode : null, "85049");
+        dto.city = valueOrFallback(user != null ? user.city : null, "Ingolstadt");
+        dto.phoneNumber = valueOrFallback(user != null ? user.phoneNumber : null, "0841 000000");
+        dto.contactPerson = valueOrFallback(user != null ? user.roleInCompany : null, "Empfang");
+        dto.deliveryHint = valueOrFallback(
+                user != null ? user.deliveryHint : null,
+                "Demo-Adresse, bis Customerdaten verfuegbar sind."
+        );
 
         // From orders service
         dto.houseNumber = valueOrEmpty(user != null ? user.houseNumber : null);
@@ -423,6 +426,13 @@ public class DeliveryService {
 
     private String valueOrFallback(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private String fallbackCompanyName(String userId) {
+        String suffix = userId == null || userId.isBlank()
+                ? "unbekannt"
+                : userId.substring(0, Math.min(8, userId.length()));
+        return "Demo Kunde " + suffix;
     }
 
     private record DeliveryGroupKey(String customerId, LocalDate deliveryDate) {

@@ -17,7 +17,8 @@ import {
 } from "./deliveries";
 import { getProducts } from "./products";
 
-const ORDERS_API_URL = "https://orders.restockoffice.de/orders";
+const ORDERS_API_URL =
+  import.meta.env.VITE_ORDERS_API_URL ?? "https://orders.restockoffice.de/orders";
 const TEMPORARY_CUSTOMER_ID = "100";
 const RESTOCKER_ASSIGNMENTS_STORAGE_KEY = "restockoffice-restocker-order-assignments-v1";
 const RESTOCKER_LOOKAHEAD_DAYS = 28;

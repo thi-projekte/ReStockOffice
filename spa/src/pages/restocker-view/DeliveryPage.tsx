@@ -322,7 +322,7 @@ export function DeliveryPage() {
           <div className="delivery-table delivery-table--warehouse">
             <div className="delivery-table__row delivery-table__row--head">
               <span>Eingesammelt</span>
-              <span>Auftrag</span>
+              <span>Paket</span>
             </div>
             {sortedDeliveries.map((delivery) => (
               <div className="delivery-table__row" key={delivery.id}>
@@ -331,12 +331,14 @@ export function DeliveryPage() {
                   type="button"
                   onClick={() => void handleCollect(delivery)}
                   disabled={delivery.collected || isBusy}
-                  aria-label={`Auftrag ${delivery.orderId} einsammeln`}
+                  aria-label={`Paket ${delivery.stopOrder} einsammeln`}
                   title="Paket einsammeln"
                 >
                   {delivery.collected ? <FaCheck /> : null}
                 </button>
-                <span className={delivery.collected ? "delivery-line-muted" : ""}>#{delivery.orderId}</span>
+                <span className={delivery.collected ? "delivery-line-muted" : ""}>
+                  Paket #{delivery.stopOrder}
+                </span>
               </div>
             ))}
           </div>
