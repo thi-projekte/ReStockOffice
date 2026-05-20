@@ -192,19 +192,17 @@ export function OrderPage() {
 
         <div className="hero-copy">
           <h1>RESTOCKORDER - MARKTPLATZ</h1>
-          <p>Alle verfügbaren Aufträge</p>
+          <p>Alle verfügbaren Aufträge für die nächsten 4 Wochen.</p>
 
           <div className="dashboard-strip" aria-label="Marktplatz Übersicht">
             <article className="dashboard-stat">
               <span className="dashboard-stat__label">Offene Aufträge</span>
               <strong>{filteredOrders.length}</strong>
-              <small>Fällig in den nächsten 4 Wochen</small>
             </article>
 
             <article className="dashboard-stat">
               <span className="dashboard-stat__label">Unternehmen</span>
               <strong>{new Set(filteredOrders.map((order) => order.companyName)).size}</strong>
-              <small>Aktuell im Marktplatz verfügbar</small>
             </article>
 
           </div>
