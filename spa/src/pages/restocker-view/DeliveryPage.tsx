@@ -24,7 +24,7 @@ import {
 } from "../../services/deliveries";
 import "../../styles/restocker-deliveries.css";
 
-const EARNINGS_PER_STOP = 11.425;
+const EARNINGS_PER_COMPANY = 7;
 
 function formatDate(value: string | null) {
   if (!value) return "Heute";
@@ -48,6 +48,14 @@ function findNextOpenStopIndex(deliveries: DeliveryDetail[]) {
   return nextOpenIndex >= 0 ? nextOpenIndex : Math.max(deliveries.length - 1, 0);
 }
 
+function countCompanies(deliveries: DeliveryDetail[]) {
+  const companyKeys = new Set(
+    deliveries.map((delivery) => delivery.userId || delivery.companyName).filter(Boolean),
+  );
+
+  return companyKeys.size;
+}
+
 export function DeliveryPage() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -64,7 +72,8 @@ export function DeliveryPage() {
   const activeDelivery = sortedDeliveries[activeStopIndex] ?? sortedDeliveries[0];
   const allCollected = sortedDeliveries.length > 0 && sortedDeliveries.every((delivery) => delivery.collected);
   const completedStops = sortedDeliveries.filter((delivery) => delivery.deliveredAt).length;
-  const calculatedEarnings = Number((sortedDeliveries.length * EARNINGS_PER_STOP).toFixed(2));
+  const companyCount = countCompanies(sortedDeliveries);
+  const calculatedEarnings = Number((companyCount * EARNINGS_PER_COMPANY).toFixed(2));
   const isTourStarted = Boolean(tour?.startTime);
   const isTourFinished = Boolean(tour?.endTime);
   const phase = !isTourStarted ? "warehouse" : isTourFinished ? "finished" : "route";

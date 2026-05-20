@@ -246,6 +246,13 @@ export function OrderPage() {
           </div>
         ) : null}
 
+        <div className="mock-box">
+          <strong>Dein Verdienst</strong>
+          <span>
+            {"Für jede erfolgreich abgeschlossene Unternehmenslieferung erhältst du 7 €."}
+          </span>
+        </div>
+
         {error ? <div className="error-box">{error}</div> : null}
 
         <div className="restocker-marketplace-toolbar">
