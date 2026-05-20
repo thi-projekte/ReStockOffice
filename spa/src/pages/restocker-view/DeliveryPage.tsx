@@ -72,10 +72,12 @@ export function DeliveryPage() {
   const activeDelivery = sortedDeliveries[activeStopIndex] ?? sortedDeliveries[0];
   const allCollected = sortedDeliveries.length > 0 && sortedDeliveries.every((delivery) => delivery.collected);
   const completedStops = sortedDeliveries.filter((delivery) => delivery.deliveredAt).length;
+  const allStopsDelivered =
+    sortedDeliveries.length > 0 && completedStops === sortedDeliveries.length;
   const companyCount = countCompanies(sortedDeliveries);
   const calculatedEarnings = Number((companyCount * EARNINGS_PER_COMPANY).toFixed(2));
   const isTourStarted = Boolean(tour?.startTime);
-  const isTourFinished = Boolean(tour?.endTime);
+  const isTourFinished = Boolean(tour?.endTime) && allStopsDelivered;
   const phase = !isTourStarted ? "warehouse" : isTourFinished ? "finished" : "route";
   const currentItemsReady =
     activeDelivery?.items.length > 0 &&
@@ -448,7 +450,7 @@ export function DeliveryPage() {
             <h2 id="delivery-complete-title">Alle Lieferungen erledigt</h2>
             <p>Starke Leistung. Du hast alle Auftraege fuer heute erfolgreich zugestellt.</p>
             <div className="delivery-complete-stats">
-              <span>Abgeschlossene Stopps: {completedStops || sortedDeliveries.length} von {sortedDeliveries.length}</span>
+              <span>Abgeschlossene Stopps: {completedStops} von {sortedDeliveries.length}</span>
               <span>Gesammelte Verguetung: {formatMoney(tour.earnings || calculatedEarnings)}</span>
               <span>Status: Tour beendet</span>
             </div>
