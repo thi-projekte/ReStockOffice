@@ -77,7 +77,9 @@ export function DeliveryPage() {
   const companyCount = countCompanies(sortedDeliveries);
   const calculatedEarnings = Number((companyCount * EARNINGS_PER_COMPANY).toFixed(2));
   const isTourStarted = Boolean(tour?.startTime);
-  const isTourFinished = Boolean(tour?.endTime) && allStopsDelivered;
+  const hasTourEndTime = Boolean(tour?.endTime);
+  const isTourFinished = hasTourEndTime && allStopsDelivered;
+  const shouldShowDoneDialog = allStopsDelivered && (showDoneDialog || hasTourEndTime);
   const phase = !isTourStarted ? "warehouse" : isTourFinished ? "finished" : "route";
   const currentItemsReady =
     activeDelivery?.items.length > 0 &&
@@ -444,7 +446,7 @@ export function DeliveryPage() {
         </div>
       ) : null}
 
-      {showDoneDialog || isTourFinished ? (
+      {shouldShowDoneDialog ? (
         <div className="delivery-complete-overlay" role="presentation">
           <div className="delivery-complete-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-complete-title">
             <h2 id="delivery-complete-title">Alle Lieferungen erledigt</h2>
