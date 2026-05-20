@@ -8,9 +8,25 @@ import {
     type DeliveryDetail,
     type Tour,
 } from "../../services/deliveries";
+import {
+    loadAssignedRestockOrders,
+    loadOpenRestockOrders,
+} from "../../services/orders";
+import type {
+    RestockMarketplaceLoadResult,
+    RestockMarketplaceOrder,
+} from "../../types/shop";
 import "../../styles/restocker-home.css";
 
 const EARNINGS_PER_COMPANY = 7;
+
+function createEmptyMarketplaceResult(): RestockMarketplaceLoadResult {
+    return {
+        orders: [],
+        source: "live",
+        hasPlaceholderCustomerData: false,
+    };
+}
 
 function formatMoney(value: number) {
     return new Intl.NumberFormat("de-DE", {
@@ -44,23 +60,85 @@ function getTourStatus(tour: Tour | null) {
     return "Bereit zur Abholung";
 }
 
+async function loadTodayDeliveryData(token: string, restockerName: string) {
+    await syncTodayOrders({
+        token,
+        restockerName,
+    });
+
+    const tours = await loadTodayTours({
+        token,
+        restockerName,
+    });
+    const todaysTour =
+        tours.find((candidate) => !candidate.endTime) ?? tours[0] ?? null;
+
+    if (!todaysTour) {
+        return {
+            tour: null,
+            deliveries: [],
+        };
+    }
+
+    const deliveries = await loadTourDetails({
+        token,
+        tourId: todaysTour.id,
+    });
+
+    return {
+        tour: todaysTour,
+        deliveries,
+    };
+}
+
+function RestockerHomeOrderTile({
+    order,
+    statusLabel,
+}: {
+    order: RestockMarketplaceOrder;
+    statusLabel?: string;
+}) {
+    return (
+        <div className="order-tile">
+            <div className="order-top">
+                <span className="order-id">#{order.orderId}</span>
+                <span className="order-id">{order.deliveryDate}</span>
+            </div>
+            <strong className="order-company">{order.companyName}</strong>
+            <span className="order-addr">
+                {order.addressLine1}, {order.postalCode} {order.city}
+            </span>
+            <div className="order-meta">
+                <span>{order.articleCount} Artikel</span>
+                <span>{statusLabel ?? "Offen"}</span>
+            </div>
+        </div>
+    );
+}
+
 export function RestockerPage() {
     const auth = useAuth();
     const navigate = useNavigate();
     const restockerName = auth.user?.username ?? auth.user?.id ?? "";
     const [tour, setTour] = useState<Tour | null>(null);
     const [deliveries, setDeliveries] = useState<DeliveryDetail[]>([]);
+    const [openOrdersResult, setOpenOrdersResult] =
+        useState<RestockMarketplaceLoadResult>(createEmptyMarketplaceResult);
+    const [assignedOrdersResult, setAssignedOrdersResult] =
+        useState<RestockMarketplaceLoadResult>(createEmptyMarketplaceResult);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         let ignoreResult = false;
 
-        async function loadDeliveries() {
+        async function loadDashboardData() {
             if (!auth.token || !restockerName) {
                 if (!ignoreResult) {
                     setTour(null);
                     setDeliveries([]);
+                    setOpenOrdersResult(createEmptyMarketplaceResult());
+                    setAssignedOrdersResult(createEmptyMarketplaceResult());
                     setIsLoading(false);
                 }
                 return;
@@ -70,44 +148,37 @@ export function RestockerPage() {
             setError(null);
 
             try {
-                await syncTodayOrders({
-                    token: auth.token,
-                    restockerName,
-                });
-
-                const tours = await loadTodayTours({
-                    token: auth.token,
-                    restockerName,
-                });
-                const todaysTour =
-                    tours.find((candidate) => !candidate.endTime) ?? tours[0] ?? null;
-
-                if (!todaysTour) {
-                    if (!ignoreResult) {
-                        setTour(null);
-                        setDeliveries([]);
-                    }
-                    return;
-                }
-
-                const details = await loadTourDetails({
-                    token: auth.token,
-                    tourId: todaysTour.id,
-                });
+                const [deliveryResult, openOrders, assignedOrders] = await Promise.all([
+                    loadTodayDeliveryData(auth.token, restockerName),
+                    loadOpenRestockOrders({
+                        token: auth.token,
+                        restockerName,
+                    }),
+                    auth.user?.id
+                        ? loadAssignedRestockOrders({
+                            token: auth.token,
+                            restockerId: auth.user.id,
+                        })
+                        : Promise.resolve(createEmptyMarketplaceResult()),
+                ]);
 
                 if (!ignoreResult) {
-                    setTour(todaysTour);
-                    setDeliveries(details);
+                    setTour(deliveryResult.tour);
+                    setDeliveries(deliveryResult.deliveries);
+                    setOpenOrdersResult(openOrders);
+                    setAssignedOrdersResult(assignedOrders);
                 }
             } catch (loadError) {
                 if (!ignoreResult) {
                     setError(
                         loadError instanceof Error
                             ? loadError.message
-                            : "Die Lieferungen konnten nicht geladen werden.",
+                            : "Die Restocker-Daten konnten nicht geladen werden.",
                     );
                     setTour(null);
                     setDeliveries([]);
+                    setOpenOrdersResult(createEmptyMarketplaceResult());
+                    setAssignedOrdersResult(createEmptyMarketplaceResult());
                 }
             } finally {
                 if (!ignoreResult) {
@@ -116,12 +187,12 @@ export function RestockerPage() {
             }
         }
 
-        void loadDeliveries();
+        void loadDashboardData();
 
         return () => {
             ignoreResult = true;
         };
-    }, [auth.token, restockerName]);
+    }, [auth.token, auth.user?.id, restockerName]);
 
     const sortedDeliveries = useMemo(
         () => [...deliveries].sort((first, second) => first.stopOrder - second.stopOrder),
@@ -141,6 +212,8 @@ export function RestockerPage() {
     ).size;
     const earnings = tour?.earnings ?? companyCount * EARNINGS_PER_COMPANY;
     const previewDeliveries = sortedDeliveries.slice(0, 3);
+    const previewOpenOrders = openOrdersResult.orders.slice(0, 2);
+    const previewAssignedOrders = assignedOrdersResult.orders.slice(0, 3);
     const greetingName = getGreetingName(auth.user);
 
     if (!auth.isInitializing && !auth.hasRole("Restocker")) {
@@ -148,7 +221,7 @@ export function RestockerPage() {
     }
 
     if (auth.isInitializing || isLoading) {
-        return <section className="page-card">Lieferungen werden geladen...</section>;
+        return <section className="page-card">Restocker-Daten werden geladen...</section>;
     }
 
     return (
@@ -169,7 +242,7 @@ export function RestockerPage() {
                         <div className="card-header">
                             <div>
                                 <h4>Deine Lieferungen heute</h4>
-                                <h2>Übersicht - Heutige Lieferungen</h2>
+                                <h2>Uebersicht - Heutige Lieferungen</h2>
                                 <p>
                                     Hallo {greetingName}, hier siehst du die wichtigsten Kennzahlen
                                     zu deinen heutigen Lieferungen.
@@ -230,7 +303,9 @@ export function RestockerPage() {
                                 </div>
                             </div>
                         ) : (
-                            <p className="muted-text">Heute ist aktuell keine Tour fuer dich geplant.</p>
+                            <p className="muted-text">
+                                Heute ist aktuell keine Delivery-Tour fuer dich geplant.
+                            </p>
                         )}
 
                         <button
@@ -248,12 +323,19 @@ export function RestockerPage() {
                             <div>
                                 <h4>Verfuegbare Auftraege</h4>
                                 <h2>Offene Lieferungen in deiner Naehe</h2>
-                                <p>
-                                    Es gibt weitere Lieferungen in deiner Naehe. Diese findest du im
-                                    Marktplatz.
-                                </p>
+                                <p>Es gibt weitere Lieferungen in deiner Naehe. Beispielsweise:</p>
                             </div>
                         </div>
+
+                        {previewOpenOrders.length > 0 ? (
+                            <div className="orders-grid">
+                                {previewOpenOrders.map((order) => (
+                                    <RestockerHomeOrderTile order={order} key={order.orderKey} />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="muted-text">Aktuell sind keine offenen Auftraege verfuegbar.</p>
+                        )}
 
                         <button
                             className="tour-btn"
@@ -269,12 +351,22 @@ export function RestockerPage() {
                         <div className="card-header">
                             <div>
                                 <h4>Deine Auftraege</h4>
-                                <h2>Deine Übersicht</h2>
-                                <p>Hier einige Lieferungen aus deiner heutigen Tour.</p>
+                                <h2>Deine Uebersicht</h2>
+                                <p>Hier einige Auftraege, die du dir gesichert hast.</p>
                             </div>
                         </div>
 
-                        {previewDeliveries.length > 0 ? (
+                        {previewAssignedOrders.length > 0 ? (
+                            <div className="orders-grid">
+                                {previewAssignedOrders.map((order) => (
+                                    <RestockerHomeOrderTile
+                                        order={order}
+                                        key={order.orderKey}
+                                        statusLabel="Angenommen"
+                                    />
+                                ))}
+                            </div>
+                        ) : previewDeliveries.length > 0 ? (
                             <div className="orders-grid">
                                 {previewDeliveries.map((delivery) => (
                                     <div className="order-tile" key={delivery.id}>
