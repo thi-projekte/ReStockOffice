@@ -64,7 +64,7 @@ public class DeliveryService {
         }
 
         LocalDate today = LocalDate.now();
-        Tour tour = findTodayTour(restockerName);
+        Tour tour = findTodayOpenTour(restockerName);
         int nextStopOrder = nextStopOrder(tour);
 
         List<OrderDto> activeOrders = orderClient.getActiveOrders(authorizationHeader);
@@ -103,10 +103,9 @@ public class DeliveryService {
 
             DeliveryGroupKey groupKey = entry.getKey();
             DeliveryGroup group = entry.getValue();
-            Delivery delivery = findDeliveryForCustomerOnDate(
+            Delivery delivery = findOpenDeliveryForCustomerInTour(
                     groupKey.customerId(),
-                    groupKey.deliveryDate(),
-                    restockerName
+                    tour
             );
 
             if (delivery == null) {
@@ -256,9 +255,12 @@ public class DeliveryService {
         return delivery;
     }
 
-    private Tour findTodayTour(String restockerName) {
-        List<Tour> tours = Tour.findTodayByRestocker(restockerName);
-        return tours.isEmpty() ? null : tours.get(0);
+    private Tour findTodayOpenTour(String restockerName) {
+        return Tour.find(
+                "restockerName = ?1 and tourDate = ?2 and endTime is null",
+                restockerName,
+                LocalDate.now()
+        ).firstResult();
     }
 
     private int nextStopOrder(Tour tour) {
@@ -343,12 +345,11 @@ public class DeliveryService {
         return item;
     }
 
-    private Delivery findDeliveryForCustomerOnDate(String customerId, LocalDate deliveryDate, String restockerName) {
+    private Delivery findOpenDeliveryForCustomerInTour(String customerId, Tour tour) {
         return Delivery.find(
-                "userId = ?1 and tour.tourDate = ?2 and tour.restockerName = ?3",
+                "userId = ?1 and tour.id = ?2 and deliveredAt is null",
                 customerId,
-                deliveryDate,
-                restockerName
+                tour.id
         ).firstResult();
     }
 
