@@ -9,6 +9,8 @@ interface RestockerOrderCardProps {
   detailLabel: string;
   onClick: () => void;
   statusLabel?: string;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 }
 
 export function RestockerOrderCard({
@@ -16,15 +18,29 @@ export function RestockerOrderCard({
   detailLabel,
   onClick,
   statusLabel,
+  secondaryActionLabel,
+  onSecondaryAction,
 }: RestockerOrderCardProps) {
   return (
-    <button className="restocker-order-card" type="button" onClick={onClick}>
+    <article
+      className="restocker-order-card"
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+    >
       <div className="restocker-order-card__head">
         <span className="restocker-order-card__id">#{order.orderId}</span>
         <span className="restocker-order-card__articles">{order.articleCount} Artikel</span>
       </div>
 
       <div className="restocker-order-card__body">
+        <span className="restocker-order-card__body-label">Kunde</span>
         <strong>{order.companyName}</strong>
         <span>{order.addressLine1}</span>
         <span>
@@ -33,13 +49,15 @@ export function RestockerOrderCard({
       </div>
 
       <div className="restocker-order-card__delivery">
-        <span className="restocker-order-card__delivery-label">Auslieferung</span>
+        <div className="restocker-order-card__delivery-date">
+          <span className="restocker-order-card__delivery-label">Auslieferung</span>
 
-        <div className="restocker-order-card__delivery-main">
-          <strong>{order.deliveryDate}</strong>
-          <span className="restocker-order-card__delivery-relative">
-            {formatRelativeDelivery(order.deliveryDate)}
-          </span>
+          <div className="restocker-order-card__delivery-main">
+            <strong>{order.deliveryDate}</strong>
+            <span className="restocker-order-card__delivery-relative">
+              {formatRelativeDelivery(order.deliveryDate)}
+            </span>
+          </div>
         </div>
 
         <div className="restocker-order-card__delivery-window">
@@ -52,10 +70,33 @@ export function RestockerOrderCard({
         {statusLabel ? (
           <span className="restocker-order-card__status">{statusLabel}</span>
         ) : (
-          <span />
+          <span className="restocker-order-card__status-spacer" aria-hidden="true" />
         )}
-        <span className="restocker-order-card__detail-link">{detailLabel}</span>
+
+        <button
+          className="restocker-order-card__detail-link"
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onClick();
+          }}
+        >
+          {detailLabel}
+        </button>
       </div>
-    </button>
+
+      {secondaryActionLabel && onSecondaryAction ? (
+        <button
+          className="restocker-order-card__secondary-action"
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSecondaryAction();
+          }}
+        >
+          {secondaryActionLabel}
+        </button>
+      ) : null}
+    </article>
   );
 }
