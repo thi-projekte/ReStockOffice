@@ -557,6 +557,60 @@
 }
 
 @media (max-width: 720px) {
+  .restocker-marketplace-hero--orders {
+    gap: 0.9rem;
+    padding: 1.15rem 1rem;
+  }
+
+  .restocker-marketplace-hero--orders .home-hero__top {
+    margin-bottom: 0;
+  }
+
+  .restocker-marketplace-hero--orders .hero-copy {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .restocker-marketplace-hero--orders .hero-copy h1 {
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.08;
+    white-space: nowrap;
+  }
+
+  .restocker-marketplace-hero--orders .hero-copy p {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.25;
+  }
+
+  .restocker-marketplace-hero--orders .dashboard-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    align-items: stretch;
+    margin-top: 0.45rem;
+  }
+
+  .restocker-marketplace-hero--orders .dashboard-stat {
+    min-height: 7.1rem;
+    padding: 0.7rem 0.7rem 0.6rem;
+    gap: 0.3rem;
+  }
+
+  .restocker-marketplace-hero--orders .dashboard-stat strong {
+    font-size: 1.45rem;
+    line-height: 1;
+  }
+
+  .restocker-marketplace-hero--orders .dashboard-stat__label {
+    font-size: 0.68rem;
+  }
+
+  .restocker-marketplace-hero--orders .dashboard-stat small {
+    font-size: 0.7rem;
+    line-height: 1.18;
+  }
+
   .restocker-order-grid {
     grid-template-columns: 1fr;
     justify-items: center;
