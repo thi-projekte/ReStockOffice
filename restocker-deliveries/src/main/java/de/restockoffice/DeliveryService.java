@@ -10,7 +10,10 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -69,6 +72,8 @@ public class DeliveryService {
             return tour;
         }
 
+        Map<DeliveryGroupKey, DeliveryGroup> groupedOrders = new LinkedHashMap<>();
+
         for (OrderDto order : activeOrders) {
             if (!isActiveOrder(order) || order.id == null || order.customerId == null) {
                 continue;
@@ -79,10 +84,16 @@ public class DeliveryService {
                 continue;
             }
 
-            if (deliveryExistsForOrderToday(order.id.toString(), today)) {
+            if (deliveryContainsOrderOnDate(order.id.toString(), today)) {
                 continue;
             }
 
+            DeliveryGroupKey groupKey = new DeliveryGroupKey(order.customerId, today);
+            DeliveryGroup group = groupedOrders.computeIfAbsent(groupKey, ignored -> new DeliveryGroup());
+            group.orders.add(order);
+        }
+
+        for (Map.Entry<DeliveryGroupKey, DeliveryGroup> entry : groupedOrders.entrySet()) {
             if (tour == null) {
                 tour = new Tour();
                 tour.restockerName = restockerName;
@@ -90,14 +101,30 @@ public class DeliveryService {
                 tour.persist();
             }
 
-            Delivery delivery = new Delivery();
-            delivery.orderId = order.id.toString();
-            delivery.userId = order.customerId;
-            delivery.tour = tour;
-            delivery.stopOrder = nextStopOrder++;
-            delivery.addItem(createDeliveryItem(order));
-            delivery.persist();
-            tour.deliveries.add(delivery);
+            DeliveryGroupKey groupKey = entry.getKey();
+            DeliveryGroup group = entry.getValue();
+            Delivery delivery = findDeliveryForCustomerOnDate(
+                    groupKey.customerId(),
+                    groupKey.deliveryDate(),
+                    restockerName
+            );
+
+            if (delivery == null) {
+                delivery = new Delivery();
+                delivery.orderId = joinedOrderIds(group.orders);
+                delivery.userId = groupKey.customerId();
+                delivery.tour = tour;
+                delivery.stopOrder = nextStopOrder++;
+
+                for (OrderDto order : group.orders) {
+                    delivery.addItem(createDeliveryItem(order));
+                }
+
+                delivery.persist();
+                tour.deliveries.add(delivery);
+            } else {
+                appendOrdersToDelivery(delivery, group.orders);
+            }
         }
 
         return tour;
@@ -152,7 +179,7 @@ public class DeliveryService {
         Delivery delivery = findDeliveryOrThrow(deliveryId);
 
         UserDto user = tryLoadUser(delivery.userId, authorizationHeader);
-        OrderDto order = tryLoadOrder(delivery.orderId, authorizationHeader);
+        OrderDto order = tryLoadOrder(firstOrderId(delivery.orderId), authorizationHeader);
 
         return toDetailDto(delivery, user, order);
     }
@@ -162,7 +189,7 @@ public class DeliveryService {
         return deliveries.stream()
                 .map(d -> {
                     UserDto user = tryLoadUser(d.userId, authorizationHeader);
-                    OrderDto order = tryLoadOrder(d.orderId, authorizationHeader);
+                    OrderDto order = tryLoadOrder(firstOrderId(d.orderId), authorizationHeader);
                     return toDetailDto(d, user, order);
                 })
                 .collect(Collectors.toList());
@@ -303,8 +330,9 @@ public class DeliveryService {
         return daysSinceCreation >= 0 && daysSinceCreation % order.interval == 0;
     }
 
-    private boolean deliveryExistsForOrderToday(String orderId, LocalDate today) {
-        return Delivery.find("orderId = ?1 and tour.tourDate = ?2", orderId, today).firstResult() != null;
+    private boolean deliveryContainsOrderOnDate(String orderId, LocalDate deliveryDate) {
+        return Delivery.<Delivery>find("tour.tourDate = ?1", deliveryDate).stream()
+                .anyMatch(delivery -> splitOrderIds(delivery.orderId).contains(orderId));
     }
 
     private DeliveryItem createDeliveryItem(OrderDto order) {
@@ -313,6 +341,58 @@ public class DeliveryService {
         item.quantity = order.quantity != null && order.quantity > 0 ? order.quantity : 1;
         item.warehouseItem = findOrCreateWarehouseItem(order.productId);
         return item;
+    }
+
+    private Delivery findDeliveryForCustomerOnDate(String customerId, LocalDate deliveryDate, String restockerName) {
+        return Delivery.find(
+                "userId = ?1 and tour.tourDate = ?2 and tour.restockerName = ?3",
+                customerId,
+                deliveryDate,
+                restockerName
+        ).firstResult();
+    }
+
+    private void appendOrdersToDelivery(Delivery delivery, List<OrderDto> orders) {
+        List<String> existingOrderIds = splitOrderIds(delivery.orderId);
+
+        for (OrderDto order : orders) {
+            String orderId = order.id.toString();
+            if (existingOrderIds.contains(orderId)) {
+                continue;
+            }
+
+            DeliveryItem item = createDeliveryItem(order);
+            if (delivery.collected) {
+                item.warehouseItem.reduceStock(item.quantity);
+            }
+
+            delivery.addItem(item);
+            existingOrderIds.add(orderId);
+        }
+
+        delivery.orderId = String.join(",", existingOrderIds);
+    }
+
+    private String joinedOrderIds(List<OrderDto> orders) {
+        return orders.stream()
+                .map(order -> order.id.toString())
+                .collect(Collectors.joining(","));
+    }
+
+    private List<String> splitOrderIds(String orderIds) {
+        if (orderIds == null || orderIds.isBlank()) {
+            return new ArrayList<>();
+        }
+
+        return java.util.Arrays.stream(orderIds.split(","))
+                .map(String::trim)
+                .filter(orderId -> !orderId.isBlank())
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private String firstOrderId(String orderIds) {
+        List<String> ids = splitOrderIds(orderIds);
+        return ids.isEmpty() ? orderIds : ids.get(0);
     }
 
     private WarehouseItem findOrCreateWarehouseItem(String articleNumber) {
@@ -342,6 +422,13 @@ public class DeliveryService {
 
     private String valueOrFallback(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private record DeliveryGroupKey(String customerId, LocalDate deliveryDate) {
+    }
+
+    private static class DeliveryGroup {
+        final List<OrderDto> orders = new ArrayList<>();
     }
 
     private Long parseOrderId(String orderId) {
