@@ -6,10 +6,13 @@ import type { RestockMarketplaceOrder } from "../../types/shop";
 import { loadAssignedRestockOrders } from "../../services/orders";
 import type { RestockMarketplaceLoadResult } from "../../types/shop";
 import { getDaysUntilDelivery } from "./restockerOrderUi";
+import { useNavigate } from "react-router-dom";
 
 
 export function RestockerPage() {
     const auth = useAuth();
+
+    const navigate = useNavigate();
 
     const [openOrders, setOpenOrders] = useState<RestockMarketplaceOrder[]>([]);
     const [openLoading, setOpenLoading] = useState(true);
@@ -129,7 +132,10 @@ export function RestockerPage() {
 
                         </div>
 
-                        <button className="tour-btn">
+                        <button
+                            className="tour-btn"
+                            onClick={() => navigate("/restocker-my-orders")}
+                        >
                             Alle heutigen Lieferungen anzeigen
                         </button>
                     </div>
@@ -162,7 +168,10 @@ export function RestockerPage() {
                         </div>
 
 
-                        <button className="tour-btn">
+                        <button
+                            className="tour-btn"
+                            onClick={() => navigate("/restocker-orders")}
+                        >
                             Alle offenen Lieferungen anzeigen
                         </button>
                     </div>
@@ -198,7 +207,10 @@ export function RestockerPage() {
 
 
 
-                        <button className="tour-btn">
+                        <button
+                            className="tour-btn"
+                            onClick={() => navigate("/restocker-my-orders")}
+                        >
                             Alle dir zugeordneten Aufträge anzeigen
                         </button>
                     </div>
