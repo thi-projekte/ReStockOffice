@@ -21,6 +21,8 @@ const ORDERS_API_URL = "https://orders.restockoffice.de/orders";
 const TEMPORARY_CUSTOMER_ID = "100";
 const RESTOCKER_ASSIGNMENTS_STORAGE_KEY = "restockoffice-restocker-order-assignments-v1";
 const RESTOCKER_LOOKAHEAD_DAYS = 28;
+const DEMO_OPEN_TODAY_CUSTOMER_ID = "104";
+const DEMO_COMPLETED_TODAY_CUSTOMER_ID = "105";
 
 interface OrdersRequestContext {
   customerId?: string;
@@ -438,6 +440,53 @@ function writeRestockerAssignments(assignments: RestockerOrderAssignment[]) {
   );
 }
 
+function buildDemoTodayOrderKey(customerId: string, referenceDate = new Date()) {
+  return `${customerId}__${formatDate(referenceDate)}`;
+}
+
+function createDemoAssignedOrders(restockerId: string): RestockerOrderAssignment[] {
+  const today = formatDate(new Date());
+
+  return [
+    {
+      orderKey: buildDemoTodayOrderKey(DEMO_OPEN_TODAY_CUSTOMER_ID),
+      restockerId,
+      acceptedAt: `${today}T08:15:00.000Z`,
+      status: "accepted",
+    },
+    {
+      orderKey: buildDemoTodayOrderKey(DEMO_COMPLETED_TODAY_CUSTOMER_ID),
+      restockerId,
+      acceptedAt: `${today}T08:45:00.000Z`,
+      status: "completed",
+    },
+  ];
+}
+
+function mergeAssignments(
+  storedAssignments: RestockerOrderAssignment[],
+  demoAssignments: RestockerOrderAssignment[],
+) {
+  const assignmentsByOrderKey = new Map<string, RestockerOrderAssignment>();
+
+  for (const assignment of demoAssignments) {
+    assignmentsByOrderKey.set(assignment.orderKey, assignment);
+  }
+
+  for (const assignment of storedAssignments) {
+    assignmentsByOrderKey.set(assignment.orderKey, assignment);
+  }
+
+  return Array.from(assignmentsByOrderKey.values());
+}
+
+function isAssignedDemoOrderKey(orderKey: string) {
+  return (
+    orderKey === buildDemoTodayOrderKey(DEMO_OPEN_TODAY_CUSTOMER_ID) ||
+    orderKey === buildDemoTodayOrderKey(DEMO_COMPLETED_TODAY_CUSTOMER_ID)
+  );
+}
+
 async function fetchAllOrders(token: string) {
   let response: Response;
 
@@ -645,7 +694,11 @@ export async function loadOpenRestockOrders({
       orders,
       productsById,
       deliveryDetailsByCustomerId,
-    ).filter((order) => !assignments.some((assignment) => assignment.orderKey === order.orderKey));
+    ).filter(
+      (order) =>
+        !assignments.some((assignment) => assignment.orderKey === order.orderKey) &&
+        !isAssignedDemoOrderKey(order.orderKey),
+    );
 
     return {
       orders: marketplaceOrders,
@@ -658,7 +711,9 @@ export async function loadOpenRestockOrders({
     const deliveryBackedOrders = deriveMarketplaceOrdersFromDeliveryDetails(
       await loadDeliveryDetailsForRestocker(resolvedToken, restockerName),
     ).filter(
-      (order) => !assignments.some((assignment) => assignment.orderKey === order.orderKey),
+      (order) =>
+        !assignments.some((assignment) => assignment.orderKey === order.orderKey) &&
+        !isAssignedDemoOrderKey(order.orderKey),
     );
 
     if (deliveryBackedOrders.length > 0) {
@@ -675,7 +730,9 @@ export async function loadOpenRestockOrders({
       undefined,
       true,
     ).filter(
-      (order) => !assignments.some((assignment) => assignment.orderKey === order.orderKey),
+      (order) =>
+        !assignments.some((assignment) => assignment.orderKey === order.orderKey) &&
+        !isAssignedDemoOrderKey(order.orderKey),
     );
 
     return {
@@ -692,10 +749,11 @@ export async function loadAssignedRestockOrders({
   restockerName,
 }: RestockerOrdersRequestContext & { restockerId: string }): Promise<RestockMarketplaceLoadResult> {
   const resolvedToken = resolveToken(token);
-  const assignments = readRestockerAssignments().filter(
-    (assignment) =>
-      assignment.restockerId === restockerId &&
-      assignment.status !== "completed",
+  const assignments = mergeAssignments(
+    readRestockerAssignments().filter(
+      (assignment) => assignment.restockerId === restockerId,
+    ),
+    createDemoAssignedOrders(restockerId),
   );
   const assignmentsByOrderKey = new Map(
     assignments.map((assignment) => [

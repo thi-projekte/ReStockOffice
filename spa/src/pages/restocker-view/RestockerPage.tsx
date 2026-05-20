@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import type { RestockMarketplaceOrder } from "../../types/shop";
 import { loadAssignedRestockOrders } from "../../services/orders";
 import type { RestockMarketplaceLoadResult } from "../../types/shop";
+import { getDaysUntilDelivery } from "./restockerOrderUi";
 
 
 export function RestockerPage() {
@@ -82,7 +83,9 @@ export function RestockerPage() {
         load();
     }, [auth.token, auth.user?.id]);
 
-    const assignedToday = assignedOrdersResult.orders;
+    const assignedToday = assignedOrdersResult.orders.filter(
+        (order) => getDaysUntilDelivery(order.deliveryDate) === 0
+    );
     const totalToday = assignedToday.length;
 
     const completedToday = assignedToday.filter(
