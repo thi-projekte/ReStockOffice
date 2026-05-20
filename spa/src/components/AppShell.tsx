@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   FaBars,
   FaChevronRight,
@@ -9,20 +9,20 @@ import {
   FaTimes,
   FaUser,
   FaCalendarAlt,
-  FaArchive, FaClipboardList, FaTruck
+  FaArchive, FaClipboardList, FaTruck, FaShieldAlt, FaPaintBrush, FaSignOutAlt
 } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
 import iconColored from "../assets/logos/icon_colored.png";
 import { useAuth } from "../auth/AuthProvider";
 import { useSubscriptionCart } from "../hooks/useSubscriptionCart";
 import { getProducts } from "../services/products";
+import { getMyUser } from "../services/users";
 import type {
   Product,
   RestockOrderWithProduct,
 } from "../types/shop";
 import { ProductGrid } from "./ProductGrid";
 import { SubscriptionDialog } from "./SubscriptionDialog";
-import keycloak from "../auth/keycloak";
 
 interface AppShellProps {
   children: (context: {
@@ -48,7 +48,9 @@ export function AppShell({ children }: AppShellProps) {
   const [selectedArticleType, setSelectedArticleType] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
   const [isHeaderAssistOpen, setIsHeaderAssistOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>();
   const { hasRole } = useAuth();
   const [activeSubscriptionLayer, setActiveSubscriptionLayer] =
     useState<ActiveSubscriptionLayer>(null);
@@ -65,6 +67,7 @@ export function AppShell({ children }: AppShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const headerSearchRef = useRef<HTMLDivElement | null>(null);
+  const profileMenuCloseTimerRef = useRef<number | null>(null);
 
   const articleTypeOptions = Array.from(
     new Set(products.map((product) => product.category)),
@@ -167,6 +170,26 @@ export function AppShell({ children }: AppShellProps) {
     setSelectedBrand(value);
   }
 
+  function openProfileMenu() {
+    if (profileMenuCloseTimerRef.current) {
+      window.clearTimeout(profileMenuCloseTimerRef.current);
+      profileMenuCloseTimerRef.current = null;
+    }
+
+    setIsProfileMenuOpen(true);
+  }
+
+  function closeProfileMenuWithDelay() {
+    if (profileMenuCloseTimerRef.current) {
+      window.clearTimeout(profileMenuCloseTimerRef.current);
+    }
+
+    profileMenuCloseTimerRef.current = window.setTimeout(() => {
+      setIsProfileMenuOpen(false);
+      profileMenuCloseTimerRef.current = null;
+    }, 180);
+  }
+
   function handleSearchToggle() {
     setIsAdvancedSearch((current) => {
       const next = !current;
@@ -201,9 +224,36 @@ export function AppShell({ children }: AppShellProps) {
   }, [auth.isInitializing, isLoggedIn, location.pathname, navigate]);
 
   useEffect(() => {
+    if (!isLoggedIn) {
+      setProfilePictureUrl(undefined);
+      return;
+    }
+
+    getMyUser({
+      token: auth.token,
+      kind: isRestocker ? "restocker" : "customer",
+    })
+      .then((loadedUser) => {
+        setProfilePictureUrl(loadedUser.profilePictureUrl);
+      })
+      .catch(() => {
+        setProfilePictureUrl(undefined);
+      });
+  }, [auth.token, isLoggedIn, isRestocker]);
+
+  useEffect(() => {
     setMenuOpen(false);
     setIsHeaderAssistOpen(false);
+    setIsProfileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (profileMenuCloseTimerRef.current) {
+        window.clearTimeout(profileMenuCloseTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -512,14 +562,78 @@ export function AppShell({ children }: AppShellProps) {
                   )}
 
                   {/* Account: Für beide gleich*/}
-                  <NavLink
-                      className="button button--ghost nav-btn"
-                      to="/account"
-                      title="Konto"
-                      aria-label="Konto"
+                  <div
+                      className="header-profile-menu"
+                      onMouseEnter={openProfileMenu}
+                      onMouseLeave={closeProfileMenuWithDelay}
                   >
-                    <FaUser />
-                  </NavLink>
+                    <NavLink
+                        className={`button button--ghost nav-btn ${profilePictureUrl ? "header-profile-button" : ""}`.trim()}
+                        to="/account"
+                        title="Konto"
+                        aria-label="Konto"
+                        onFocus={openProfileMenu}
+                    >
+                      {profilePictureUrl ? (
+                        <img
+                          className="header-profile-avatar"
+                          src={profilePictureUrl}
+                          alt="Profilbild"
+                        />
+                      ) : (
+                        <FaUser />
+                      )}
+                    </NavLink>
+
+                    {isProfileMenuOpen ? (
+                      <div
+                        className="header-profile-popover"
+                        onMouseEnter={openProfileMenu}
+                        onMouseLeave={closeProfileMenuWithDelay}
+                        onBlur={(event) => {
+                          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                            setIsProfileMenuOpen(false);
+                          }
+                        }}
+                      >
+                        <Link
+                          className="header-profile-popover__link"
+                          to="/account#profile"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <FaUser />
+                          <span>Profil</span>
+                        </Link>
+
+                        <Link
+                          className="header-profile-popover__link"
+                          to="/account#settings"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <FaPaintBrush />
+                          <span>Darstellung</span>
+                        </Link>
+
+                        <Link
+                          className="header-profile-popover__link"
+                          to="/account#security"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <FaShieldAlt />
+                          <span>Sicherheit</span>
+                        </Link>
+
+                        <button
+                          className="header-profile-popover__link header-profile-popover__link--danger"
+                          type="button"
+                          onClick={handleLogout}
+                        >
+                          <FaSignOutAlt />
+                          <span>Abmelden</span>
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
 
 
                   {/* Hamburger immer sichtbar */}

@@ -1,0 +1,15 @@
+{
+  "postalCode": "80331",
+  "city": "Ingolstadt",
+  "street": "Liefergasse",
+  "houseNumber": "7",
+  "country": "Deutschland",
+  "phoneNumber": "+49 89 555123",
+  "iban": "DE12500105170648489890",
+  "bic": "INGDDEFFXXX",
+  "accountHolder": "Max",
+  "birthDate": "1990-11-03",
+  "profilePictureUrl": "../assets/10002.png",
+  "createdAt": "2026-05-19T08:00:00",
+  "updatedAt": "2026-05-19T08:00:00"
+}

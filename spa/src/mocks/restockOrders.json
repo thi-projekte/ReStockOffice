@@ -3,7 +3,7 @@
     "productId": "10001",
     "status": "ACTIVE",
     "quantity": 2,
-    "interval": 14,
+    "interval": 3,
     "createdAt": "2026-05-19",
     "updatedAt": "2026-05-19"
   },
@@ -11,7 +11,7 @@
     "productId": "10003",
     "status": "ACTIVE",
     "quantity": 10,
-    "interval": 30,
+    "interval": 8,
     "createdAt": "2026-05-19",
     "updatedAt": "2026-05-19"
   }

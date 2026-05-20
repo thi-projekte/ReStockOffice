@@ -350,7 +350,7 @@
 
 .account-panel,
 .account-setting-card {
-  display: grid;
+  display: inline;
   gap: 1rem;
   padding: 1.15rem;
   border: 1px solid rgba(38, 64, 55, 0.12);
