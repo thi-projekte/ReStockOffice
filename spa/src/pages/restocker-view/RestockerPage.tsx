@@ -95,15 +95,19 @@ export function RestockerPage() {
         (order) => order.assignment?.status === "completed"
     ).length;
 
+
     const earningsPerDelivery = 7;
-    const earningsToday = completedToday * earningsPerDelivery;
+    const earningsToday = totalToday * earningsPerDelivery;
 
     return (
         <>
             <div className="restocker-page">
                 <div className="restocker-inner">
 
-                    <button className="tour-btn">
+                    <button
+                        className="tour-btn"
+                        onClick={() => navigate("/restocker-deliveries")}
+                    >
                         Tour von heute beginnen
                     </button>
 
