@@ -22,6 +22,11 @@
     transform: scale(0.98)
 }
 
+.tour-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 /* Cards */
 .card {
     background: var(--color-grey-100);
@@ -72,6 +77,10 @@
     line-height: 1.1;
 }
 
+.metric-value--compact {
+    font-size: 20px;
+}
+
 .metric-sub {
     font-size: 11px;
     color: var(--color-text);
@@ -96,6 +105,9 @@
     flex-direction: column;
 }
 
+.order-tile--highlight {
+    margin-bottom: 16px;
+}
 
 .order-top {
     display: flex;
