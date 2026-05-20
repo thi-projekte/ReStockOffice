@@ -689,6 +689,7 @@ export async function loadOpenRestockOrders({
 export async function loadAssignedRestockOrders({
   token,
   restockerId,
+  restockerName,
 }: RestockerOrdersRequestContext & { restockerId: string }): Promise<RestockMarketplaceLoadResult> {
   const resolvedToken = resolveToken(token);
   const assignments = readRestockerAssignments().filter(
@@ -710,11 +711,15 @@ export async function loadAssignedRestockOrders({
   const productsById = createProductLookup(products);
 
   try {
+    const deliveryDetailsByCustomerId = await loadDeliveryDetailsByCustomerId(
+      resolvedToken,
+      restockerName,
+    );
     const orders = await fetchAllOrders(resolvedToken);
     const marketplaceOrders = deriveMarketplaceOrders(
       orders,
       productsById,
-      undefined,
+      deliveryDetailsByCustomerId,
       false,
       assignmentsByOrderKey,
     ).filter((order) => assignmentsByOrderKey.has(order.orderKey));

@@ -33,6 +33,7 @@ function getGreetingName(user: ReturnType<typeof useAuth>["user"]) {
 
 export function MyOrdersPage() {
   const auth = useAuth();
+  const restockerName = auth.user?.username ?? auth.user?.id ?? "";
   const [assignedOrdersResult, setAssignedOrdersResult] =
     useState<RestockMarketplaceLoadResult>({
       orders: [],
@@ -72,6 +73,7 @@ export function MyOrdersPage() {
         const loadedOrders = await loadAssignedRestockOrders({
           token: auth.token,
           restockerId: auth.user.id,
+          restockerName,
         });
 
         if (!ignoreResult) {
@@ -97,7 +99,7 @@ export function MyOrdersPage() {
     return () => {
       ignoreResult = true;
     };
-  }, [auth.token, auth.user?.id]);
+  }, [auth.token, auth.user?.id, restockerName]);
 
   const availableCities = useMemo(
     () =>

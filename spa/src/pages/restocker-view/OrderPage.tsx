@@ -149,27 +149,27 @@ export function OrderPage() {
     setIsConfirmDialogOpen(false);
   }
 
-  function handleAcceptSelectedOrder() {
-    if (!selectedOrder || !auth.user?.id) {
+  function handleAcceptOrder(orderToAccept: RestockMarketplaceOrder) {
+    if (!auth.user?.id) {
       return;
     }
 
     try {
       acceptRestockOrder({
-        orderKey: selectedOrder.orderKey,
+        orderKey: orderToAccept.orderKey,
         restockerId: auth.user.id,
       });
 
       setMarketplaceResult((currentResult) => ({
         ...currentResult,
         orders: currentResult.orders.filter(
-          (order) => order.orderKey !== selectedOrder.orderKey,
+          (order) => order.orderKey !== orderToAccept.orderKey,
         ),
       }));
       setIsConfirmDialogOpen(false);
       setSelectedOrder(null);
       toast.success(
-        `Auftrag #${selectedOrder.orderId} wurde deinem Restocker-Konto zugeordnet.`,
+        `Auftrag #${orderToAccept.orderId} wurde deinem Restocker-Konto zugeordnet.`,
       );
     } catch (acceptError) {
       toast.error(
@@ -178,6 +178,14 @@ export function OrderPage() {
           : "Der Auftrag konnte nicht übernommen werden.",
       );
     }
+  }
+
+  function handleAcceptSelectedOrder() {
+    if (!selectedOrder) {
+      return;
+    }
+
+    handleAcceptOrder(selectedOrder);
   }
 
   return (
@@ -342,13 +350,15 @@ export function OrderPage() {
                 order={order}
                 detailLabel="Auftrag ansehen"
                 onClick={() => setSelectedOrder(order)}
+                secondaryActionLabel="Fahrt akzeptieren"
+                onSecondaryAction={() => handleAcceptOrder(order)}
               />
             ))}
           </div>
         )}
       </section>
 
-      {selectedOrder ? (
+      {selectedOrder && !isConfirmDialogOpen ? (
         <RestockerOrderDetailDialog
           order={selectedOrder}
           backLabel="Zurück zu allen Aufträgen"
