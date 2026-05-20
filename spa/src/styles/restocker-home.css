@@ -1,0 +1,181 @@
+.restocker-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Tour-Starten Button */
+.tour-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 32px;
+    background: var(--color-secondary);
+    color: var(--color-grey-100);
+    border: none;
+    border-radius: 14px;
+}
+
+.tour-btn:active {
+    transform: scale(0.98)
+}
+
+/* Cards */
+.card {
+    background: var(--color-grey-100);
+    border-radius: 16px;
+    border: 0.5px solid var(--color-grey-200);
+    padding: 24px;
+    overflow: hidden;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.card h4 {
+    color: var(--color-primary);
+}
+
+/* Metrics card — desktop: metrics + next-tile in one row */
+.metrics-row-desktop {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+
+}
+
+.metric-tile {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-grey-300);
+}
+
+.metric-label {
+    font-size: 18px;
+    color: var(--color-text);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.metric-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--color-text);
+    line-height: 1.1;
+}
+
+.metric-sub {
+    font-size: 11px;
+    color: var(--color-text);
+    margin-top: 4px;
+}
+
+.orders-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+
+/* Order tile */
+.order-tile {
+    border: 0.5px solid var(--color-grey-200);
+    border-radius: 12px;
+    padding: 14px;
+    transition: background 0.15s;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.order-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.order-id {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-grey-300);
+    letter-spacing: 0.5px;
+}
+
+.order-company {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.order-addr {
+    font-size: 12px;
+    color: var(--color-grey-300);
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    flex: 1;
+}
+
+.order-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 0.5px solid var(--color-grey-300);
+}
+
+
+/* Responsive — mobile */
+@media (max-width: 768px) {
+    .restocker-page {
+        padding: 16px;
+    }
+
+    .restocker-inner {
+        gap: 14px;
+    }
+
+    .tour-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .card-header {
+        flex-direction: column;
+        gap: 2px;
+        margin-bottom: 5px;
+    }
+
+    .metrics-row-desktop {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .metrics-row-desktop .next-tile {
+        grid-column: span 2;
+    }
+
+    .orders-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .all-link {
+        width: 100%;
+        justify-content: center;
+    }
+}

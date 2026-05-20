@@ -1,151 +1,107 @@
+import "../../styles/restocker-home.css";
 
-import { Link } from "react-router-dom";
+const orders = [
+    { id: "#1234", company: "Technische Hochschule Ingolstadt", addr: "Esplanade 138, 85049 Ingolstadt", date: "13.05.2026 · 11:00 Uhr", count: "10 Artikel" },
+    { id: "#1354", company: "AUDI AG", addr: "Auto-Union-Straße 1, 85049 Ingolstadt", date: "13.05.2026 · 11:20 Uhr", count: "8 Artikel" },
+]
+
+function OrderTile({ order }) {
+    return (
+        <div className="order-tile">
+            <div className="order-top">
+                <span className="order-id">{order.id}</span>
+            </div>
+            <div className="order-company">{order.company}</div>
+            <div className="order-addr">
+                {order.addr}
+            </div>
+            <div className="order-meta">
+                <span>{order.date}</span>
+                <span>{order.count}</span>
+            </div>
+        </div>
+    );
+}
 
 export function RestockerPage() {
     return (
-        <div className="home-showcase">
+        <>
+            <div className="restocker-page">
+                <div className="restocker-inner">
 
-            {/* Button (ohne Funktion aktuell) */}
-            <button className="dashboard-btn button">
-                TOUR VON HEUTE BEGINNEN
-            </button>
+                    <button className="tour-btn">
+                        Tour von heute beginnen
+                    </button>
 
+                    {/* Heutige Lieferungen */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <h4>Deine Lieferungen heute</h4>
+                                <h2>Übersicht – Heutige Lieferungen</h2>
+                                <p> Hallo, hier siehst du die wichtigsten Kennzahlen zu deinen heutigen Lieferungen.</p>
+                            </div>
+                        </div>
 
-            {/* //Card Heutige Lieferungen */}
-            <section className="page-card section-space">
+                        <div className="metrics-row-desktop">
+                            <div className="metric-tile">
+                                <div className="metric-label">Abgeschlossen</div>
+                                <div className="metric-value">2</div>
+                                <div className="metric-sub">von 10 Lieferungen</div>
+                            </div>
+                            <div className="metric-tile">
+                                <div className="metric-label">Heutiger Verdienst</div>
+                                <div className="metric-value">30 €</div>
+                            </div>
 
-                <div className="section-head">
-                    <div>
-                        <span className="eyebrow">Deine Lieferungen heute</span>
-                        <h2>Status Heute: 2 von 10 offen</h2>
-                        <p>Hallo Max, hier siehst du deine heutigen Lieferungen.</p>
+                        </div>
+
+                        <button className="tour-btn">
+                            Alle heutigen Lieferungen anzeigen
+                        </button>
                     </div>
 
-                    <Link className="button dashboard-btn" to="/restocker-orders">
-                        Alle heutigen Lieferungen anzeigen →
-                    </Link>
-                </div>
+                    {/* Offene Aufträge */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <h4>Verfügbare Aufträge</h4>
+                                <h2>Offene Lieferungen in deiner Nähe</h2>
+                                <p>Es gibt weitere Lieferungen in deiner Nähe. Beispielsweise:</p>
+                            </div>
+                        </div>
 
-                <div className="category-grid">
+                        <div className="orders-grid">
+                            {orders.map(o => <OrderTile key={o.id} order={o} />)}
+                        </div>
 
-                    <div className="highlight-tile">
-                        <h3>#1234</h3>
-                        <p>Technische Hochschule Ingolstadt</p>
-                        <span>Esplanade 138, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:00 Uhr</small>
-                        <strong>10 Artikel</strong>
+                        <button className="tour-btn">
+                            Alle offenen Lieferungen anzeigen
+                        </button>
                     </div>
 
-                    <div className="highlight-tile">
-                        <h3>#1354</h3>
-                        <p>AUDI AG</p>
-                        <span>Auto-Union-Straße 1, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:20 Uhr</small>
-                        <strong>8 Artikel</strong>
+                    {/* Meine Aufträge */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <h4>Deine Aufträge</h4>
+                                <h2>Deine Übersicht</h2>
+                                <p>Hier einige Aufträge, die du dir gesichert hast.</p>
+                            </div>
+                        </div>
+
+                        <div className="orders-grid">
+                            {orders.map(o => <OrderTile key={o.id} order={o} />)}
+                        </div>
+
+                        <button className="tour-btn">
+                            Alle dir zugeordneten Aufträge anzeigen
+                        </button>
                     </div>
 
-                    <div className="highlight-tile">
-                        <h3>#1355</h3>
-                        <p>COM-IN Telekommunikations GmbH</p>
-                        <span>Mauthstraße 4, 85051 Ingolstadt</span>
-                        <small>13.05.2026 | 11:30 Uhr</small>
-                        <strong>6 Artikel</strong>
-                    </div>
-
-                </div>
-            </section>
-
-            {/* //Card Offene Aufträge */}
-
-            <section className="page-card section-space">
-
-                <div className="section-head">
-                    <div>
-                        <span className="eyebrow">Verfügbare Aufträge</span>
-                        <h2>Offene Lieferungen in deiner Nähe</h2>
-                        <p>Wähle einen Auftrag aus, um die Details zu sehen und die Fahrt zu übernehmen.</p>
-                    </div>
-
-                    <Link className="button dashboard-btn" to="/restocker-orders">
-                        Alle offenen Aufträge anzeigen →
-                    </Link>
-                </div>
-
-                <div className="category-grid">
-
-                    <div className="highlight-tile">
-                        <h3>#1234</h3>
-                        <p>Technische Hochschule Ingolstadt</p>
-                        <span>Esplanade 138, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:00 Uhr</small>
-                        <strong>10 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1354</h3>
-                        <p>AUDI AG</p>
-                        <span>Auto-Union-Straße 1, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:20 Uhr</small>
-                        <strong>8 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1355</h3>
-                        <p>COM-IN Telekommunikations GmbH</p>
-                        <span>Mauthstraße 4, 85051 Ingolstadt</span>
-                        <small>13.05.2026 | 11:30 Uhr</small>
-                        <strong>6 Artikel</strong>
-                    </div>
 
                 </div>
-            </section>
-
-            {/* //Card Meine Aufträge */}
-
-            <section className="page-card section-space">
-
-                <div className="section-head">
-                    <div>
-                        <span className="eyebrow">Deine Aufträge</span>
-                        <h2>Deine Übersicht</h2>
-                        <p>Hier die Aufträge, die du dir gesichert hast.</p>
-                    </div>
-
-                    <Link className="button dashboard-btn" to="/restocker-orders">
-                        Deine Aufträge anzeigen →
-                    </Link>
-                </div>
-
-                <div className="category-grid">
-
-                    <div className="highlight-tile">
-                        <h3>#1234</h3>
-                        <p>Technische Hochschule Ingolstadt</p>
-                        <span>Esplanade 138, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:00 Uhr</small>
-                        <strong>10 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1354</h3>
-                        <p>AUDI AG</p>
-                        <span>Auto-Union-Straße 1, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:20 Uhr</small>
-                        <strong>8 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1355</h3>
-                        <p>COM-IN Telekommunikations GmbH</p>
-                        <span>Mauthstraße 4, 85051 Ingolstadt</span>
-                        <small>13.05.2026 | 11:30 Uhr</small>
-                        <strong>6 Artikel</strong>
-                    </div>
-
-                </div>
-            </section>
-
-
-        </div>
+            </div>
+        </>
     );
 }
