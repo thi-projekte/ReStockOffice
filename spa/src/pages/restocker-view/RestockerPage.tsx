@@ -1,27 +1,6 @@
 import "../../styles/restocker-home.css";
 
-const orders = [
-    { id: "#1234", company: "Technische Hochschule Ingolstadt", addr: "Esplanade 138, 85049 Ingolstadt", date: "13.05.2026 · 11:00 Uhr", count: "10 Artikel" },
-    { id: "#1354", company: "AUDI AG", addr: "Auto-Union-Straße 1, 85049 Ingolstadt", date: "13.05.2026 · 11:20 Uhr", count: "8 Artikel" },
-]
 
-function OrderTile({ order }) {
-    return (
-        <div className="order-tile">
-            <div className="order-top">
-                <span className="order-id">{order.id}</span>
-            </div>
-            <div className="order-company">{order.company}</div>
-            <div className="order-addr">
-                {order.addr}
-            </div>
-            <div className="order-meta">
-                <span>{order.date}</span>
-                <span>{order.count}</span>
-            </div>
-        </div>
-    );
-}
 
 export function RestockerPage() {
     return (
@@ -71,9 +50,6 @@ export function RestockerPage() {
                             </div>
                         </div>
 
-                        <div className="orders-grid">
-                            {orders.map(o => <OrderTile key={o.id} order={o} />)}
-                        </div>
 
                         <button className="tour-btn">
                             Alle offenen Lieferungen anzeigen
@@ -90,9 +66,7 @@ export function RestockerPage() {
                             </div>
                         </div>
 
-                        <div className="orders-grid">
-                            {orders.map(o => <OrderTile key={o.id} order={o} />)}
-                        </div>
+
 
                         <button className="tour-btn">
                             Alle dir zugeordneten Aufträge anzeigen
