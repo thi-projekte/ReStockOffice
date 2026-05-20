@@ -73,30 +73,36 @@ export function RestockerOrderCard({
           <span className="restocker-order-card__status-spacer" aria-hidden="true" />
         )}
 
-        <button
-          className="restocker-order-card__detail-link"
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onClick();
-          }}
+        <div
+          className={`restocker-order-card__actions ${
+            statusLabel ? "restocker-order-card__actions--with-status" : ""
+          }`.trim()}
         >
-          {detailLabel}
-        </button>
-      </div>
+          <button
+            className="restocker-order-card__detail-link"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onClick();
+            }}
+          >
+            {detailLabel}
+          </button>
 
-      {secondaryActionLabel && onSecondaryAction ? (
-        <button
-          className="restocker-order-card__secondary-action"
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onSecondaryAction();
-          }}
-        >
-          {secondaryActionLabel}
-        </button>
-      ) : null}
+          {secondaryActionLabel && onSecondaryAction ? (
+            <button
+              className="restocker-order-card__secondary-action"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onSecondaryAction();
+              }}
+            >
+              {secondaryActionLabel}
+            </button>
+          ) : null}
+        </div>
+      </div>
     </article>
   );
 }
