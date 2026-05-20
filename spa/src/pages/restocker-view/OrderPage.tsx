@@ -131,11 +131,6 @@ export function OrderPage() {
     return sortOrders(visibleOrders, sortOption);
   }, [marketplaceResult.orders, searchQuery, selectedCity, selectedDeliveryWindow, sortOption]);
 
-  const totalArticleCount = filteredOrders.reduce(
-    (sum, order) => sum + order.articleCount,
-    0,
-  );
-
   if (!auth.isInitializing && !auth.hasRole("Restocker")) {
     return <Navigate to="/" replace />;
   }
@@ -149,27 +144,27 @@ export function OrderPage() {
     setIsConfirmDialogOpen(false);
   }
 
-  function handleAcceptSelectedOrder() {
-    if (!selectedOrder || !auth.user?.id) {
+  function handleAcceptOrder(orderToAccept: RestockMarketplaceOrder) {
+    if (!auth.user?.id) {
       return;
     }
 
     try {
       acceptRestockOrder({
-        orderKey: selectedOrder.orderKey,
+        orderKey: orderToAccept.orderKey,
         restockerId: auth.user.id,
       });
 
       setMarketplaceResult((currentResult) => ({
         ...currentResult,
         orders: currentResult.orders.filter(
-          (order) => order.orderKey !== selectedOrder.orderKey,
+          (order) => order.orderKey !== orderToAccept.orderKey,
         ),
       }));
       setIsConfirmDialogOpen(false);
       setSelectedOrder(null);
       toast.success(
-        `Auftrag #${selectedOrder.orderId} wurde deinem Restocker-Konto zugeordnet.`,
+        `Auftrag #${orderToAccept.orderId} wurde deinem Restocker-Konto zugeordnet.`,
       );
     } catch (acceptError) {
       toast.error(
@@ -180,35 +175,36 @@ export function OrderPage() {
     }
   }
 
+  function handleAcceptSelectedOrder() {
+    if (!selectedOrder) {
+      return;
+    }
+
+    handleAcceptOrder(selectedOrder);
+  }
+
   return (
     <div className="home-showcase restocker-marketplace-page">
-      <section className="hero-card home-hero restocker-marketplace-hero">
+      <section className="hero-card home-hero restocker-marketplace-hero restocker-marketplace-hero--orders">
         <div className="home-hero__top">
           <span className="eyebrow">Restocker</span>
         </div>
 
         <div className="hero-copy">
           <h1>RESTOCKORDER - MARKTPLATZ</h1>
-          <p>Alle verfügbaren Aufträge</p>
+          <p>Alle verfügbaren Aufträge für die nächsten 4 Wochen.</p>
 
           <div className="dashboard-strip" aria-label="Marktplatz Übersicht">
             <article className="dashboard-stat">
               <span className="dashboard-stat__label">Offene Aufträge</span>
               <strong>{filteredOrders.length}</strong>
-              <small>Fällig in den nächsten 4 Wochen</small>
             </article>
 
             <article className="dashboard-stat">
               <span className="dashboard-stat__label">Unternehmen</span>
               <strong>{new Set(filteredOrders.map((order) => order.companyName)).size}</strong>
-              <small>Aktuell im Marktplatz verfügbar</small>
             </article>
 
-            <article className="dashboard-stat">
-              <span className="dashboard-stat__label">Artikel</span>
-              <strong>{totalArticleCount}</strong>
-              <small>Summierte Lieferpositionen der aktuellen Treffer</small>
-            </article>
           </div>
         </div>
       </section>
@@ -342,13 +338,15 @@ export function OrderPage() {
                 order={order}
                 detailLabel="Auftrag ansehen"
                 onClick={() => setSelectedOrder(order)}
+                secondaryActionLabel="Fahrt akzeptieren"
+                onSecondaryAction={() => handleAcceptOrder(order)}
               />
             ))}
           </div>
         )}
       </section>
 
-      {selectedOrder ? (
+      {selectedOrder && !isConfirmDialogOpen ? (
         <RestockerOrderDetailDialog
           order={selectedOrder}
           backLabel="Zurück zu allen Aufträgen"

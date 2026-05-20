@@ -33,6 +33,7 @@ function getGreetingName(user: ReturnType<typeof useAuth>["user"]) {
 
 export function MyOrdersPage() {
   const auth = useAuth();
+  const restockerName = auth.user?.username ?? auth.user?.id ?? "";
   const [assignedOrdersResult, setAssignedOrdersResult] =
     useState<RestockMarketplaceLoadResult>({
       orders: [],
@@ -72,6 +73,7 @@ export function MyOrdersPage() {
         const loadedOrders = await loadAssignedRestockOrders({
           token: auth.token,
           restockerId: auth.user.id,
+          restockerName,
         });
 
         if (!ignoreResult) {
@@ -97,7 +99,7 @@ export function MyOrdersPage() {
     return () => {
       ignoreResult = true;
     };
-  }, [auth.token, auth.user?.id]);
+  }, [auth.token, auth.user?.id, restockerName]);
 
   const availableCities = useMemo(
     () =>
@@ -154,10 +156,6 @@ export function MyOrdersPage() {
   ]);
 
   const greetingName = getGreetingName(auth.user);
-  const totalArticleCount = filteredOrders.reduce(
-    (sum, order) => sum + order.articleCount,
-    0,
-  );
   const dueTodayCount = filteredOrders.filter(
     (order) => getDaysUntilDelivery(order.deliveryDate) === 0,
   ).length;
@@ -205,7 +203,7 @@ export function MyOrdersPage() {
 
   return (
     <div className="home-showcase restocker-marketplace-page">
-      <section className="hero-card home-hero restocker-marketplace-hero">
+      <section className="hero-card home-hero restocker-marketplace-hero restocker-marketplace-hero--orders">
         <div className="home-hero__top">
           <span className="eyebrow">Restocker</span>
         </div>
@@ -213,14 +211,13 @@ export function MyOrdersPage() {
         <div className="hero-copy">
           <h1>MEINE AUFTRÄGE</h1>
           <p className="section-copy">
-            Hallo {greetingName}, hier sind die Aufträge, die du dir gesichert hast.
+            Hallo {greetingName}, hier sind deine Aufträge für die nächsten 4 Wochen.
           </p>
 
           <div className="dashboard-strip" aria-label="Meine Aufträge Übersicht">
             <article className="dashboard-stat">
               <span className="dashboard-stat__label">Angenommene Aufträge</span>
               <strong>{filteredOrders.length}</strong>
-              <small>Nur deinem Restocker-Konto zugeordnet</small>
             </article>
 
             <article className="dashboard-stat">
@@ -228,14 +225,8 @@ export function MyOrdersPage() {
               <strong>
                 {dueTodayCount} / {dueTomorrowCount}
               </strong>
-              <small>Besonders zeitnahe Auslieferungen</small>
             </article>
 
-            <article className="dashboard-stat">
-              <span className="dashboard-stat__label">Artikel</span>
-              <strong>{totalArticleCount}</strong>
-              <small>Summierte Positionen deiner aktuellen Treffer</small>
-            </article>
           </div>
         </div>
       </section>

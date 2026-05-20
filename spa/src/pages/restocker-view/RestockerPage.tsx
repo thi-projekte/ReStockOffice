@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import type { RestockMarketplaceOrder } from "../../types/shop";
 import { loadAssignedRestockOrders } from "../../services/orders";
 import type { RestockMarketplaceLoadResult } from "../../types/shop";
+import { getDaysUntilDelivery } from "./restockerOrderUi";
 
 
 export function RestockerPage() {
@@ -82,6 +83,18 @@ export function RestockerPage() {
         load();
     }, [auth.token, auth.user?.id]);
 
+    const assignedToday = assignedOrdersResult.orders.filter(
+        (order) => getDaysUntilDelivery(order.deliveryDate) === 0
+    );
+    const totalToday = assignedToday.length;
+
+    const completedToday = assignedToday.filter(
+        (order) => order.assignment?.status === "completed"
+    ).length;
+
+    const earningsPerDelivery = 7;
+    const earningsToday = completedToday * earningsPerDelivery;
+
     return (
         <>
             <div className="restocker-page">
@@ -102,14 +115,16 @@ export function RestockerPage() {
                         </div>
 
                         <div className="metrics-row-desktop">
+
                             <div className="metric-tile">
                                 <div className="metric-label">Abgeschlossen</div>
-                                <div className="metric-value">2</div>
-                                <div className="metric-sub">von 10 Lieferungen</div>
+                                <div className="metric-value">{completedToday}</div>
+                                <div className="metric-sub">von {totalToday} Lieferungen</div>
                             </div>
+
                             <div className="metric-tile">
                                 <div className="metric-label">Heutiger Verdienst</div>
-                                <div className="metric-value">30 €</div>
+                                <div className="metric-value">{earningsToday} €</div>
                             </div>
 
                         </div>
@@ -190,7 +205,7 @@ export function RestockerPage() {
 
 
                 </div>
-            </div>
+            </div >
         </>
     );
 }

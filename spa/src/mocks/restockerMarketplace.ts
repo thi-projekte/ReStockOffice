@@ -33,6 +33,22 @@ const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlace
     deliveryTime: "12:00 Uhr",
     deliveryNotes: "Lieferung am Seiteneingang abgeben. Zugang über Halle B.",
   },
+  "104": {
+    companyName: "MediaMarktSaturn Campus",
+    street: "Wankelstrasse 5",
+    postalCode: "85046",
+    city: "Ingolstadt",
+    deliveryTime: "09:00 Uhr",
+    deliveryNotes: "Noch offene Demo-Lieferung. Bitte an der Warenannahme im Erdgeschoss melden.",
+  },
+  "105": {
+    companyName: "Brunel Ingolstadt",
+    street: "Eriagstrasse 28",
+    postalCode: "85053",
+    city: "Ingolstadt",
+    deliveryTime: "10:00 Uhr",
+    deliveryNotes: "Abgeschlossene Demo-Lieferung fuer die heutige Tagesstatistik.",
+  },
 };
 
 const companyFallbacks = [
@@ -149,6 +165,24 @@ export function createDemoRestockOrders(referenceDate = new Date()): RestockOrde
       productId: "10006",
       status: "ACTIVE",
       quantity: 3,
+      interval: 1,
+      createdAt: toIsoDate(addDays(today, -7)),
+      updatedAt: toIsoDate(addDays(today, -7)),
+    },
+    {
+      customerId: "104",
+      productId: "10002",
+      status: "ACTIVE",
+      quantity: 5,
+      interval: 1,
+      createdAt: toIsoDate(addDays(today, -7)),
+      updatedAt: toIsoDate(addDays(today, -7)),
+    },
+    {
+      customerId: "105",
+      productId: "10007",
+      status: "ACTIVE",
+      quantity: 8,
       interval: 1,
       createdAt: toIsoDate(addDays(today, -7)),
       updatedAt: toIsoDate(addDays(today, -7)),
