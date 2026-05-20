@@ -131,11 +131,6 @@ export function OrderPage() {
     return sortOrders(visibleOrders, sortOption);
   }, [marketplaceResult.orders, searchQuery, selectedCity, selectedDeliveryWindow, sortOption]);
 
-  const totalArticleCount = filteredOrders.reduce(
-    (sum, order) => sum + order.articleCount,
-    0,
-  );
-
   if (!auth.isInitializing && !auth.hasRole("Restocker")) {
     return <Navigate to="/" replace />;
   }
@@ -190,7 +185,7 @@ export function OrderPage() {
 
   return (
     <div className="home-showcase restocker-marketplace-page">
-      <section className="hero-card home-hero restocker-marketplace-hero">
+      <section className="hero-card home-hero restocker-marketplace-hero restocker-marketplace-hero--orders">
         <div className="home-hero__top">
           <span className="eyebrow">Restocker</span>
         </div>
@@ -212,11 +207,6 @@ export function OrderPage() {
               <small>Aktuell im Marktplatz verfügbar</small>
             </article>
 
-            <article className="dashboard-stat">
-              <span className="dashboard-stat__label">Artikel</span>
-              <strong>{totalArticleCount}</strong>
-              <small>Summierte Lieferpositionen der aktuellen Treffer</small>
-            </article>
           </div>
         </div>
       </section>
