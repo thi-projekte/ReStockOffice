@@ -58,6 +58,22 @@ public class UserResource {
     }
 
     @GET
+    @Path("customerForRestocker")
+    public RestockerCustomerView getCustomerAddressForRestocker(@QueryParam("userId") String userId){
+        if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("admin")) {
+            throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.", 403);
+        }
+
+        if (userId == null || userId.isBlank()) {
+            throw new WebApplicationException("Übergebene userId darf nicht leer sein.", 400);
+        }
+
+        Customer customer = findCustomerOrThrow(userId);
+
+        return new RestockerCustomerView(customer);
+    }
+
+    @GET
     @Path("restocker")
     public Restocker getRestockerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
