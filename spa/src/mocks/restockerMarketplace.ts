@@ -49,6 +49,22 @@ const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlace
     deliveryTime: "10:00 Uhr",
     deliveryNotes: "Abgeschlossene Demo-Lieferung fuer die heutige Tagesstatistik.",
   },
+    "106": {
+    companyName: "Siemens Mobility GmbH",
+    street: "Rheinstrasse 12",
+    postalCode: "85049",
+    city: "Ingolstadt",
+    deliveryTime: "14:00 Uhr",
+    deliveryNotes: "Testsatz mit heutigem Liefertag fuer Filtertests.",
+  },
+  "107": {
+    companyName: "Capgemini Deutschland",
+    street: "Bahnhofstrasse 18",
+    postalCode: "85051",
+    city: "Ingolstadt",
+    deliveryTime: "15:30 Uhr",
+    deliveryNotes: "Testsatz mit morgigem Liefertag fuer Filtertests.",
+  },
 };
 
 const companyFallbacks = [
@@ -186,6 +202,24 @@ export function createDemoRestockOrders(referenceDate = new Date()): RestockOrde
       interval: 1,
       createdAt: toIsoDate(addDays(today, -7)),
       updatedAt: toIsoDate(addDays(today, -7)),
+    },
+    {
+      customerId: "106",
+      productId: "10008",
+      status: "ACTIVE",
+      quantity: 2,
+      interval: 1,
+      createdAt: toIsoDate(today),
+      updatedAt: toIsoDate(today),
+    },
+    {
+      customerId: "107",
+      productId: "10009",
+      status: "ACTIVE",
+      quantity: 3,
+      interval: 1,
+      createdAt: toIsoDate(addDays(today, -6)),
+      updatedAt: toIsoDate(addDays(today, -6)),
     },
   ];
 }
