@@ -175,8 +175,8 @@ export function createDemoRestockOrders(referenceDate = new Date()): RestockOrde
       status: "ACTIVE",
       quantity: 5,
       interval: 1,
-      createdAt: toIsoDate(today),
-      updatedAt: toIsoDate(today),
+      createdAt: toIsoDate(addDays(today, -7)),
+      updatedAt: toIsoDate(addDays(today, -7)),
     },
     {
       customerId: "105",
@@ -184,8 +184,8 @@ export function createDemoRestockOrders(referenceDate = new Date()): RestockOrde
       status: "ACTIVE",
       quantity: 8,
       interval: 1,
-      createdAt: toIsoDate(today),
-      updatedAt: toIsoDate(today),
+      createdAt: toIsoDate(addDays(today, -7)),
+      updatedAt: toIsoDate(addDays(today, -7)),
     },
   ];
 }
