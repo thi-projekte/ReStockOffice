@@ -280,7 +280,7 @@ public class DeliveryService {
 
     private UserDto tryLoadUser(String userId, String authorizationHeader) {
         try {
-            return userClient.getUserById(userId, authorizationHeader);
+            return userClient.getCustomerAddressForRestocker(userId, authorizationHeader);
         } catch (RuntimeException exception) {
             return null;
         }
