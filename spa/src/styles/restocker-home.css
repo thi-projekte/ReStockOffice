@@ -33,7 +33,6 @@
     border-radius: 16px;
     border: 0.5px solid var(--color-grey-200);
     padding: 24px;
-    overflow: hidden;
 }
 
 .card-header {
@@ -148,6 +147,25 @@
     border-top: 0.5px solid var(--color-grey-300);
 }
 
+.open-orders-carousel {
+    display: flex;
+    gap: 1rem;
+}
+
+.open-order-card {
+    background: var(--color-grey-100);
+    border-radius: 16px;
+    padding: 1.25rem;
+    border: 1px solid var(--color-grey-200);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.open-orders-carousel+.tour-btn {
+    margin-top: 1rem;
+}
+
 
 /* Responsive — mobile */
 @media (max-width: 768px) {
@@ -189,5 +207,86 @@
     .all-link {
         width: 100%;
         justify-content: center;
+    }
+
+    .metric-tile,
+    .open-order-card,
+    .order-tile {
+        background:
+            linear-gradient(180deg, rgba(244, 247, 242, 0.92), rgba(230, 230, 230, 0.88)),
+            radial-gradient(circle at top right, rgba(102, 189, 164, 0.12), transparent 55%);
+        border: 1px solid rgba(38, 64, 55, 0.12);
+        border-radius: 1rem;
+        color: var(--color-text);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .metric-tile {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .metric-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-grey-300);
+    }
+
+    .metric-value {
+        font-size: 1.9rem;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--color-secondary);
+    }
+
+    .metric-sub {
+        font-size: 0.85rem;
+        color: rgba(31, 42, 46, 0.75);
+    }
+
+    .open-orders-carousel {
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        padding-bottom: 0.5rem;
+    }
+
+    .open-orders-carousel::-webkit-scrollbar {
+        display: none;
+    }
+
+    .open-order-card {
+        min-width: 280px;
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
+
+    .open-orders-carousel .restocker-order-card {
+        min-width: 300px;
+        width: 300px;
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
+}
+
+@media (min-width: 768px) {
+    .open-orders-carousel {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        overflow: visible;
+    }
+
+    .open-order-card {
+        min-width: unset;
+        flex: unset;
+        width: 100%;
     }
 }
