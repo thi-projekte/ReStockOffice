@@ -10,6 +10,7 @@ public class RestockerCustomerView {
     public String deliveryHint;
     public DeliveryDay deliveryDay;
     public int deliveryTime;
+    public String phoneNumber;
 
     public RestockerCustomerView(Customer customer) {
         this.companyName = customer.companyName;
@@ -21,5 +22,6 @@ public class RestockerCustomerView {
         this.deliveryHint = customer.deliveryHint;
         this.deliveryDay = customer.deliveryDay;
         this.deliveryTime = customer.deliveryTime;
+        this.phoneNumber = customer.phoneNumber;
     }
 }
