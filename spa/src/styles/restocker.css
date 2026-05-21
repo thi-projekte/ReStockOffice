@@ -79,6 +79,46 @@
     linear-gradient(180deg, rgba(234, 243, 238, 0.96), rgba(221, 235, 228, 0.96));
 }
 
+.restocker-earnings-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(38, 64, 55, 0.1);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at top right, rgba(102, 189, 164, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(244, 247, 242, 0.9));
+}
+
+.restocker-earnings-note__copy {
+  display: grid;
+  gap: 0.28rem;
+  max-width: 40rem;
+}
+
+.restocker-earnings-note__eyebrow {
+  color: var(--color-grey-300);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.restocker-earnings-note__copy strong {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.restocker-earnings-note__copy p {
+  margin: 0;
+  color: var(--color-grey-300);
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
 .restocker-priority-filter__eyebrow {
   color: var(--color-grey-300);
   font-size: 0.75rem;
@@ -1565,6 +1605,24 @@
     gap: 1rem;
   }
 
+  .restocker-earnings-note {
+    align-items: flex-start;
+    padding: 0.92rem 0.96rem;
+  }
+
+  .restocker-earnings-note__copy {
+    gap: 0.24rem;
+  }
+
+  .restocker-earnings-note__copy strong {
+    font-size: 0.96rem;
+  }
+
+  .restocker-earnings-note__copy p {
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
   .restocker-marketplace-hero--orders {
     padding: 1rem;
     border-radius: 1rem;
@@ -1840,6 +1898,18 @@
     .restocker-empty-state p {
       font-size: 0.9rem;
       line-height: 1.45;
+    }
+
+    .restocker-earnings-note {
+      padding: 0.88rem 0.9rem;
+    }
+
+    .restocker-earnings-note__eyebrow {
+      font-size: 0.7rem;
+    }
+
+    .restocker-earnings-note__copy strong {
+      font-size: 0.92rem;
     }
 
     .restocker-order-card {

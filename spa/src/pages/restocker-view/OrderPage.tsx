@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
   FaCheck,
@@ -348,7 +348,7 @@ export function OrderPage() {
           <h1>RESTOCKORDER - MARKTPLATZ</h1>
           <p>Alle verfügbaren Aufträge für die nächsten 4 Wochen.</p>
 
-          <div className="dashboard-strip" aria-label="Marktplatz Übersicht">
+          <div className="dashboard-strip" aria-label="Marktplatz Üœbersicht">
             <article className="dashboard-stat">
               <span className="dashboard-stat__label">Offene Aufträge</span>
               <strong>{filteredOrders.length}</strong>
@@ -374,32 +374,16 @@ export function OrderPage() {
           </div>
         </div>
 
-        {marketplaceResult.source === "demo" ? (
-          <div className="mock-box">
-            <strong>Demo-Daten aktiv</strong>
-            <span>
-              Die Orders-API war nicht erreichbar. Deshalb wird der Marktplatz aktuell
-              mit klar gekennzeichneten Demo-Aufträgen gerendert.
-            </span>
-          </div>
-        ) : null}
 
-        {marketplaceResult.hasPlaceholderCustomerData ? (
-          <div className="mock-box">
-            <strong>Unvollständige Delivery-Service-Daten</strong>
-            <span>
-              Verfügbare Firmen- und Adressdaten werden aus dem Delivery Service
-              angereichert. Felder, die dort aktuell noch fehlen, zeigen wir
-              sichtbar als "Fehlt noch" an.
-            </span>
+        <div className="restocker-earnings-note" aria-label="Information zu deinem Verdienst">
+          <div className="restocker-earnings-note__copy">
+            <span className="restocker-earnings-note__eyebrow">Dein Verdienst</span>
+            <strong>7 € pro erfolgreich abgeschlossener Unternehmenslieferung</strong>
+            <p>
+              Die Vergütung wird dir für jeden angenommenen und erfolgreich erledigten
+              Lieferauftrag gutgeschrieben.
+            </p>
           </div>
-        ) : null}
-
-        <div className="mock-box">
-          <strong>Dein Verdienst</strong>
-          <span>
-            {"Für jede erfolgreich abgeschlossene Unternehmenslieferung erhältst du 7 €."}
-          </span>
         </div>
 
         {error ? <div className="error-box">{error}</div> : null}
@@ -821,3 +805,5 @@ export function OrderPage() {
     </div>
   );
 }
+
+

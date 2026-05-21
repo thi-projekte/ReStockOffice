@@ -442,26 +442,6 @@ export function MyOrdersPage() {
           </div>
         </div>
 
-        {assignedOrdersResult.source === "demo" ? (
-          <div className="mock-box">
-            <strong>Demo-Daten aktiv</strong>
-            <span>
-              Die Orders-API war nicht erreichbar. Deine angenommenen Aufträge
-              werden deshalb aktuell mit klar gekennzeichneten Demo-Daten gerendert.
-            </span>
-          </div>
-        ) : null}
-
-        {assignedOrdersResult.hasPlaceholderCustomerData ? (
-          <div className="mock-box">
-            <strong>Unvollständige Delivery-Service-Daten</strong>
-            <span>
-              Verfügbare Firmen-, Adress- und Lieferhinweise werden aus dem
-              Delivery Service angereichert. Felder, die dort aktuell noch
-              fehlen, zeigen wir sichtbar als "Fehlt noch" an.
-            </span>
-          </div>
-        ) : null}
 
         {error ? <div className="error-box">{error}</div> : null}
 
