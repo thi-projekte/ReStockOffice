@@ -338,7 +338,7 @@ export function OrderPage() {
                 order={order}
                 detailLabel="Auftrag ansehen"
                 onClick={() => setSelectedOrder(order)}
-                secondaryActionLabel="Fahrt akzeptieren"
+                secondaryActionLabel="Fahrt annehmen"
                 onSecondaryAction={() => handleAcceptOrder(order)}
               />
             ))}
@@ -352,23 +352,13 @@ export function OrderPage() {
           backLabel="Zurück zu allen Aufträgen"
           onClose={handleCloseDetailDialog}
           actions={
-            <>
-              <button
-                className="button button--ghost"
-                type="button"
-                onClick={handleCloseDetailDialog}
-              >
-                Abbrechen
-              </button>
-
-              <button
-                className="button"
-                type="button"
-                onClick={() => setIsConfirmDialogOpen(true)}
-              >
-                Auftrag annehmen
-              </button>
-            </>
+            <button
+              className="button"
+              type="button"
+              onClick={() => setIsConfirmDialogOpen(true)}
+            >
+              Fahrt annehmen
+            </button>
           }
         />
       ) : null}
@@ -436,11 +426,11 @@ export function OrderPage() {
                 type="button"
                 onClick={() => setIsConfirmDialogOpen(false)}
               >
-                Abbrechen
+                Zurück zur Lieferung
               </button>
 
               <button className="button" type="button" onClick={handleAcceptSelectedOrder}>
-                Ja, Auftrag annehmen
+                Ja, Fahrt annehmen
               </button>
             </div>
           </section>

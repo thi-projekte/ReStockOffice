@@ -14,7 +14,6 @@ import {
   type RelativeDayOption,
   type SortOption,
   formatAcceptedAtDate,
-  formatAcceptedAtTime,
   formatDeliveryWindowOption,
   getDaysUntilDelivery,
   getDeliveryWindowKey,
@@ -162,7 +161,6 @@ export function MyOrdersPage() {
   const dueTomorrowCount = filteredOrders.filter(
     (order) => getDaysUntilDelivery(order.deliveryDate) === 1,
   ).length;
-  const acceptedAtTimeLabel = formatAcceptedAtTime(selectedOrder?.assignment?.acceptedAt);
   const priorityFilterOptions: Array<{
     value: "" | RelativeDayOption;
     label: string;
@@ -226,7 +224,6 @@ export function MyOrdersPage() {
                 {dueTodayCount} / {dueTomorrowCount}
               </strong>
             </article>
-
           </div>
         </div>
       </section>
@@ -255,10 +252,11 @@ export function MyOrdersPage() {
 
         {assignedOrdersResult.hasPlaceholderCustomerData ? (
           <div className="mock-box">
-            <strong>Vorläufige Customer-Stammdaten</strong>
+            <strong>Unvollständige Delivery-Service-Daten</strong>
             <span>
-              Firmenname, Adresse, Lieferfenster und Lieferhinweise werden derzeit
-              noch übergangsweise aus einer kleinen Placeholder-Directory abgeleitet.
+              Verfügbare Firmen-, Adress- und Lieferhinweise werden aus dem
+              Delivery Service angereichert. Felder, die dort aktuell noch
+              fehlen, zeigen wir sichtbar als "Fehlt noch" an.
             </span>
           </div>
         ) : null}
@@ -372,7 +370,6 @@ export function MyOrdersPage() {
                 key={order.orderKey}
                 order={order}
                 detailLabel="Details ansehen"
-                statusLabel="Angenommen"
                 onClick={() => setSelectedOrder(order)}
               />
             ))}
@@ -391,31 +388,18 @@ export function MyOrdersPage() {
               type="button"
               onClick={() => setSelectedOrder(null)}
             >
-              Zurück zu deinen Aufträgen
+              Zurück zur Übersicht
             </button>
           }
-        >
-          <div className="restocker-order-dialog__assignment">
-            <div className="restocker-order-dialog__summary">
-              <span className="eyebrow">Angenommen am</span>
-              <strong>{formatAcceptedAtDate(selectedOrder.assignment?.acceptedAt)}</strong>
+          infoRows={
+            <div className="restocker-order-dialog__info-row">
+              <span className="restocker-order-dialog__info-label">Angenommen am</span>
+              <span className="restocker-order-dialog__info-value restocker-order-dialog__info-value--plain">
+                {formatAcceptedAtDate(selectedOrder.assignment?.acceptedAt)}
+              </span>
             </div>
-
-            <div className="restocker-order-dialog__summary">
-              <span className="eyebrow">Uhrzeit</span>
-              <strong>
-                {acceptedAtTimeLabel === "Nicht verfügbar"
-                  ? acceptedAtTimeLabel
-                  : `${acceptedAtTimeLabel} Uhr`}
-              </strong>
-            </div>
-
-            <div className="restocker-order-dialog__summary">
-              <span className="eyebrow">Status</span>
-              <strong className="restocker-order-dialog__status-badge">ANGENOMMEN</strong>
-            </div>
-          </div>
-        </RestockerOrderDetailDialog>
+          }
+        />
       ) : null}
     </div>
   );
