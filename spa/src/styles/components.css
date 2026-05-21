@@ -251,6 +251,7 @@
 
 .account-page {
   gap: 1.25rem;
+  min-width: 0;
 }
 
 .account-hero {
@@ -309,6 +310,7 @@
 .account-settings-shell {
   display: grid;
   gap: 1.1rem;
+  min-width: 0;
   padding: 1.15rem;
   border: 1px solid rgba(38, 64, 55, 0.12);
   border-radius: 1rem;
@@ -352,6 +354,7 @@
 .account-setting-card {
   display: inline;
   gap: 1rem;
+  min-width: 0;
   padding: 1.15rem;
   border: 1px solid rgba(38, 64, 55, 0.12);
   border-radius: 1rem;
@@ -381,11 +384,13 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
+  min-width: 0;
 }
 
 .account-field {
   display: grid;
   gap: 0.45rem;
+  min-width: 0;
 }
 
 .account-field--full {
@@ -1995,10 +2000,38 @@
 }
 
 @media (max-width: 720px) {
+  .account-page {
+    width: 100%;
+  }
+
+  .account-page > .page-card {
+    width: 100%;
+    margin-inline: auto;
+    padding: 1.15rem;
+  }
+
+  .account-hero__copy,
+  .account-hero__summary,
+  .account-profile-grid,
+  .account-settings-shell,
+  .account-action-row,
+  .account-danger-zone,
+  .account-danger-zone__actions {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
   .hero-card,
   .section-head {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .account-section-head,
+  .account-settings-section__head {
+    align-items: flex-start;
+    justify-content: flex-start;
   }
 
   .carousel-shell {
@@ -2077,6 +2110,12 @@
     display: none;
   }
 
+  .button.nav-btn.header-profile-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .quantity-button {
     width: 2.75rem;
     height: 2.75rem;
@@ -2129,13 +2168,42 @@
     flex-direction: column;
   }
 
+  .account-action-row .button,
   .account-action-button {
     width: 100%;
+    min-width: 0;
   }
 
   .account-theme-option,
   .account-toggle-button {
     grid-template-columns: 1fr;
+  }
+
+  .account-panel,
+  .account-settings-shell,
+  .account-danger-zone {
+    padding: 1rem;
+  }
+
+  .account-toggle-button,
+  .account-theme-option,
+  .account-info-list div {
+    align-items: flex-start;
+  }
+
+  .account-settings-section__head,
+  .account-danger-zone {
+    grid-template-columns: 1fr;
+  }
+
+  .account-settings-section__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-danger-zone,
+  .account-danger-zone__actions {
+    width: 100%;
   }
 
   .account-toggle-pill {

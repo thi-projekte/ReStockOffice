@@ -561,6 +561,16 @@ export function AppShell({ children }: AppShellProps) {
                       </NavLink>
                   )}
 
+                  {/* Hamburger immer sichtbar */}
+                  <button
+                      className="button button--ghost hamburger-btn"
+                      type="button"
+                      onClick={() => setMenuOpen((v) => !v)}
+                      aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
+                  >
+                    {menuOpen ? <FaTimes /> : <FaBars />}
+                  </button>
+
                   {/* Account: Für beide gleich*/}
                   <div
                       className="header-profile-menu"
@@ -584,6 +594,8 @@ export function AppShell({ children }: AppShellProps) {
                         <FaUser />
                       )}
                     </NavLink>
+
+
 
                     {isProfileMenuOpen ? (
                       <div
@@ -635,16 +647,6 @@ export function AppShell({ children }: AppShellProps) {
                     ) : null}
                   </div>
 
-
-                  {/* Hamburger immer sichtbar */}
-                  <button
-                      className="button button--ghost hamburger-btn"
-                      type="button"
-                      onClick={() => setMenuOpen((v) => !v)}
-                      aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
-                  >
-                    {menuOpen ? <FaTimes /> : <FaBars />}
-                  </button>
                 </>
             ) : null}
           </div>
