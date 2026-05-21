@@ -157,7 +157,11 @@ export async function getProducts(): Promise<Product[]> {
   }
 
   if (useAPI) {
-    return loadProductsFromApi();
+    try {
+      return await loadProductsFromApi();
+    } catch {
+      return loadProductsFromMock();
+    }
   }
 
   return loadProductsFromMock();
@@ -175,7 +179,11 @@ export async function getProductById(productId: number): Promise<Product | undef
   }
 
   if (useAPI) {
-    return loadProductByIdFromApi(productId);
+    try {
+      return await loadProductByIdFromApi(productId);
+    } catch {
+      return productMocks.find((product) => product.productId === productId);
+    }
   }
 
   return productMocks.find((product) => product.productId === productId);

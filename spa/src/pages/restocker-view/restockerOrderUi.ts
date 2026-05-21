@@ -55,6 +55,28 @@ export function formatDeliveryEta(dateValue: string) {
   return `Auslieferung ${relativeDelivery}`;
 }
 
+export function formatDeliveryBanner(dateValue: string) {
+  const daysUntilDelivery = getDaysUntilDelivery(dateValue);
+
+  if (daysUntilDelivery === 0) {
+    return `Lieferung heute - ${dateValue}`;
+  }
+
+  if (daysUntilDelivery === 1) {
+    return `Lieferung morgen - ${dateValue}`;
+  }
+
+  if (daysUntilDelivery > 1) {
+    return `Lieferung in ${daysUntilDelivery} Tagen - ${dateValue}`;
+  }
+
+  if (daysUntilDelivery === -1) {
+    return `Lieferung gestern - ${dateValue}`;
+  }
+
+  return `Lieferung vor ${Math.abs(daysUntilDelivery)} Tagen - ${dateValue}`;
+}
+
 export function matchesRelativeDayFilter(
   dateValue: string,
   relativeDayFilter: RelativeDayOption | "",

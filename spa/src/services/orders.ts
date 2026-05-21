@@ -791,6 +791,18 @@ export async function loadAssignedRestockOrders({
       ),
     };
   } catch {
+    const deliveryBackedOrders = deriveMarketplaceOrdersFromDeliveryDetails(
+      await loadDeliveryDetailsForRestocker(resolvedToken, restockerName),
+    );
+
+    if (deliveryBackedOrders.length > 0) {
+      return {
+        orders: deliveryBackedOrders,
+        source: "live",
+        hasPlaceholderCustomerData: true,
+      };
+    }
+
     const demoOrders = deriveMarketplaceOrders(
       createDemoRestockOrders(),
       productsById,
