@@ -40,11 +40,12 @@ export function OrderPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
-  const [selectedDeliveryWindow, setSelectedDeliveryWindow] = useState("");
+  const [selectedDeliveryWindows, setSelectedDeliveryWindows] = useState<DeliveryWindowOption[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>("delivery-asc");
   const [draftSearchQuery, setDraftSearchQuery] = useState("");
   const [draftSelectedCity, setDraftSelectedCity] = useState("");
-  const [draftSelectedDeliveryWindow, setDraftSelectedDeliveryWindow] = useState("");
+  const [draftSelectedDeliveryWindows, setDraftSelectedDeliveryWindows] =
+    useState<DeliveryWindowOption[]>([]);
   const [draftSortOption, setDraftSortOption] = useState<SortOption>("delivery-asc");
   const [isCityMenuOpen, setIsCityMenuOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<RestockMarketplaceOrder | null>(null);
@@ -211,14 +212,14 @@ export function OrderPage() {
           .includes(normalizedQuery);
       const matchesCity = !selectedCity || order.city === selectedCity;
       const matchesDeliveryWindow =
-        !selectedDeliveryWindow ||
-        getDeliveryWindowKey(order.deliveryDate) === selectedDeliveryWindow;
+        selectedDeliveryWindows.length === 0 ||
+        selectedDeliveryWindows.includes(getDeliveryWindowKey(order.deliveryDate) as DeliveryWindowOption);
 
       return matchesQuery && matchesCity && matchesDeliveryWindow;
     });
 
     return sortOrders(visibleOrders, sortOption);
-  }, [marketplaceResult.orders, searchQuery, selectedCity, selectedDeliveryWindow, sortOption]);
+  }, [marketplaceResult.orders, searchQuery, selectedCity, selectedDeliveryWindows, sortOption]);
 
   const selectedDraftCityLabel =
     cityOptions.find((cityOption) => cityOption.value === draftSelectedCity)?.label ??
@@ -279,7 +280,7 @@ export function OrderPage() {
   function openMobileFilter() {
     setDraftSearchQuery(searchQuery);
     setDraftSelectedCity(selectedCity);
-    setDraftSelectedDeliveryWindow(selectedDeliveryWindow);
+    setDraftSelectedDeliveryWindows(selectedDeliveryWindows);
     setDraftSortOption(sortOption);
     setIsCityMenuOpen(false);
     setIsFilterOpen(true);
@@ -307,7 +308,7 @@ export function OrderPage() {
   function handleApplyMobileFilters() {
     setSearchQuery(draftSearchQuery);
     setSelectedCity(draftSelectedCity);
-    setSelectedDeliveryWindow(draftSelectedDeliveryWindow);
+    setSelectedDeliveryWindows(draftSelectedDeliveryWindows);
     setSortOption(draftSortOption);
     closeMobileFilter();
   }
@@ -315,9 +316,17 @@ export function OrderPage() {
   function handleResetMobileFilters() {
     setDraftSearchQuery("");
     setDraftSelectedCity("");
-    setDraftSelectedDeliveryWindow("");
+    setDraftSelectedDeliveryWindows([]);
     setDraftSortOption("delivery-asc");
     setIsCityMenuOpen(false);
+  }
+
+    function toggleDraftDeliveryWindow(deliveryWindow: DeliveryWindowOption) {
+    setDraftSelectedDeliveryWindows((currentWindows) =>
+      currentWindows.includes(deliveryWindow)
+        ? currentWindows.filter((windowValue) => windowValue !== deliveryWindow)
+        : [...currentWindows, deliveryWindow],
+    );
   }
 
   return (
@@ -419,8 +428,14 @@ export function OrderPage() {
             <label className="restocker-filter-field">
               <span>Lieferzeitraum</span>
               <select
-                value={selectedDeliveryWindow}
-                onChange={(event) => setSelectedDeliveryWindow(event.target.value)}
+                value={selectedDeliveryWindows[0] ?? ""}
+                onChange={(event) =>
+                  setSelectedDeliveryWindows(
+                    event.target.value
+                      ? [event.target.value as DeliveryWindowOption]
+                      : [],
+                  )
+                }
               >
                 <option value="">Alle Zeiträume</option>
                 {desktopDeliveryWindowOptions.map((deliveryWindow) => (
@@ -531,9 +546,9 @@ export function OrderPage() {
                   {deliveryWindowOptions.map((deliveryWindow) => (
                     <button
                       key={deliveryWindow.value}
-                      className={`restocker-mobile-filter-chip restocker-mobile-filter-week-chip ${draftSelectedDeliveryWindow === deliveryWindow.value ? "is-active" : ""}`.trim()}
+                      className={`restocker-mobile-filter-chip restocker-mobile-filter-week-chip ${draftSelectedDeliveryWindows.includes(deliveryWindow.value) ? "is-active" : ""}`.trim()}
                       type="button"
-                      onClick={() => setDraftSelectedDeliveryWindow(deliveryWindow.value)}
+                      onClick={() => toggleDraftDeliveryWindow(deliveryWindow.value)}
                     >
                       <span className="restocker-mobile-filter-week-chip__label">
                         <span>{deliveryWindow.labelTop}</span>
