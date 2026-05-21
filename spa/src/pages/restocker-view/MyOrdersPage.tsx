@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { FaFilter, FaSearch, FaTruck } from "react-icons/fa";
+import { FaCheck, FaChevronDown, FaFilter, FaSearch, FaTruck } from "react-icons/fa";
 import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCard";
 import { RestockerOrderDetailDialog } from "../../components/restocker/RestockerOrderDetailDialog";
 import { useAuth } from "../../auth/AuthProvider";
@@ -41,13 +41,37 @@ export function MyOrdersPage() {
     });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
-  const [selectedDeliveryWindow, setSelectedDeliveryWindow] = useState("");
+  const [selectedDeliveryWindows, setSelectedDeliveryWindows] = useState<DeliveryWindowOption[]>([]);
   const [selectedRelativeDay, setSelectedRelativeDay] = useState<"" | RelativeDayOption>("");
   const [sortOption, setSortOption] = useState<SortOption>("delivery-asc");
+  const [draftSearchQuery, setDraftSearchQuery] = useState("");
+  const [draftSelectedCity, setDraftSelectedCity] = useState("");
+  const [draftSelectedDeliveryWindows, setDraftSelectedDeliveryWindows] =
+    useState<DeliveryWindowOption[]>([]);
+  const [draftSelectedRelativeDay, setDraftSelectedRelativeDay] =
+    useState<"" | RelativeDayOption>("");
+  const [draftSortOption, setDraftSortOption] = useState<SortOption>("delivery-asc");
+  const [isCityMenuOpen, setIsCityMenuOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<RestockMarketplaceOrder | null>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 720px)");
+
+    const updateViewportMatch = () => {
+      setIsMobileViewport(mediaQuery.matches);
+    };
+
+    updateViewportMatch();
+    mediaQuery.addEventListener("change", updateViewportMatch);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateViewportMatch);
+    };
+  }, []);
 
   useEffect(() => {
     let ignoreResult = false;
@@ -100,6 +124,19 @@ export function MyOrdersPage() {
     };
   }, [auth.token, auth.user?.id, restockerName]);
 
+  useEffect(() => {
+    if (!isMobileViewport || !isFilterOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isFilterOpen, isMobileViewport]);
+
   const availableCities = useMemo(
     () =>
       Array.from(new Set(assignedOrdersResult.orders.map((order) => order.city))).sort(
@@ -122,6 +159,55 @@ export function MyOrdersPage() {
     [assignedOrdersResult.orders],
   );
 
+  const deliveryWindowOptions = useMemo(
+    () => [
+      {
+        value: "week-1" as DeliveryWindowOption,
+        labelTop: "Diese",
+        labelBottom: "Woche",
+      },
+      {
+        value: "week-2" as DeliveryWindowOption,
+        labelTop: "Nächste",
+        labelBottom: "Woche",
+      },
+      {
+        value: "week-3" as DeliveryWindowOption,
+        labelTop: "Woche",
+        labelBottom: "3",
+      },
+      {
+        value: "week-4" as DeliveryWindowOption,
+        labelTop: "Woche",
+        labelBottom: "4",
+      },
+    ],
+    [],
+  );
+
+  const desktopDeliveryWindowOptions = useMemo(
+    () =>
+      availableDeliveryWindows.map((deliveryWindow) => ({
+        value: deliveryWindow,
+        label: formatDeliveryWindowOption(deliveryWindow),
+      })),
+    [availableDeliveryWindows],
+  );
+
+  const cityOptions = useMemo(
+    () => [
+      { value: "", label: "Alle Städte" },
+      ...availableCities.map((city) => ({ value: city, label: city })),
+    ],
+    [availableCities],
+  );
+
+  const sortOptions: Array<{ value: SortOption; label: string }> = [
+    { value: "delivery-asc", label: "Frühester Liefertermin" },
+    { value: "delivery-desc", label: "Spätester Liefertermin" },
+    { value: "company-asc", label: "Unternehmen (A-Z)" },
+  ];
+
   const filteredOrders = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -134,8 +220,10 @@ export function MyOrdersPage() {
           .includes(normalizedQuery);
       const matchesCity = !selectedCity || order.city === selectedCity;
       const matchesDeliveryWindow =
-        !selectedDeliveryWindow ||
-        getDeliveryWindowKey(order.deliveryDate) === selectedDeliveryWindow;
+        selectedDeliveryWindows.length === 0 ||
+        selectedDeliveryWindows.includes(
+          getDeliveryWindowKey(order.deliveryDate) as DeliveryWindowOption,
+        );
       const matchesRelativeDay = matchesRelativeDayFilter(
         order.deliveryDate,
         selectedRelativeDay,
@@ -149,7 +237,7 @@ export function MyOrdersPage() {
     assignedOrdersResult.orders,
     searchQuery,
     selectedCity,
-    selectedDeliveryWindow,
+    selectedDeliveryWindows,
     selectedRelativeDay,
     sortOption,
   ]);
@@ -190,6 +278,13 @@ export function MyOrdersPage() {
       ).length,
     },
   ];
+  const mobilePriorityFilterOptions: Array<{ value: RelativeDayOption; label: string }> = [
+    { value: "today", label: "Heute" },
+    { value: "tomorrow", label: "Morgen" },
+  ];
+  const selectedDraftCityLabel =
+    cityOptions.find((cityOption) => cityOption.value === draftSelectedCity)?.label ??
+    "Alle Städte";
 
   if (!auth.isInitializing && !auth.hasRole("Restocker")) {
     return <Navigate to="/" replace />;
@@ -197,6 +292,95 @@ export function MyOrdersPage() {
 
   if (auth.isInitializing || isLoading) {
     return <section className="page-card">Deine Aufträge werden geladen...</section>;
+  }
+
+  function openMobileFilter() {
+    setDraftSearchQuery(searchQuery);
+    setDraftSelectedCity(selectedCity);
+    setDraftSelectedDeliveryWindows(selectedDeliveryWindows);
+    setDraftSelectedRelativeDay(selectedRelativeDay);
+    setDraftSortOption(sortOption);
+    setIsCityMenuOpen(false);
+    setIsFilterOpen(true);
+  }
+
+  function closeMobileFilter() {
+    setIsCityMenuOpen(false);
+    setIsFilterOpen(false);
+  }
+
+  function handleFilterToggle() {
+    if (!isMobileViewport) {
+      setIsFilterOpen((currentState) => !currentState);
+      return;
+    }
+
+    if (isFilterOpen) {
+      closeMobileFilter();
+      return;
+    }
+
+    openMobileFilter();
+  }
+
+  function handleApplyMobileFilters() {
+    setSearchQuery(draftSearchQuery);
+    setSelectedCity(draftSelectedCity);
+    setSelectedDeliveryWindows(draftSelectedDeliveryWindows);
+    setSelectedRelativeDay(draftSelectedRelativeDay);
+    setSortOption(draftSortOption);
+    closeMobileFilter();
+  }
+
+  function handleResetMobileFilters() {
+    setDraftSearchQuery("");
+    setDraftSelectedCity("");
+    setDraftSelectedDeliveryWindows([]);
+    setDraftSelectedRelativeDay("");
+    setDraftSortOption("delivery-asc");
+    setIsCityMenuOpen(false);
+  }
+
+  function handlePriorityFilterSelection(nextValue: "" | RelativeDayOption) {
+    setSelectedRelativeDay(nextValue);
+
+    if (nextValue) {
+      setSelectedDeliveryWindows([]);
+    }
+  }
+
+  function handleDeliveryWindowSelection(nextValue: DeliveryWindowOption | "") {
+    setSelectedDeliveryWindows(nextValue ? [nextValue] : []);
+
+    if (nextValue) {
+      setSelectedRelativeDay("");
+    }
+  }
+
+  function handleDraftPriorityFilterSelection(nextValue: RelativeDayOption) {
+    setDraftSelectedRelativeDay((currentValue) => {
+      const updatedValue = currentValue === nextValue ? "" : nextValue;
+
+      if (updatedValue) {
+        setDraftSelectedDeliveryWindows([]);
+      }
+
+      return updatedValue;
+    });
+  }
+
+  function toggleDraftDeliveryWindow(deliveryWindow: DeliveryWindowOption) {
+    setDraftSelectedDeliveryWindows((currentWindows) => {
+      const updatedWindows = currentWindows.includes(deliveryWindow)
+        ? currentWindows.filter((windowValue) => windowValue !== deliveryWindow)
+        : [...currentWindows, deliveryWindow];
+
+      if (updatedWindows.length > 0) {
+        setDraftSelectedRelativeDay("");
+      }
+
+      return updatedWindows;
+    });
   }
 
   return (
@@ -264,60 +448,68 @@ export function MyOrdersPage() {
         {error ? <div className="error-box">{error}</div> : null}
 
         <div className="restocker-marketplace-toolbar">
-          <label className="restocker-marketplace-search" htmlFor="restocker-my-orders-search">
-            <FaSearch aria-hidden="true" />
-            <input
-              id="restocker-my-orders-search"
-              type="search"
-              placeholder="Nach Unternehmen suchen ..."
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
-          </label>
+          {!isMobileViewport ? (
+            <label className="restocker-marketplace-search" htmlFor="restocker-my-orders-search">
+              <FaSearch aria-hidden="true" />
+              <input
+                id="restocker-my-orders-search"
+                type="search"
+                placeholder="Nach Unternehmen suchen ..."
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
+            </label>
+          ) : null}
 
           <button
             className={`button button--ghost restocker-filter-button ${isFilterOpen ? "active" : ""}`.trim()}
             type="button"
-            onClick={() => setIsFilterOpen((currentState) => !currentState)}
+            onClick={handleFilterToggle}
           >
             <FaFilter />
             Filter
           </button>
         </div>
 
-        <div className="restocker-priority-filters" aria-label="Schnellfilter für Auslieferungen">
-          {priorityFilterOptions.map((filterOption) => {
-            const isActive = selectedRelativeDay === filterOption.value;
+        {!isMobileViewport ? (
+          <div className="restocker-priority-filters" aria-label="Schnellfilter für Auslieferungen">
+            {priorityFilterOptions.map((filterOption) => {
+              const isActive = selectedRelativeDay === filterOption.value;
 
-            return (
-              <button
-                key={filterOption.value || "all"}
-                className={`restocker-priority-filter ${isActive ? "is-active" : ""}`.trim()}
-                type="button"
-                onClick={() => setSelectedRelativeDay(filterOption.value)}
-              >
-                <span className="restocker-priority-filter__eyebrow">
-                  {filterOption.eyebrow}
-                </span>
-                <strong>{filterOption.label}</strong>
-                <small>{filterOption.count} Aufträge</small>
-              </button>
-            );
-          })}
-        </div>
+              return (
+                <button
+                  key={filterOption.value || "all"}
+                  className={`restocker-priority-filter ${isActive ? "is-active" : ""}`.trim()}
+                  type="button"
+                  onClick={() => handlePriorityFilterSelection(filterOption.value)}
+                >
+                  <span className="restocker-priority-filter__eyebrow">
+                    {filterOption.eyebrow}
+                  </span>
+                  <strong>{filterOption.label}</strong>
+                  <small>{filterOption.count} Aufträge</small>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
-        {isFilterOpen ? (
+        {isFilterOpen && !isMobileViewport ? (
           <div className="restocker-marketplace-filters">
             <label className="restocker-filter-field">
               <span>Lieferzeitraum</span>
               <select
-                value={selectedDeliveryWindow}
-                onChange={(event) => setSelectedDeliveryWindow(event.target.value)}
+                value={selectedDeliveryWindows[0] ?? ""}
+                onChange={(event) =>
+                  handleDeliveryWindowSelection(
+                    (event.target.value as DeliveryWindowOption | "") ?? "",
+                  )
+                }
               >
                 <option value="">Alle Zeiträume</option>
-                {availableDeliveryWindows.map((deliveryWindow) => (
-                  <option key={deliveryWindow} value={deliveryWindow}>
-                    {formatDeliveryWindowOption(deliveryWindow)}
+                {desktopDeliveryWindowOptions.map((deliveryWindow) => (
+                  <option key={deliveryWindow.value} value={deliveryWindow.value}>
+                    {deliveryWindow.label}
                   </option>
                 ))}
               </select>
@@ -329,10 +521,9 @@ export function MyOrdersPage() {
                 value={selectedCity}
                 onChange={(event) => setSelectedCity(event.target.value)}
               >
-                <option value="">Alle Städte</option>
-                {availableCities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
+                {cityOptions.map((cityOption) => (
+                  <option key={cityOption.value || "all-cities"} value={cityOption.value}>
+                    {cityOption.label}
                   </option>
                 ))}
               </select>
@@ -344,9 +535,11 @@ export function MyOrdersPage() {
                 value={sortOption}
                 onChange={(event) => setSortOption(event.target.value as SortOption)}
               >
-                <option value="delivery-asc">Frühester Liefertermin</option>
-                <option value="delivery-desc">Spätester Liefertermin</option>
-                <option value="company-asc">Unternehmen (A-Z)</option>
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
@@ -376,6 +569,150 @@ export function MyOrdersPage() {
           </div>
         )}
       </section>
+
+      {isMobileViewport && isFilterOpen ? (
+        <>
+          <button
+            className="subscription-modal__overlay"
+            type="button"
+            aria-label="Filter schließen"
+            onClick={closeMobileFilter}
+          />
+
+          <section
+            className="restocker-mobile-filter-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="restocker-my-orders-mobile-filter-title"
+          >
+            <div className="restocker-mobile-filter-sheet__handle" aria-hidden="true" />
+
+            <div className="restocker-mobile-filter-sheet__header">
+              <h2 id="restocker-my-orders-mobile-filter-title">Filter</h2>
+            </div>
+
+            <div className="restocker-mobile-filter-sheet__body">
+              <label
+                className="restocker-marketplace-search restocker-marketplace-search--sheet"
+                htmlFor="restocker-my-orders-search-mobile"
+              >
+                <FaSearch aria-hidden="true" />
+                <input
+                  id="restocker-my-orders-search-mobile"
+                  type="search"
+                  placeholder="Nach Unternehmen suchen ..."
+                  value={draftSearchQuery}
+                  onChange={(event) => setDraftSearchQuery(event.target.value)}
+                />
+              </label>
+
+              <div className="restocker-mobile-filter-group">
+                <span className="restocker-mobile-filter-group__label">Priorität</span>
+                <div className="restocker-mobile-filter-chip-grid restocker-mobile-filter-chip-grid--priority">
+                  {mobilePriorityFilterOptions.map((filterOption) => (
+                    <button
+                      key={filterOption.value}
+                      className={`restocker-mobile-filter-chip restocker-mobile-filter-priority-chip ${draftSelectedRelativeDay === filterOption.value ? "is-active" : ""}`.trim()}
+                      type="button"
+                      onClick={() => handleDraftPriorityFilterSelection(filterOption.value)}
+                    >
+                      {filterOption.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="restocker-mobile-filter-group">
+                <span className="restocker-mobile-filter-group__label">Lieferzeitraum</span>
+                <div className="restocker-mobile-filter-chip-grid restocker-mobile-filter-chip-grid--weeks">
+                  {deliveryWindowOptions.map((deliveryWindow) => (
+                    <button
+                      key={deliveryWindow.value}
+                      className={`restocker-mobile-filter-chip restocker-mobile-filter-week-chip ${draftSelectedDeliveryWindows.includes(deliveryWindow.value) ? "is-active" : ""}`.trim()}
+                      type="button"
+                      onClick={() => toggleDraftDeliveryWindow(deliveryWindow.value)}
+                    >
+                      <span className="restocker-mobile-filter-week-chip__label">
+                        <span>{deliveryWindow.labelTop}</span>
+                        <span>{deliveryWindow.labelBottom}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="restocker-mobile-filter-group">
+                <span className="restocker-mobile-filter-group__label">Stadt</span>
+                <div className="restocker-mobile-select-shell">
+                  <button
+                    className={`restocker-mobile-select-trigger ${isCityMenuOpen ? "is-open" : ""}`.trim()}
+                    type="button"
+                    onClick={() => setIsCityMenuOpen((currentState) => !currentState)}
+                    aria-expanded={isCityMenuOpen}
+                    aria-haspopup="listbox"
+                  >
+                    <span>{selectedDraftCityLabel}</span>
+                    <FaChevronDown aria-hidden="true" />
+                  </button>
+
+                  {isCityMenuOpen ? (
+                    <div
+                      className="restocker-mobile-select-menu"
+                      role="listbox"
+                      aria-label="Stadt auswählen"
+                    >
+                      {cityOptions.map((cityOption) => (
+                        <button
+                          key={cityOption.value || "all-cities"}
+                          className={`restocker-mobile-select-option ${draftSelectedCity === cityOption.value ? "is-active" : ""}`.trim()}
+                          type="button"
+                          onClick={() => {
+                            setDraftSelectedCity(cityOption.value);
+                            setIsCityMenuOpen(false);
+                          }}
+                        >
+                          <span>{cityOption.label}</span>
+                          {draftSelectedCity === cityOption.value ? <FaCheck aria-hidden="true" /> : null}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="restocker-mobile-filter-group">
+                <span className="restocker-mobile-filter-group__label">Sortieren</span>
+                <div className="restocker-mobile-sort-shell">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      className={`restocker-mobile-sort-option restocker-mobile-sort-option--stacked ${draftSortOption === option.value ? "is-active" : ""}`.trim()}
+                      type="button"
+                      onClick={() => setDraftSortOption(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="restocker-mobile-filter-sheet__actions">
+              <button
+                className="button button--ghost"
+                type="button"
+                onClick={handleResetMobileFilters}
+              >
+                Zurücksetzen
+              </button>
+
+              <button className="button" type="button" onClick={handleApplyMobileFilters}>
+                Anwenden
+              </button>
+            </div>
+          </section>
+        </>
+      ) : null}
 
       {selectedOrder ? (
         <RestockerOrderDetailDialog
