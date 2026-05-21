@@ -742,6 +742,26 @@
   color: var(--color-text);
 }
 
+.statistics-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+  margin-bottom: 20px;
+
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.restocker-tour-card_money {
+  margin-left: auto;
+  background-color: var(--color-secondary);
+  color: var(--color-grey-100);
+
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
 @media (max-width: 720px) {
   .restocker-marketplace-hero--orders {
     gap: 0.9rem;
@@ -1078,32 +1098,32 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-.restocker-mobile-filter-week-chip {
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 0.2rem;
+  .restocker-mobile-filter-week-chip {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.2rem;
     min-height: 5.35rem;
     padding: 0.7rem 0.35rem;
     border-radius: 1.2rem;
     text-align: center;
     line-height: 1.05;
-}
+  }
 
-.restocker-mobile-filter-week-chip__label {
-  display: grid;
-  gap: 0.08rem;
-}
+  .restocker-mobile-filter-week-chip__label {
+    display: grid;
+    gap: 0.08rem;
+  }
 
-.restocker-mobile-filter-week-chip__label span {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 500;
-  line-height: 1.05;
-}
+  .restocker-mobile-filter-week-chip__label span {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.05;
+  }
 
-.restocker-mobile-filter-week-chip.is-active {
-  color: var(--color-surface);
+  .restocker-mobile-filter-week-chip.is-active {
+    color: var(--color-surface);
     background:
       radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 48%),
       linear-gradient(180deg, rgba(173, 188, 167, 0.96), rgba(154, 173, 149, 0.96));
@@ -1505,142 +1525,134 @@
   :root[data-theme="dark"] .restocker-order-dialog .subscription-modal__actions {
     border-top-color: rgba(153, 153, 153, 0.16);
     background: rgba(31, 42, 46, 0.96);
-  .restocker-order-dialog__table-row+.restocker-order-dialog__table-row {
-    border-top: 1px solid rgba(38, 64, 55, 0.12);
-  }
-}
 
-@media (max-width: 390px) {
-  .restocker-order-card {
-    padding: 0.92rem 0.82rem 0.82rem;
+    .restocker-order-dialog__table-row+.restocker-order-dialog__table-row {
+      border-top: 1px solid rgba(38, 64, 55, 0.12);
+    }
   }
 
-  .restocker-order-card__head {
-    gap: 0.45rem;
+  @media (max-width: 390px) {
+    .restocker-order-card {
+      padding: 0.92rem 0.82rem 0.82rem;
+    }
+
+    .restocker-order-card__head {
+      gap: 0.45rem;
+    }
+
+    .restocker-order-card__id,
+    .restocker-order-card__articles {
+      min-height: 1.85rem;
+      padding: 0.18rem 0.58rem;
+      font-size: 0.8rem;
+    }
+
+    .restocker-order-card__body strong {
+      font-size: 0.9rem;
+    }
+
+    .restocker-order-card__body span {
+      font-size: 0.88rem;
+    }
+
+    .restocker-order-card__delivery {
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+      gap: 0.45rem;
+      padding: 0.72rem 0.75rem;
+    }
+
+    .restocker-order-card__delivery-date,
+    .restocker-order-card__delivery-window {
+      min-width: 0;
+    }
+
+    .restocker-order-card__delivery-date {
+      grid-template-rows: 0.82rem 1.55rem;
+    }
+
+    .restocker-order-card__delivery-window {
+      grid-template-rows: 0.82rem 1.55rem;
+      padding-left: 0.65rem;
+      border-top: 0;
+      border-left: 1px solid rgba(38, 64, 55, 0.08);
+    }
+
+    .restocker-order-card__delivery-label,
+    .restocker-order-card__delivery-window span {
+      font-size: 0.64rem;
+      letter-spacing: 0;
+    }
+
+    .restocker-order-card__delivery-main {
+      gap: 0.3rem;
+    }
+
+    .restocker-order-card__delivery-main strong,
+    .restocker-order-card__delivery-window strong {
+      min-height: 1.55rem;
+      font-size: 0.77rem;
+      line-height: 1.08;
+    }
+
+    .restocker-order-card__delivery-main strong,
+    .restocker-order-card__delivery-window strong,
+    .restocker-order-card__delivery-relative {
+      min-width: 0;
+    }
+
+    .restocker-order-card__delivery-window strong {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .restocker-order-card__delivery-relative {
+      min-height: 1.45rem;
+      padding: 0.14rem 0.46rem;
+      font-size: 0.62rem;
+    }
+
+    .restocker-order-card__detail-link,
+    .restocker-order-card__secondary-action {
+      min-height: 2.4rem;
+      padding: 0.48rem 0.82rem;
+      font-size: 0.86rem;
+    }
+
+    .restocker-order-dialog__title-block h2 {
+      font-size: 1.32rem;
+    }
+
+    .restocker-order-dialog__status-banner strong {
+      font-size: 0.8rem;
+    }
+
+    .restocker-order-dialog__info-row {
+      grid-template-columns: 1fr;
+      gap: 0.35rem;
+      padding: 0.82rem 0.85rem;
+    }
+
+    .restocker-order-dialog__table-row {
+      grid-template-columns: 86px 72px minmax(0, 1fr);
+      gap: 0.4rem;
+      padding: 0.78rem 0.85rem;
+      font-size: 0.78rem;
+    }
+
+    .restocker-order-dialog__article-head {
+      padding: 0.85rem 0.85rem 0.65rem;
+    }
   }
 
-  .restocker-order-card__id,
-  .restocker-order-card__articles {
-    min-height: 1.85rem;
-    padding: 0.18rem 0.58rem;
-    font-size: 0.8rem;
+  .statistics-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+    margin-bottom: 20px;
   }
 
-  .restocker-order-card__body strong {
-    font-size: 0.9rem;
+  .statistics-filter input {
+    width: 220px;
   }
-
-  .restocker-order-card__body span {
-    font-size: 0.88rem;
-  }
-
-  .restocker-order-card__delivery {
-    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-    gap: 0.45rem;
-    padding: 0.72rem 0.75rem;
-  }
-
-  .restocker-order-card__delivery-date,
-  .restocker-order-card__delivery-window {
-    min-width: 0;
-  }
-
-  .restocker-order-card__delivery-date {
-    grid-template-rows: 0.82rem 1.55rem;
-  }
-
-  .restocker-order-card__delivery-window {
-    grid-template-rows: 0.82rem 1.55rem;
-    padding-left: 0.65rem;
-    border-top: 0;
-    border-left: 1px solid rgba(38, 64, 55, 0.08);
-  }
-
-  .restocker-order-card__delivery-label,
-  .restocker-order-card__delivery-window span {
-    font-size: 0.64rem;
-    letter-spacing: 0;
-  }
-
-  .restocker-order-card__delivery-main {
-    gap: 0.3rem;
-  }
-
-  .restocker-order-card__delivery-main strong,
-  .restocker-order-card__delivery-window strong {
-    min-height: 1.55rem;
-    font-size: 0.77rem;
-    line-height: 1.08;
-  }
-
-  .restocker-order-card__delivery-main strong,
-  .restocker-order-card__delivery-window strong,
-  .restocker-order-card__delivery-relative {
-    min-width: 0;
-  }
-
-  .restocker-order-card__delivery-window strong {
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .restocker-order-card__delivery-relative {
-    min-height: 1.45rem;
-    padding: 0.14rem 0.46rem;
-    font-size: 0.62rem;
-  }
-
-  .restocker-order-card__detail-link,
-  .restocker-order-card__secondary-action {
-    min-height: 2.4rem;
-    padding: 0.48rem 0.82rem;
-    font-size: 0.86rem;
-  }
-
-  .restocker-order-dialog__title-block h2 {
-    font-size: 1.32rem;
-  }
-
-  .restocker-order-dialog__status-banner strong {
-    font-size: 0.8rem;
-  }
-
-  .restocker-order-dialog__info-row {
-    grid-template-columns: 1fr;
-    gap: 0.35rem;
-    padding: 0.82rem 0.85rem;
-  }
-
-  .restocker-order-dialog__table-row {
-    grid-template-columns: 86px 72px minmax(0, 1fr);
-    gap: 0.4rem;
-    padding: 0.78rem 0.85rem;
-    font-size: 0.78rem;
-  }
-
-  .restocker-order-dialog__article-head {
-    padding: 0.85rem 0.85rem 0.65rem;
-  }
-}
-
-.statistics-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 16px;
-  margin-bottom: 20px;
-}
-
-.statistics-filter input {
-  width: 220px;
-}
-
-.restocker-tour-card_money {
-  margin-left: auto;
-  background-color: var(--color-secondary);
-  color: var(--color-grey-100);
-
-  border-radius: 999px;
-  padding: 4px 10px;
-}
 }

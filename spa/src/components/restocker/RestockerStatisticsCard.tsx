@@ -120,7 +120,7 @@ export function RestockerStatisticsCard({
             {/* Monatsfilter */}
             <div className="statistics-filter">
 
-                <label>Monat auswählen</label>
+                <label>Monat auswählen:</label>
 
                 <input
                     type="month"
