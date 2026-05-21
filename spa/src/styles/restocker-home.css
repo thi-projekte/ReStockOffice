@@ -86,83 +86,17 @@
     margin-top: 4px;
 }
 
-.orders-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-
-/* Order tile */
-.order-tile {
-    border: 0.5px solid var(--color-grey-200);
-    border-radius: 12px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-}
-
-.order-tile--highlight {
-    margin-bottom: 16px;
-}
-
-.order-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-}
-
-.order-id {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--color-grey-300);
-    letter-spacing: 0.5px;
-}
-
-.order-company {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: 4px;
-}
-
-.order-addr {
-    font-size: 12px;
-    color: var(--color-grey-300);
-    display: flex;
-    align-items: flex-start;
-    gap: 4px;
-    flex: 1;
-}
-
-.order-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 0.5px solid var(--color-grey-300);
-}
-
 .open-orders-carousel {
     display: flex;
     gap: 1rem;
 }
 
-.open-order-card {
-    background: var(--color-grey-100);
-    border-radius: 16px;
-    padding: 1.25rem;
-    border: 1px solid var(--color-grey-200);
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-}
-
 .open-orders-carousel+.tour-btn {
     margin-top: 1rem;
+}
+
+.restocker-order-card {
+    min-width: 300px;
 }
 
 
@@ -193,33 +127,16 @@
 
     .metrics-row-desktop {
         grid-template-columns: repeat(2, 1fr);
-    }
-
-    .metrics-row-desktop .next-tile {
         grid-column: span 2;
     }
 
-    .orders-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .all-link {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .metric-tile,
-    .open-order-card,
-    .order-tile {
+    .metric-tile {
         background:
             linear-gradient(180deg, var(--color-background), var(--color-background)),
             radial-gradient(circle at top right, var(--color-secondary), transparent 55%);
         border: 1px solid var(--color-secondary);
         border-radius: 1rem;
         color: var(--color-text);
-    }
-
-    .metric-tile {
         padding: 16px;
         display: flex;
         flex-direction: column;
@@ -259,299 +176,10 @@
         display: none;
     }
 
-    .open-order-card {
+    .open-orders-carousel .restocker-order-card {
         min-width: 200px;
         flex: 0 0 auto;
         scroll-snap-align: start;
         scroll-snap-stop: always;
-    }
-
-    .open-orders-carousel .restocker-order-card {
-        min-width: 300px;
-        width: 260px;
-        flex: 0 0 auto;
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
-    }
-}
-
-@media (min-width: 768px) {
-    .open-orders-carousel {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        overflow: visible;
-    }
-
-    .open-order-card {
-        min-width: unset;
-        flex: unset;
-        width: 100%;
-    }
-
-    /*Fahrer*/
-    /* Filter row */
-    .fahrer-filter-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-        position: relative;
-    }
-
-    .fahrer-filter-wrapper {
-        position: relative;
-    }
-
-    .fahrer-filter-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-    }
-
-    /* Month tooltip / dropdown */
-    .fahrer-month-tooltip {
-        position: absolute;
-        top: calc(100% + 0.5rem);
-        left: 0;
-        z-index: 20;
-        background: var(--color-tertiaryl);
-        color: var(--color-surfac);
-        border-radius: 0.6rem;
-        padding: 0.75rem 1rem;
-        min-width: 220px;
-        box-shadow: 0 4px 16px var(--shadow-soft);
-    }
-
-    .fahrer-month-tooltip__hint {
-        font-size: 0.8rem;
-        margin: 0 0 0.6rem;
-        line-height: 1.4;
-    }
-
-    .fahrer-month-select {
-        width: 100%;
-        padding: 0.35rem 0.5rem;
-        border-radius: 0.4rem;
-        border: none;
-        font-size: 0.9rem;
-        cursor: pointer;
-        background: var(--color-primar);
-        color: var(--color-surface);
-    }
-
-    .fahrer-month-select option {
-        background: var(--color-surface);
-        color: var(--color-text);
-    }
-
-    /* KPI cards */
-    .fahrer-kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.75rem;
-    }
-
-    .fahrer-kpi-card {
-        display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
-        padding: 1rem 1.25rem;
-        border: 1px solid var(--color-grey-300);
-        border-radius: 0.75rem;
-        background: var(--color-background);
-    }
-
-    .fahrer-kpi-card__label {
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--color-primary);
-    }
-
-    .fahrer-kpi-card__value {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: var(--color-text);
-    }
-
-    /* Tour panel */
-    .fahrer-tour-panel {
-        border: 1px solid var(--color-grey-300);
-        border-radius: 0.85rem;
-        overflow: hidden;
-        background: var(--color-surface);
-    }
-
-    .fahrer-tour-panel__head {
-        padding: 1rem 1.25rem 0.75rem;
-        border-bottom: 1px solid var(--color-grey-300);
-    }
-
-    .fahrer-tour-panel__head h3 {
-        margin: 0.2rem 0 0;
-        font-size: 1.1rem;
-    }
-
-    /* Table */
-    .fahrer-tour-table-wrapper {
-        overflow-x: auto;
-    }
-
-    .fahrer-tour-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.9rem;
-    }
-
-    .fahrer-tour-table thead th {
-        padding: 0.65rem 1.25rem;
-        text-align: left;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        color: var(--color-primary);
-        background: var(--color-surface);
-        border-bottom: 1px solid var(--color-grey-300);
-    }
-
-    .fahrer-tour-table tbody tr {
-        border-bottom: 1px solid var(--color-grey-300);
-    }
-
-    .fahrer-tour-table tbody tr:last-child {
-        border-bottom: none;
-    }
-
-    .fahrer-tour-table tbody td {
-        padding: 0.85rem 1.25rem;
-        color: var(--color-text);
-    }
-
-    .fahrer-tour-id {
-        display: inline-block;
-        padding: 0.2rem 0.6rem;
-        border-radius: 999px;
-        background: var(--color-grey-300);
-        font-size: 0.82rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-    }
-
-    .fahrer-kpi-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        margin-bottom: 1.75rem;
-    }
-
-    @media (min-width: 768px) {
-        .fahrer-kpi-grid {
-            flex-direction: row;
-        }
-    }
-
-    @media (max-width: 767px) {
-        .fahrer-tour-table thead {
-            display: none;
-        }
-
-        .fahrer-tour-table tbody tr {
-            display: flex;
-            flex-direction: column;
-            padding: 0.85rem 1.25rem;
-            gap: 0.3rem;
-            border-bottom: 1px solid var(--color-grey-300);
-        }
-
-        .fahrer-tour-table tbody td {
-            padding: 0 0;
-            font-size: 0.88rem;
-        }
-
-        .fahrer-tour-table tbody td::before {
-            content: attr(data-label) " ";
-            font-weight: 700;
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--color-primary);
-            margin-right: 0.3rem;
-        }
-    }
-
-    .fahrer-desktop-only {
-        display: block;
-    }
-
-    .fahrer-mobile-only {
-        display: none;
-    }
-
-    @media (max-width: 767px) {
-        .fahrer-desktop-only {
-            display: none;
-        }
-
-        .fahrer-mobile-only {
-            display: block;
-        }
-    }
-
-    /* Karussell */
-    .fahrer-carousel {
-        display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        gap: 1rem;
-        padding: 1rem 1.25rem 1.25rem;
-        scrollbar-width: none;
-    }
-
-    .fahrer-carousel::-webkit-scrollbar {
-        display: none;
-    }
-
-    .fahrer-carousel__card {
-        flex: 0 0 85%;
-        scroll-snap-align: start;
-        border: 1px solid var(--color-grey-300);
-        border-radius: 0.85rem;
-        padding: 1rem 1.1rem;
-        background: var(--color-background);
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-    }
-
-    .fahrer-carousel__card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.25rem;
-    }
-
-    .fahrer-carousel__counter {
-        font-size: 0.75rem;
-        color: var(--color-primaryb);
-    }
-
-    .fahrer-carousel__row {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.9rem;
-        color: var(--color-primary);
-    }
-
-    .fahrer-carousel__row strong {
-        color: var(--color-text);
-    }
-
-    .fahrer-carousel__row--highlight strong {
-        color: var(--color-primary);
-        font-size: 1.05rem;
     }
 }

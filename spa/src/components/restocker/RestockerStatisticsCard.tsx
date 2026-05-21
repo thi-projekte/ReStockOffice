@@ -120,7 +120,7 @@ export function RestockerStatisticsCard({
             {/* Monatsfilter */}
             <div className="statistics-filter">
 
-                <label>Monat auswählen:</label>
+                <strong>Monat auswählen:</strong>
 
                 <input
                     type="month"
@@ -209,19 +209,19 @@ export function RestockerStatisticsCard({
 
             ) : completedOrders.length === 0 ? (
 
-                <p>
+                <strong>
                     Du hast in diesem Monat
                     keine Touren abgeschlossen.
-                </p>
+                </strong>
 
             ) : (
 
                 <>
-                    <p>
+                    <strong>
                         Du hast in diesem Monat{" "}
-                        {completedOrders.length} Touren
-                        abgeschlossen.
-                    </p>
+                        {completedOrders.length}{" "}
+                        {completedOrders.length === 1 ? "Tour" : "Touren"} abgeschlossen.
+                    </strong>
 
                     <div className="open-orders-carousel">
 
