@@ -9,7 +9,7 @@ import {
   FaTimes,
   FaUser,
   FaCalendarAlt,
-  FaArchive, FaClipboardList, FaTruck, FaShieldAlt, FaPaintBrush, FaSignOutAlt
+  FaArchive, FaClipboardList, FaTruck, FaShieldAlt, FaPaintBrush, FaSignOutAlt, FaFileInvoiceDollar
 } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
 import iconColored from "../assets/logos/icon_colored.png";
@@ -624,6 +624,15 @@ export function AppShell({ children }: AppShellProps) {
                         >
                           <FaPaintBrush />
                           <span>Darstellung</span>
+                        </Link>
+
+                        <Link
+                          className="header-profile-popover__link"
+                          to="/account#finance"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <FaFileInvoiceDollar />
+                          <span>Finanzen</span>
                         </Link>
 
                         <Link

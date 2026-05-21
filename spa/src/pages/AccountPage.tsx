@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useOutletContext } from "react-router-dom";
+import { Navigate, useLocation, useOutletContext } from "react-router-dom";
 import { MdEdit, MdLogout, MdOutlineWarningAmber, MdReceiptLong, MdSave } from "react-icons/md";
 import {FaBell, FaMoon, FaSun} from "react-icons/fa";
 import type { Product, RestockOrderWithProduct } from "../types/shop";
@@ -53,6 +53,7 @@ export function AccountPage() {
   const { isLoggedIn, onLogout, onSetTheme, theme } = useOutletContext<OutletContext>();
   const { hasRole, token } = useAuth();
   const isRestocker = hasRole("Restocker");
+  const location = useLocation();
 
   const username = keycloak.tokenParsed?.preferred_username ?? "unbekannt";
 
@@ -136,6 +137,30 @@ export function AccountPage() {
         console.error("Rechnungen konnten nicht geladen werden.", error);
       });
   }, [isLoggedIn, isRestocker, token]);
+
+  useEffect(() => {
+    if (!location.hash) {
+      return;
+    }
+
+    const sectionId = location.hash.slice(1);
+    const scrollToSection = () => {
+      const section = document.getElementById(sectionId);
+
+      if (!section) {
+        return;
+      }
+
+      const headerOffset = 96;
+      const top = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+      window.scrollTo({
+        top,
+        behavior: "smooth",
+      });
+    };
+
+    window.requestAnimationFrame(scrollToSection);
+  }, [location.hash, invoices.length]);
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
@@ -604,10 +629,10 @@ export function AccountPage() {
         </div>
       </section>
 
-      <section id="invoices" className="page-card section-space">
+      <section id="finance" className="page-card section-space">
         <div className="section-head account-section-head">
           <div>
-            <span className="eyebrow">Rechnungen</span>
+            <span className="eyebrow">Finanzen</span>
             <h2>Monatliche Abrechnungen</h2>
             <p className="section-copy">
               Deine zuletzt bereitgestellten Rechnungen der letzen Monate.
