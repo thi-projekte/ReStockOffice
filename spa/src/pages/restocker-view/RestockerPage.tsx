@@ -8,6 +8,7 @@ import type { RestockMarketplaceLoadResult } from "../../types/shop";
 import { getDaysUntilDelivery } from "./restockerOrderUi";
 import { useNavigate } from "react-router-dom";
 import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCardDashboard";
+import { RestockerStatisticsCard } from "../../components/restocker/RestockerStatisticsCard";
 
 
 export function RestockerPage() {
@@ -217,6 +218,12 @@ export function RestockerPage() {
                             Alle dir zugeordneten Aufträge anzeigen
                         </button>
                     </div>
+
+                    <RestockerStatisticsCard
+                        assignedLoading={assignedLoading}
+                        assignedError={assignedError}
+                        assignedOrdersResult={assignedOrdersResult}
+                    />
 
 
                 </div>
