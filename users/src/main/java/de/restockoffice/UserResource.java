@@ -2,7 +2,6 @@ package de.restockoffice;
 
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
@@ -86,14 +85,12 @@ public class UserResource {
 
     @GET
     @Path("customers")
-    @RolesAllowed("admin")
     public List<Customer> getAllCustomers(){
         return Customer.listAll();
     }
 
     @GET
     @Path("restockers")
-    @RolesAllowed("admin")
     public List<Restocker> getAllRestockers(){
         return Restocker.listAll();
     }
