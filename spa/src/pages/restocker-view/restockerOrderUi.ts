@@ -1,6 +1,6 @@
 import type { RestockMarketplaceOrder } from "../../types/shop";
 
-export type SortOption = "delivery-asc" | "company-asc" | "articles-desc";
+export type SortOption = "delivery-desc" | "delivery-asc" | "company-asc";
 export type DeliveryWindowOption = "week-1" | "week-2" | "week-3" | "week-4";
 export type RelativeDayOption = "today" | "tomorrow";
 
@@ -198,17 +198,17 @@ export function sortOrders(orders: RestockMarketplaceOrder[], sortOption: SortOp
       return firstOrder.companyName.localeCompare(secondOrder.companyName, "de");
     }
 
-    if (sortOption === "articles-desc") {
-      return secondOrder.articleCount - firstOrder.articleCount;
-    }
-
     const firstDate = parseDisplayDate(firstOrder.deliveryDate).getTime();
     const secondDate = parseDisplayDate(secondOrder.deliveryDate).getTime();
 
     if (firstDate !== secondDate) {
-      return firstDate - secondDate;
+      return sortOption === "delivery-desc"
+        ? secondDate - firstDate
+        : firstDate - secondDate;
     }
 
-    return firstOrder.deliveryTime.localeCompare(secondOrder.deliveryTime, "de");
+    return sortOption === "delivery-desc"
+      ? secondOrder.deliveryTime.localeCompare(firstOrder.deliveryTime, "de")
+      : firstOrder.deliveryTime.localeCompare(secondOrder.deliveryTime, "de");
   });
 }

@@ -344,9 +344,9 @@ export function MyOrdersPage() {
                 value={sortOption}
                 onChange={(event) => setSortOption(event.target.value as SortOption)}
               >
-                <option value="delivery-asc">Lieferdatum zuerst</option>
-                <option value="company-asc">Unternehmen A-Z</option>
-                <option value="articles-desc">Meiste Artikel zuerst</option>
+                <option value="delivery-asc">Frühester Liefertermin</option>
+                <option value="delivery-desc">Spätester Liefertermin</option>
+                <option value="company-asc">Unternehmen (A-Z)</option>
               </select>
             </label>
           </div>
