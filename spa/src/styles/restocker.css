@@ -43,6 +43,11 @@
   margin-top: 1rem;
 }
 
+.restocker-priority-filters--single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 22rem;
+}
+
 .restocker-priority-filter {
   display: grid;
   gap: 0.28rem;

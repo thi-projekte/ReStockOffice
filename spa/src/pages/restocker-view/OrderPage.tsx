@@ -137,20 +137,6 @@ export function OrderPage() {
     [marketplaceResult.orders],
   );
 
-  const availableDeliveryWindows = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          marketplaceResult.orders
-            .map((order) => getDeliveryWindowKey(order.deliveryDate))
-            .filter(
-              (windowKey): windowKey is DeliveryWindowOption => windowKey !== null,
-            ),
-        ),
-      ).sort((firstWindow, secondWindow) => firstWindow.localeCompare(secondWindow, "de")),
-    [marketplaceResult.orders],
-  );
-
   const deliveryWindowOptions = useMemo(
     () => [
       {
@@ -179,11 +165,11 @@ export function OrderPage() {
 
   const desktopDeliveryWindowOptions = useMemo(
     () =>
-      availableDeliveryWindows.map((deliveryWindow) => ({
-        value: deliveryWindow,
-        label: formatDeliveryWindowOption(deliveryWindow),
+      deliveryWindowOptions.map((deliveryWindow) => ({
+        value: deliveryWindow.value,
+        label: formatDeliveryWindowOption(deliveryWindow.value),
       })),
-    [availableDeliveryWindows],
+    [deliveryWindowOptions],
   );
 
   const cityOptions = useMemo(
@@ -224,6 +210,12 @@ export function OrderPage() {
   const selectedDraftCityLabel =
     cityOptions.find((cityOption) => cityOption.value === draftSelectedCity)?.label ??
     "Alle Städte";
+
+  const hasActiveDesktopFilters =
+    searchQuery.trim().length > 0 ||
+    selectedCity !== "" ||
+    selectedDeliveryWindows.length > 0 ||
+    sortOption !== "delivery-asc";
 
   if (!auth.isInitializing && !auth.hasRole("Restocker")) {
     return <Navigate to="/" replace />;
@@ -321,7 +313,22 @@ export function OrderPage() {
     setIsCityMenuOpen(false);
   }
 
-    function toggleDraftDeliveryWindow(deliveryWindow: DeliveryWindowOption) {
+  function handleResetDesktopFilters() {
+    setSearchQuery("");
+    setSelectedCity("");
+    setSelectedDeliveryWindows([]);
+    setSortOption("delivery-asc");
+  }
+
+  function toggleDesktopDeliveryWindow(deliveryWindow: DeliveryWindowOption) {
+    setSelectedDeliveryWindows((currentWindows) =>
+      currentWindows.includes(deliveryWindow)
+        ? currentWindows.filter((windowValue) => windowValue !== deliveryWindow)
+        : [...currentWindows, deliveryWindow],
+    );
+  }
+
+  function toggleDraftDeliveryWindow(deliveryWindow: DeliveryWindowOption) {
     setDraftSelectedDeliveryWindows((currentWindows) =>
       currentWindows.includes(deliveryWindow)
         ? currentWindows.filter((windowValue) => windowValue !== deliveryWindow)
@@ -424,7 +431,94 @@ export function OrderPage() {
         </div>
 
         {isFilterOpen && !isMobileViewport ? (
-          <div className="restocker-marketplace-filters">
+          <div className="restocker-my-orders-desktop-filters">
+            <div className="restocker-my-orders-desktop-filters__header">
+              <div className="restocker-my-orders-desktop-filters__heading">
+                <span className="restocker-my-orders-desktop-filters__eyebrow">Filter</span>
+                <strong>Weitere Filter</strong>
+              </div>
+
+              <button
+                className="restocker-my-orders-desktop-filters__reset-link"
+                type="button"
+                onClick={handleResetDesktopFilters}
+                disabled={!hasActiveDesktopFilters}
+              >
+                Zurücksetzen
+              </button>
+            </div>
+
+            <div className="restocker-my-orders-desktop-filters__toolbar">
+              <div className="restocker-my-orders-desktop-filters__filter-row">
+                <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--delivery">
+                  <span className="restocker-my-orders-desktop-field__label">
+                    Lieferzeitraum
+                  </span>
+
+                  <div className="restocker-my-orders-desktop-segmented-control" role="group" aria-label="Lieferzeitraum auswählen">
+                    {desktopDeliveryWindowOptions.map((deliveryWindow) => {
+                      const isActive = selectedDeliveryWindows.includes(deliveryWindow.value);
+
+                      return (
+                        <button
+                          key={deliveryWindow.value}
+                          className={`restocker-my-orders-desktop-segment ${isActive ? "is-active" : ""}`.trim()}
+                          type="button"
+                          aria-pressed={isActive}
+                          onClick={() => toggleDesktopDeliveryWindow(deliveryWindow.value)}
+                        >
+                          {deliveryWindow.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </label>
+
+                <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--city">
+                  <span className="restocker-my-orders-desktop-field__label">Stadt</span>
+
+                  <span className="restocker-my-orders-desktop-select-shell">
+                    <select
+                      className="restocker-my-orders-desktop-select"
+                      value={selectedCity}
+                      onChange={(event) => setSelectedCity(event.target.value)}
+                    >
+                      {cityOptions.map((cityOption) => (
+                        <option key={cityOption.value || "all-cities"} value={cityOption.value}>
+                          {cityOption.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <FaChevronDown aria-hidden="true" />
+                  </span>
+                </label>
+              </div>
+
+              <div className="restocker-my-orders-desktop-filters__sort-row">
+                <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--sort">
+                  <span className="restocker-my-orders-desktop-field__label">Sortieren nach</span>
+
+                  <span className="restocker-my-orders-desktop-select-shell restocker-my-orders-desktop-select-shell--sort">
+                    <select
+                      className="restocker-my-orders-desktop-select restocker-my-orders-desktop-select--sort"
+                      value={sortOption}
+                      onChange={(event) => setSortOption(event.target.value as SortOption)}
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <FaChevronDown aria-hidden="true" />
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="restocker-my-orders-desktop-filters__legacy" aria-hidden="true">
             <label className="restocker-filter-field">
               <span>Lieferzeitraum</span>
               <select
@@ -474,6 +568,7 @@ export function OrderPage() {
                 ))}
               </select>
             </label>
+            </div>
           </div>
         ) : null}
 
