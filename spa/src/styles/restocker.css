@@ -510,7 +510,7 @@
   padding: 1rem 1.15rem;
 }
 
-.restocker-order-dialog__info-row + .restocker-order-dialog__info-row {
+.restocker-order-dialog__info-row+.restocker-order-dialog__info-row {
   border-top: 1px solid rgba(38, 64, 55, 0.08);
 }
 
@@ -623,7 +623,7 @@
   background: rgba(255, 255, 255, 0.62);
 }
 
-.restocker-order-dialog__table-row + .restocker-order-dialog__table-row {
+.restocker-order-dialog__table-row+.restocker-order-dialog__table-row {
   border-top: 1px solid rgba(38, 64, 55, 0.08);
 }
 
@@ -1505,6 +1505,8 @@
   :root[data-theme="dark"] .restocker-order-dialog .subscription-modal__actions {
     border-top-color: rgba(153, 153, 153, 0.16);
     background: rgba(31, 42, 46, 0.96);
+  .restocker-order-dialog__table-row+.restocker-order-dialog__table-row {
+    border-top: 1px solid rgba(38, 64, 55, 0.12);
   }
 }
 
@@ -1619,4 +1621,26 @@
   .restocker-order-dialog__article-head {
     padding: 0.85rem 0.85rem 0.65rem;
   }
+}
+
+.statistics-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+  margin-bottom: 20px;
+}
+
+.statistics-filter input {
+  width: 220px;
+}
+
+.restocker-tour-card_money {
+  margin-left: auto;
+  background-color: var(--color-secondary);
+  color: var(--color-grey-100);
+
+  border-radius: 999px;
+  padding: 4px 10px;
+}
 }
