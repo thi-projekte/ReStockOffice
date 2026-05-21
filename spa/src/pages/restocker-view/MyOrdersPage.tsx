@@ -437,8 +437,7 @@ export function MyOrdersPage() {
             <span className="eyebrow">Meine Aufträge</span>
             <h2>Deine Übersicht</h2>
             <p className="section-copy">
-              Diese Ansicht zeigt nur Aufträge, die du bereits angenommen hast
-              und die noch nicht als abgeschlossen markiert sind.
+              Hier findest du all deine aktiven und angenommenen Aufträge.
             </p>
           </div>
         </div>
@@ -694,10 +693,10 @@ export function MyOrdersPage() {
           <div className="restocker-empty-state restocker-empty-state--assigned">
             <FaTruck aria-hidden="true" />
             <div>
-              <strong>Du hast aktuell keine Aufträge angenommen.</strong>
+              <strong>Keine passenden Aufträge gefunden.</strong>
               <p className="muted-text">
-                Sobald du im Marktplatz einen Auftrag übernimmst, erscheint er hier
-                in deiner persönlichen Übersicht.
+                Ändere deine Filtereinstellungen oder schaue im Marktplatz vorbei,
+                um neue Aufträge anzunehmen.
               </p>
             </div>
           </div>

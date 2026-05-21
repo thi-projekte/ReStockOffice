@@ -5,6 +5,7 @@ import {
   FaChevronDown,
   FaFilter,
   FaSearch,
+  FaTruck,
   FaTruckLoading,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
@@ -367,8 +368,8 @@ export function OrderPage() {
             <span className="eyebrow">Offene Aufträge</span>
             <h2>Alle verfügbaren Aufträge</h2>
             <p className="section-copy">
-              Ein offener Lieferauftrag entsteht aus aktiven Bestellungen, deren
-              nächster Liefertermin innerhalb der kommenden 4 Wochen liegt.
+              Sichere dir offene Lieferaufträge mit einem Liefertermin in den
+              kommenden 4 Wochen.
             </p>
           </div>
         </div>
@@ -574,12 +575,12 @@ export function OrderPage() {
 
         {filteredOrders.length === 0 ? (
           <div className="restocker-empty-state">
-            <FaTruckLoading aria-hidden="true" />
+            <FaTruck aria-hidden="true" />
             <div>
-              <strong>Aktuell sind keine offenen Aufträge verfügbar.</strong>
+              <strong>Keine offenen Aufträge gefunden.</strong>
               <p className="muted-text">
-                Prüfe die Filter oder warte auf neue Liefertermine innerhalb des
-                4-Wochen-Fensters.
+                Passe deine Filter an oder versuche es später noch einmal, wenn
+                neue Liefertermine verfügbar sind.
               </p>
             </div>
           </div>
