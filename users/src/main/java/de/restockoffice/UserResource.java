@@ -59,6 +59,7 @@ public class UserResource {
     @GET
     @Path("customerForRestocker")
     public RestockerCustomerView getCustomerAddressForRestocker(@QueryParam("userId") String userId){
+        System.out.println("ROLES FOUND BY QUARKUS: " + securityIdentity.getRoles());
         if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("restocker") && !securityIdentity.hasRole("admin")) {
             throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.", 403);
         }
