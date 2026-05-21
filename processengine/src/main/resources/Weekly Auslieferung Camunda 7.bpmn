@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_05owui8" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Collaboration_12nb192">
-    <bpmn:participant id="Participant_00wvqi6" name="Auslifereungsprozess" processRef="Process_0g5bjt8" />
+    <bpmn:participant id="Participant_00wvqi6" name="Auslieferungsprozess" processRef="Process_0g5bjt8" />
   </bpmn:collaboration>
   <bpmn:process id="Process_0g5bjt8" isExecutable="true">
     <bpmn:laneSet id="LaneSet_1nydzqh">
-      <bpmn:lane id="Lane_17143vn" name="Lager">
-        <bpmn:flowNodeRef>Activity_0opdws4</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_125dcev</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_0hlofyb</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_0e5oqpu</bpmn:flowNodeRef>
+      <bpmn:lane id="Lane_0yuuyd5" name="ReStockOffice">
+        <bpmn:flowNodeRef>Activity_1p8hvqp</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0zbkmkg</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_044ptp8</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0gnxb09</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0f4c07j</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_19k1xh4" name="Restocker">
         <bpmn:flowNodeRef>Activity_0dg81bf</bpmn:flowNodeRef>
@@ -17,12 +18,11 @@
         <bpmn:flowNodeRef>Activity_0ezzdkf</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_05ljhyv</bpmn:flowNodeRef>
       </bpmn:lane>
-      <bpmn:lane id="Lane_0yuuyd5" name="ReStockOffice">
-        <bpmn:flowNodeRef>Activity_1p8hvqp</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_0zbkmkg</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_044ptp8</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_0gnxb09</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_0f4c07j</bpmn:flowNodeRef>
+      <bpmn:lane id="Lane_17143vn" name="Lager">
+        <bpmn:flowNodeRef>Activity_0opdws4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_125dcev</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0hlofyb</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0e5oqpu</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
     <bpmn:serviceTask id="Activity_1p8hvqp" name="Artikel für nächsten Liefertermin bestimmen">
@@ -33,7 +33,7 @@
       <bpmn:outgoing>Flow_01myuza</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_1jyrl31" />
     </bpmn:startEvent>
-    <bpmn:serviceTask id="Activity_044ptp8" name="Lieferankündigung senden">
+    <bpmn:serviceTask id="Activity_044ptp8" name="Lieferankündigung versenden">
       <bpmn:incoming>Flow_0kfozsq</bpmn:incoming>
       <bpmn:outgoing>Flow_1llqen9</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -45,11 +45,11 @@
       <bpmn:incoming>Flow_128dtzx</bpmn:incoming>
       <bpmn:outgoing>Flow_1lw8z58</bpmn:outgoing>
     </bpmn:manualTask>
-    <bpmn:manualTask id="Activity_0hlofyb" name="Ware bereitstellen">
+    <bpmn:manualTask id="Activity_0hlofyb" name="Paket bereitstellen">
       <bpmn:incoming>Flow_1lw8z58</bpmn:incoming>
       <bpmn:outgoing>Flow_0z88w52</bpmn:outgoing>
     </bpmn:manualTask>
-    <bpmn:userTask id="Activity_0dg81bf" name="Auslieferung annehmen">
+    <bpmn:userTask id="Activity_0dg81bf" name="Auftrag annehmen">
       <bpmn:incoming>Flow_12oqfln</bpmn:incoming>
       <bpmn:outgoing>Flow_02ja83g</bpmn:outgoing>
     </bpmn:userTask>
@@ -70,6 +70,14 @@
       <bpmn:incoming>Flow_0o59ge6</bpmn:incoming>
       <bpmn:outgoing>Flow_0gy22cd</bpmn:outgoing>
     </bpmn:userTask>
+    <bpmn:endEvent id="Event_0gnxb09" name="Paket ausgeliefert und Lieferung bestätigt">
+      <bpmn:incoming>Flow_1moyqvu</bpmn:incoming>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_13yz4fk" />
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Activity_0f4c07j" name="Liefer-bestätigung versenden">
+      <bpmn:incoming>Flow_0gy22cd</bpmn:incoming>
+      <bpmn:outgoing>Flow_1moyqvu</bpmn:outgoing>
+    </bpmn:serviceTask>
     <bpmn:sequenceFlow id="Flow_01myuza" sourceRef="Event_0zbkmkg" targetRef="Activity_1p8hvqp" />
     <bpmn:sequenceFlow id="Flow_0kfozsq" sourceRef="Activity_1p8hvqp" targetRef="Activity_044ptp8" />
     <bpmn:sequenceFlow id="Flow_1llqen9" sourceRef="Activity_044ptp8" targetRef="Activity_0opdws4" />
@@ -82,14 +90,6 @@
     <bpmn:sequenceFlow id="Flow_0o59ge6" sourceRef="Activity_0ezzdkf" targetRef="Activity_05ljhyv" />
     <bpmn:sequenceFlow id="Flow_0gy22cd" sourceRef="Activity_05ljhyv" targetRef="Activity_0f4c07j" />
     <bpmn:sequenceFlow id="Flow_1moyqvu" sourceRef="Activity_0f4c07j" targetRef="Event_0gnxb09" />
-    <bpmn:endEvent id="Event_0gnxb09" name="Paket ausgeliefert und Auslieferung bestätigt">
-      <bpmn:incoming>Flow_1moyqvu</bpmn:incoming>
-      <bpmn:messageEventDefinition id="MessageEventDefinition_13yz4fk" />
-    </bpmn:endEvent>
-    <bpmn:serviceTask id="Activity_0f4c07j" name="Lieferbestätigung senden">
-      <bpmn:incoming>Flow_0gy22cd</bpmn:incoming>
-      <bpmn:outgoing>Flow_1moyqvu</bpmn:outgoing>
-    </bpmn:serviceTask>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_12nb192">
@@ -98,7 +98,7 @@
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_0yuuyd5_di" bpmnElement="Lane_0yuuyd5" isHorizontal="true">
-        <dc:Bounds x="190" y="80" width="1780" height="120" />
+        <dc:Bounds x="190" y="80" width="1780" height="140" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_19k1xh4_di" bpmnElement="Lane_19k1xh4" isHorizontal="true">
@@ -106,7 +106,7 @@
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_17143vn_di" bpmnElement="Lane_17143vn" isHorizontal="true">
-        <dc:Bounds x="190" y="200" width="1780" height="200" />
+        <dc:Bounds x="190" y="220" width="1780" height="180" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0zl0aba_di" bpmnElement="Activity_1p8hvqp">
@@ -120,6 +120,7 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1oviyij_di" bpmnElement="Activity_044ptp8">
         <dc:Bounds x="450" y="100" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0zbj6rx_di" bpmnElement="Activity_0opdws4">
         <dc:Bounds x="610" y="260" width="100" height="80" />
@@ -130,6 +131,7 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1gwjwck_di" bpmnElement="Activity_0hlofyb">
         <dc:Bounds x="910" y="260" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_00rs8bn_di" bpmnElement="Activity_0dg81bf">
         <dc:Bounds x="1140" y="440" width="100" height="80" />
@@ -152,13 +154,14 @@
         <dc:Bounds x="1570" y="440" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0k3gozm_di" bpmnElement="Event_0gnxb09">
-        <dc:Bounds x="1892" y="112" width="36" height="36" />
+        <dc:Bounds x="1892" y="132" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1866" y="155" width="89" height="40" />
+          <dc:Bounds x="1866" y="175" width="89" height="40" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_08yd1sl_di" bpmnElement="Activity_0f4c07j">
-        <dc:Bounds x="1750" y="100" width="100" height="80" />
+        <dc:Bounds x="1750" y="110" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_01myuza_di" bpmnElement="Flow_01myuza">
         <di:waypoint x="268" y="140" />
@@ -207,14 +210,12 @@
       <bpmndi:BPMNEdge id="Flow_0gy22cd_di" bpmnElement="Flow_0gy22cd">
         <di:waypoint x="1670" y="480" />
         <di:waypoint x="1700" y="480" />
-        <di:waypoint x="1700" y="140" />
-        <di:waypoint x="1750" y="140" />
+        <di:waypoint x="1700" y="150" />
+        <di:waypoint x="1750" y="150" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1moyqvu_di" bpmnElement="Flow_1moyqvu">
-        <di:waypoint x="1850" y="140" />
-        <di:waypoint x="1871" y="140" />
-        <di:waypoint x="1871" y="130" />
-        <di:waypoint x="1892" y="130" />
+        <di:waypoint x="1850" y="150" />
+        <di:waypoint x="1892" y="150" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

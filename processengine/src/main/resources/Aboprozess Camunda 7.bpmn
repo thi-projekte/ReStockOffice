@@ -3,7 +3,6 @@
   <bpmn:collaboration id="Collaboration_1a8qzdr">
     <bpmn:participant id="Participant_16nrhn5" name="Aboprozess" processRef="Process_0dqfxnd" />
     <bpmn:participant id="Participant_1p5oqzg" name="Kunde" />
-    <bpmn:participant id="Participant_00v19kl" name="Restocker" />
     <bpmn:messageFlow id="Flow_1qd1ori" sourceRef="Participant_1p5oqzg" targetRef="StartEvent_1" />
     <bpmn:messageFlow id="Flow_0q0lwc2" sourceRef="Activity_1y9tr1d" targetRef="Participant_1p5oqzg" />
   </bpmn:collaboration>
@@ -41,11 +40,10 @@
     <bpmn:sequenceFlow id="Flow_072vknj" sourceRef="Activity_1y9tr1d" targetRef="Gateway_1h7je98" />
     <bpmn:sequenceFlow id="Flow_16owvnv" sourceRef="Activity_0gasjxq" targetRef="Event_0re11is" />
     <bpmn:sequenceFlow id="Flow_1jateme" sourceRef="Event_0re11is" targetRef="Activity_1y9tr1d" />
-    <bpmn:dataObjectReference id="DataObjectReference_1jqfh0y" name="Lieferankündigung" dataObjectRef="DataObject_0moc6e2" />
+    <bpmn:dataObjectReference id="DataObjectReference_1jqfh0y" name="Liefer-ankündigung" dataObjectRef="DataObject_0moc6e2" />
     <bpmn:dataObject id="DataObject_0moc6e2" />
     <bpmn:sequenceFlow id="Flow_0axsq7u" sourceRef="Activity_098v8bj" targetRef="Gateway_03a8blz" />
     <bpmn:serviceTask id="Activity_0gasjxq" name="Nächsten Liefertermin bestimmen">
-      <bpmn:extensionElements />
       <bpmn:incoming>Flow_1xibnc4</bpmn:incoming>
       <bpmn:outgoing>Flow_16owvnv</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -58,7 +56,7 @@
       <bpmn:outgoing>Flow_14i62eo</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_1x8rmqb" />
     </bpmn:startEvent>
-    <bpmn:serviceTask id="Activity_098v8bj" name="Abonnement-Bestätigung versenden">
+    <bpmn:serviceTask id="Activity_098v8bj" name="Abo-Bestätigung versenden">
       <bpmn:extensionElements />
       <bpmn:incoming>Flow_14i62eo</bpmn:incoming>
       <bpmn:outgoing>Flow_0axsq7u</bpmn:outgoing>
@@ -66,7 +64,7 @@
     <bpmn:sequenceFlow id="Flow_14i62eo" sourceRef="StartEvent_1" targetRef="Activity_098v8bj" />
     <bpmn:dataObjectReference id="DataObjectReference_0dcce1y" name="Abo" dataObjectRef="DataObject_006kpb7" />
     <bpmn:dataObject id="DataObject_006kpb7" />
-    <bpmn:callActivity id="Activity_1y9tr1d" name="Paket der Woche aufbereiten und ausliefern" calledElement="Collaboration_12nb192">
+    <bpmn:callActivity id="Activity_1y9tr1d" name="Paket  aufbereiten und ausliefern" calledElement="Process_0g5bjt8">
       <bpmn:incoming>Flow_1jateme</bpmn:incoming>
       <bpmn:outgoing>Flow_072vknj</bpmn:outgoing>
     </bpmn:callActivity>
@@ -107,7 +105,7 @@
       <bpmndi:BPMNShape id="DataObjectReference_1jqfh0y_di" bpmnElement="DataObjectReference_1jqfh0y">
         <dc:Bounds x="832" y="185" width="36" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="808" y="242" width="85" height="27" />
+          <dc:Bounds x="819" y="242" width="64" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_00ojicx_di" bpmnElement="Activity_0gasjxq">
@@ -124,6 +122,7 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1lh7v0z_di" bpmnElement="Activity_098v8bj">
         <dc:Bounds x="270" y="280" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="DataObjectReference_0dcce1y_di" bpmnElement="DataObjectReference_0dcce1y">
         <dc:Bounds x="232" y="165" width="36" height="50" />
@@ -133,6 +132,7 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1ogdql0_di" bpmnElement="Activity_1y9tr1d">
         <dc:Bounds x="850" y="280" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_0a6db4x_di" bpmnElement="Flow_0a6db4x">
         <di:waypoint x="1080" y="295" />
@@ -176,10 +176,6 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Participant_1p5oqzg_di" bpmnElement="Participant_1p5oqzg" isHorizontal="true">
         <dc:Bounds x="130" y="70" width="1140" height="60" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_0nc0oms" bpmnElement="Participant_00v19kl" isHorizontal="true">
-        <dc:Bounds x="130" y="470" width="1140" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_1qd1ori_di" bpmnElement="Flow_1qd1ori">
