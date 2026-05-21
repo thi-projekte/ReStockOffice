@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Navigate, useOutletContext } from "react-router-dom";
-import { MdEdit, MdLogout, MdOutlineWarningAmber, MdSave } from "react-icons/md";
+import { MdEdit, MdLogout, MdOutlineWarningAmber, MdReceiptLong, MdSave } from "react-icons/md";
 import {FaBell, FaMoon, FaSun} from "react-icons/fa";
 import type { Product, RestockOrderWithProduct } from "../types/shop";
 import keycloak from "../auth/keycloak";
 import { useAuth } from "../auth/AuthProvider";
+import { getInvoices, requestInvoicePdf, type InvoiceSummary } from "../services/invoices";
 import { getMyUser, saveMyUser, type UserProfile } from "../services/users";
 
 interface OutletContext {
@@ -46,6 +47,8 @@ interface NotificationState {
   reminders: boolean;
 }
 
+const INVOICE_PAGE_SIZE = 3;
+
 export function AccountPage() {
   const { isLoggedIn, onLogout, onSetTheme, theme } = useOutletContext<OutletContext>();
   const { hasRole, token } = useAuth();
@@ -83,6 +86,9 @@ export function AccountPage() {
     confirmations: true,
     reminders: true,
   });
+  const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
+  const [visibleInvoiceCount, setVisibleInvoiceCount] = useState(INVOICE_PAGE_SIZE);
+  const [loadingInvoiceId, setLoadingInvoiceId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -116,6 +122,21 @@ export function AccountPage() {
       });
   }, [isLoggedIn, isRestocker, token]);
 
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    getInvoices({ token, kind: isRestocker ? "restocker" : "customer" })
+      .then((loadedInvoices) => {
+        setInvoices(loadedInvoices);
+        setVisibleInvoiceCount(INVOICE_PAGE_SIZE);
+      })
+      .catch((error) => {
+        console.error("Rechnungen konnten nicht geladen werden.", error);
+      });
+  }, [isLoggedIn, isRestocker, token]);
+
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
   }
@@ -135,6 +156,32 @@ export function AccountPage() {
       ...current,
       [field]: !current[field],
     }));
+  }
+
+  function formatInvoiceAmount(invoice: InvoiceSummary) {
+    return new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: invoice.currency,
+    }).format(invoice.totalAmount);
+  }
+
+  async function handleInvoiceOpen(invoice: InvoiceSummary) {
+    setLoadingInvoiceId(invoice.invoiceId);
+
+    try {
+      await requestInvoicePdf(invoice.invoiceId, {
+        token,
+        kind: isRestocker ? "restocker" : "customer",
+      });
+    } catch (error) {
+      console.error("Die Rechnung konnte nicht geladen werden.", error);
+    } finally {
+      setLoadingInvoiceId(null);
+    }
+  }
+
+  function handleLoadMoreInvoices() {
+    setVisibleInvoiceCount((current) => current + INVOICE_PAGE_SIZE);
   }
 
   async function handleProfileAction() {
@@ -201,6 +248,9 @@ export function AccountPage() {
       setIsSavingProfile(false);
     }
   }
+
+  const visibleInvoices = invoices.slice(0, visibleInvoiceCount);
+  const hasMoreInvoices = visibleInvoiceCount < invoices.length;
 
   return (
     <div className="home-showcase account-page">
@@ -550,6 +600,57 @@ export function AccountPage() {
                 </span>
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="invoices" className="page-card section-space">
+        <div className="section-head account-section-head">
+          <div>
+            <span className="eyebrow">Rechnungen</span>
+            <h2>Monatliche Abrechnungen</h2>
+            <p className="section-copy">
+              Deine zuletzt bereitgestellten Rechnungen der letzen Monate.
+            </p>
+          </div>
+        </div>
+
+        <div className="account-settings-shell">
+          <div className="account-settings-section">
+
+
+            <div className="account-invoice-list" role="list">
+              {visibleInvoices.map((invoice) => (
+                <button
+                  key={invoice.invoiceId}
+                  className="account-invoice-item"
+                  type="button"
+                  onClick={() => {
+                    void handleInvoiceOpen(invoice);
+                  }}
+                  disabled={loadingInvoiceId === invoice.invoiceId}
+                >
+                  <div className="account-invoice-item__copy">
+                    <span>{invoice.monthLabel}</span>
+                    <strong>{invoice.title}</strong>
+                  </div>
+                  <span className="account-invoice-pill">
+                    <MdReceiptLong />
+                    {formatInvoiceAmount(invoice)}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {hasMoreInvoices ? (
+              <button
+                className="button button--ghost account-invoice-more"
+                type="button"
+                onClick={handleLoadMoreInvoices}
+              >
+                Mehr anzeigen
+              </button>
+            ) : null}
           </div>
         </div>
       </section>

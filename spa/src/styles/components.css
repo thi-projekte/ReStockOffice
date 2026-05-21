@@ -600,6 +600,71 @@
   color: var(--color-grey-300);
 }
 
+.account-invoice-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.account-invoice-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(38, 64, 55, 0.1);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.56);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.account-invoice-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 107, 97, 0.24);
+  box-shadow:
+    0 8px 18px rgba(38, 64, 55, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.account-invoice-item__copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.account-invoice-item__copy span {
+  color: var(--color-grey-300);
+  font-size: 0.84rem;
+}
+
+.account-invoice-item__copy strong {
+  color: var(--color-secondary);
+}
+
+.account-invoice-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(38, 64, 55, 0.1);
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--color-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.account-invoice-more {
+  width: fit-content;
+}
+
 .account-action-row {
   display: flex;
   flex-wrap: wrap;
@@ -1487,7 +1552,8 @@
 :root[data-theme="dark"] .account-settings-shell,
 :root[data-theme="dark"] .account-setting-card,
 :root[data-theme="dark"] .account-info-list div,
-:root[data-theme="dark"] .account-theme-option {
+:root[data-theme="dark"] .account-theme-option,
+:root[data-theme="dark"] .account-invoice-item {
   border-color: rgba(153, 153, 153, 0.16);
   background: rgba(31, 42, 46, 0.88);
 }
@@ -1542,6 +1608,16 @@
   background: rgba(102, 189, 164, 0.10);
   color: var(--color-text);
   border: 1px solid rgba(153, 153, 153, 0.18);
+}
+
+:root[data-theme="dark"] .account-invoice-item__copy strong,
+:root[data-theme="dark"] .account-invoice-pill {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .account-invoice-pill {
+  background: rgba(102, 189, 164, 0.10);
+  border-color: rgba(153, 153, 153, 0.18);
 }
 
 :root[data-theme="dark"] .account-toggle-button.active .account-toggle-pill {
@@ -2191,6 +2267,11 @@
     align-items: flex-start;
   }
 
+  .account-invoice-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .account-settings-section__head,
   .account-danger-zone {
     grid-template-columns: 1fr;
@@ -2204,6 +2285,12 @@
   .account-danger-zone,
   .account-danger-zone__actions {
     width: 100%;
+  }
+
+  .account-invoice-pill,
+  .account-invoice-more {
+    width: 100%;
+    justify-content: center;
   }
 
   .account-toggle-pill {
