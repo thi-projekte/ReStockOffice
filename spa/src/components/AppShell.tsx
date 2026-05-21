@@ -812,7 +812,6 @@ export function AppShell({ children }: AppShellProps) {
                 : `${selectedProduct.name} wurde zum Abo hinzugefügt`,
             );
 
-            resetSubscriptionLayer();
             } catch (error) {
               console.error(error);
               toast.error(
