@@ -4,7 +4,7 @@ import { useAPIs } from "./products";
 import type { UserKind } from "./users";
 
 const INVOICES_API_URL = "https://invoice.restockoffice.de/invoices";
-const INVOICE_PDF_API_URL = "nvoice.restockoffice.de/invoices/download";
+const INVOICE_PDF_API_URL = "https://invoice.restockoffice.de/invoices/download";
 
 export interface InvoiceSummary {
   invoiceId: string;
@@ -55,7 +55,9 @@ function createHeaders(token: string) {
 
 function normalizeInvoice(rawInvoice: unknown): InvoiceSummary {
   const source = rawInvoice as Record<string, unknown>;
-  const issuedAt = String(source.issuedAt ?? source.invoiceDate ?? "");
+
+  // API fields: issueDate, invoiceNumber, grossAmount
+  const issuedAt = String(source.issueDate ?? "");
   const issuedDate = new Date(issuedAt);
   const monthLabel = new Intl.DateTimeFormat("de-DE", {
     month: "long",
@@ -64,12 +66,12 @@ function normalizeInvoice(rawInvoice: unknown): InvoiceSummary {
   const capitalizedMonthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
   return {
-    invoiceId: String(source.invoiceId ?? source.id ?? ""),
+    invoiceId: String(source.invoiceNumber ?? ""),
     issuedAt,
-    totalAmount: Number(source.totalAmount ?? source.amount ?? 0),
-    currency: String(source.currency ?? "EUR"),
+    totalAmount: Number(source.grossAmount ?? 0),
+    currency: "EUR",
     monthLabel: capitalizedMonthLabel,
-    title: "Rechnung: " + source.invoiceId,
+    title: `Rechnung ${source.invoiceNumber ?? ""}`,
   };
 }
 
@@ -77,13 +79,19 @@ function sortInvoicesDescending(left: InvoiceSummary, right: InvoiceSummary) {
   return new Date(right.issuedAt).getTime() - new Date(left.issuedAt).getTime();
 }
 
+function resolveUserId(): string {
+  return keycloak.tokenParsed?.sub ?? "";
+}
+
 async function loadInvoicesFromApi(context: InvoiceRequestContext = {}) {
   const token = await resolveToken(context.token);
-  const query = context.kind ? `?kind=${encodeURIComponent(context.kind)}` : "";
+  const userId = resolveUserId();
+  const query = new URLSearchParams({ userId });
+
   let response: Response;
 
   try {
-    response = await fetch(`${INVOICES_API_URL}${query}`, {
+    response = await fetch(`${INVOICES_API_URL}?${query.toString()}`, {
       headers: createHeaders(token),
     });
   } catch {
@@ -111,15 +119,16 @@ export async function getInvoices(context: InvoiceRequestContext = {}) {
 }
 
 export async function requestInvoicePdf(
-  invoiceId: string,
-  context: InvoiceRequestContext = {},
+    invoiceId: string,
+    context: InvoiceRequestContext = {},
 ): Promise<void> {
   if (!useAPIs) {
     return;
   }
 
   const token = await resolveToken(context.token);
-  const query = new URLSearchParams({ invoiceId });
+  const userId = resolveUserId();
+  const query = new URLSearchParams({ userId, invoiceNumber: invoiceId });
 
   const response = await fetch(`${INVOICE_PDF_API_URL}?${query.toString()}`, {
     headers: createHeaders(token),
@@ -129,5 +138,9 @@ export async function requestInvoicePdf(
     throw new Error(`Die Rechnung konnte nicht geladen werden (HTTP ${response.status}).`);
   }
 
-  await response.blob();
+  // Open PDF in new tab
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }

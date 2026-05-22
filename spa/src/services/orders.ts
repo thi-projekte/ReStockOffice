@@ -27,11 +27,9 @@ function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert") {
 }
 
 async function resolveToken(token?: string) {
-  console.log("[Orders] resolveToken called, token present:", !!token);
 
   if (token) {
-    console.log("[Orders] Token prefix:", token.slice(0, 20));
-    console.log("[Orders] Token length:", token.length);
+    console.log("[Orders] Debug: Token length:", token.length);
     return token;
   }
 
@@ -50,7 +48,6 @@ async function resolveToken(token?: string) {
     throw new Error("Kein Keycloak-Token verfügbar.");
   }
 
-  console.log("[Orders] Token prefix:", keycloak.token.slice(0, 50));
   return keycloak.token;
 }
 
