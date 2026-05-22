@@ -33,8 +33,6 @@ public class DeliveryService {
     @RestClient
     ArticleClient articleClient;
 
-    // ── Tour management ──────────────────────────
-
     @Transactional
     public Tour createTour(Tour tour) {
         tour.persist();
@@ -108,10 +106,7 @@ public class DeliveryService {
 
             DeliveryGroupKey groupKey = entry.getKey();
             DeliveryGroup group = entry.getValue();
-            Delivery delivery = findOpenDeliveryForCustomerInTour(
-                    groupKey.customerId(),
-                    tour
-            );
+            Delivery delivery = findOpenDeliveryForCustomerInTour(groupKey.customerId(), tour);
 
             if (delivery == null) {
                 delivery = new Delivery();
@@ -134,31 +129,22 @@ public class DeliveryService {
         return tour;
     }
 
-    // ── Warehouse collection ─────────────────────
-
-    /**
-     * Restocker checks off a package in the warehouse.
-     * Reduces warehouse stock at this moment.
-     */
     @Transactional
     public Delivery collectPackage(UUID deliveryId) {
         Delivery delivery = findDeliveryOrThrow(deliveryId);
         if (delivery.collected) {
             throw new BadRequestException("Paket wurde bereits eingesammelt.");
         }
-        for (DeliveryItem item : delivery.items) {
-            item.warehouseItem.reduceStock(item.quantity);
-        }
         delivery.markCollected();
         return delivery;
     }
 
-    // ── Delivery confirmation ────────────────────
-
     @Transactional
     public DeliveryItem markItemDelivered(UUID itemId) {
         DeliveryItem item = DeliveryItem.findById(itemId);
-        if (item == null) throw new NotFoundException("Artikel nicht gefunden: " + itemId);
+        if (item == null) {
+            throw new NotFoundException("Artikel nicht gefunden: " + itemId);
+        }
         item.markDelivered();
         return item;
     }
@@ -173,15 +159,8 @@ public class DeliveryService {
         return delivery;
     }
 
-    // ── Enriched detail — combines delivery + user + order ──
-
-    /**
-     * Returns a delivery enriched with data from users and orders service.
-     * The frontend only needs to call this one endpoint.
-     */
     public DeliveryDetailDto getDeliveryDetail(UUID deliveryId, String authorizationHeader) {
         Delivery delivery = findDeliveryOrThrow(deliveryId);
-
         UserDto user = tryLoadUser(delivery.userId, authorizationHeader);
         OrderDto order = tryLoadOrder(firstOrderId(delivery.orderId), authorizationHeader);
         Map<String, ArticleDto> articleCache = new HashMap<>();
@@ -193,21 +172,13 @@ public class DeliveryService {
         List<Delivery> deliveries = Delivery.findByTour(tourId);
         Map<String, ArticleDto> articleCache = new HashMap<>();
         return deliveries.stream()
-                .map(d -> {
-                    UserDto user = tryLoadUser(d.userId, authorizationHeader);
-                    OrderDto order = tryLoadOrder(firstOrderId(d.orderId), authorizationHeader);
-                    return toDetailDto(d, user, order, articleCache);
+                .map(delivery -> {
+                    UserDto user = tryLoadUser(delivery.userId, authorizationHeader);
+                    OrderDto order = tryLoadOrder(firstOrderId(delivery.orderId), authorizationHeader);
+                    return toDetailDto(delivery, user, order, articleCache);
                 })
                 .collect(Collectors.toList());
     }
-
-    // ── Warehouse items ──────────────────────────
-
-    public List<WarehouseItem> getAllWarehouseItems() {
-        return WarehouseItem.listAll();
-    }
-
-    // ── Mapping ──────────────────────────────────
 
     private DeliveryDetailDto toDetailDto(
             Delivery delivery,
@@ -224,55 +195,54 @@ public class DeliveryService {
         dto.collectedAt = delivery.collectedAt;
         dto.deliveredAt = delivery.deliveredAt;
 
-        // From users service, with demo fallbacks for local tests without customer service data.
-        dto.companyName = valueOrFallback(user != null ? user.companyName : null, fallbackCompanyName(delivery.userId));
-        dto.street = valueOrFallback(user != null ? buildStreet(user) : null, "Esplanade 10");
-        dto.postalCode = valueOrFallback(user != null ? user.postalCode : null, "85049");
-        dto.city = valueOrFallback(user != null ? user.city : null, "Ingolstadt");
-        dto.phoneNumber = valueOrFallback(user != null ? user.phoneNumber : null, "0841 000000");
-        dto.contactPerson = valueOrFallback(user != null ? user.roleInCompany : null, "Empfang");
-        dto.deliveryHint = valueOrFallback(
-                user != null ? user.deliveryHint : null,
-                "Demo-Adresse, bis Customerdaten verfuegbar sind."
-        );
-
-        // From orders service
+        dto.companyName = valueOrEmpty(user != null ? user.companyName : null);
+        dto.street = valueOrEmpty(user != null ? user.street : null);
         dto.houseNumber = valueOrEmpty(user != null ? user.houseNumber : null);
+        dto.postalCode = valueOrEmpty(user != null ? user.postalCode : null);
+        dto.city = valueOrEmpty(user != null ? user.city : null);
+        dto.country = valueOrEmpty(user != null ? user.country : null);
+        dto.phoneNumber = valueOrEmpty(user != null ? user.phoneNumber : null);
+        dto.contactPerson = valueOrEmpty(user != null ? user.roleInCompany : null);
+        dto.deliveryHint = valueOrEmpty(user != null ? user.deliveryHint : null);
+        dto.deliveryDay = valueOrEmpty(user != null ? user.deliveryDay : null);
+        dto.deliveryTime = user != null ? user.deliveryTime : null;
         dto.deliveryDate = delivery.tour != null && delivery.tour.tourDate != null
                 ? delivery.tour.tourDate.toString()
                 : null;
         dto.items = delivery.items.stream().map(item -> {
-            DeliveryDetailDto.DeliveryItemDetailDto i = new DeliveryDetailDto.DeliveryItemDetailDto();
+            DeliveryDetailDto.DeliveryItemDetailDto detailItem = new DeliveryDetailDto.DeliveryItemDetailDto();
             ArticleDto article = loadArticle(item.articleNumber, articleCache);
-            i.id = item.id;
-            i.articleNumber = item.articleNumber;
-            i.delivered = item.delivered;
-            i.name = valueOrFallback(
-                    article != null ? article.name : null,
-                    item.warehouseItem.name
+            detailItem.id = item.id;
+            detailItem.articleNumber = item.articleNumber;
+            detailItem.delivered = item.delivered;
+            detailItem.name = valueOrFallback(
+                    item.name,
+                    article != null ? article.name : fallbackArticleName(item.articleNumber)
             );
-            i.quantity = item.quantity;
-            i.unit = valueOrFallback(
-                    article != null ? article.unit : null,
-                    item.warehouseItem.unit
+            detailItem.quantity = item.quantity;
+            detailItem.unit = valueOrFallback(
+                    item.unit,
+                    article != null ? article.unit : "Stueck"
             );
-            return i;
+            return detailItem;
         }).collect(Collectors.toList());
 
         return dto;
     }
 
-    // ── Helpers ──────────────────────────────────
-
     private Tour findTourOrThrow(UUID tourId) {
         Tour tour = Tour.findById(tourId);
-        if (tour == null) throw new NotFoundException("Tour nicht gefunden: " + tourId);
+        if (tour == null) {
+            throw new NotFoundException("Tour nicht gefunden: " + tourId);
+        }
         return tour;
     }
 
     private Delivery findDeliveryOrThrow(UUID deliveryId) {
         Delivery delivery = Delivery.findById(deliveryId);
-        if (delivery == null) throw new NotFoundException("Lieferung nicht gefunden: " + deliveryId);
+        if (delivery == null) {
+            throw new NotFoundException("Lieferung nicht gefunden: " + deliveryId);
+        }
         return delivery;
     }
 
@@ -360,9 +330,17 @@ public class DeliveryService {
 
     private DeliveryItem createDeliveryItem(OrderDto order) {
         DeliveryItem item = new DeliveryItem();
+        ArticleDto article = tryLoadArticle(order.productId);
         item.articleNumber = order.productId;
+        item.name = valueOrFallback(
+                article != null ? article.name : null,
+                fallbackArticleName(order.productId)
+        );
+        item.unit = valueOrFallback(
+                article != null ? article.unit : null,
+                "Stueck"
+        );
         item.quantity = order.quantity != null && order.quantity > 0 ? order.quantity : 1;
-        item.warehouseItem = findOrCreateWarehouseItem(order.productId);
         return item;
     }
 
@@ -384,10 +362,6 @@ public class DeliveryService {
             }
 
             DeliveryItem item = createDeliveryItem(order);
-            if (delivery.collected) {
-                item.warehouseItem.reduceStock(item.quantity);
-            }
-
             delivery.addItem(item);
             existingOrderIds.add(orderId);
         }
@@ -417,29 +391,6 @@ public class DeliveryService {
         return ids.isEmpty() ? orderIds : ids.get(0);
     }
 
-    private WarehouseItem findOrCreateWarehouseItem(String articleNumber) {
-        WarehouseItem warehouseItem = WarehouseItem.findByArticleNumber(articleNumber);
-        ArticleDto article = tryLoadArticle(articleNumber);
-        if (warehouseItem != null) {
-            refreshWarehouseItemFromArticle(warehouseItem, article);
-            return warehouseItem;
-        }
-
-        WarehouseItem created = new WarehouseItem();
-        created.articleNumber = articleNumber;
-        created.name = valueOrFallback(
-                article != null ? article.name : null,
-                "Artikel " + articleNumber
-        );
-        created.unit = valueOrFallback(
-                article != null ? article.unit : null,
-                "Stueck"
-        );
-        created.quantity = 1000;
-        created.persist();
-        return created;
-    }
-
     private ArticleDto loadArticle(String articleNumber, Map<String, ArticleDto> articleCache) {
         if (articleNumber == null || articleNumber.isBlank()) {
             return null;
@@ -462,26 +413,6 @@ public class DeliveryService {
         }
     }
 
-    private void refreshWarehouseItemFromArticle(WarehouseItem warehouseItem, ArticleDto article) {
-        if (warehouseItem == null || article == null) {
-            return;
-        }
-
-        if (article.name != null && !article.name.isBlank()) {
-            warehouseItem.name = article.name;
-        }
-
-        if (article.unit != null && !article.unit.isBlank()) {
-            warehouseItem.unit = article.unit;
-        }
-    }
-
-    private String buildStreet(UserDto user) {
-        String street = valueOrEmpty(user.street);
-        String houseNumber = valueOrEmpty(user.houseNumber);
-        return (street + " " + houseNumber).trim();
-    }
-
     private String valueOrEmpty(String value) {
         return value == null ? "" : value;
     }
@@ -490,11 +421,8 @@ public class DeliveryService {
         return value == null || value.isBlank() ? fallback : value;
     }
 
-    private String fallbackCompanyName(String userId) {
-        String suffix = userId == null || userId.isBlank()
-                ? "unbekannt"
-                : userId.substring(0, Math.min(8, userId.length()));
-        return "Demo Kunde " + suffix;
+    private String fallbackArticleName(String articleNumber) {
+        return "Artikel " + articleNumber;
     }
 
     private record DeliveryGroupKey(String customerId, LocalDate deliveryDate) {
@@ -508,7 +436,7 @@ public class DeliveryService {
         try {
             return Long.valueOf(orderId);
         } catch (NumberFormatException exception) {
-            throw new BadRequestException("Ungültige Order-ID: " + orderId);
+            throw new BadRequestException("Ungueltige Order-ID: " + orderId);
         }
     }
 }

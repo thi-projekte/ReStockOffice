@@ -24,9 +24,12 @@ export interface DeliveryDetail {
   houseNumber?: string;
   postalCode: string;
   city: string;
+  country: string;
   phoneNumber: string;
   contactPerson: string;
   deliveryHint: string;
+  deliveryDay: string;
+  deliveryTime: number | string | null;
   deliveryDate: string | null;
   items: DeliveryItemDetail[];
 }

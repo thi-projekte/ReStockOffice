@@ -26,9 +26,12 @@ public class DeliveryDetailDto {
     public String houseNumber;
     public String postalCode;
     public String city;
+    public String country;
     public String phoneNumber;
     public String contactPerson;   // roleInCompany as contact label
     public String deliveryHint;
+    public String deliveryDay;
+    public Integer deliveryTime;
 
     // From orders service
     public String deliveryDate;
