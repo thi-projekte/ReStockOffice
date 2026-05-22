@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   FaBoxOpen,
   FaCheck,
@@ -25,6 +25,12 @@ import {
 import "../../styles/restocker-deliveries.css";
 
 const EARNINGS_PER_COMPANY = 7;
+const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
+const START_TOUR_TASK_DEFINITION_KEY = "Activity_06o1eiy";
+
+interface CamundaTask {
+  id: string;
+}
 
 function formatDate(value: string | null) {
   if (!value) return "Heute";
@@ -105,6 +111,7 @@ function formatDeliveryTime(value: DeliveryDetail["deliveryTime"]) {
 export function DeliveryPage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [tour, setTour] = useState<Tour | null>(null);
   const [deliveries, setDeliveries] = useState<DeliveryDetail[]>([]);
   const [activeStopIndex, setActiveStopIndex] = useState(0);
@@ -237,7 +244,27 @@ export function DeliveryPage() {
     }
   }
 
-  const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
+  async function loadStartTourTask(processInstanceId: string) {
+    const query = new URLSearchParams({
+      processInstanceId,
+      taskDefinitionKey: START_TOUR_TASK_DEFINITION_KEY,
+    });
+    const response = await fetch(`${CAMUNDA_BASE_URL}/task?${query.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(
+        `Task fuer den Tourstart konnte nicht geladen werden: ${response.status}`,
+      );
+    }
+
+    const tasks = (await response.json()) as CamundaTask[];
+
+    if (tasks.length !== 1) {
+      throw new Error("Die Camunda-Task fuer den Tourstart wurde nicht eindeutig gefunden.");
+    }
+
+    return tasks[0];
+  }
 
   async function completeUserTask(taskId: string) {
     const response = await fetch(
@@ -264,10 +291,15 @@ export function DeliveryPage() {
     setIsBusy(true);
 
     try {
-      // 1. Camunda User Task abschließen
-      await completeUserTask(
-        "2ac9cc81-55ac-11f1-8e18-b6d2c9f4c7e5",
-      );
+      const processInstanceId = searchParams.get("processInstanceId");
+
+      if (!processInstanceId) {
+        throw new Error("Die Prozessinstanz fuer den Tourstart fehlt.");
+      }
+
+      // 1. Camunda User Task abschliessen
+      const startTourTask = await loadStartTourTask(processInstanceId);
+      await completeUserTask(startTourTask.id);
 
       // 2. Deine bestehende Business-Logik
       const startedTour = await startTour({
