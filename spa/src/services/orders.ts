@@ -30,6 +30,8 @@ async function resolveToken(token?: string) {
   console.log("[Orders] resolveToken called, token present:", !!token);
 
   if (token) {
+    console.log("[Orders] Token prefix:", token.slice(0, 20));
+    console.log("[Orders] Token length:", token.length);
     return token;
   }
 
@@ -161,7 +163,7 @@ export async function loadSubscription({
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      throw new Error("Die Orders-API hat den Request abgelehnt. Bitte prüfe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.");
+      throw new Error("Orders-API hat den Request abgelehnt.");
     }
 
     throw new Error(`RestockOrders konnten nicht geladen werden (HTTP ${response.status}).`);
