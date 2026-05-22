@@ -205,7 +205,7 @@ public class DeliveryService {
         dto.contactPerson = valueOrEmpty(user != null ? user.roleInCompany : null);
         dto.deliveryHint = valueOrEmpty(user != null ? user.deliveryHint : null);
         dto.deliveryDay = valueOrEmpty(user != null ? user.deliveryDay : null);
-        dto.deliveryTime = user != null ? user.deliveryTime : null;
+        dto.deliveryTime = valueOrEmpty(user != null ? user.deliveryTime : null);
         dto.deliveryDate = delivery.tour != null && delivery.tour.tourDate != null
                 ? delivery.tour.tourDate.toString()
                 : null;

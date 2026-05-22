@@ -228,7 +228,12 @@ async function loadDeliveryDetailsByCustomerId(
   }
 
   try {
-    await syncTodayOrders({ restockerName, token });
+    try {
+      await syncTodayOrders({ restockerName, token });
+    } catch {
+      // Keep reading existing routed deliveries even when today's sync fails.
+    }
+
     const todaysTours = await loadTodayTours({ restockerName, token });
 
     if (todaysTours.length === 0) {
@@ -265,7 +270,12 @@ async function loadDeliveryDetailsForRestocker(
   }
 
   try {
-    await syncTodayOrders({ restockerName, token });
+    try {
+      await syncTodayOrders({ restockerName, token });
+    } catch {
+      // Keep reading existing routed deliveries even when today's sync fails.
+    }
+
     const todaysTours = await loadTodayTours({ restockerName, token });
 
     if (todaysTours.length === 0) {

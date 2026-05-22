@@ -180,6 +180,25 @@ function createHeaders(token: string) {
 async function parseJsonResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
   if (!response.ok) {
     const responseText = await response.text().catch(() => "");
+    if (responseText) {
+      try {
+        const parsedError = JSON.parse(responseText) as {
+          details?: string;
+          message?: string;
+          error?: string;
+        };
+        const normalizedMessage =
+          parsedError.details || parsedError.message || parsedError.error;
+        if (normalizedMessage) {
+          throw new Error(normalizedMessage);
+        }
+      } catch (parseError) {
+        if (parseError instanceof Error) {
+          throw parseError;
+        }
+      }
+    }
+
     throw new Error(responseText || `${fallbackMessage} (HTTP ${response.status}).`);
   }
 

@@ -31,7 +31,7 @@ public class DeliveryDetailDto {
     public String contactPerson;   // roleInCompany as contact label
     public String deliveryHint;
     public String deliveryDay;
-    public Integer deliveryTime;
+    public String deliveryTime;
 
     // From orders service
     public String deliveryDate;

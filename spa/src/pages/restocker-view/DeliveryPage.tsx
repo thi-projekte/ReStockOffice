@@ -162,10 +162,19 @@ export function DeliveryPage() {
       setError(null);
 
       try {
-        await syncTodayOrders({
-          restockerName,
-          token: auth.token,
-        });
+        try {
+          await syncTodayOrders({
+            restockerName,
+            token: auth.token,
+          });
+        } catch (syncError) {
+          if (!isMounted) return;
+          const syncMessage =
+            syncError instanceof Error
+              ? syncError.message
+              : "Die heutige Delivery-Synchronisierung ist fehlgeschlagen.";
+          toast.error(`${syncMessage} Vorhandene Lieferungen werden trotzdem geladen.`);
+        }
 
         const tours = await loadTodayTours({
           restockerName,
