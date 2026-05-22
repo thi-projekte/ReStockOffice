@@ -87,7 +87,8 @@
 }
 
 .open-orders-carousel {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 1rem;
 }
 
@@ -95,8 +96,20 @@
     margin-top: 1rem;
 }
 
+.statistics-tour-grid {
+    margin-top: 1.5rem;
+}
+
+.statistics-tour-summary {
+    display: block;
+}
+
 .restocker-order-card {
     min-width: 300px;
+}
+
+.mobile-swipe-hint {
+    display: none;
 }
 
 
@@ -164,6 +177,7 @@
     }
 
     .open-orders-carousel {
+        display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
@@ -181,5 +195,9 @@
         flex: 0 0 auto;
         scroll-snap-align: start;
         scroll-snap-stop: always;
+    }
+
+    .mobile-swipe-hint {
+        display: block;
     }
 }

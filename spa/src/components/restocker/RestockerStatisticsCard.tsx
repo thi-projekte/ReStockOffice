@@ -112,7 +112,7 @@ export function RestockerStatisticsCard({
                     <p>
                         Hallo, hier siehst du deine Performance,
                         Verdienst und Details zu deinen
-                        abgeschlossenen Touren.
+                        abgeschlossenen und geplanten Touren.
                     </p>
                 </div>
             </div>
@@ -152,7 +152,7 @@ export function RestockerStatisticsCard({
                 <div className="metric-tile">
 
                     <div className="metric-label">
-                        Gefahrene Touren
+                        Angenommene Touren
                     </div>
 
                     <div className="metric-value">
@@ -160,7 +160,7 @@ export function RestockerStatisticsCard({
                     </div>
 
                     <div className="metric-sub">
-                        Tage mit abgeschlossenen Touren
+                        Tage mit angenommenen Touren
                     </div>
                 </div>
 
@@ -175,7 +175,7 @@ export function RestockerStatisticsCard({
                     </div>
 
                     <div className="metric-sub">
-                        Erfolgreiche Lieferungen
+                        Ausgewählte Lieferungen
                     </div>
                 </div>
 
@@ -211,19 +211,19 @@ export function RestockerStatisticsCard({
 
                 <strong>
                     Du hast in diesem Monat
-                    keine Touren abgeschlossen.
+                    keine Touren abgeschlossen oder geplant.
                 </strong>
 
             ) : (
 
                 <>
-                    <strong>
+                    <strong className="statistics-tour-summary">
                         Du hast in diesem Monat{" "}
                         {completedOrders.length}{" "}
-                        {completedOrders.length === 1 ? "Tour" : "Touren"} abgeschlossen.
+                        {completedOrders.length === 1 ? "Tour" : "Touren"} abgeschlossen oder geplant.
                     </strong>
 
-                    <div className="open-orders-carousel">
+                    <div className="open-orders-carousel statistics-tour-grid">
 
 
                         {groupedTours.map((tourOrders) => (

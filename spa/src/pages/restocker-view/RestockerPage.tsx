@@ -359,7 +359,8 @@ export function RestockerPage() {
                             <p style={{ color: "red" }}>{openError}</p>
                         ) : (
                             <>
-                                <p>Es gibt weitere Lieferungen in deiner Nähe. Beispielsweise:</p>
+                                <p>Es gibt weitere Lieferungen in deiner Nähe. </p>
+                                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
                                 <div className="open-orders-carousel">
                                     {openOrders.slice(0, 6).map((order) => (
                                         <RestockerOrderCard
