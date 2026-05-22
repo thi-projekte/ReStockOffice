@@ -29,6 +29,9 @@ public class DeliveryItem extends PanacheEntityBase {
     @Column(name = "article_number")
     public String articleNumber;
 
+    @Column(name = "warehouse_item_id")
+    public String warehouseItemId;
+
     @Column(name = "article_name")
     public String name;
 
