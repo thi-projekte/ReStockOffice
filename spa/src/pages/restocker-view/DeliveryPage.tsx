@@ -56,6 +56,52 @@ function countCompanies(deliveries: DeliveryDetail[]) {
   return companyKeys.size;
 }
 
+function buildStreetLine(delivery: DeliveryDetail) {
+  return [delivery.street, delivery.houseNumber].filter(Boolean).join(" ").trim();
+}
+
+function buildCityLine(delivery: DeliveryDetail) {
+  return [delivery.postalCode, delivery.city].filter(Boolean).join(" ").trim();
+}
+
+function formatDeliveryTime(value: DeliveryDetail["deliveryTime"]) {
+  if (value == null) {
+    return "";
+  }
+
+  const normalizedValue = String(value).trim();
+  if (!normalizedValue) {
+    return "";
+  }
+
+  if (
+    normalizedValue.includes("-") ||
+    normalizedValue.toLowerCase().includes("bis") ||
+    normalizedValue.toLowerCase().includes("uhr")
+  ) {
+    return normalizedValue;
+  }
+
+  if (normalizedValue.includes(":")) {
+    const [hoursPart, minutesPart = "00"] = normalizedValue.split(":");
+    const hours = Number(hoursPart);
+    const minutes = Number(minutesPart);
+
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+      return normalizedValue;
+    }
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} Uhr`;
+  }
+
+  const hours = Number(normalizedValue);
+  if (!Number.isFinite(hours)) {
+    return normalizedValue;
+  }
+
+  return `${String(hours).padStart(2, "0")}:00 Uhr`;
+}
+
 export function DeliveryPage() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -85,6 +131,11 @@ export function DeliveryPage() {
     activeDelivery?.items.length > 0 &&
     activeDelivery.items.every((item) => item.delivered);
   const isLastStop = activeStopIndex >= sortedDeliveries.length - 1;
+  const activeStreetLine = activeDelivery ? buildStreetLine(activeDelivery) : "";
+  const activeCityLine = activeDelivery ? buildCityLine(activeDelivery) : "";
+  const activeDeliveryTime = activeDelivery ? formatDeliveryTime(activeDelivery.deliveryTime) : "";
+  const activeDeliveryDay =
+    activeDelivery?.deliveryDay || formatDate(activeDelivery?.deliveryDate ?? null);
 
   async function reloadDeliveries(nextTour = tour) {
     if (!nextTour) return;
@@ -368,7 +419,9 @@ export function DeliveryPage() {
             <a
               className="button button--ghost delivery-map-link"
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                `${activeDelivery.street}, ${activeDelivery.postalCode} ${activeDelivery.city}`,
+                [activeStreetLine, activeCityLine, activeDelivery.country]
+                  .filter(Boolean)
+                  .join(", "),
               )}`}
               target="_blank"
               rel="noreferrer"
@@ -381,26 +434,29 @@ export function DeliveryPage() {
           <div className="delivery-info-grid">
             <div className="delivery-info-card">
               <span>Unternehmen</span>
-              <strong>{activeDelivery.companyName}</strong>
+              <strong>{activeDelivery.companyName || "Nicht hinterlegt"}</strong>
             </div>
             <div className="delivery-info-card">
               <span>Adresse</span>
-              <strong>{activeDelivery.street}</strong>
-              <small>{activeDelivery.postalCode} {activeDelivery.city}</small>
+              <strong>{activeStreetLine || "Nicht hinterlegt"}</strong>
+              {activeCityLine ? <small>{activeCityLine}</small> : null}
+              {activeDelivery.country ? <small>{activeDelivery.country}</small> : null}
             </div>
             <div className="delivery-info-card">
-              <span>Lieferzeit</span>
-              <strong>{formatDate(activeDelivery.deliveryDate)}</strong>
-              <small>11:00 Uhr</small>
+              <span>Liefertag</span>
+              <strong>{activeDeliveryDay}</strong>
+              {activeDeliveryTime ? <small>{activeDeliveryTime}</small> : null}
             </div>
             <div className="delivery-info-card">
-              <span>Ansprechpartner</span>
-              <strong>{activeDelivery.contactPerson || "Vor Ort"}</strong>
+              <span>Telefonnummer</span>
               {activeDelivery.phoneNumber ? (
                 <a href={`tel:${activeDelivery.phoneNumber}`}>
                   <FaPhoneAlt /> {activeDelivery.phoneNumber}
                 </a>
-              ) : null}
+              ) : (
+                <strong>Nicht hinterlegt</strong>
+              )}
+              {activeDelivery.contactPerson ? <small>{activeDelivery.contactPerson}</small> : null}
             </div>
           </div>
 

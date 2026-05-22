@@ -195,18 +195,17 @@ public class DeliveryService {
         dto.collectedAt = delivery.collectedAt;
         dto.deliveredAt = delivery.deliveredAt;
 
-        dto.companyName = valueOrFallback(user != null ? user.companyName : null, fallbackCompanyName(delivery.userId));
-        dto.street = valueOrFallback(user != null ? buildStreet(user) : null, "Esplanade 10");
-        dto.postalCode = valueOrFallback(user != null ? user.postalCode : null, "85049");
-        dto.city = valueOrFallback(user != null ? user.city : null, "Ingolstadt");
-        dto.phoneNumber = valueOrFallback(user != null ? user.phoneNumber : null, "0841 000000");
-        dto.contactPerson = valueOrFallback(user != null ? user.roleInCompany : null, "Empfang");
-        dto.deliveryHint = valueOrFallback(
-                user != null ? user.deliveryHint : null,
-                "Demo-Adresse, bis Customerdaten verfuegbar sind."
-        );
-
+        dto.companyName = valueOrEmpty(user != null ? user.companyName : null);
+        dto.street = valueOrEmpty(user != null ? user.street : null);
         dto.houseNumber = valueOrEmpty(user != null ? user.houseNumber : null);
+        dto.postalCode = valueOrEmpty(user != null ? user.postalCode : null);
+        dto.city = valueOrEmpty(user != null ? user.city : null);
+        dto.country = valueOrEmpty(user != null ? user.country : null);
+        dto.phoneNumber = valueOrEmpty(user != null ? user.phoneNumber : null);
+        dto.contactPerson = valueOrEmpty(user != null ? user.roleInCompany : null);
+        dto.deliveryHint = valueOrEmpty(user != null ? user.deliveryHint : null);
+        dto.deliveryDay = valueOrEmpty(user != null ? user.deliveryDay : null);
+        dto.deliveryTime = user != null ? user.deliveryTime : null;
         dto.deliveryDate = delivery.tour != null && delivery.tour.tourDate != null
                 ? delivery.tour.tourDate.toString()
                 : null;
@@ -414,12 +413,6 @@ public class DeliveryService {
         }
     }
 
-    private String buildStreet(UserDto user) {
-        String street = valueOrEmpty(user.street);
-        String houseNumber = valueOrEmpty(user.houseNumber);
-        return (street + " " + houseNumber).trim();
-    }
-
     private String valueOrEmpty(String value) {
         return value == null ? "" : value;
     }
@@ -430,13 +423,6 @@ public class DeliveryService {
 
     private String fallbackArticleName(String articleNumber) {
         return "Artikel " + articleNumber;
-    }
-
-    private String fallbackCompanyName(String userId) {
-        String suffix = userId == null || userId.isBlank()
-                ? "unbekannt"
-                : userId.substring(0, Math.min(8, userId.length()));
-        return "Demo Kunde " + suffix;
     }
 
     private record DeliveryGroupKey(String customerId, LocalDate deliveryDate) {
