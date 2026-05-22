@@ -13,6 +13,11 @@ import { loadCustomerProfile } from "../../services/users";
 import type { UserProfile } from "../../types/user";
 
 const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
+const RESTOCKER_TOUR_PROCESS_DEFINITION_KEY = "Process_0h5mosh";
+
+interface CamundaProcessInstance {
+    id: string;
+}
 
 function currentTourProcessStorageKey(restockerId: string) {
     const date = new Date();
@@ -163,35 +168,64 @@ export function RestockerPage() {
     const earningsPerDelivery = 7;
     const earningsToday = totalToday * earningsPerDelivery;
 
-    //Prozess starten
-    async function startTourProcess(restockerId: string) {
+    async function loadActiveTourProcess(restockerId: string) {
+        const query = new URLSearchParams({
+            processDefinitionKey: RESTOCKER_TOUR_PROCESS_DEFINITION_KEY,
+            businessKey: restockerId,
+            active: "true",
+        });
+        const res = await fetch(`${CAMUNDA_BASE_URL}/process-instance?${query.toString()}`);
+
+        if (!res.ok) {
+            throw new Error(`Aktiver Tour-Prozess konnte nicht geladen werden: ${res.status}`);
+        }
+
+        const processInstances = (await res.json()) as CamundaProcessInstance[];
+        return processInstances[0]?.id ?? null;
+    }
+
+    async function startTourProcessThroughEngineRest(restockerId: string) {
+        const activeProcessId = await loadActiveTourProcess(restockerId);
+
+        if (activeProcessId) {
+            return activeProcessId;
+        }
+
         const res = await fetch(
-            `${CAMUNDA_BASE_URL.replace("/engine-rest", "")}/api/restocker-tour-process/start`,
+            `${CAMUNDA_BASE_URL}/process-definition/key/${RESTOCKER_TOUR_PROCESS_DEFINITION_KEY}/start`,
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    restockerId,
+                    businessKey: restockerId,
+                    variables: {
+                        restockerId: {
+                            value: restockerId,
+                            type: "String",
+                        },
+                    },
                 }),
-            }
+            },
         );
 
-        const text = await res.text(); // 👈 wichtig zum Debuggen
-
         if (!res.ok) {
-            console.error("Camunda Error Response:", text);
-            throw new Error(text);
+            const text = await res.text();
+            throw new Error(text || `Tour-Prozess konnte nicht gestartet werden: ${res.status}`);
         }
 
-        const processInstance = JSON.parse(text) as { id?: string };
+        const processInstance = (await res.json()) as CamundaProcessInstance;
 
         if (!processInstance.id) {
             throw new Error("Camunda hat keine Prozessinstanz-ID geliefert.");
         }
 
         return processInstance.id;
+    }
+
+    async function startTourProcess(restockerId: string) {
+        return startTourProcessThroughEngineRest(restockerId);
     }
 
     const startTourRequestInFlight = useRef(false);
