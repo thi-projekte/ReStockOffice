@@ -12,6 +12,12 @@ import { RestockerStatisticsCard } from "../../components/restocker/RestockerSta
 import { loadCustomerProfile } from "../../services/users";
 import type { UserProfile } from "../../types/user";
 
+const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
+const RESTOCKER_PROCESS_DEFINITION_KEY = "Process_0h5mosh";
+
+interface CamundaProcessInstance {
+    id: string;
+}
 
 export function RestockerPage() {
     const auth = useAuth();
@@ -136,16 +142,41 @@ export function RestockerPage() {
     const earningsPerDelivery = 7;
     const earningsToday = totalToday * earningsPerDelivery;
 
+    async function findActiveTourProcess(restockerId: string) {
+        const query = new URLSearchParams({
+            processDefinitionKey: RESTOCKER_PROCESS_DEFINITION_KEY,
+            businessKey: restockerId,
+            active: "true",
+        });
+        const res = await fetch(`${CAMUNDA_BASE_URL}/process-instance?${query.toString()}`);
+        const text = await res.text();
+
+        if (!res.ok) {
+            console.error("Camunda Error Response:", text);
+            throw new Error(text || "Aktiver Tourprozess konnte nicht geprueft werden.");
+        }
+
+        return JSON.parse(text) as CamundaProcessInstance[];
+    }
+
     //Prozess starten
-    async function startTourProcess() {
+    async function startTourProcess(restockerId: string) {
         const res = await fetch(
-            "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_0h5mosh/start",
+            `${CAMUNDA_BASE_URL}/process-definition/key/${RESTOCKER_PROCESS_DEFINITION_KEY}/start`,
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({}),
+                body: JSON.stringify({
+                    businessKey: restockerId,
+                    variables: {
+                        restockerId: {
+                            value: restockerId,
+                            type: "String",
+                        },
+                    },
+                }),
             }
         );
 
@@ -178,7 +209,13 @@ export function RestockerPage() {
                         onClick={async () => {
                             try {
                                 setStartingTour(true);
-                                const processInstanceId = await startTourProcess();
+                                if (!auth.user?.id) {
+                                    throw new Error("Eingeloggter Restocker konnte nicht ermittelt werden.");
+                                }
+
+                                const activeProcesses = await findActiveTourProcess(auth.user.id);
+                                const processInstanceId =
+                                    activeProcesses[0]?.id ?? await startTourProcess(auth.user.id);
                                 const query = new URLSearchParams({ processInstanceId });
                                 navigate(`/restocker-deliveries?${query.toString()}`);
                             } catch (err) {
