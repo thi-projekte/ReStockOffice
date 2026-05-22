@@ -39,7 +39,7 @@ public class Customer extends PanacheEntityBase {
 
     public String roleInCompany;
 
-    public Date birthDate;
+    public java.time.LocalDate birthDate;
 
     public String deliveryHint;
 

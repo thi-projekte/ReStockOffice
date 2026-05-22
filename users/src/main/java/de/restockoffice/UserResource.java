@@ -2,7 +2,6 @@ package de.restockoffice;
 
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
@@ -64,6 +63,23 @@ public class UserResource {
     }
 
     @GET
+    @Path("customerForRestocker")
+    public RestockerCustomerView getCustomerAddressForRestocker(@QueryParam("userId") String userId){
+        System.out.println("ROLES FOUND BY QUARKUS: " + securityIdentity.getRoles());
+        if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("restocker") && !securityIdentity.hasRole("admin")) {
+            throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.", 403);
+        }
+
+        if (userId == null || userId.isBlank()) {
+            throw new WebApplicationException("Übergebene userId darf nicht leer sein.", 400);
+        }
+
+        Customer customer = findCustomerOrThrow(userId);
+
+        return new RestockerCustomerView(customer);
+    }
+
+    @GET
     @Path("restocker")
     public Restocker getRestockerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
@@ -82,14 +98,12 @@ public class UserResource {
 
     @GET
     @Path("customers")
-    @RolesAllowed("admin")
     public List<Customer> getAllCustomers(){
         return Customer.listAll();
     }
 
     @GET
     @Path("restockers")
-    @RolesAllowed("admin")
     public List<Restocker> getAllRestockers(){
         return Restocker.listAll();
     }
