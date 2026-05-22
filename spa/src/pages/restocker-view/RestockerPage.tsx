@@ -71,6 +71,8 @@ export function RestockerPage() {
                 const result = await loadAssignedRestockOrders({
                     token: auth.token,
                     restockerId: auth.user.id,
+                    restockerName:
+                        auth.user?.username ?? auth.user?.id ?? "",
                 });
 
                 setAssignedOrdersResult(result);
@@ -86,7 +88,7 @@ export function RestockerPage() {
         }
 
         load();
-    }, [auth.token, auth.user?.id]);
+    }, [auth.token, auth.user?.id, auth.user?.username]);
 
     const assignedToday = assignedOrdersResult.orders.filter(
         (order) => getDaysUntilDelivery(order.deliveryDate) === 0
@@ -166,7 +168,7 @@ export function RestockerPage() {
                                 <div className="open-orders-carousel">
                                     {openOrders.slice(0, 6).map((order) => (
                                         <RestockerOrderCard
-                                            key={order.orderId}
+                                            key={order.orderKey}
                                             order={order}
                                         />
                                     ))}
