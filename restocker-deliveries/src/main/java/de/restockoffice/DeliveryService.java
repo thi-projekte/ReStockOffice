@@ -449,7 +449,6 @@ public class DeliveryService {
         DeliveryItem item = new DeliveryItem();
         ArticleDto article = tryLoadArticle(order.productId);
         item.articleNumber = order.productId;
-        item.warehouseItemId = order.productId;
         item.name = valueOrFallback(
                 article != null ? article.name : null,
                 fallbackArticleName(order.productId)
