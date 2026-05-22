@@ -50,48 +50,37 @@ public class UserResource {
     public Customer getCustomerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
 
-        if (!loggedInId.equals(userId)
-            && !securityIdentity.hasRole("admin")
-            && !securityIdentity.hasRole("Restocker")) {
-            throw new WebApplicationException(
-                "Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.",
-                403
-            );
+        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin")) {
+            throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
         }
-
         return findCustomerOrThrow(userId);
     }
 
     @GET
     @Path("customerForRestocker")
     public RestockerCustomerView getCustomerAddressForRestocker(@QueryParam("userId") String userId){
-
-        if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("admin")) {
-            throw new WebApplicationException("403", 403);
+        System.out.println("ROLES FOUND BY QUARKUS: " + securityIdentity.getRoles());
+        if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("restocker") && !securityIdentity.hasRole("admin")) {
+            throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.", 403);
         }
 
         if (userId == null || userId.isBlank()) {
-            throw new WebApplicationException("userId missing", 400);
+            throw new WebApplicationException("Übergebene userId darf nicht leer sein.", 400);
         }
 
         Customer customer = findCustomerOrThrow(userId);
 
         return new RestockerCustomerView(customer);
     }
+
     @GET
     @Path("restocker")
     public Restocker getRestockerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
 
-        if (!loggedInId.equals(userId)
-            && !securityIdentity.hasRole("admin")
-            && !securityIdentity.hasRole("Restocker")) {
-            throw new WebApplicationException(
-                "Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.",
-                403
-            );
+        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin")) {
+            throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
         }
-
         return findRestockerOrThrow(userId);
     }
 
