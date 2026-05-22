@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,10 @@ public class DeliveryService {
     @Inject
     @RestClient
     OrderClient orderClient;
+
+    @Inject
+    @RestClient
+    ArticleClient articleClient;
 
     // ── Tour management ──────────────────────────
 
@@ -179,17 +184,19 @@ public class DeliveryService {
 
         UserDto user = tryLoadUser(delivery.userId, authorizationHeader);
         OrderDto order = tryLoadOrder(firstOrderId(delivery.orderId), authorizationHeader);
+        Map<String, ArticleDto> articleCache = new HashMap<>();
 
-        return toDetailDto(delivery, user, order);
+        return toDetailDto(delivery, user, order, articleCache);
     }
 
     public List<DeliveryDetailDto> getTourDeliveryDetails(UUID tourId, String authorizationHeader) {
         List<Delivery> deliveries = Delivery.findByTour(tourId);
+        Map<String, ArticleDto> articleCache = new HashMap<>();
         return deliveries.stream()
                 .map(d -> {
                     UserDto user = tryLoadUser(d.userId, authorizationHeader);
                     OrderDto order = tryLoadOrder(firstOrderId(d.orderId), authorizationHeader);
-                    return toDetailDto(d, user, order);
+                    return toDetailDto(d, user, order, articleCache);
                 })
                 .collect(Collectors.toList());
     }
@@ -202,7 +209,12 @@ public class DeliveryService {
 
     // ── Mapping ──────────────────────────────────
 
-    private DeliveryDetailDto toDetailDto(Delivery delivery, UserDto user, OrderDto order) {
+    private DeliveryDetailDto toDetailDto(
+            Delivery delivery,
+            UserDto user,
+            OrderDto order,
+            Map<String, ArticleDto> articleCache
+    ) {
         DeliveryDetailDto dto = new DeliveryDetailDto();
         dto.id = delivery.id;
         dto.orderId = delivery.orderId;
@@ -231,13 +243,19 @@ public class DeliveryService {
                 : null;
         dto.items = delivery.items.stream().map(item -> {
             DeliveryDetailDto.DeliveryItemDetailDto i = new DeliveryDetailDto.DeliveryItemDetailDto();
+            ArticleDto article = loadArticle(item.articleNumber, articleCache);
             i.id = item.id;
             i.articleNumber = item.articleNumber;
             i.delivered = item.delivered;
-            // match warehouse item name with order item if available
-            i.name = item.warehouseItem.name;
+            i.name = valueOrFallback(
+                    article != null ? article.name : null,
+                    item.warehouseItem.name
+            );
             i.quantity = item.quantity;
-            i.unit = item.warehouseItem.unit;
+            i.unit = valueOrFallback(
+                    article != null ? article.unit : null,
+                    item.warehouseItem.unit
+            );
             return i;
         }).collect(Collectors.toList());
 
@@ -401,17 +419,61 @@ public class DeliveryService {
 
     private WarehouseItem findOrCreateWarehouseItem(String articleNumber) {
         WarehouseItem warehouseItem = WarehouseItem.findByArticleNumber(articleNumber);
+        ArticleDto article = tryLoadArticle(articleNumber);
         if (warehouseItem != null) {
+            refreshWarehouseItemFromArticle(warehouseItem, article);
             return warehouseItem;
         }
 
         WarehouseItem created = new WarehouseItem();
         created.articleNumber = articleNumber;
-        created.name = "Artikel " + articleNumber;
-        created.unit = "Stueck";
+        created.name = valueOrFallback(
+                article != null ? article.name : null,
+                "Artikel " + articleNumber
+        );
+        created.unit = valueOrFallback(
+                article != null ? article.unit : null,
+                "Stueck"
+        );
         created.quantity = 1000;
         created.persist();
         return created;
+    }
+
+    private ArticleDto loadArticle(String articleNumber, Map<String, ArticleDto> articleCache) {
+        if (articleNumber == null || articleNumber.isBlank()) {
+            return null;
+        }
+
+        if (articleCache.containsKey(articleNumber)) {
+            return articleCache.get(articleNumber);
+        }
+
+        ArticleDto article = tryLoadArticle(articleNumber);
+        articleCache.put(articleNumber, article);
+        return article;
+    }
+
+    private ArticleDto tryLoadArticle(String articleNumber) {
+        try {
+            return articleClient.getArticleByProductId(articleNumber);
+        } catch (RuntimeException exception) {
+            return null;
+        }
+    }
+
+    private void refreshWarehouseItemFromArticle(WarehouseItem warehouseItem, ArticleDto article) {
+        if (warehouseItem == null || article == null) {
+            return;
+        }
+
+        if (article.name != null && !article.name.isBlank()) {
+            warehouseItem.name = article.name;
+        }
+
+        if (article.unit != null && !article.unit.isBlank()) {
+            warehouseItem.unit = article.unit;
+        }
     }
 
     private String buildStreet(UserDto user) {
