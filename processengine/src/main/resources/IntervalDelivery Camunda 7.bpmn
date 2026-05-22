@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_05owui8" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_05owui8" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Collaboration_12nb192">
     <bpmn:participant id="Participant_00wvqi6" name="Auslieferungsprozess" processRef="Process_0g5bjt8" />
   </bpmn:collaboration>
@@ -33,7 +33,7 @@
       <bpmn:outgoing>Flow_01myuza</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_1jyrl31" />
     </bpmn:startEvent>
-    <bpmn:serviceTask id="Activity_044ptp8" name="Lieferankündigung versenden">
+    <bpmn:serviceTask id="Activity_044ptp8" name="Lieferankündigung versenden" camunda:delegateExpression="${sendDeliveryAnnouncementDelegate}">
       <bpmn:incoming>Flow_0kfozsq</bpmn:incoming>
       <bpmn:outgoing>Flow_1llqen9</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -74,7 +74,7 @@
       <bpmn:incoming>Flow_1moyqvu</bpmn:incoming>
       <bpmn:messageEventDefinition id="MessageEventDefinition_13yz4fk" />
     </bpmn:endEvent>
-    <bpmn:serviceTask id="Activity_0f4c07j" name="Liefer-bestätigung versenden">
+    <bpmn:serviceTask id="Activity_0f4c07j" name="Liefer-bestätigung versenden" camunda:delegateExpression="${sendDeliveryConfirmationDelegate}">
       <bpmn:incoming>Flow_0gy22cd</bpmn:incoming>
       <bpmn:outgoing>Flow_1moyqvu</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -97,16 +97,16 @@
         <dc:Bounds x="160" y="80" width="1810" height="490" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_0yuuyd5_di" bpmnElement="Lane_0yuuyd5" isHorizontal="true">
-        <dc:Bounds x="190" y="80" width="1780" height="140" />
+      <bpmndi:BPMNShape id="Lane_17143vn_di" bpmnElement="Lane_17143vn" isHorizontal="true">
+        <dc:Bounds x="190" y="220" width="1780" height="180" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_19k1xh4_di" bpmnElement="Lane_19k1xh4" isHorizontal="true">
         <dc:Bounds x="190" y="400" width="1780" height="170" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_17143vn_di" bpmnElement="Lane_17143vn" isHorizontal="true">
-        <dc:Bounds x="190" y="220" width="1780" height="180" />
+      <bpmndi:BPMNShape id="Lane_0yuuyd5_di" bpmnElement="Lane_0yuuyd5" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="1780" height="140" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0zl0aba_di" bpmnElement="Activity_1p8hvqp">

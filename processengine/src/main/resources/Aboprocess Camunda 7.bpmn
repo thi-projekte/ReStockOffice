@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_151ybzy" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_151ybzy" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Collaboration_1a8qzdr">
     <bpmn:participant id="Participant_16nrhn5" name="Aboprozess" processRef="Process_0dqfxnd" />
     <bpmn:participant id="Participant_1p5oqzg" name="Kunde" />
@@ -56,7 +56,7 @@
       <bpmn:outgoing>Flow_14i62eo</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_1x8rmqb" />
     </bpmn:startEvent>
-    <bpmn:serviceTask id="Activity_098v8bj" name="Abo-Bestätigung versenden">
+    <bpmn:serviceTask id="Activity_098v8bj" name="Abo-Bestätigung versenden" camunda:delegateExpression="${sendAboConfirmationDelegate}">
       <bpmn:extensionElements />
       <bpmn:incoming>Flow_14i62eo</bpmn:incoming>
       <bpmn:outgoing>Flow_0axsq7u</bpmn:outgoing>
