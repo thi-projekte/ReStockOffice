@@ -223,6 +223,8 @@ export function RestockerStatisticsCard({
                         {completedOrders.length === 1 ? "Tour" : "Touren"} abgeschlossen oder geplant.
                     </strong>
 
+                    <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+
                     <div className="open-orders-carousel statistics-tour-grid">
 
 

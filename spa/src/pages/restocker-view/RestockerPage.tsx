@@ -399,6 +399,7 @@ export function RestockerPage() {
                         ) : (
                             <>
                                 <p>Du hast aktuell {assignedOrdersResult.orders.length} zugeordnete Aufträge.</p>
+                                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
                                 <div className="open-orders-carousel">
                                     {assignedOrdersResult.orders.slice(0, 6).map((order) => (
                                         <RestockerOrderCard
