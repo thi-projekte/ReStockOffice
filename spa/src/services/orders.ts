@@ -179,6 +179,46 @@ function buildStreetLine(detail?: DeliveryDetail) {
     : MISSING_MARKETPLACE_VALUE;
 }
 
+function formatMarketplaceDeliveryTime(
+  deliveryTime: DeliveryDetail["deliveryTime"] | null | undefined,
+) {
+  if (deliveryTime == null) {
+    return MISSING_MARKETPLACE_VALUE;
+  }
+
+  const normalizedValue = String(deliveryTime).trim();
+  if (!normalizedValue) {
+    return MISSING_MARKETPLACE_VALUE;
+  }
+
+  if (
+    normalizedValue.includes("-") ||
+    normalizedValue.toLowerCase().includes("bis") ||
+    normalizedValue.toLowerCase().includes("uhr")
+  ) {
+    return normalizedValue;
+  }
+
+  if (normalizedValue.includes(":")) {
+    const [hoursPart, minutesPart = "00"] = normalizedValue.split(":");
+    const hours = Number(hoursPart);
+    const minutes = Number(minutesPart);
+
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+      return normalizedValue;
+    }
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} Uhr`;
+  }
+
+  const hours = Number(normalizedValue);
+  if (!Number.isFinite(hours)) {
+    return normalizedValue;
+  }
+
+  return `${String(hours).padStart(2, "0")}:00 Uhr`;
+}
+
 async function loadDeliveryDetailsByCustomerId(
   token: string,
   restockerName?: string,
@@ -257,14 +297,12 @@ function resolveMarketplaceCustomerData({
   useMockFallback: boolean;
 }): MarketplaceCustomerData {
   if (deliveryDetail) {
-    // The delivery service does not expose a dedicated delivery window yet,
-    // so we keep a visible placeholder until the backend provides that field.
     const customerData = {
       companyName: normalizeMarketplaceText(deliveryDetail.companyName),
       street: buildStreetLine(deliveryDetail),
       postalCode: normalizeMarketplaceText(deliveryDetail.postalCode),
       city: normalizeMarketplaceText(deliveryDetail.city),
-      deliveryTime: MISSING_MARKETPLACE_VALUE,
+      deliveryTime: formatMarketplaceDeliveryTime(deliveryDetail.deliveryTime),
       deliveryNotes: normalizeMarketplaceText(deliveryDetail.deliveryHint),
     };
 
@@ -304,10 +342,7 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
   deliveryDetails: DeliveryDetail[],
 ): RestockMarketplaceOrder[] {
   return deliveryDetails.map((detail) => {
-    // The delivery service currently exposes today's routed stops, not the full
-    // open-marketplace model for the next four weeks. We still render these
-    // live stops here as a fallback instead of dropping to demo cards.
-    const deliveryTime = MISSING_MARKETPLACE_VALUE;
+    const deliveryTime = formatMarketplaceDeliveryTime(detail.deliveryTime);
     const deliveryNotes = normalizeMarketplaceText(detail.deliveryHint);
     const items = detail.items.map((item, index) => ({
       position: index + 1,
@@ -328,7 +363,6 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
       postalCode: normalizeMarketplaceText(detail.postalCode),
       city: normalizeMarketplaceText(detail.city),
       deliveryDate: formatIsoDateForDisplay(detail.deliveryDate),
-      // TODO: Replace this placeholder once the delivery service exposes a delivery window.
       deliveryTime,
       deliveryNotes,
       articleCount: detail.items.reduce((sum, item) => sum + item.quantity, 0),
