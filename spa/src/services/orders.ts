@@ -19,6 +19,8 @@ import {
   type DeliveryDetail,
 } from "./deliveries";
 import { getProducts } from "./products";
+import { loadCustomerProfile } from "./users";
+import type { UserProfile } from "../types/user";
 
 const ORDERS_API_URL =
   import.meta.env.VITE_ORDERS_API_URL ?? "https://orders.restockoffice.de/orders";
@@ -362,6 +364,104 @@ function resolveMarketplaceCustomerData({
   };
 }
 
+function hasMissingCustomerData(order: RestockMarketplaceOrder) {
+  return (
+    order.isPlaceholderCustomerData ||
+    [
+      order.companyName,
+      order.addressLine1,
+      order.postalCode,
+      order.city,
+      order.deliveryTime,
+      order.deliveryNotes,
+    ].some((value) => value === MISSING_MARKETPLACE_VALUE)
+  );
+}
+
+function buildStreetLineFromProfile(profile: UserProfile) {
+  return [profile.street, profile.houseNumber]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function profileValueOrCurrent(value: string | null | undefined, currentValue: string) {
+  const normalizedValue = normalizeMarketplaceText(value);
+  return normalizedValue !== MISSING_MARKETPLACE_VALUE
+    ? normalizedValue
+    : currentValue;
+}
+
+function applyCustomerProfile(
+  order: RestockMarketplaceOrder,
+  profile?: UserProfile,
+): RestockMarketplaceOrder {
+  if (!profile) {
+    return order;
+  }
+
+  const profileDeliveryTime = formatMarketplaceDeliveryTime(
+    profile.deliveryTime ?? null,
+  );
+  const nextOrder = {
+    ...order,
+    companyName: profileValueOrCurrent(profile.companyName, order.companyName),
+    addressLine1: profileValueOrCurrent(
+      buildStreetLineFromProfile(profile),
+      order.addressLine1,
+    ),
+    postalCode: profileValueOrCurrent(profile.postalCode, order.postalCode),
+    city: profileValueOrCurrent(profile.city, order.city),
+    deliveryTime:
+      profileDeliveryTime !== MISSING_MARKETPLACE_VALUE
+        ? profileDeliveryTime
+        : order.deliveryTime,
+    deliveryNotes: profileValueOrCurrent(
+      profile.deliveryHint,
+      order.deliveryNotes,
+    ),
+  };
+
+  return {
+    ...nextOrder,
+    isPlaceholderCustomerData: hasMissingCustomerData(nextOrder),
+  };
+}
+
+async function enrichMarketplaceOrdersWithCustomerProfiles(
+  orders: RestockMarketplaceOrder[],
+  token: string,
+) {
+  const missingCustomerIds = Array.from(
+    new Set(
+      orders
+        .filter(hasMissingCustomerData)
+        .map((order) => order.customerId)
+        .filter(Boolean),
+    ),
+  );
+
+  if (missingCustomerIds.length === 0) {
+    return orders;
+  }
+
+  const profilesByCustomerId = new Map<string, UserProfile>();
+  await Promise.all(
+    missingCustomerIds.map(async (customerId) => {
+      try {
+        const profile = await loadCustomerProfile({ token, userId: customerId });
+        profilesByCustomerId.set(customerId, profile);
+      } catch {
+        // Keep the Delivery API payload when a profile cannot be resolved.
+      }
+    }),
+  );
+
+  return orders.map((order) =>
+    applyCustomerProfile(order, profilesByCustomerId.get(order.customerId)),
+  );
+}
+
 function deriveMarketplaceOrdersFromDeliveryDetails(
   deliveryDetails: DeliveryDetail[],
 ): RestockMarketplaceOrder[] {
@@ -551,6 +651,35 @@ function isAssignedDemoOrderKey(orderKey: string) {
   return (
     orderKey === buildDemoTodayOrderKey(DEMO_OPEN_TODAY_CUSTOMER_ID) ||
     orderKey === buildDemoTodayOrderKey(DEMO_COMPLETED_TODAY_CUSTOMER_ID)
+  );
+}
+
+async function syncStoredDeliveryAssignments({
+  assignments,
+  token,
+  restockerName,
+}: {
+  assignments: RestockerOrderAssignment[];
+  token: string;
+  restockerName?: string;
+}) {
+  await Promise.all(
+    assignments.map(async (assignment) => {
+      const deliveryId = readDeliveryIdFromOrderKey(assignment.orderKey);
+      if (!deliveryId || assignment.status === "completed") {
+        return;
+      }
+
+      try {
+        await acceptDelivery({
+          deliveryId,
+          restockerName: restockerName?.trim() || assignment.restockerId,
+          token,
+        });
+      } catch {
+        // Older local assignments are best-effort migrated to backend state.
+      }
+    }),
   );
 }
 
@@ -752,8 +881,15 @@ export async function loadOpenRestockOrders({
   const productsById = createProductLookup(products);
 
   try {
-    const marketplaceOrders = deriveMarketplaceOrdersFromDeliveryDetails(
-      await loadOpenDeliveries({ token: resolvedToken }),
+    const marketplaceOrders = await enrichMarketplaceOrdersWithCustomerProfiles(
+      deriveMarketplaceOrdersFromDeliveryDetails(
+        await loadOpenDeliveries({ token: resolvedToken }),
+      ).filter(
+        (order) =>
+          !order.assignment &&
+          !assignments.some((assignment) => assignment.orderKey === order.orderKey),
+      ),
+      resolvedToken,
     );
 
     return {
@@ -851,12 +987,21 @@ export async function loadAssignedRestockOrders({
   const products = await getProducts().catch(() => []);
   const productsById = createProductLookup(products);
 
+  await syncStoredDeliveryAssignments({
+    assignments,
+    token: resolvedToken,
+    restockerName: restockerName?.trim() || restockerId,
+  });
+
   try {
-    const marketplaceOrders = deriveMarketplaceOrdersFromDeliveryDetails(
-      await loadAssignedDeliveries({
-        token: resolvedToken,
-        restockerName: restockerName?.trim() || restockerId,
-      }),
+    const marketplaceOrders = await enrichMarketplaceOrdersWithCustomerProfiles(
+      deriveMarketplaceOrdersFromDeliveryDetails(
+        await loadAssignedDeliveries({
+          token: resolvedToken,
+          restockerName: restockerName?.trim() || restockerId,
+        }),
+      ),
+      resolvedToken,
     );
 
     return {

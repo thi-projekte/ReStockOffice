@@ -302,15 +302,11 @@ export function DeliveryPage() {
     try {
       const processInstanceId = searchParams.get("processInstanceId");
 
-      if (!processInstanceId) {
-        throw new Error("Die Prozessinstanz fuer den Tourstart fehlt.");
+      if (processInstanceId) {
+        const startTourTask = await loadStartTourTask(processInstanceId);
+        await completeUserTask(startTourTask.id);
       }
 
-      // 1. Camunda User Task abschliessen
-      const startTourTask = await loadStartTourTask(processInstanceId);
-      await completeUserTask(startTourTask.id);
-
-      // 2. Deine bestehende Business-Logik
       const startedTour = await startTour({
         tourId: tour.id,
         token: auth.token,
@@ -318,7 +314,6 @@ export function DeliveryPage() {
 
       setTour(startedTour);
 
-      // 3. Daten neu laden
       await reloadDeliveries(startedTour);
 
       toast.success("Tour wurde gestartet.");
