@@ -24,10 +24,11 @@ public class ProcessEngineCorsConfiguration {
     cors.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/engine-rest/**", cors);
+    source.registerCorsConfiguration("/**", cors);
 
     FilterRegistrationBean<CorsFilter> registration =
         new FilterRegistrationBean<>(new CorsFilter(source));
+    registration.addUrlPatterns("/engine-rest/*");
     registration.setOrder(0);
     return registration;
   }
