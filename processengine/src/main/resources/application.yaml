@@ -13,6 +13,10 @@ logging:
   level:
     root: INFO
 
+restockoffice:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,https://app.restockoffice.de}
+
 # Metrics & Health
 management:
   endpoint.health.probes.enabled: true
