@@ -163,6 +163,12 @@ export function RestockerPage() {
     const completedToday = assignedToday.filter(
         (order) => order.assignment?.status === "completed"
     ).length;
+    const openAssignedToday = assignedToday.filter(
+        (order) =>
+            Boolean(order.assignment && order.assignment.status !== "completed")
+    );
+    const openAssignedTodayCount = openAssignedToday.length;
+    const hasOpenAssignedToday = openAssignedTodayCount > 0;
 
 
     const earningsPerDelivery = 7;
@@ -184,7 +190,10 @@ export function RestockerPage() {
         return processInstances[0]?.id ?? null;
     }
 
-    async function startTourProcessThroughEngineRest(restockerId: string) {
+    async function startTourProcessThroughEngineRest(
+        restockerId: string,
+        todayDeliveryCount: number,
+    ) {
         const activeProcessId = await loadActiveTourProcess(restockerId);
 
         if (activeProcessId) {
@@ -205,6 +214,10 @@ export function RestockerPage() {
                             value: restockerId,
                             type: "String",
                         },
+                        todayDeliveryCount: {
+                            value: todayDeliveryCount,
+                            type: "Integer",
+                        },
                     },
                 }),
             },
@@ -224,8 +237,8 @@ export function RestockerPage() {
         return processInstance.id;
     }
 
-    async function startTourProcess(restockerId: string) {
-        return startTourProcessThroughEngineRest(restockerId);
+    async function startTourProcess(restockerId: string, todayDeliveryCount: number) {
+        return startTourProcessThroughEngineRest(restockerId, todayDeliveryCount);
     }
 
     const startTourRequestInFlight = useRef(false);
@@ -238,8 +251,22 @@ export function RestockerPage() {
         setTourProcessId(loadStoredTourProcessId(auth.user?.id));
     }, [auth.user?.id]);
 
+    const startTourButtonLabel = startingTour
+        ? "Tour startet..."
+        : assignedLoading
+            ? "Lieferungen werden geladen..."
+            : !hasOpenAssignedToday
+                ? "Keine offenen Lieferungen heute"
+                : tourProcessId
+                    ? "Zur laufenden Tour wechseln"
+                    : "Tour von heute beginnen";
+
     async function handleStartTourProcess() {
         if (startTourRequestInFlight.current) {
+            return;
+        }
+
+        if (!hasOpenAssignedToday) {
             return;
         }
 
@@ -252,7 +279,7 @@ export function RestockerPage() {
             }
 
             const processInstanceId =
-                tourProcessId ?? await startTourProcess(auth.user.id);
+                tourProcessId ?? await startTourProcess(auth.user.id, openAssignedTodayCount);
 
             if (!tourProcessId) {
                 storeTourProcessId(auth.user.id, processInstanceId);
@@ -277,14 +304,10 @@ export function RestockerPage() {
 
                     <button
                         className="tour-btn"
-                        disabled={startingTour}
+                        disabled={startingTour || assignedLoading || !hasOpenAssignedToday}
                         onClick={() => void handleStartTourProcess()}
                     >
-                        {startingTour
-                            ? "Tour startet..."
-                            : tourProcessId
-                                ? "Zur laufenden Tour wechseln"
-                                : "Tour von heute beginnen"}
+                        {startTourButtonLabel}
                     </button>
 
                     {/* Heutige Lieferungen */}

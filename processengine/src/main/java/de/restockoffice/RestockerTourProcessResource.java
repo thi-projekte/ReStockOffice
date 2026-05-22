@@ -27,6 +27,7 @@ public class RestockerTourProcessResource {
   public ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcess(
       @RequestBody StartTourProcessRequest request) {
     String restockerId = request != null ? request.restockerId() : null;
+    Integer todayDeliveryCount = request != null ? request.todayDeliveryCount() : null;
 
     if (restockerId == null || restockerId.isBlank()) {
       return ResponseEntity.badRequest().build();
@@ -41,13 +42,19 @@ public class RestockerTourProcessResource {
           .list();
 
       if (!activeProcesses.isEmpty()) {
-        return ResponseEntity.ok(toResponse(activeProcesses.get(0), false));
+        ProcessInstance activeProcess = activeProcesses.get(0);
+        runtimeService.setVariable(
+            activeProcess.getProcessInstanceId(),
+            "todayDeliveryCount",
+            todayDeliveryCount != null ? todayDeliveryCount : 0);
+        return ResponseEntity.ok(toResponse(activeProcess, false));
       }
 
       ProcessInstance processInstance = runtimeService
           .createProcessInstanceByKey(PROCESS_DEFINITION_KEY)
           .businessKey(restockerId)
           .setVariable("restockerId", restockerId)
+          .setVariable("todayDeliveryCount", todayDeliveryCount != null ? todayDeliveryCount : 0)
           .execute();
 
       return ResponseEntity.ok(toResponse(processInstance, true));
@@ -58,7 +65,7 @@ public class RestockerTourProcessResource {
     return new StartTourProcessResponse(processInstance.getProcessInstanceId(), started);
   }
 
-  public record StartTourProcessRequest(String restockerId) {
+  public record StartTourProcessRequest(String restockerId, Integer todayDeliveryCount) {
   }
 
   public record StartTourProcessResponse(String id, boolean started) {
