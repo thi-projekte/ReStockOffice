@@ -12,7 +12,7 @@ export async function loadCustomerProfile({
     userId: string;
 }): Promise<UserProfile> {
     const response = await fetch(
-        `${USERS_API_URL}/customer?userId=${userId}`,
+        `${USERS_API_URL}/customerForRestocker?userId=${userId}`,
         {
             method: "GET",
             headers: {
