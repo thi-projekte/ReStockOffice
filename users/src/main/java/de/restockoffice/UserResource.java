@@ -51,9 +51,15 @@ public class UserResource {
     public Customer getCustomerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
 
-        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin")) {
-            throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
+        if (!loggedInId.equals(userId)
+            && !securityIdentity.hasRole("admin")
+            && !securityIdentity.hasRole("restocker")) {
+            throw new WebApplicationException(
+                "Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.",
+                403
+            );
         }
+
         return findCustomerOrThrow(userId);
     }
 
@@ -62,9 +68,15 @@ public class UserResource {
     public Restocker getRestockerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
 
-        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin")) {
-            throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
+        if (!loggedInId.equals(userId)
+            && !securityIdentity.hasRole("admin")
+            && !securityIdentity.hasRole("restocker")) {
+            throw new WebApplicationException(
+                "Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.",
+                403
+            );
         }
+
         return findRestockerOrThrow(userId);
     }
 
