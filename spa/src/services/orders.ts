@@ -10,6 +10,9 @@ import type {
   Subscription,
 } from "../types/shop";
 import {
+  acceptDelivery,
+  loadAssignedDeliveries,
+  loadOpenDeliveries,
   loadTodayTours,
   loadTourDetails,
   syncTodayOrders,
@@ -177,6 +180,17 @@ function buildStreetLine(detail?: DeliveryDetail) {
   return streetParts.length > 0
     ? streetParts.join(" ")
     : MISSING_MARKETPLACE_VALUE;
+}
+
+function buildDeliveryDisplayId(deliveryId: string) {
+  const normalizedId = deliveryId.replace(/-/g, "");
+  return normalizedId ? normalizedId.slice(0, 8).toUpperCase() : "Delivery";
+}
+
+function readDeliveryIdFromOrderKey(orderKey: string) {
+  return orderKey.startsWith("delivery__")
+    ? orderKey.slice("delivery__".length)
+    : null;
 }
 
 function formatMarketplaceDeliveryTime(
@@ -354,6 +368,13 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
   return deliveryDetails.map((detail) => {
     const deliveryTime = formatMarketplaceDeliveryTime(detail.deliveryTime);
     const deliveryNotes = normalizeMarketplaceText(detail.deliveryHint);
+    const assignment = detail.acceptedAt || detail.restockerName
+      ? {
+        restockerId: detail.restockerName ?? "",
+        acceptedAt: detail.acceptedAt ?? "",
+        status: detail.deliveredAt ? "completed" : "accepted",
+      } satisfies RestockMarketplaceAssignment
+      : undefined;
     const items = detail.items.map((item, index) => ({
       position: index + 1,
       articleNumber: item.articleNumber,
@@ -365,7 +386,7 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
     }));
 
     return {
-      orderId: detail.orderId,
+      orderId: buildDeliveryDisplayId(detail.id),
       orderKey: `delivery__${detail.id}`,
       customerId: detail.userId,
       companyName: normalizeMarketplaceText(detail.companyName),
@@ -375,13 +396,14 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
       deliveryDate: formatIsoDateForDisplay(detail.deliveryDate),
       deliveryTime,
       deliveryNotes,
-      articleCount: detail.items.reduce((sum, item) => sum + item.quantity, 0),
+      articleCount: detail.items.length,
       items,
       isPlaceholderCustomerData:
         deliveryTime === MISSING_MARKETPLACE_VALUE ||
         [detail.companyName, detail.street, detail.postalCode, detail.city].some(
           (value) => !value?.trim(),
         ),
+      assignment,
     };
   });
 }
@@ -730,6 +752,22 @@ export async function loadOpenRestockOrders({
   const productsById = createProductLookup(products);
 
   try {
+    const marketplaceOrders = deriveMarketplaceOrdersFromDeliveryDetails(
+      await loadOpenDeliveries({ token: resolvedToken }),
+    );
+
+    return {
+      orders: marketplaceOrders,
+      source: "live",
+      hasPlaceholderCustomerData: marketplaceOrders.some(
+        (order) => order.isPlaceholderCustomerData,
+      ),
+    };
+  } catch {
+    // Fall back to the older frontend-side derivation when the Delivery API is unavailable.
+  }
+
+  try {
     const deliveryDetailsByCustomerId = await loadDeliveryDetailsByCustomerId(
       resolvedToken,
       restockerName,
@@ -814,6 +852,25 @@ export async function loadAssignedRestockOrders({
   const productsById = createProductLookup(products);
 
   try {
+    const marketplaceOrders = deriveMarketplaceOrdersFromDeliveryDetails(
+      await loadAssignedDeliveries({
+        token: resolvedToken,
+        restockerName: restockerName?.trim() || restockerId,
+      }),
+    );
+
+    return {
+      orders: marketplaceOrders,
+      source: "live",
+      hasPlaceholderCustomerData: marketplaceOrders.some(
+        (order) => order.isPlaceholderCustomerData,
+      ),
+    };
+  } catch {
+    // Fall back to local demo assignments for older deployments.
+  }
+
+  try {
     const deliveryDetailsByCustomerId = await loadDeliveryDetailsByCustomerId(
       resolvedToken,
       restockerName,
@@ -863,13 +920,27 @@ export async function loadAssignedRestockOrders({
   }
 }
 
-export function acceptRestockOrder({
+export async function acceptRestockOrder({
   orderKey,
   restockerId,
+  restockerName,
+  token,
 }: {
   orderKey: string;
   restockerId: string;
+  restockerName?: string;
+  token?: string;
 }) {
+  const deliveryId = readDeliveryIdFromOrderKey(orderKey);
+  if (deliveryId && token) {
+    await acceptDelivery({
+      deliveryId,
+      restockerName: restockerName?.trim() || restockerId,
+      token,
+    });
+    return;
+  }
+
   const assignments = readRestockerAssignments();
   const existingAssignment = assignments.find(
     (assignment) => assignment.orderKey === orderKey,

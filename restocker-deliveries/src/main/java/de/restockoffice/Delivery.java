@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,12 @@ public class Delivery extends PanacheEntityBase {
 
     @Column(name = "user_id", nullable = false)
     public String userId;
+
+    @Column(name = "delivery_date")
+    public LocalDate deliveryDate;
+
+    @Column(name = "accepted_at")
+    public LocalDateTime acceptedAt;
 
     @ManyToOne
     @JoinColumn(name = "tour_id")
@@ -57,6 +64,11 @@ public class Delivery extends PanacheEntityBase {
         this.collectedAt = LocalDateTime.now();
     }
 
+    public void markAccepted(Tour tour) {
+        this.tour = tour;
+        this.acceptedAt = LocalDateTime.now();
+    }
+
     public void markDelivered() {
         this.deliveredAt = LocalDateTime.now();
     }
@@ -75,6 +87,36 @@ public class Delivery extends PanacheEntityBase {
     }
 
     public static List<Delivery> findByTour(UUID tourId) {
-        return list("tour.id", tourId);
+        return list("tour.id = ?1 order by stopOrder asc", tourId);
+    }
+
+    public static Delivery findByCustomerAndDate(String customerId, LocalDate deliveryDate) {
+        Delivery delivery = find("userId = ?1 and deliveryDate = ?2", customerId, deliveryDate)
+                .firstResult();
+        if (delivery != null) {
+            return delivery;
+        }
+
+        return find(
+                "userId = ?1 and deliveryDate is null and tour is not null and tour.tourDate = ?2",
+                customerId,
+                deliveryDate
+        ).firstResult();
+    }
+
+    public static List<Delivery> findOpenBetween(LocalDate startDate, LocalDate endDate) {
+        return list(
+                "tour is null and deliveredAt is null and deliveryDate >= ?1 and deliveryDate <= ?2 " +
+                        "order by deliveryDate asc, userId asc",
+                startDate,
+                endDate
+        );
+    }
+
+    public static List<Delivery> findAssignedToRestocker(String restockerName) {
+        return list(
+                "tour.restockerName = ?1 and deliveredAt is null order by deliveryDate asc, stopOrder asc",
+                restockerName
+        );
     }
 }

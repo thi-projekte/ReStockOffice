@@ -18,7 +18,9 @@ public class DeliveryDetailDto {
     public int stopOrder;
     public boolean collected;
     public LocalDateTime collectedAt;
+    public LocalDateTime acceptedAt;
     public LocalDateTime deliveredAt;
+    public String restockerName;
 
     // From users service
     public String companyName;

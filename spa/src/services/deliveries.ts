@@ -18,7 +18,9 @@ export interface DeliveryDetail {
   stopOrder: number;
   collected: boolean;
   collectedAt: string | null;
+  acceptedAt: string | null;
   deliveredAt: string | null;
+  restockerName?: string | null;
   companyName: string;
   street: string;
   houseNumber?: string;
@@ -132,8 +134,12 @@ function normalizeDeliveryDetail(rawDetail: unknown): DeliveryDetail {
     collected: Boolean(detail.collected),
     collectedAt:
       typeof detail.collectedAt === "string" ? detail.collectedAt : null,
+    acceptedAt:
+      typeof detail.acceptedAt === "string" ? detail.acceptedAt : null,
     deliveredAt:
       typeof detail.deliveredAt === "string" ? detail.deliveredAt : null,
+    restockerName:
+      typeof detail.restockerName === "string" ? detail.restockerName : null,
     companyName: readString(detail, ["companyName", "customerName", "name"]) ||
       readString(customer, ["companyName", "customerName", "name"]),
     street: readString(detail, ["street", "addressLine1"]) ||
@@ -274,6 +280,71 @@ export async function syncTodayOrders({
   }
 
   return parseJsonResponse<Tour>(response, "Heutige Orders konnten nicht synchronisiert werden");
+}
+
+export async function loadOpenDeliveries({
+  token,
+}: {
+  token?: string;
+}) {
+  const resolvedToken = resolveToken(token);
+
+  const rawDetails = await requestJson<unknown[]>(
+    `${DELIVERIES_API_URL}/open`,
+    {
+      method: "GET",
+      headers: createHeaders(resolvedToken),
+    },
+    "Offene Lieferungen konnten nicht geladen werden",
+  );
+
+  return Array.isArray(rawDetails) ? rawDetails.map(normalizeDeliveryDetail) : [];
+}
+
+export async function loadAssignedDeliveries({
+  restockerName,
+  token,
+}: {
+  restockerName: string;
+  token?: string;
+}) {
+  const resolvedToken = resolveToken(token);
+  const query = new URLSearchParams({ restocker: restockerName });
+
+  const rawDetails = await requestJson<unknown[]>(
+    `${DELIVERIES_API_URL}/assigned?${query.toString()}`,
+    {
+      method: "GET",
+      headers: createHeaders(resolvedToken),
+    },
+    "Angenommene Lieferungen konnten nicht geladen werden",
+  );
+
+  return Array.isArray(rawDetails) ? rawDetails.map(normalizeDeliveryDetail) : [];
+}
+
+export async function acceptDelivery({
+  deliveryId,
+  restockerName,
+  token,
+}: {
+  deliveryId: string;
+  restockerName: string;
+  token?: string;
+}) {
+  const resolvedToken = resolveToken(token);
+  const query = new URLSearchParams({ restocker: restockerName });
+
+  const rawDetail = await requestJson<unknown>(
+    `${DELIVERIES_API_URL}/${deliveryId}/accept?${query.toString()}`,
+    {
+      method: "POST",
+      headers: createHeaders(resolvedToken),
+    },
+    "Lieferung konnte nicht angenommen werden",
+  );
+
+  return normalizeDeliveryDetail(rawDetail);
 }
 
 export async function loadTourDetails({

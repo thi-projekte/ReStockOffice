@@ -34,6 +34,18 @@ public class DeliveryResource {
         return deliveryService.getTodayToursByRestocker(restockerName);
     }
 
+    @GET
+    @Path("/open")
+    public List<DeliveryDetailDto> getOpenDeliveries() {
+        return deliveryService.getOpenDeliveries(authorizationHeader());
+    }
+
+    @GET
+    @Path("/assigned")
+    public List<DeliveryDetailDto> getAssignedDeliveries(@QueryParam("restocker") String restockerName) {
+        return deliveryService.getAssignedDeliveries(restockerName, authorizationHeader());
+    }
+
     @POST
     @Path("/tours")
     public Response createTour(Tour tour) {
@@ -50,6 +62,15 @@ public class DeliveryResource {
         }
 
         return Response.ok(tour).build();
+    }
+
+    @POST
+    @Path("/{deliveryId}/accept")
+    public DeliveryDetailDto acceptDelivery(
+            @PathParam("deliveryId") UUID deliveryId,
+            @QueryParam("restocker") String restockerName
+    ) {
+        return deliveryService.acceptDelivery(deliveryId, restockerName, authorizationHeader());
     }
 
     @POST

@@ -231,15 +231,17 @@ export function OrderPage() {
     setIsConfirmDialogOpen(false);
   }
 
-  function handleAcceptOrder(orderToAccept: RestockMarketplaceOrder) {
-    if (!auth.user?.id) {
+  async function handleAcceptOrder(orderToAccept: RestockMarketplaceOrder) {
+    if (!auth.user?.id || !auth.token) {
       return;
     }
 
     try {
-      acceptRestockOrder({
+      await acceptRestockOrder({
         orderKey: orderToAccept.orderKey,
         restockerId: auth.user.id,
+        restockerName,
+        token: auth.token,
       });
 
       setMarketplaceResult((currentResult) => ({
@@ -267,7 +269,7 @@ export function OrderPage() {
       return;
     }
 
-    handleAcceptOrder(selectedOrder);
+    void handleAcceptOrder(selectedOrder);
   }
 
   function openMobileFilter() {
@@ -577,7 +579,7 @@ export function OrderPage() {
                 detailLabel="Auftrag ansehen"
                 onClick={() => setSelectedOrder(order)}
                 secondaryActionLabel="Fahrt annehmen"
-                onSecondaryAction={() => handleAcceptOrder(order)}
+                onSecondaryAction={() => void handleAcceptOrder(order)}
               />
             ))}
           </div>
