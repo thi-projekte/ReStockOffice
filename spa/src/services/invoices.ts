@@ -3,8 +3,8 @@ import keycloak from "../auth/keycloak";
 import { useAPIs } from "./products";
 import type { UserKind } from "./users";
 
-const INVOICES_API_URL = "https://billing.restockoffice.de/invoices";
-const INVOICE_PDF_API_URL = "https://billing.restockoffice.de/invoicePdf";
+const INVOICES_API_URL = "https://invoice.restockoffice.de/invoices";
+const INVOICE_PDF_API_URL = "nvoice.restockoffice.de/invoices/download";
 
 export interface InvoiceSummary {
   invoiceId: string;
