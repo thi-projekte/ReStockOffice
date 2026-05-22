@@ -1,7 +1,13 @@
 package de.restockoffice;
 
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -21,16 +27,6 @@ public class DeliveryResource {
 
     @Context
     HttpHeaders headers;
-
-    // ── Warehouse ────────────────────────────────
-
-    @GET
-    @Path("/warehouse")
-    public List<WarehouseItem> getAllWarehouseItems() {
-        return deliveryService.getAllWarehouseItems();
-    }
-
-    // ── Tours ────────────────────────────────────
 
     @GET
     @Path("/tours/today")
@@ -70,13 +66,6 @@ public class DeliveryResource {
         return Response.ok(tour).build();
     }
 
-    // ── Deliveries — enriched with user + order data ──
-
-    /**
-     * GET /api/deliveries/tours/{tourId}/details
-     * Returns all stops for a tour, each enriched with company info and article list.
-     * Frontend only needs this one call — no separate user/order lookups needed.
-     */
     @GET
     @Path("/tours/{tourId}/details")
     public List<DeliveryDetailDto> getTourDetails(@PathParam("tourId") UUID tourId) {
@@ -89,8 +78,6 @@ public class DeliveryResource {
         return deliveryService.getDeliveryDetail(deliveryId, authorizationHeader());
     }
 
-    // ── Warehouse collection ─────────────────────
-
     @POST
     @Path("/{deliveryId}/collect")
     public Response collectPackage(@PathParam("deliveryId") UUID deliveryId) {
@@ -98,13 +85,12 @@ public class DeliveryResource {
         return Response.ok(delivery).build();
     }
 
-    // ── Item confirmation ────────────────────────
-
     @POST
     @Path("/{deliveryId}/items/{itemId}/delivered")
     public Response markItemDelivered(
             @PathParam("deliveryId") UUID deliveryId,
-            @PathParam("itemId") UUID itemId) {
+            @PathParam("itemId") UUID itemId
+    ) {
         DeliveryItem item = deliveryService.markItemDelivered(itemId);
         return Response.ok(item).build();
     }
