@@ -26,12 +26,30 @@ function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert") {
   return `Die Orders-API konnte nicht erreicht werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration, falls Orders nicht ${action} werden konnten.`;
 }
 
-function resolveToken(token?: string) {
-  if (!token) {
+async function resolveToken(token?: string) {
+  console.log("[Orders] resolveToken called, token present:", !!token);
+
+  if (token) {
+    return token;
+  }
+
+  // Fallback: direkt aus Keycloak holen + refreshen
+  if (!keycloak.authenticated) {
     throw new Error("Kein Keycloak-Token für Orders-Requests verfügbar.");
   }
 
-  return token;
+  try {
+    await keycloak.updateToken(30);
+  } catch {
+    throw new Error("Das Keycloak-Token konnte nicht aktualisiert werden.");
+  }
+
+  if (!keycloak.token) {
+    throw new Error("Kein Keycloak-Token verfügbar.");
+  }
+
+  console.log("[Orders] Token prefix:", keycloak.token.slice(0, 50));
+  return keycloak.token;
 }
 
 function createHeaders(token: string) {
@@ -128,7 +146,7 @@ export async function loadSubscription({
     return createSubscriptionFromOrders(getMockOrdersForCustomer(customerId), customerId);
   }
 
-  const resolvedToken = resolveToken(token);
+  const resolvedToken = await resolveToken(token);
 
   let response: Response;
 
@@ -196,7 +214,7 @@ export async function upsertSubscriptionOrder({
     return mockOrder;
   }
 
-  const resolvedToken = resolveToken(token);
+  const resolvedToken = await resolveToken(token);
 
   const orderPayload = {
     productId,
