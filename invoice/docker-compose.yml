@@ -22,6 +22,8 @@ services:
 
   db-container:
     image: postgres:15
+    ports:
+      - "5439:5432"
     networks:
       - invoice-intern
     environment:
