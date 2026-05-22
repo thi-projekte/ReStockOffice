@@ -28,7 +28,7 @@ public class ProcessEngineCorsConfiguration {
 
     FilterRegistrationBean<CorsFilter> registration =
         new FilterRegistrationBean<>(new CorsFilter(source));
-    registration.addUrlPatterns("/engine-rest/*");
+    registration.addUrlPatterns("/engine-rest/*", "/api/*");
     registration.setOrder(0);
     return registration;
   }
