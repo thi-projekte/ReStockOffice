@@ -1,5 +1,5 @@
 import "../../styles/restocker-home.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadOpenRestockOrders } from "../../services/orders";
 import { useAuth } from "../../auth/AuthProvider";
 import type { RestockMarketplaceOrder } from "../../types/shop";
@@ -14,8 +14,30 @@ import type { UserProfile } from "../../types/user";
 
 const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
 
-interface CamundaProcessInstance {
-    id: string;
+function currentTourProcessStorageKey(restockerId: string) {
+    const date = new Date();
+    const today = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    return `restocker-tour-process:${restockerId}:${today}`;
+}
+
+function loadStoredTourProcessId(restockerId?: string) {
+    if (!restockerId) {
+        return null;
+    }
+
+    return sessionStorage.getItem(currentTourProcessStorageKey(restockerId));
+}
+
+function storeTourProcessId(restockerId: string, processInstanceId: string) {
+    sessionStorage.setItem(
+        currentTourProcessStorageKey(restockerId),
+        processInstanceId,
+    );
 }
 
 export function RestockerPage() {
@@ -172,7 +194,47 @@ export function RestockerPage() {
         return processInstance.id;
     }
 
+    const startTourRequestInFlight = useRef(false);
     const [startingTour, setStartingTour] = useState(false);
+    const [tourProcessId, setTourProcessId] = useState<string | null>(() =>
+        loadStoredTourProcessId(auth.user?.id),
+    );
+
+    useEffect(() => {
+        setTourProcessId(loadStoredTourProcessId(auth.user?.id));
+    }, [auth.user?.id]);
+
+    async function handleStartTourProcess() {
+        if (startTourRequestInFlight.current) {
+            return;
+        }
+
+        try {
+            startTourRequestInFlight.current = true;
+            setStartingTour(true);
+
+            if (!auth.user?.id) {
+                throw new Error("Eingeloggter Restocker konnte nicht ermittelt werden.");
+            }
+
+            const processInstanceId =
+                tourProcessId ?? await startTourProcess(auth.user.id);
+
+            if (!tourProcessId) {
+                storeTourProcessId(auth.user.id, processInstanceId);
+                setTourProcessId(processInstanceId);
+            }
+
+            const query = new URLSearchParams({ processInstanceId });
+            navigate(`/restocker-deliveries?${query.toString()}`);
+        } catch (err) {
+            console.error(err);
+            alert("Fehler beim Start der Tour");
+        } finally {
+            startTourRequestInFlight.current = false;
+            setStartingTour(false);
+        }
+    }
 
     return (
         <>
@@ -182,25 +244,13 @@ export function RestockerPage() {
                     <button
                         className="tour-btn"
                         disabled={startingTour}
-                        onClick={async () => {
-                            try {
-                                setStartingTour(true);
-                                if (!auth.user?.id) {
-                                    throw new Error("Eingeloggter Restocker konnte nicht ermittelt werden.");
-                                }
-
-                                const processInstanceId = await startTourProcess(auth.user.id);
-                                const query = new URLSearchParams({ processInstanceId });
-                                navigate(`/restocker-deliveries?${query.toString()}`);
-                            } catch (err) {
-                                console.error(err);
-                                alert("Fehler beim Start der Tour");
-                            } finally {
-                                setStartingTour(false);
-                            }
-                        }}
+                        onClick={() => void handleStartTourProcess()}
                     >
-                        {startingTour ? "Tour startet..." : "Tour von heute beginnen"}
+                        {startingTour
+                            ? "Tour startet..."
+                            : tourProcessId
+                                ? "Zur laufenden Tour wechseln"
+                                : "Tour von heute beginnen"}
                     </button>
 
                     {/* Heutige Lieferungen */}
