@@ -136,6 +136,31 @@ export function RestockerPage() {
     const earningsPerDelivery = 7;
     const earningsToday = totalToday * earningsPerDelivery;
 
+    //Prozess starten
+    async function startTourProcess() {
+        const res = await fetch(
+            "http://localhost:8080/engine-rest/process-definition/key/Process_0h5mosh/start",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({}),
+            }
+        );
+
+        const text = await res.text(); // 👈 wichtig zum Debuggen
+
+        if (!res.ok) {
+            console.error("Camunda Error Response:", text);
+            throw new Error(text);
+        }
+
+        return JSON.parse(text);
+    }
+
+    const [startingTour, setStartingTour] = useState(false);
+
     return (
         <>
             <div className="restocker-page">
@@ -143,9 +168,21 @@ export function RestockerPage() {
 
                     <button
                         className="tour-btn"
-                        onClick={() => navigate("/restocker-deliveries")}
+                        disabled={startingTour}
+                        onClick={async () => {
+                            try {
+                                setStartingTour(true);
+                                await startTourProcess();
+                                navigate("/restocker-deliveries");
+                            } catch (err) {
+                                console.error(err);
+                                alert("Fehler beim Start der Tour");
+                            } finally {
+                                setStartingTour(false);
+                            }
+                        }}
                     >
-                        Tour von heute beginnen
+                        {startingTour ? "Tour startet..." : "Tour von heute beginnen"}
                     </button>
 
                     {/* Heutige Lieferungen */}
