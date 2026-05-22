@@ -1,6 +1,8 @@
 import type { RestockOrder, Subscription } from "../types/shop";
 import mockRestockOrderTemplates from "../mocks/restockOrders.json";
 import { useAPIs } from "./products";
+import keycloak from "../auth/keycloak";
+
 
 const ORDERS_API_URL = "https://orders.restockoffice.de/orders";
 

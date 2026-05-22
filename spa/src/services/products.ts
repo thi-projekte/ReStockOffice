@@ -2,7 +2,7 @@ import products from "../mocks/products.json";
 import logoColored from "../assets/logos/logo_colored.png";
 import type { Product } from "../types/shop";
 
-export const useAPIs = true;
+export const useAPIs = false;
 
 const PRODUCTS_API_URL = "https://articles.restockoffice.de/articles";
 const PRODUCT_API_URL = "https://articles.restockoffice.de/article";

@@ -8,7 +8,7 @@ import { useAPIs } from "./products";
 const CUSTOMER_ME_API_URL = "https://users.restockoffice.de/customer/me";
 const RESTOCKER_ME_API_URL = "https://users.restockoffice.de/restocker/me";
 
-// Admin endpoints are prepared here, but the list/single-user flow is not implemented yet.
+
 export const CUSTOMERS_API_URL = "https://users.restockoffice.de/customers";
 export const RESTOCKERS_API_URL = "https://users.restockoffice.de/restockers";
 

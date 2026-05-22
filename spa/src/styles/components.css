@@ -2051,6 +2051,12 @@
   padding: 0.85rem 1rem;
 }
 
+
+.input--invalid {
+  border-color: var(--color-danger, #e53e3e) !important;
+  outline-color: var(--color-danger, #e53e3e);
+}
+
 :root[data-theme="dark"] .subscription-modal {
   border-color: rgba(153, 153, 153, 0.18);
   background: #1f2a2e;
