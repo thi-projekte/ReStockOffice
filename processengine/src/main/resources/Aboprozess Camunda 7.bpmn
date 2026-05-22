@@ -72,11 +72,11 @@
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1a8qzdr">
       <bpmndi:BPMNShape id="Participant_16nrhn5_di" bpmnElement="Participant_16nrhn5" isHorizontal="true">
-        <dc:Bounds x="130" y="152" width="1140" height="298" />
+        <dc:Bounds x="130" y="152" width="1140" height="488" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_11at471_di" bpmnElement="Lane_11at471" isHorizontal="true">
-        <dc:Bounds x="160" y="152" width="1110" height="298" />
+        <dc:Bounds x="160" y="152" width="1110" height="488" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0qmqdkl_di" bpmnElement="Event_0qmqdkl">
         <dc:Bounds x="1192" y="302" width="36" height="36" />
