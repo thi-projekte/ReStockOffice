@@ -52,7 +52,7 @@ public class UserResource {
 
         if (!loggedInId.equals(userId)
             && !securityIdentity.hasRole("admin")
-            && !securityIdentity.hasRole("restocker")) {
+            && !securityIdentity.hasRole("Restocker")) {
             throw new WebApplicationException(
                 "Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.",
                 403
@@ -65,20 +65,19 @@ public class UserResource {
     @GET
     @Path("customerForRestocker")
     public RestockerCustomerView getCustomerAddressForRestocker(@QueryParam("userId") String userId){
-        System.out.println("ROLES FOUND BY QUARKUS: " + securityIdentity.getRoles());
-        if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("restocker") && !securityIdentity.hasRole("admin")) {
-            throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.", 403);
+
+        if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("admin")) {
+            throw new WebApplicationException("403", 403);
         }
 
         if (userId == null || userId.isBlank()) {
-            throw new WebApplicationException("Übergebene userId darf nicht leer sein.", 400);
+            throw new WebApplicationException("userId missing", 400);
         }
 
         Customer customer = findCustomerOrThrow(userId);
 
         return new RestockerCustomerView(customer);
     }
-
     @GET
     @Path("restocker")
     public Restocker getRestockerById(@QueryParam("userId") String userId){
@@ -86,7 +85,7 @@ public class UserResource {
 
         if (!loggedInId.equals(userId)
             && !securityIdentity.hasRole("admin")
-            && !securityIdentity.hasRole("restocker")) {
+            && !securityIdentity.hasRole("Restocker")) {
             throw new WebApplicationException(
                 "Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.",
                 403
