@@ -186,19 +186,54 @@ export function DeliveryPage() {
     }
   }
 
+  const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
+
+  async function completeUserTask(taskId: string) {
+    const response = await fetch(
+      `${CAMUNDA_BASE_URL}/task/${taskId}/complete`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Task konnte nicht abgeschlossen werden: ${response.status}`,
+      );
+    }
+  }
+
   async function handleStartTour() {
-    if (!tour || !allCollected || isBusy) return;
+    if (!tour || isBusy) return;
 
     setIsBusy(true);
+
     try {
-      const updatedTour = await startTour({ tourId: tour.id, token: auth.token });
-      setTour(updatedTour);
-      await reloadDeliveries(updatedTour);
+      // 1. Camunda User Task abschließen
+      await completeUserTask(
+        "2ac9cc81-55ac-11f1-8e18-b6d2c9f4c7e5",
+      );
+
+      // 2. Deine bestehende Business-Logik
+      const startedTour = await startTour({
+        tourId: tour.id,
+        token: auth.token,
+      });
+
+      setTour(startedTour);
+
+      // 3. Daten neu laden
+      await reloadDeliveries(startedTour);
+
       toast.success("Tour wurde gestartet.");
-    } catch (startError) {
+    } catch (error) {
       toast.error(
-        startError instanceof Error
-          ? startError.message
+        error instanceof Error
+          ? error.message
           : "Tour konnte nicht gestartet werden.",
       );
     } finally {
@@ -216,11 +251,11 @@ export function DeliveryPage() {
         current.map((delivery) =>
           delivery.id === deliveryId
             ? {
-                ...delivery,
-                items: delivery.items.map((item) =>
-                  item.id === itemId ? { ...item, delivered: true } : item,
-                ),
-              }
+              ...delivery,
+              items: delivery.items.map((item) =>
+                item.id === itemId ? { ...item, delivered: true } : item,
+              ),
+            }
             : delivery,
         ),
       );
