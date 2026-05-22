@@ -156,7 +156,13 @@ export function RestockerPage() {
             throw new Error(text);
         }
 
-        return JSON.parse(text);
+        const processInstance = JSON.parse(text) as { id?: string };
+
+        if (!processInstance.id) {
+            throw new Error("Camunda hat keine Prozessinstanz-ID geliefert.");
+        }
+
+        return processInstance.id;
     }
 
     const [startingTour, setStartingTour] = useState(false);
@@ -172,8 +178,9 @@ export function RestockerPage() {
                         onClick={async () => {
                             try {
                                 setStartingTour(true);
-                                await startTourProcess();
-                                navigate("/restocker-deliveries");
+                                const processInstanceId = await startTourProcess();
+                                const query = new URLSearchParams({ processInstanceId });
+                                navigate(`/restocker-deliveries?${query.toString()}`);
                             } catch (err) {
                                 console.error(err);
                                 alert("Fehler beim Start der Tour");
