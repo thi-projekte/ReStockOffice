@@ -78,6 +78,26 @@ public class OrderResource {
         return Order.list("customerId", customerId);
     }
 
+    @PUT
+    @Path("/admin/customer-id")
+    @Transactional
+    public Map<String, Object> replaceCustomerId(Map<String, String> request) {
+        String oldCustomerId = normalizeRequiredCustomerId(request.get("oldCustomerId"), "oldCustomerId");
+        String newCustomerId = normalizeRequiredCustomerId(request.get("newCustomerId"), "newCustomerId");
+
+        long updated = Order.update(
+                "customerId = ?1 where customerId = ?2",
+                newCustomerId,
+                oldCustomerId
+        );
+
+        return Map.of(
+                "oldCustomerId", oldCustomerId,
+                "newCustomerId", newCustomerId,
+                "updated", updated
+        );
+    }
+
     //==== Update-Endpoint ==== //
     @PUT
     @Path("/{id}")
@@ -176,5 +196,13 @@ public class OrderResource {
         client.close();
 
         return order;
+    }
+
+    private String normalizeRequiredCustomerId(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new BadRequestException(fieldName + " fehlt.");
+        }
+
+        return value.trim();
     }
 }
