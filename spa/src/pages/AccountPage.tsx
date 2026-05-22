@@ -465,7 +465,7 @@ export function AccountPage() {
 
               {!isRestocker && (
                 <label className="account-field">
-                  <span>Liefertag</span>
+                  <span>Bevorzugter Liefertag</span>
                   <input
                     value={profileForm.deliveryDay}
                     disabled={!isEditingProfile}
@@ -476,7 +476,7 @@ export function AccountPage() {
 
               {!isRestocker && (
                 <label className="account-field">
-                  <span>Lieferzeit</span>
+                  <span>Bevorzugte Uhrzeit</span>
                   <input
                     type="number"
                     min={0}
