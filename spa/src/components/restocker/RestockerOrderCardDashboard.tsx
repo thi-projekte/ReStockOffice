@@ -3,15 +3,20 @@ import {
   formatDeliveryWindow,
   formatRelativeDelivery,
 } from "../../pages/restocker-view/restockerOrderUi";
+import type { UserProfile } from "../../types/user";
 
 interface RestockerOrderCardProps {
   order: RestockMarketplaceOrder;
   statusLabel?: string;
+  customer?: UserProfile;
 }
+
+
 
 export function RestockerOrderCard({
   order,
   statusLabel,
+  customer,
 }: RestockerOrderCardProps) {
   return (
     <article
@@ -28,10 +33,15 @@ export function RestockerOrderCard({
 
       <div className="restocker-order-card__body">
         <span className="restocker-order-card__body-label">Kunde</span>
-        <strong>{order.companyName}</strong>
-        <span>{order.addressLine1}</span>
+        <strong>{customer?.companyName}</strong>
+
+        <span>{customer?.street}</span>
+
         <span>
-          {order.postalCode} {order.city}
+          {customer?.postalCode} {customer?.city}
+        </span>
+        <span>
+          <span>{order.postalCode} {order.city}</span>
         </span>
       </div>
 
@@ -48,7 +58,12 @@ export function RestockerOrderCard({
 
         <div className="restocker-order-card__delivery-window">
           <span>Lieferfenster</span>
-          <strong>{formatDeliveryWindow(order.deliveryTime)}</strong>
+
+          <strong>
+            {customer?.deliveryTime != null
+              ? formatDeliveryWindow(customer.deliveryTime.toString())
+              : "-"}
+          </strong>
         </div>
       </div>
 

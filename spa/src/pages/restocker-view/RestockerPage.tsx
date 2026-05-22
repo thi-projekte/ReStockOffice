@@ -9,6 +9,8 @@ import { getDaysUntilDelivery } from "./restockerOrderUi";
 import { useNavigate } from "react-router-dom";
 import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCardDashboard";
 import { RestockerStatisticsCard } from "../../components/restocker/RestockerStatisticsCard";
+import { loadCustomerProfile } from "../../services/users";
+import type { UserProfile } from "../../types/user";
 
 
 export function RestockerPage() {
@@ -19,6 +21,10 @@ export function RestockerPage() {
     const [openOrders, setOpenOrders] = useState<RestockMarketplaceOrder[]>([]);
     const [openLoading, setOpenLoading] = useState(true);
     const [openError, setOpenError] = useState<string | null>(null);
+
+    const [customerProfiles, setCustomerProfiles] = useState<
+        Record<string, UserProfile>
+    >({});
 
     const [assignedOrdersResult, setAssignedOrdersResult] =
         useState<RestockMarketplaceLoadResult>({
@@ -89,6 +95,33 @@ export function RestockerPage() {
 
         load();
     }, [auth.token, auth.user?.id, auth.user?.username]);
+
+    useEffect(() => {
+        async function loadProfiles() {
+            if (!auth.token) return;
+
+            const uniqueUserIds = [
+                ...new Set(openOrders.map((o) => o.customerId).filter(Boolean)),
+            ];
+
+            const results = await Promise.all(
+                uniqueUserIds.map(async (userId) => {
+                    const profile = await loadCustomerProfile({
+                        token: auth.token!,
+                        userId,
+                    });
+
+                    return [userId, profile] as const;
+                })
+            );
+
+            setCustomerProfiles(Object.fromEntries(results));
+        }
+
+        if (openOrders.length > 0) {
+            loadProfiles();
+        }
+    }, [openOrders, auth.token]);
 
     const assignedToday = assignedOrdersResult.orders.filter(
         (order) => getDaysUntilDelivery(order.deliveryDate) === 0
@@ -170,6 +203,7 @@ export function RestockerPage() {
                                         <RestockerOrderCard
                                             key={order.orderKey}
                                             order={order}
+                                            customer={customerProfiles[order.customerId]}
                                         />
                                     ))}
                                 </div>
@@ -205,8 +239,9 @@ export function RestockerPage() {
                                 <div className="open-orders-carousel">
                                     {assignedOrdersResult.orders.slice(0, 6).map((order) => (
                                         <RestockerOrderCard
-                                            key={order.orderId}
+                                            key={order.orderKey}
                                             order={order}
+                                            customer={customerProfiles[order.customerId]}
                                         />
                                     ))}
                                 </div>
