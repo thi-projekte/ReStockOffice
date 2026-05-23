@@ -15,6 +15,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -126,7 +128,7 @@ public class DeliveryResource {
     @Path("/{deliveryId}/collect")
     public Response collectPackage(@PathParam("deliveryId") UUID deliveryId) {
         Delivery delivery = deliveryService.collectPackage(deliveryId);
-        return Response.ok(delivery).build();
+        return Response.ok(deliveryStatusResponse(delivery)).build();
     }
 
     @POST
@@ -143,7 +145,7 @@ public class DeliveryResource {
     @Path("/{deliveryId}/confirm")
     public Response confirmDelivery(@PathParam("deliveryId") UUID deliveryId) {
         Delivery delivery = deliveryService.confirmDelivery(deliveryId);
-        return Response.ok(delivery).build();
+        return Response.ok(deliveryStatusResponse(delivery)).build();
     }
 
     public static class EndTourRequest {
@@ -152,5 +154,18 @@ public class DeliveryResource {
 
     private String authorizationHeader() {
         return headers.getHeaderString(HttpHeaders.AUTHORIZATION);
+    }
+
+    private Map<String, Object> deliveryStatusResponse(Delivery delivery) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", delivery.id);
+        response.put("collected", delivery.collected);
+        response.put("collectedAt", formatDateTime(delivery.collectedAt));
+        response.put("deliveredAt", formatDateTime(delivery.deliveredAt));
+        return response;
+    }
+
+    private String formatDateTime(LocalDateTime value) {
+        return value != null ? value.toString() : null;
     }
 }
