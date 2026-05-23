@@ -14,7 +14,6 @@ import type { UserProfile } from "../../types/user";
 
 const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
 const RESTOCKER_TOUR_PROCESS_DEFINITION_KEY = "Process_05mosh";
-const test;
 
 interface CamundaProcessInstance {
     id: string;
