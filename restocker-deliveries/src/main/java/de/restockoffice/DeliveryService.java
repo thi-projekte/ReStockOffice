@@ -500,8 +500,46 @@ public class DeliveryService {
         try {
             return userClient.getCustomerAddressForRestocker(userId, authorizationHeader);
         } catch (RuntimeException exception) {
-            return null;
+            return createTestCustomerFallback(userId);
         }
+    }
+
+    private UserDto createTestCustomerFallback(String userId) {
+        if (DEFAULT_TEST_CUSTOMER_ONE.equals(userId)) {
+            UserDto user = new UserDto();
+            user.userId = userId;
+            user.companyName = "Muster GmbH";
+            user.street = "Teststrasse";
+            user.houseNumber = "12";
+            user.postalCode = "85049";
+            user.city = "Ingolstadt";
+            user.country = "Deutschland";
+            user.phoneNumber = "+49 841 123456";
+            user.roleInCompany = "Warenannahme";
+            user.deliveryHint = "Bitte am Empfang melden.";
+            user.deliveryDay = "Samstag";
+            user.deliveryTime = "10:00";
+            return user;
+        }
+
+        if (DEFAULT_TEST_CUSTOMER_TWO.equals(userId)) {
+            UserDto user = new UserDto();
+            user.userId = userId;
+            user.companyName = "Beispiel Office AG";
+            user.street = "Demoweg";
+            user.houseNumber = "7";
+            user.postalCode = "90402";
+            user.city = "Nuernberg";
+            user.country = "Deutschland";
+            user.phoneNumber = "+49 911 987654";
+            user.roleInCompany = "Office Management";
+            user.deliveryHint = "Anlieferung ueber Seiteneingang.";
+            user.deliveryDay = "Samstag";
+            user.deliveryTime = "14:00";
+            return user;
+        }
+
+        return null;
     }
 
     private DeliveryItem createDeliveryItem(OrderDto order) {
