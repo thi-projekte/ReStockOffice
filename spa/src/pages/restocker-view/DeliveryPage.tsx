@@ -27,6 +27,7 @@ import "../../styles/restocker-deliveries.css";
 const EARNINGS_PER_COMPANY = 7;
 const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
 const START_TOUR_TASK_DEFINITION_KEY = "Activity_06o1eiy";
+const CONFIRM_DELIVERY_TASK_DEFINITION_KEY = "Activity_1cx1i45";
 
 interface CamundaTask {
   id: string;
@@ -253,29 +254,32 @@ export function DeliveryPage() {
     }
   }
 
-  async function loadStartTourTask(processInstanceId: string) {
+  async function loadUserTask(processInstanceId: string, taskDefinitionKey: string) {
     const query = new URLSearchParams({
       processInstanceId,
-      taskDefinitionKey: START_TOUR_TASK_DEFINITION_KEY,
+      taskDefinitionKey,
     });
     const response = await fetch(`${CAMUNDA_BASE_URL}/task?${query.toString()}`);
 
     if (!response.ok) {
       throw new Error(
-        `Task fuer den Tourstart konnte nicht geladen werden: ${response.status}`,
+        `Task konnte nicht geladen werden: ${response.status}`,
       );
     }
 
     const tasks = (await response.json()) as CamundaTask[];
 
     if (tasks.length !== 1) {
-      throw new Error("Die Camunda-Task fuer den Tourstart wurde nicht eindeutig gefunden.");
+      throw new Error("Die Camunda-Task wurde nicht eindeutig gefunden.");
     }
 
     return tasks[0];
   }
 
-  async function completeUserTask(taskId: string) {
+  async function completeUserTask(
+    taskId: string,
+    variables: Record<string, { value: string | number | boolean; type: string }> = {},
+  ) {
     const response = await fetch(
       `${CAMUNDA_BASE_URL}/task/${taskId}/complete`,
       {
@@ -283,7 +287,7 @@ export function DeliveryPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ variables }),
       },
     );
 
@@ -292,6 +296,20 @@ export function DeliveryPage() {
         `Task konnte nicht abgeschlossen werden: ${response.status}`,
       );
     }
+  }
+
+  async function completeProcessTask(
+    taskDefinitionKey: string,
+    variables?: Record<string, { value: string | number | boolean; type: string }>,
+  ) {
+    const processInstanceId = searchParams.get("processInstanceId");
+
+    if (!processInstanceId) {
+      return;
+    }
+
+    const task = await loadUserTask(processInstanceId, taskDefinitionKey);
+    await completeUserTask(task.id, variables);
   }
 
   async function handleStartTour() {
@@ -303,7 +321,10 @@ export function DeliveryPage() {
       const processInstanceId = searchParams.get("processInstanceId");
 
       if (processInstanceId) {
-        const startTourTask = await loadStartTourTask(processInstanceId);
+        const startTourTask = await loadUserTask(
+          processInstanceId,
+          START_TOUR_TASK_DEFINITION_KEY,
+        );
         await completeUserTask(startTourTask.id);
       }
 
@@ -363,6 +384,20 @@ export function DeliveryPage() {
     setIsBusy(true);
     try {
       await confirmDelivery({ deliveryId: activeDelivery.id, token: auth.token });
+      await completeProcessTask(CONFIRM_DELIVERY_TASK_DEFINITION_KEY, {
+        deliveredDeliveryId: {
+          value: activeDelivery.id,
+          type: "String",
+        },
+        deliveredOrderId: {
+          value: activeDelivery.orderId,
+          type: "String",
+        },
+        isLastDelivery: {
+          value: isLastStop,
+          type: "Boolean",
+        },
+      });
 
       const deliveredAt = new Date().toISOString();
       setDeliveries((current) =>
