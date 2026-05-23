@@ -44,10 +44,12 @@ public class DeliveryService {
 
     @Transactional
     public Map<String, Long> deleteAllDeliveries() {
+        long deletedItems = DeliveryItem.deleteAll();
         long deletedDeliveries = Delivery.deleteAll();
         long deletedTours = Tour.deleteAll();
 
         return Map.of(
+                "deletedItems", deletedItems,
                 "deletedDeliveries", deletedDeliveries,
                 "deletedTours", deletedTours
         );
