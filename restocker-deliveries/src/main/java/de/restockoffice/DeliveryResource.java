@@ -2,6 +2,7 @@ package de.restockoffice;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -15,6 +16,7 @@ import jakarta.ws.rs.core.Response;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Path("/api/deliveries")
@@ -51,6 +53,12 @@ public class DeliveryResource {
     public Response createTour(Tour tour) {
         Tour created = deliveryService.createTour(tour);
         return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+
+    @DELETE
+    @Path("/admin/all")
+    public Map<String, Long> deleteAllDeliveries() {
+        return deliveryService.deleteAllDeliveries();
     }
 
     @POST

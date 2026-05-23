@@ -43,6 +43,19 @@ public class DeliveryService {
     }
 
     @Transactional
+    public Map<String, Long> deleteAllDeliveries() {
+        long deletedItems = DeliveryItem.deleteAll();
+        long deletedDeliveries = Delivery.deleteAll();
+        long deletedTours = Tour.deleteAll();
+
+        return Map.of(
+                "deletedItems", deletedItems,
+                "deletedDeliveries", deletedDeliveries,
+                "deletedTours", deletedTours
+        );
+    }
+
+    @Transactional
     public Tour startTour(UUID tourId) {
         Tour tour = findTourOrThrow(tourId);
         if (!tour.allPackagesCollected()) {
