@@ -367,6 +367,7 @@ public class DeliveryService {
         dto.deliveredAt = delivery.deliveredAt;
         dto.restockerName = delivery.tour != null ? delivery.tour.restockerName : null;
 
+        dto.recipientEmail = valueOrEmpty(user != null ? user.email : null);
         dto.companyName = valueOrEmpty(user != null ? user.companyName : null);
         dto.street = valueOrEmpty(user != null ? user.street : null);
         dto.houseNumber = valueOrEmpty(user != null ? user.houseNumber : null);

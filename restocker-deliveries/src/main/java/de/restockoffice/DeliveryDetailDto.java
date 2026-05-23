@@ -23,6 +23,7 @@ public class DeliveryDetailDto {
     public String restockerName;
 
     // From users service
+    public String recipientEmail;
     public String companyName;
     public String street;
     public String houseNumber;

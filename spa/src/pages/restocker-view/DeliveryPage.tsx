@@ -383,6 +383,11 @@ export function DeliveryPage() {
 
     setIsBusy(true);
     try {
+      const firstItem = activeDelivery.items[0];
+      const deliveryDetailsUrl = `${window.location.origin}/restocker/deliveries?processInstanceId=${encodeURIComponent(
+        searchParams.get("processInstanceId") ?? "",
+      )}`;
+
       await confirmDelivery({ deliveryId: activeDelivery.id, token: auth.token });
       await completeProcessTask(CONFIRM_DELIVERY_TASK_DEFINITION_KEY, {
         deliveredDeliveryId: {
@@ -391,6 +396,46 @@ export function DeliveryPage() {
         },
         deliveredOrderId: {
           value: activeDelivery.orderId,
+          type: "String",
+        },
+        recipientEmail: {
+          value: activeDelivery.recipientEmail,
+          type: "String",
+        },
+        customerName: {
+          value: activeDelivery.companyName,
+          type: "String",
+        },
+        deliveryDate: {
+          value: activeDelivery.deliveryDate ?? "",
+          type: "String",
+        },
+        deliveryWindow: {
+          value: activeDeliveryTime,
+          type: "String",
+        },
+        orderNumber: {
+          value: activeDelivery.orderId,
+          type: "String",
+        },
+        supplierName: {
+          value: restockerName,
+          type: "String",
+        },
+        deliveryDetailsUrl: {
+          value: deliveryDetailsUrl,
+          type: "String",
+        },
+        itemName: {
+          value: firstItem?.name ?? "",
+          type: "String",
+        },
+        itemArticleNumber: {
+          value: firstItem?.articleNumber ?? "",
+          type: "String",
+        },
+        itemQuantity: {
+          value: firstItem ? `${firstItem.quantity} ${firstItem.unit}`.trim() : "",
           type: "String",
         },
         isLastDelivery: {

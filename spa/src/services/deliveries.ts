@@ -21,6 +21,7 @@ export interface DeliveryDetail {
   acceptedAt: string | null;
   deliveredAt: string | null;
   restockerName?: string | null;
+  recipientEmail: string;
   companyName: string;
   street: string;
   houseNumber?: string;
@@ -140,6 +141,8 @@ function normalizeDeliveryDetail(rawDetail: unknown): DeliveryDetail {
       typeof detail.deliveredAt === "string" ? detail.deliveredAt : null,
     restockerName:
       typeof detail.restockerName === "string" ? detail.restockerName : null,
+    recipientEmail: readString(detail, ["recipientEmail", "customerEmail", "email"]) ||
+      readString(customer, ["recipientEmail", "customerEmail", "email"]),
     companyName: readString(detail, ["companyName", "customerName", "name"]) ||
       readString(customer, ["companyName", "customerName", "name"]),
     street: readString(detail, ["street", "addressLine1"]) ||
