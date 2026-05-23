@@ -62,6 +62,21 @@ public class DeliveryResource {
     }
 
     @POST
+    @Path("/admin/test-data")
+    public List<DeliveryDetailDto> createTestDeliveries(
+            @QueryParam("deliveryDate") String deliveryDate,
+            @QueryParam("firstCustomerId") String firstCustomerId,
+            @QueryParam("secondCustomerId") String secondCustomerId
+    ) {
+        return deliveryService.createTestDeliveries(
+                deliveryDate,
+                firstCustomerId,
+                secondCustomerId,
+                authorizationHeader()
+        );
+    }
+
+    @POST
     @Path("/tours/today/sync")
     public Response syncTodayOrders(@QueryParam("restocker") String restockerName) {
         Tour tour = deliveryService.syncTodayOrders(restockerName, authorizationHeader());
