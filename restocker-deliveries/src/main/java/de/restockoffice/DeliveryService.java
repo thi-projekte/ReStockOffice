@@ -132,7 +132,7 @@ public class DeliveryService {
     public Delivery collectPackage(UUID deliveryId) {
         Delivery delivery = findDeliveryOrThrow(deliveryId);
         if (delivery.collected) {
-            throw new BadRequestException("Paket wurde bereits eingesammelt.");
+            return delivery;
         }
         delivery.markCollected();
         return delivery;
