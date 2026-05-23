@@ -32,8 +32,7 @@ export function RestockerOrderCard({
       </div>
 
       <div className="restocker-order-card__body">
-        <span className="restocker-order-card__body-label">Kunde</span>
-        <strong>{customer?.companyName}</strong>
+        <strong className="restocker-order-card__company-name">{customer?.companyName}</strong>
 
         <span>{customer?.street}</span>
 

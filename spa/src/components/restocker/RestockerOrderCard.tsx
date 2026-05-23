@@ -40,8 +40,7 @@ export function RestockerOrderCard({
       </div>
 
       <div className="restocker-order-card__body">
-        <span className="restocker-order-card__body-label">Kunde</span>
-        <strong>{order.companyName}</strong>
+        <strong className="restocker-order-card__company-name">{order.companyName}</strong>
         <span>{order.addressLine1}</span>
         <span>
           {order.postalCode} {order.city}
