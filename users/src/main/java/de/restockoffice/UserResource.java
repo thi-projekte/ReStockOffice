@@ -18,7 +18,6 @@ import java.util.Objects;
 @Path("/")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Authenticated
 public class UserResource {
 
     // S3 for Pics
@@ -35,18 +34,21 @@ public class UserResource {
     // logged-in User
     @GET
     @Path("customer/me")
+    @Authenticated
     public Customer getMyCustomerData() {
         return findCustomerOrThrow(jwt.getSubject());
     }
 
     @GET
     @Path("restocker/me")
+    @Authenticated
     public Restocker getMyRestockerData() {
         return findRestockerOrThrow(jwt.getSubject());
     }
 
     @GET
     @Path("customer")
+    @Authenticated
     public Customer getCustomerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
 
@@ -58,6 +60,7 @@ public class UserResource {
 
     @GET
     @Path("customerForRestocker")
+    @Authenticated
     public RestockerCustomerView getCustomerAddressForRestocker(@QueryParam("userId") String userId){
         System.out.println("ROLES FOUND BY QUARKUS: " + securityIdentity.getRoles());
         if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("restocker") && !securityIdentity.hasRole("admin")) {
@@ -75,6 +78,7 @@ public class UserResource {
 
     @GET
     @Path("restocker")
+    @Authenticated
     public Restocker getRestockerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
 
@@ -86,12 +90,14 @@ public class UserResource {
 
     @GET
     @Path("customers")
+    @Authenticated
     public List<Customer> getAllCustomers(){
         return Customer.listAll();
     }
 
     @GET
     @Path("restockers")
+    @Authenticated
     public List<Restocker> getAllRestockers(){
         return Restocker.listAll();
     }
@@ -99,6 +105,7 @@ public class UserResource {
     @POST
     @Path("customer/create")
     @Transactional
+    @Authenticated
     public Response createCustomer(Customer newCustomer){
         String userId = jwt.getSubject();
 
@@ -118,6 +125,7 @@ public class UserResource {
     @POST
     @Path("restocker/create")
     @Transactional
+    @Authenticated
     public Response createRestocker(Restocker newRestocker){
         String userId = jwt.getSubject();
 
@@ -138,6 +146,7 @@ public class UserResource {
     @Path("customer/update")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
+    @Authenticated
     public Response updateCustomer(
             @RestForm("userData") @org.jboss.resteasy.reactive.PartType(MediaType.APPLICATION_JSON) Customer updatedData,
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
@@ -164,6 +173,7 @@ public class UserResource {
     @Path("restocker/update")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
+    @Authenticated
     public Response updateRestocker(
             @RestForm("userData") @org.jboss.resteasy.reactive.PartType(MediaType.APPLICATION_JSON) Restocker updatedData,
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
