@@ -13,10 +13,12 @@ services:
       RESTOCK_MAIL_LOGO_URL: https://restockoffice.de/assets/logo_colored.png
       QUARKUS_MAILER_PASSWORD: ${QUARKUS_MAILER_PASSWORD}
       RESTOCK_MAIL_RESEND_BASE_URL: https://api.resend.com
-      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db-container:5432/invoices_db
-      QUARKUS_DATASOURCE_USERNAME: reStockOffice
-      QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
-      QUARKUS_OIDC_AUTH_SERVER_URL: http://id.restockoffice.de/realms/restockoffice
+      DB_JDBC_URL: jdbc:postgresql://db-container:5432/invoices_db
+      DB_USERNAME: reStockOffice
+      DB_PASSWORD: reStockOffice123$
+      QUARKUS_PROFILE: prod
+      KEYCLOAK_URL: http://id.restockoffice.de/realms/restockoffice
+
     depends_on:
       - db-container
 
@@ -36,6 +38,7 @@ services:
 
 volumes:
   db_data:
+
 networks:
   nginx-proxy-manager:
     external: true

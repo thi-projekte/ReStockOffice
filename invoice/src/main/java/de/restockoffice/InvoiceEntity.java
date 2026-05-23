@@ -26,7 +26,7 @@ public class InvoiceEntity extends PanacheEntity {
     public BigDecimal grossAmount;
 
     @Lob
-    @Column(name = "zugferd_pdf", columnDefinition = "LONGBLOB")
+    @Column(name = "zugferd_pdf")
     @JsonIgnore
     public byte[] zugferdPdf;
 
