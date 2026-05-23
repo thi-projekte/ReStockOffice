@@ -98,6 +98,19 @@ public class OrderResource {
         );
     }
 
+    @DELETE
+    @Path("/admin/all")
+    @Transactional
+    public Map<String, Object> deleteAllOrders() {
+        long deleted = Order.deleteAll();
+        long remaining = Order.count();
+
+        return Map.of(
+                "deleted", deleted,
+                "remaining", remaining
+        );
+    }
+
     //==== Update-Endpoint ==== //
     @PUT
     @Path("/{id}")
