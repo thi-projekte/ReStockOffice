@@ -197,6 +197,8 @@ export function RestockerPage() {
         const activeProcessId = await loadActiveTourProcess(restockerId);
 
         if (activeProcessId) {
+            await updateTourProcessVariables(activeProcessId, todayDeliveryCount);
+
             return activeProcessId;
         }
 
@@ -237,8 +239,43 @@ export function RestockerPage() {
         return processInstance.id;
     }
 
-    async function startTourProcess(restockerId: string, todayDeliveryCount: number) {
-        return startTourProcessThroughEngineRest(restockerId, todayDeliveryCount);
+    async function updateTourProcessVariables(
+        processInstanceId: string,
+        todayDeliveryCount: number,
+    ) {
+        const res = await fetch(
+            `${CAMUNDA_BASE_URL}/process-instance/${processInstanceId}/variables`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    modifications: {
+                        todayDeliveryCount: {
+                            value: todayDeliveryCount,
+                            type: "Integer",
+                        },
+                    },
+                    deletions: [],
+                }),
+            },
+        );
+
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || `Tour-Prozessvariablen konnten nicht aktualisiert werden: ${res.status}`);
+        }
+    }
+
+    async function startTourProcess(
+        restockerId: string,
+        todayDeliveryCount: number,
+    ) {
+        return startTourProcessThroughEngineRest(
+            restockerId,
+            todayDeliveryCount,
+        );
     }
 
     const startTourRequestInFlight = useRef(false);
@@ -278,10 +315,12 @@ export function RestockerPage() {
                 throw new Error("Eingeloggter Restocker konnte nicht ermittelt werden.");
             }
 
-            const processInstanceId =
-                tourProcessId ?? await startTourProcess(auth.user.id, openAssignedTodayCount);
+            const processInstanceId = await startTourProcess(
+                auth.user.id,
+                openAssignedTodayCount,
+            );
 
-            if (!tourProcessId) {
+            if (tourProcessId !== processInstanceId) {
                 storeTourProcessId(auth.user.id, processInstanceId);
                 setTourProcessId(processInstanceId);
             }
