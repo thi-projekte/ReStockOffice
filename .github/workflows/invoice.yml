@@ -20,24 +20,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up GraalVM
-        uses: graalvm/setup-graalvm@v1
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
         with:
-          java-version: "21"
-          distribution: graalvm-community
+          java-version: '21'
+          distribution: 'temurin'
           cache: maven
 
-      - name: Build with Maven
+      - name: Build and Package with Maven
         working-directory: invoice
         run: |
           chmod +x mvnw
-          ./mvnw -B verify
-
-      - name: Package native
-        working-directory: invoice
-        run: |
-          chmod +x mvnw
-          ./mvnw -B package -Dnative -DskipTests
+          ./mvnw -B clean package
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -82,6 +76,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./invoice
-          file: ./invoice/src/main/docker/Dockerfile.native-micro
+          file: ./invoice/src/main/docker/Dockerfile.jvm
           push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
           tags: ${{ steps.image_tags.outputs.tags }}
