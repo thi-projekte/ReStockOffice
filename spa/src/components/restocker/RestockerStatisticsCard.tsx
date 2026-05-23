@@ -102,6 +102,8 @@ export function RestockerStatisticsCard({
         }, {} as Record<string, RestockMarketplaceOrder[]>)
     );
 
+    const totalTours = groupedTours.length;
+
     return (
         <div className="card">
 
@@ -207,7 +209,7 @@ export function RestockerStatisticsCard({
                     {assignedError}
                 </p>
 
-            ) : completedOrders.length === 0 ? (
+            ) : totalTours === 0 ? (
 
                 <strong>
                     Du hast in diesem Monat
@@ -219,8 +221,8 @@ export function RestockerStatisticsCard({
                 <>
                     <strong className="statistics-tour-summary">
                         Du hast in diesem Monat{" "}
-                        {completedOrders.length}{" "}
-                        {completedOrders.length === 1 ? "Tour" : "Touren"} abgeschlossen oder geplant.
+                        {totalTours}{" "}
+                        {totalTours === 1 ? "Tour" : "Touren"} abgeschlossen oder geplant.
                     </strong>
 
                     <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
