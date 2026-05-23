@@ -6,6 +6,10 @@ interface RestockerOrderCardProps {
   order: RestockMarketplaceOrder;
   statusLabel?: string;
   customer?: UserProfile;
+  detailLabel?: string;
+  onClick?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 }
 
 
@@ -14,6 +18,10 @@ export function RestockerOrderCard({
   order,
   statusLabel,
   customer,
+  detailLabel,
+  onClick,
+  secondaryActionLabel,
+  onSecondaryAction,
 }: RestockerOrderCardProps) {
   const companyName = customer?.companyName || order.companyName;
   const streetLine = customer
@@ -29,8 +37,19 @@ export function RestockerOrderCard({
   return (
     <article
       className="restocker-order-card"
-      role="button"
-      tabIndex={0}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (!onClick) {
+          return;
+        }
+
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
     >
       <div className="restocker-order-card__head">
         <span className="restocker-order-card__id">#{order.orderId}</span>
@@ -74,6 +93,40 @@ export function RestockerOrderCard({
             aria-hidden="true"
           />
         )}
+
+        {(detailLabel && onClick) || (secondaryActionLabel && onSecondaryAction) ? (
+          <div
+            className={`restocker-order-card__actions ${
+              statusLabel ? "restocker-order-card__actions--with-status" : ""
+            }`.trim()}
+          >
+            {detailLabel && onClick ? (
+              <button
+                className="restocker-order-card__detail-link"
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onClick();
+                }}
+              >
+                {detailLabel}
+              </button>
+            ) : null}
+
+            {secondaryActionLabel && onSecondaryAction ? (
+              <button
+                className="restocker-order-card__secondary-action"
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSecondaryAction();
+                }}
+              >
+                {secondaryActionLabel}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
       </div>
     </article>

@@ -1,6 +1,7 @@
 import "../../styles/restocker-home.css";
 import { useEffect, useRef, useState } from "react";
-import { loadOpenRestockOrders } from "../../services/orders";
+import toast from "react-hot-toast";
+import { acceptRestockOrder, loadOpenRestockOrders } from "../../services/orders";
 import { useAuth } from "../../auth/AuthProvider";
 import type { RestockMarketplaceOrder } from "../../types/shop";
 import { loadAssignedRestockOrders } from "../../services/orders";
@@ -9,6 +10,8 @@ import { getDaysUntilDelivery } from "./restockerOrderUi";
 import { useNavigate } from "react-router-dom";
 import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCardDashboard";
 import { RestockerStatisticsCard } from "../../components/restocker/RestockerStatisticsCard";
+import { RestockerOrderDetailDialog } from "../../components/restocker/RestockerOrderDetailDialog";
+import { formatDeliveryWindow } from "./restockerOrderUi";
 
 const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
 const RESTOCKER_TOUR_PROCESS_DEFINITION_KEY = "Process_0h5mosh";
@@ -61,6 +64,8 @@ export function RestockerPage() {
 
     const [assignedLoading, setAssignedLoading] = useState(true);
     const [assignedError, setAssignedError] = useState<string | null>(null);
+    const [selectedOrder, setSelectedOrder] = useState<RestockMarketplaceOrder | null>(null);
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
 
 
@@ -303,6 +308,66 @@ export function RestockerPage() {
         }
     }
 
+    async function handleAcceptOrder(orderToAccept: RestockMarketplaceOrder) {
+        if (!auth.user?.id || !auth.token) {
+            return;
+        }
+
+        try {
+            await acceptRestockOrder({
+                orderKey: orderToAccept.orderKey,
+                restockerId: auth.user.id,
+                restockerName: auth.user?.username ?? auth.user.id,
+                token: auth.token,
+            });
+
+            setOpenOrders((currentOrders) =>
+                currentOrders.filter((order) => order.orderKey !== orderToAccept.orderKey),
+            );
+            setAssignedOrdersResult((currentResult) => ({
+                ...currentResult,
+                orders: [
+                    {
+                        ...orderToAccept,
+                        assignment: {
+                            restockerId: auth.user!.id,
+                            acceptedAt: new Date().toISOString(),
+                            status: "accepted",
+                        },
+                    },
+                    ...currentResult.orders,
+                ],
+            }));
+            setIsConfirmDialogOpen(false);
+            setSelectedOrder(null);
+            toast.success(`Du hast Auftrag #${orderToAccept.orderId} erfolgreich übernommen.`);
+        } catch (acceptError) {
+            toast.error(
+                acceptError instanceof Error
+                    ? acceptError.message
+                    : "Der Auftrag konnte nicht übernommen werden.",
+            );
+        }
+    }
+
+    function openAcceptConfirmation(orderToAccept: RestockMarketplaceOrder) {
+        setSelectedOrder(orderToAccept);
+        setIsConfirmDialogOpen(true);
+    }
+
+    function handleCloseDetailDialog() {
+        setSelectedOrder(null);
+        setIsConfirmDialogOpen(false);
+    }
+
+    function handleAcceptSelectedOrder() {
+        if (!selectedOrder) {
+            return;
+        }
+
+        void handleAcceptOrder(selectedOrder);
+    }
+
     return (
         <>
             <div className="restocker-page">
@@ -372,6 +437,10 @@ export function RestockerPage() {
                                         <RestockerOrderCard
                                             key={order.orderKey}
                                             order={order}
+                                            detailLabel="Auftrag ansehen"
+                                            onClick={() => setSelectedOrder(order)}
+                                            secondaryActionLabel="Fahrt annehmen"
+                                            onSecondaryAction={() => openAcceptConfirmation(order)}
                                         />
                                     ))}
                                 </div>
@@ -410,6 +479,8 @@ export function RestockerPage() {
                                         <RestockerOrderCard
                                             key={order.orderKey}
                                             order={order}
+                                            detailLabel="Auftrag ansehen"
+                                            onClick={() => setSelectedOrder(order)}
                                         />
                                     ))}
                                 </div>
@@ -429,6 +500,89 @@ export function RestockerPage() {
                         assignedError={assignedError}
                         assignedOrdersResult={assignedOrdersResult}
                     />
+
+                    {selectedOrder && !isConfirmDialogOpen ? (
+                        <RestockerOrderDetailDialog
+                            order={selectedOrder}
+                            backLabel="Zurück zur Übersicht"
+                            onClose={handleCloseDetailDialog}
+                            actions={
+                                selectedOrder.assignment ? null : (
+                                    <button
+                                        className="button"
+                                        type="button"
+                                        onClick={() => setIsConfirmDialogOpen(true)}
+                                    >
+                                        Fahrt annehmen
+                                    </button>
+                                )
+                            }
+                        />
+                    ) : null}
+
+                    {selectedOrder && isConfirmDialogOpen ? (
+                        <>
+                            <button
+                                className="subscription-modal__overlay"
+                                type="button"
+                                aria-label="Bestätigungsdialog schließen"
+                                onClick={() => setIsConfirmDialogOpen(false)}
+                            />
+
+                            <section
+                                className="subscription-modal restocker-confirm-dialog"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="restocker-confirm-dialog-title"
+                            >
+                                <div className="subscription-modal__header">
+                                    <div>
+                                        <span className="eyebrow">Bereit für deinen nächsten Einsatz?</span>
+                                        <h2 id="restocker-confirm-dialog-title">Auftrag wirklich übernehmen?</h2>
+                                    </div>
+                                </div>
+
+                                <div className="subscription-modal__body restocker-confirm-dialog__body">
+                                    <p>
+                                        Du bist dabei, die Lieferung für <strong>{selectedOrder.companyName}</strong>{" "}
+                                        am <strong>{selectedOrder.deliveryDate}</strong> zu übernehmen.
+                                    </p>
+
+                                    <div className="restocker-confirm-dialog__facts">
+                                        <div>
+                                            <span>Ziel</span>
+                                            <strong>
+                                                {selectedOrder.addressLine1}, {selectedOrder.postalCode}{" "}
+                                                {selectedOrder.city}
+                                            </strong>
+                                        </div>
+                                        <div>
+                                            <span>Lieferfenster</span>
+                                            <strong>{formatDeliveryWindow(selectedOrder.deliveryTime)}</strong>
+                                        </div>
+                                        <div>
+                                            <span>Artikel</span>
+                                            <strong>{selectedOrder.articleCount}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="subscription-modal__actions">
+                                    <button
+                                        className="button button--ghost"
+                                        type="button"
+                                        onClick={() => setIsConfirmDialogOpen(false)}
+                                    >
+                                        Zurück zur Lieferung
+                                    </button>
+
+                                    <button className="button" type="button" onClick={handleAcceptSelectedOrder}>
+                                        Ja, Fahrt annehmen
+                                    </button>
+                                </div>
+                            </section>
+                        </>
+                    ) : null}
 
 
                 </div>
