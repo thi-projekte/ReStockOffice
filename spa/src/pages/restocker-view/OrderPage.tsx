@@ -253,7 +253,7 @@ export function OrderPage() {
       setIsConfirmDialogOpen(false);
       setSelectedOrder(null);
       toast.success(
-        `Auftrag #${orderToAccept.orderId} wurde deinem Restocker-Konto zugeordnet.`,
+        `Du hast Auftrag #${orderToAccept.orderId} erfolgreich übernommen.`,
       );
     } catch (acceptError) {
       toast.error(
@@ -270,6 +270,11 @@ export function OrderPage() {
     }
 
     void handleAcceptOrder(selectedOrder);
+  }
+
+  function openAcceptConfirmation(orderToAccept: RestockMarketplaceOrder) {
+    setSelectedOrder(orderToAccept);
+    setIsConfirmDialogOpen(true);
   }
 
   function openMobileFilter() {
@@ -579,7 +584,7 @@ export function OrderPage() {
                 detailLabel="Auftrag ansehen"
                 onClick={() => setSelectedOrder(order)}
                 secondaryActionLabel="Fahrt annehmen"
-                onSecondaryAction={() => void handleAcceptOrder(order)}
+                onSecondaryAction={() => openAcceptConfirmation(order)}
               />
             ))}
           </div>
@@ -759,10 +764,6 @@ export function OrderPage() {
                 am <strong>{selectedOrder.deliveryDate}</strong> zu übernehmen.
               </p>
 
-              <p className="muted-text">
-                Sobald du bestätigst, taucht der Auftrag nicht mehr im Marktplatz auf.
-              </p>
-
               <div className="restocker-confirm-dialog__facts">
                 <div>
                   <span>Ziel</span>
@@ -781,11 +782,6 @@ export function OrderPage() {
                 </div>
               </div>
 
-              <p className="muted-text">
-                Nach der Bestätigung wird der Auftrag deinem eingeloggten
-                Restocker-Konto zugeordnet und nicht mehr im offenen Marktplatz
-                angezeigt.
-              </p>
             </div>
 
             <div className="subscription-modal__actions">

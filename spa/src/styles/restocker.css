@@ -814,6 +814,7 @@
 
 .restocker-order-dialog__summary strong,
 .restocker-confirm-dialog__facts strong {
+  font-weight: 400;
   color: var(--color-secondary);
 }
 
@@ -885,11 +886,12 @@
 }
 
 .restocker-confirm-dialog {
+  gap: 0.75rem;
   width: min(100% - 2rem, 560px);
 }
 
 .restocker-confirm-dialog__body {
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .restocker-confirm-dialog__body p {
@@ -1834,6 +1836,62 @@
     text-transform: uppercase;
   }
 
+  .restocker-confirm-dialog {
+    gap: 0.65rem;
+    width: calc(100% - 1rem);
+    max-height: calc(100dvh - 1rem);
+    padding: 1rem 0.95rem calc(1rem + env(safe-area-inset-bottom));
+    border-radius: 1.1rem;
+    overflow-y: auto;
+  }
+
+  .restocker-confirm-dialog .subscription-modal__header h2 {
+    font-size: 1.28rem;
+    line-height: 1.15;
+  }
+
+  .restocker-confirm-dialog__body {
+    gap: 0.75rem;
+  }
+
+  .restocker-confirm-dialog__body p {
+    font-size: 0.94rem;
+    line-height: 1.4;
+  }
+
+  .restocker-confirm-dialog__facts {
+    gap: 0.58rem;
+  }
+
+  .restocker-confirm-dialog__facts div {
+    padding: 0.8rem 0.85rem;
+    border-radius: 0.9rem;
+  }
+
+  .restocker-confirm-dialog__facts strong {
+    font-size: 0.94rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .restocker-confirm-dialog .subscription-modal__actions {
+    position: sticky;
+    bottom: 0;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(38, 64, 55, 0.1);
+    background: rgba(244, 247, 242, 0.98);
+  }
+
+  .restocker-confirm-dialog .subscription-modal__actions .button {
+    width: 100%;
+    min-height: 2.75rem;
+    font-size: 0.88rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
   .restocker-mobile-filter-sheet {
     max-height: min(82dvh, 44rem);
     padding-inline: 0.95rem;
@@ -1883,6 +1941,11 @@
     .restocker-order-dialog__table-row+.restocker-order-dialog__table-row {
       border-top: 1px solid rgba(38, 64, 55, 0.12);
     }
+  }
+
+  :root[data-theme="dark"] .restocker-confirm-dialog .subscription-modal__actions {
+    border-top-color: rgba(153, 153, 153, 0.16);
+    background: rgba(31, 42, 46, 0.98);
   }
 
   @media (max-width: 390px) {
