@@ -1,8 +1,5 @@
 import type { RestockMarketplaceOrder } from "../../types/shop";
-import {
-  formatDeliveryWindow,
-  formatRelativeDelivery,
-} from "../../pages/restocker-view/restockerOrderUi";
+import { formatDeliveryWindow } from "../../pages/restocker-view/restockerOrderUi";
 import type { UserProfile } from "../../types/user";
 
 interface RestockerOrderCardProps {
@@ -18,6 +15,17 @@ export function RestockerOrderCard({
   statusLabel,
   customer,
 }: RestockerOrderCardProps) {
+  const companyName = customer?.companyName || order.companyName;
+  const streetLine = customer
+    ? [customer.street, customer.houseNumber].filter(Boolean).join(" ").trim()
+    : order.addressLine1;
+  const cityLine = customer
+    ? [customer.postalCode, customer.city].filter(Boolean).join(" ").trim()
+    : [order.postalCode, order.city].filter(Boolean).join(" ").trim();
+  const deliveryTime = customer?.deliveryTime != null
+    ? customer.deliveryTime.toString()
+    : order.deliveryTime;
+
   return (
     <article
       className="restocker-order-card"
@@ -32,16 +40,9 @@ export function RestockerOrderCard({
       </div>
 
       <div className="restocker-order-card__body">
-        <strong className="restocker-order-card__company-name">{customer?.companyName}</strong>
-
-        <span>{customer?.street}</span>
-
-        <span>
-          {customer?.postalCode} {customer?.city}
-        </span>
-        <span>
-          <span>{order.postalCode} {order.city}</span>
-        </span>
+        <strong className="restocker-order-card__company-name">{companyName}</strong>
+        <span>{streetLine}</span>
+        <span>{cityLine}</span>
       </div>
 
       <div className="restocker-order-card__delivery">
@@ -59,9 +60,7 @@ export function RestockerOrderCard({
           <span>Lieferfenster</span>
 
           <strong>
-            {customer?.deliveryTime != null
-              ? formatDeliveryWindow(customer.deliveryTime.toString())
-              : "-"}
+            {formatDeliveryWindow(deliveryTime)}
           </strong>
         </div>
       </div>

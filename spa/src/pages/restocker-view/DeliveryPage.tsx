@@ -139,6 +139,8 @@ export function DeliveryPage() {
     activeDelivery?.items.length > 0 &&
     activeDelivery.items.every((item) => item.delivered);
   const isLastStop = activeStopIndex >= sortedDeliveries.length - 1;
+  const canFinishDeliveredLastStop =
+    isLastStop && Boolean(activeDelivery?.deliveredAt) && !hasTourEndTime;
   const activeStreetLine = activeDelivery ? buildStreetLine(activeDelivery) : "";
   const activeCityLine = activeDelivery ? buildCityLine(activeDelivery) : "";
   const activeDeliveryTime = activeDelivery ? formatDeliveryTime(activeDelivery.deliveryTime) : "";
@@ -379,7 +381,32 @@ export function DeliveryPage() {
   }
 
   async function handleAdvance() {
-    if (!tour || !activeDelivery || !currentItemsReady || isBusy) return;
+    if (!tour || !activeDelivery || isBusy) return;
+
+    if (canFinishDeliveredLastStop) {
+      setIsBusy(true);
+      try {
+        const finishedTour = await endTour({
+          tourId: tour.id,
+          earnings: calculatedEarnings,
+          token: auth.token,
+        });
+        setTour(finishedTour);
+        setShowDoneDialog(true);
+        toast.success("Tour wurde beendet.");
+      } catch (finishError) {
+        toast.error(
+          finishError instanceof Error
+            ? finishError.message
+            : "Tour konnte nicht beendet werden.",
+        );
+      } finally {
+        setIsBusy(false);
+      }
+      return;
+    }
+
+    if (!currentItemsReady || Boolean(activeDelivery.deliveredAt)) return;
 
     setIsBusy(true);
     try {
@@ -650,7 +677,11 @@ export function DeliveryPage() {
             <button
               className="button delivery-primary-action"
               type="button"
-              disabled={!currentItemsReady || isBusy || Boolean(activeDelivery.deliveredAt)}
+              disabled={
+                isBusy ||
+                (!canFinishDeliveredLastStop &&
+                  (!currentItemsReady || Boolean(activeDelivery.deliveredAt)))
+              }
               onClick={() => void handleAdvance()}
             >
               {isLastStop ? <FaRoute /> : <FaTruck />}
@@ -683,5 +714,3 @@ export function DeliveryPage() {
     </section>
   );
 }
-
-
