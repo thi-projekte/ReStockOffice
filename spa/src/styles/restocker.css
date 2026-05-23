@@ -502,6 +502,7 @@
 
 .restocker-order-card__company-name {
   display: block;
+  font-weight: 900;
 }
 
 .restocker-order-card__body span {
