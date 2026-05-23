@@ -108,6 +108,7 @@ public class UserResource {
         }
 
         newCustomer.userId = userId;
+        newCustomer.createdAt = LocalDateTime.now();
 
         newCustomer.persist();
 
@@ -126,6 +127,7 @@ public class UserResource {
         }
 
         newRestocker.userId = userId;
+        newRestocker.createdAt = LocalDateTime.now();
 
         newRestocker.persist();
 
