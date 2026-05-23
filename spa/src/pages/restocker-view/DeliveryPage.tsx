@@ -384,9 +384,14 @@ export function DeliveryPage() {
     setIsBusy(true);
     try {
       const firstItem = activeDelivery.items[0];
+      const recipientEmail = activeDelivery.recipientEmail.trim();
       const deliveryDetailsUrl = `${window.location.origin}/restocker/deliveries?processInstanceId=${encodeURIComponent(
         searchParams.get("processInstanceId") ?? "",
       )}`;
+
+      if (!recipientEmail) {
+        throw new Error("Fuer diese Lieferung fehlt die Kunden-E-Mail.");
+      }
 
       await confirmDelivery({ deliveryId: activeDelivery.id, token: auth.token });
       await completeProcessTask(CONFIRM_DELIVERY_TASK_DEFINITION_KEY, {
@@ -399,7 +404,7 @@ export function DeliveryPage() {
           type: "String",
         },
         recipientEmail: {
-          value: activeDelivery.recipientEmail,
+          value: recipientEmail,
           type: "String",
         },
         customerName: {
