@@ -32,6 +32,7 @@ export function RestockerTourCard({
         return sum + orderItems;
     }, 0);
 
+
     /* Stops = Anzahl Lieferungen in der Tour */
     const stops = orders.length;
 
