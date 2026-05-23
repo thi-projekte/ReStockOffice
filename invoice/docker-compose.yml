@@ -1,6 +1,6 @@
 services:
   invoice:
-    image: ghcr.io/thi-projekte/restockoffice-invoice:feature-invoice
+    image: ghcr.io/thi-projekte/restockoffice-invoice:latest
     restart: unless-stopped
 
     networks:
