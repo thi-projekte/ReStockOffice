@@ -495,14 +495,13 @@
 .restocker-order-card__body strong {
   color: var(--color-secondary);
   font-size: 1.08rem;
-  font-weight: 800;
   line-height: 1.35;
   text-wrap: balance;
 }
 
 .restocker-order-card__company-name {
   display: block;
-  font-weight: 900;
+  font-weight: 900 !important;
 }
 
 .restocker-order-card__body span {
