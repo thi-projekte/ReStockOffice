@@ -14,6 +14,7 @@ import jakarta.ws.rs.client.Entity;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 
 @Path("/orders")
@@ -25,17 +26,15 @@ public class OrderResource {
     @Inject
     SecurityIdentity securityIdentity;
 
+    @Inject
+    JsonWebToken jwt;
+
     @Context
     HttpHeaders headers;
 
-    String customerId = (securityIdentity != null &&
-            securityIdentity.getPrincipal() != null)
-            ? securityIdentity.getPrincipal().getName()
-            : "anonymous";
-
     @GET
     public List<Order> getAll() {
-        if (securityIdentity == null || securityIdentity.isAnonymous() || !customerId.equals(securityIdentity.getPrincipal().getName())) {
+        if (securityIdentity == null || securityIdentity.isAnonymous()) {
             throw new NotAuthorizedException("Nicht autorisiert");
         }else{
             System.out.println("👤 GET /orders REQUESTED BY: " + securityIdentity.getPrincipal().getName());
@@ -64,7 +63,7 @@ public class OrderResource {
     @GET
     @Path("/{id}")
     public Order getById(@PathParam("id") Long id) {
-        if (securityIdentity == null || securityIdentity.isAnonymous() || !customerId.equals(securityIdentity.getPrincipal().getName())) {
+        if (securityIdentity == null || securityIdentity.isAnonymous()) {
             throw new NotAuthorizedException("Nicht autorisiert");
         }else{
             return Order.findById(id);
@@ -75,7 +74,7 @@ public class OrderResource {
     @Path("/my")
     @Authenticated
     public List<Order> getMyOrders() {
-        return Order.list("customerId", customerId);
+        return Order.list("customerId", resolveCustomerId());
     }
 
     @PUT
@@ -98,18 +97,6 @@ public class OrderResource {
         );
     }
 
-    @DELETE
-    @Path("/admin/all")
-    @Transactional
-    public Map<String, Object> deleteAllOrders() {
-        long deleted = Order.deleteAll();
-        long remaining = Order.count();
-
-        return Map.of(
-                "deleted", deleted,
-                "remaining", remaining
-        );
-    }
 
     //==== Update-Endpoint ==== //
     @PUT
@@ -164,10 +151,7 @@ public class OrderResource {
         } catch (Exception e) {
             System.out.println("❌ NO SECURITY IDENTITY (token issue?)");
         }
-        String customerId = (securityIdentity != null &&
-                securityIdentity.getPrincipal() != null)
-                ? securityIdentity.getPrincipal().getName()
-                : "anonymous";
+        String customerId = resolveCustomerId();
 
         //System.out.println(jwt.getName());
 
@@ -217,5 +201,17 @@ public class OrderResource {
         }
 
         return value.trim();
+    }
+
+    private String resolveCustomerId() {
+        if (jwt != null && jwt.getSubject() != null && !jwt.getSubject().isBlank()) {
+            return jwt.getSubject();
+        }
+
+        if (securityIdentity != null && securityIdentity.getPrincipal() != null) {
+            return securityIdentity.getPrincipal().getName();
+        }
+
+        return "anonymous";
     }
 }
