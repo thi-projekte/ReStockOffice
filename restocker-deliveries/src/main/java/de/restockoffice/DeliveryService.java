@@ -23,6 +23,9 @@ import java.util.stream.Collectors;
 public class DeliveryService {
 
     private static final int PLANNING_HORIZON_DAYS = 28;
+    private static final String TEST_ORDER_PREFIX = "test-delivery-";
+    private static final String DEFAULT_TEST_CUSTOMER_ONE = "3e6572a7-3852-42e3-81eb-17e7f9622dd6";
+    private static final String DEFAULT_TEST_CUSTOMER_TWO = "c831fce5-56a3-443e-a27f-cc769a1ed0d7";
 
     @Inject
     @RestClient
@@ -53,6 +56,49 @@ public class DeliveryService {
                 "deletedDeliveries", deletedDeliveries,
                 "deletedTours", deletedTours
         );
+    }
+
+    @Transactional
+    public List<DeliveryDetailDto> createTestDeliveries(
+            String deliveryDateValue,
+            String firstCustomerId,
+            String secondCustomerId,
+            String authorizationHeader
+    ) {
+        LocalDate deliveryDate = parseTestDeliveryDate(deliveryDateValue);
+        List<Delivery> existingTestDeliveries = Delivery.list(
+                "orderId like ?1",
+                TEST_ORDER_PREFIX + "%"
+        );
+
+        for (Delivery delivery : existingTestDeliveries) {
+            DeliveryItem.delete("delivery.id", delivery.id);
+        }
+        Delivery.delete("orderId like ?1", TEST_ORDER_PREFIX + "%");
+
+        Delivery firstDelivery = createOpenTestDelivery(
+                TEST_ORDER_PREFIX + "one",
+                normalizeOptionalCustomerId(firstCustomerId, DEFAULT_TEST_CUSTOMER_ONE),
+                deliveryDate,
+                List.of(
+                        createTestDeliveryItem("10086", "Kassenbuch A4", 1, "Stueck"),
+                        createTestDeliveryItem("10003", "Textmarker-Set (4 Farben)", 1, "Stueck")
+                )
+        );
+        Delivery secondDelivery = createOpenTestDelivery(
+                TEST_ORDER_PREFIX + "two",
+                normalizeOptionalCustomerId(secondCustomerId, DEFAULT_TEST_CUSTOMER_TWO),
+                deliveryDate,
+                List.of(
+                        createTestDeliveryItem("10088", "Gummizugmappe A3", 1, "Stueck"),
+                        createTestDeliveryItem("10007", "Klarsichthuellen A4 oben offen", 10, "Stueck")
+                )
+        );
+
+        firstDelivery.persist();
+        secondDelivery.persist();
+
+        return toDetailDtos(List.of(firstDelivery, secondDelivery), authorizationHeader);
     }
 
     @Transactional
@@ -472,6 +518,64 @@ public class DeliveryService {
         );
         item.quantity = order.quantity != null && order.quantity > 0 ? order.quantity : 1;
         return item;
+    }
+
+    private Delivery createOpenTestDelivery(
+            String orderId,
+            String customerId,
+            LocalDate deliveryDate,
+            List<DeliveryItem> items
+    ) {
+        Delivery delivery = new Delivery();
+        delivery.orderId = orderId;
+        delivery.userId = customerId;
+        delivery.deliveryDate = deliveryDate;
+        delivery.stopOrder = 0;
+        delivery.collected = false;
+        delivery.collectedAt = null;
+        delivery.acceptedAt = null;
+        delivery.deliveredAt = null;
+        delivery.tour = null;
+
+        for (DeliveryItem item : items) {
+            item.delivered = false;
+            delivery.addItem(item);
+        }
+
+        return delivery;
+    }
+
+    private DeliveryItem createTestDeliveryItem(
+            String articleNumber,
+            String name,
+            int quantity,
+            String unit
+    ) {
+        DeliveryItem item = new DeliveryItem();
+        item.articleNumber = articleNumber;
+        item.name = name;
+        item.quantity = quantity;
+        item.unit = unit;
+        item.delivered = false;
+        return item;
+    }
+
+    private LocalDate parseTestDeliveryDate(String deliveryDateValue) {
+        if (deliveryDateValue == null || deliveryDateValue.isBlank()) {
+            return LocalDate.now();
+        }
+
+        try {
+            return LocalDate.parse(deliveryDateValue.trim());
+        } catch (RuntimeException exception) {
+            throw new BadRequestException("deliveryDate muss im Format YYYY-MM-DD angegeben werden.");
+        }
+    }
+
+    private String normalizeOptionalCustomerId(String customerId, String fallbackCustomerId) {
+        return customerId == null || customerId.isBlank()
+                ? fallbackCustomerId
+                : customerId.trim();
     }
 
     private void appendOrdersToDelivery(Delivery delivery, List<OrderDto> orders) {
