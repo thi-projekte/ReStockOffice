@@ -24,7 +24,7 @@ public class DeliveryService {
 
     private static final int PLANNING_HORIZON_DAYS = 28;
     private static final String TEST_ORDER_PREFIX = "test-delivery-";
-    private static final String DEFAULT_TEST_CUSTOMER_ONE = "3e6572a7-3852-42e3-81eb-17e7f9622dd6";
+    private static final String DEFAULT_TEST_CUSTOMER_ONE = "3e6572a7-3852-42e3-81eb-17e7f9622kk8";
     private static final String DEFAULT_TEST_CUSTOMER_TWO = "c831fce5-56a3-443e-a27f-cc769a1ed0d7";
 
     @Inject
