@@ -278,7 +278,7 @@ public class DeliveryService {
         List<LocalDate> dueDates = new ArrayList<>();
         DayOfWeek deliveryDay = resolveDeliveryDay(user, order);
         LocalDate anchorDate = order.createdAt != null ? order.createdAt.toLocalDate() : startDate;
-        LocalDate firstDeliveryDate = firstDateOnOrAfter(anchorDate, deliveryDay);
+        LocalDate firstDeliveryDate = firstDateWithMinimumLeadTime(anchorDate, deliveryDay);
         int intervalWeeks = order.interval != null && order.interval > 0 ? order.interval : 1;
 
         LocalDate deliveryDate = firstDeliveryDate;
@@ -332,6 +332,33 @@ public class DeliveryService {
         }
 
         return deliveryDate;
+    }
+
+    private LocalDate firstDateWithMinimumLeadTime(LocalDate anchorDate, DayOfWeek deliveryDay) {
+        LocalDate deliveryDate = firstDateOnOrAfter(anchorDate, deliveryDay);
+        while (completeWorkdaysBetween(anchorDate, deliveryDate) < 2) {
+            deliveryDate = deliveryDate.plusWeeks(1);
+        }
+
+        return deliveryDate;
+    }
+
+    private int completeWorkdaysBetween(LocalDate startDate, LocalDate endDate) {
+        int workdays = 0;
+        LocalDate date = startDate.plusDays(1);
+        while (date.isBefore(endDate)) {
+            if (isWorkday(date)) {
+                workdays++;
+            }
+            date = date.plusDays(1);
+        }
+
+        return workdays;
+    }
+
+    private boolean isWorkday(LocalDate date) {
+        return date.getDayOfWeek() != DayOfWeek.SATURDAY
+                && date.getDayOfWeek() != DayOfWeek.SUNDAY;
     }
 
     private List<DeliveryDetailDto> toDetailDtos(List<Delivery> deliveries, String authorizationHeader) {
