@@ -249,6 +249,33 @@ export function AppShell({ children }: AppShellProps) {
   const onSearchPage = location.pathname === "/products";
   const isDarkMode = theme === "dark";
   const isHomeActive = isRestocker ? location.pathname === "/restocker" : location.pathname === "/home";
+  const restockerMobileNavItems = [
+    {
+      to: "/restocker",
+      label: "Startseite",
+      icon: <FaHome />,
+    },
+    {
+      to: "/restocker-orders",
+      label: "Offene Auftr\u00e4ge",
+      icon: <FaClipboardList />,
+    },
+    {
+      to: "/restocker-my-orders",
+      label: "Meine Auftr\u00e4ge",
+      icon: <FaCalendarAlt />,
+    },
+    {
+      to: "/restocker-deliveries",
+      label: "Auslieferungen",
+      icon: <FaTruck />,
+    },
+    {
+      to: "/account",
+      label: "Konto",
+      icon: <FaUser />,
+    },
+  ];
 
   function renderSearchControls(source: "header" | "page") {
     const isHeader = source === "header";
@@ -428,7 +455,7 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isLoggedIn && isRestocker ? "app-shell--restocker-nav" : ""}`.trim()}>
       <header className="site-header">
         <div className="container site-header__inner">
           <div className="brand-column">
@@ -534,7 +561,7 @@ export function AppShell({ children }: AppShellProps) {
 
                   {/* Hamburger immer sichtbar */}
                   <button
-                      className="button button--ghost hamburger-btn"
+                      className={`button button--ghost hamburger-btn ${isRestocker ? "hamburger-btn--restocker" : ""}`.trim()}
                       type="button"
                       onClick={() => setMenuOpen((v) => !v)}
                       aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
@@ -672,6 +699,25 @@ export function AppShell({ children }: AppShellProps) {
 
       <footer className="site-footer">
         <div className="container">© 2026 ReStockOffice</div>
+
+        {isLoggedIn && isRestocker ? (
+          <nav className="restocker-mobile-tabbar" aria-label="Restocker Navigation">
+            {restockerMobileNavItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `restocker-mobile-tabbar__item ${isActive ? "active" : ""}`
+                }
+                aria-label={item.label}
+              >
+                <span className="restocker-mobile-tabbar__icon" aria-hidden="true">
+                  {item.icon}
+                </span>
+              </NavLink>
+            ))}
+          </nav>
+        ) : null}
       </footer>
 
       {isLoggedIn ? (
