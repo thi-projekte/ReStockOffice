@@ -11,8 +11,9 @@ public class RestockerCustomerView {
     public DeliveryDay deliveryDay;
     public int deliveryTime;
     public String phoneNumber;
+    public String email;
 
-    public RestockerCustomerView(Customer customer) {
+    public RestockerCustomerView(Customer customer, String email) {
         this.companyName = customer.companyName;
         this.postalCode = customer.postalCode;
         this.city = customer.city;
@@ -23,5 +24,6 @@ public class RestockerCustomerView {
         this.deliveryDay = customer.deliveryDay;
         this.deliveryTime = customer.deliveryTime;
         this.phoneNumber = customer.phoneNumber;
+        this.email = email;
     }
 }

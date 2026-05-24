@@ -29,20 +29,28 @@ public class UserResource {
     @Inject
     JsonWebToken jwt;
 
+    // Keycloak
+    @Inject
+    org.keycloak.admin.client.Keycloak keycloak;
+
     @Inject
     SecurityIdentity securityIdentity;
 
     // logged-in User
     @GET
     @Path("customer/me")
-    public Customer getMyCustomerData() {
-        return findCustomerOrThrow(jwt.getSubject());
+    public CustomerProfileResponse getMyCustomerData() {
+        Customer customer =  findCustomerOrThrow(jwt.getSubject());
+        String email = jwt.getClaim("email");
+        return new CustomerProfileResponse(customer, email);
     }
 
     @GET
     @Path("restocker/me")
-    public Restocker getMyRestockerData() {
-        return findRestockerOrThrow(jwt.getSubject());
+    public RestockerProfileResponse getMyRestockerData() {
+        Restocker restocker = findRestockerOrThrow(jwt.getSubject());
+        String email = jwt.getClaim("email");
+        return new RestockerProfileResponse(restocker, email);
     }
 
     @GET
@@ -67,10 +75,20 @@ public class UserResource {
         if (userId == null || userId.isBlank()) {
             throw new WebApplicationException("Übergebene userId darf nicht leer sein.", 400);
         }
-
         Customer customer = findCustomerOrThrow(userId);
+        String customerEmail = null;
+        try {
+            customerEmail = keycloak.realm("restockoffice")
+                    .users()
+                    .get(userId)
+                    .toRepresentation()
+                    .getEmail();
+        } catch (Exception e) {
+            System.err.println("Fehler beim Abrufen der Keycloak-Email: " + e.getMessage());
+            customerEmail = "E-Mail nicht verfügbar";
+        }
 
-        return new RestockerCustomerView(customer);
+        return new RestockerCustomerView(customer, customerEmail);
     }
 
     @GET
