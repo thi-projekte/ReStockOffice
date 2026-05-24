@@ -17,35 +17,37 @@ public class SendDeliveryAnnouncementDelegate implements JavaDelegate {
 
     private static final Logger log = LoggerFactory.getLogger(SendDeliveryAnnouncementDelegate.class);
 
+    private final MailDataEnrichmentService mailDataEnrichmentService;
+
     @Value("${mailservice.base-url}")
     private String mailServiceBaseUrl;
+
+    public SendDeliveryAnnouncementDelegate(MailDataEnrichmentService mailDataEnrichmentService) {
+        this.mailDataEnrichmentService = mailDataEnrichmentService;
+    }
 
     @Override
     public void execute(DelegateExecution execution) {
         log.info("Sending delivery announcement for order {}", execution.getVariable("orderNumber"));
+        mailDataEnrichmentService.enrichDeliveryAnnouncement(execution);
 
         Map<String, Object> request = new HashMap<>();
         request.put("recipientEmail", execution.getVariable("recipientEmail"));
         request.put("customerName", execution.getVariable("customerName"));
         request.put("daysUntilDelivery", execution.getVariable("daysUntilDelivery"));
         request.put("deliveryDay", execution.getVariable("deliveryDay"));
-        request.put("deliveryDate", execution.getVariable("deliveryDate"));
+        request.put("deliveryDate", mailValue(execution, "deliveryDateLabel", "deliveryDate"));
         request.put("deliveryWindow", execution.getVariable("deliveryWindow"));
-        request.put("officeLocation", execution.getVariable("officeLocation"));
         request.put("orderNumber", execution.getVariable("orderNumber"));
         request.put("supplierName", execution.getVariable("supplierName"));
         request.put("deliveryLocation", execution.getVariable("deliveryLocation"));
-        request.put("deskDetails", execution.getVariable("deskDetails"));
-        request.put("onSiteContact", execution.getVariable("onSiteContact"));
         request.put("deliveryInstructions", execution.getVariable("deliveryInstructions"));
         request.put("deliveryDetailsUrl", execution.getVariable("deliveryDetailsUrl"));
-        request.put("deliveryItems", List.of(
-                Map.of(
-                        "name", execution.getVariable("itemName"),
-                        "articleNumber", execution.getVariable("itemArticleNumber"),
-                        "quantity", execution.getVariable("itemQuantity")
-                )
-        ));
+        Map<String, Object> deliveryItem = new HashMap<>();
+        deliveryItem.put("name", execution.getVariable("itemName"));
+        deliveryItem.put("articleNumber", execution.getVariable("itemArticleNumber"));
+        deliveryItem.put("quantity", execution.getVariable("itemQuantity"));
+        request.put("deliveryItems", List.of(deliveryItem));
 
         new RestTemplate().postForEntity(
                 mailServiceBaseUrl + "/emails/delivery-announcement",
@@ -54,5 +56,10 @@ public class SendDeliveryAnnouncementDelegate implements JavaDelegate {
         );
 
         log.info("Delivery announcement sent for {}", execution.getVariable("recipientEmail"));
+    }
+
+    private Object mailValue(DelegateExecution execution, String preferredVariable, String fallbackVariable) {
+        Object preferredValue = execution.getVariable(preferredVariable);
+        return preferredValue != null ? preferredValue : execution.getVariable(fallbackVariable);
     }
 }

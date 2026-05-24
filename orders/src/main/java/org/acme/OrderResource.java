@@ -11,6 +11,7 @@ import java.util.List;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -117,16 +118,12 @@ public class OrderResource {
         String camundaUrl =
                 "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_0ltcqh0/start";
 
+        Map<String, Object> variables = processVariables(order, authHeader);
+        variables.put("updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String"));
+
         Map<String, Object> body = Map.of(
                 "businessKey", order.id.toString(),
-                "variables", Map.of(
-                        "orderId", Map.of("value", order.id, "type", "Long"),
-                        "customerId", Map.of("value", order.customerId, "type", "String"),
-                        "productId", Map.of("value", order.productId, "type", "String"),
-                        "quantity", Map.of("value", order.quantity, "type", "Integer"),
-                        "interval", Map.of("value", order.interval, "type", "Integer"),
-                        "updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String")
-                )
+                "variables", variables
         );
 
         client
@@ -175,13 +172,7 @@ public class OrderResource {
 
         Map<String, Object> body = Map.of(
                 "businessKey", order.id.toString(),
-                "variables", Map.of(
-                        "orderId", Map.of("value", order.id, "type", "Long"),
-                        "customerId", Map.of("value", order.customerId, "type", "String"),
-                        "productId", Map.of("value", order.productId, "type", "String"),
-                        "quantity", Map.of("value", order.quantity, "type", "Integer"),
-                        "interval", Map.of("value", order.interval, "type", "Integer")
-                )
+                "variables", processVariables(order, authHeader)
         );
 
         client
@@ -201,6 +192,21 @@ public class OrderResource {
         }
 
         return value.trim();
+    }
+
+    private Map<String, Object> processVariables(Order order, String authHeader) {
+        Map<String, Object> variables = new LinkedHashMap<>();
+        variables.put("orderId", Map.of("value", order.id, "type", "Long"));
+        variables.put("customerId", Map.of("value", order.customerId, "type", "String"));
+        variables.put("productId", Map.of("value", order.productId, "type", "String"));
+        variables.put("quantity", Map.of("value", order.quantity, "type", "Integer"));
+        variables.put("interval", Map.of("value", order.interval, "type", "Integer"));
+
+        if (authHeader != null && !authHeader.isBlank()) {
+            variables.put("authorizationHeader", Map.of("value", authHeader, "type", "String"));
+        }
+
+        return variables;
     }
 
     private String resolveCustomerId() {
