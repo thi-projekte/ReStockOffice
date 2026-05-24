@@ -945,6 +945,7 @@
 :root[data-theme="dark"] .restocker-marketplace-filters,
 :root[data-theme="dark"] .restocker-my-orders-desktop-filters,
 :root[data-theme="dark"] .restocker-priority-filter,
+:root[data-theme="dark"] .restocker-earnings-note,
 :root[data-theme="dark"] .restocker-order-card,
 :root[data-theme="dark"] .restocker-order-card__delivery,
 :root[data-theme="dark"] .restocker-order-dialog__info-card,
@@ -1013,6 +1014,7 @@
 }
 
 :root[data-theme="dark"] .restocker-priority-filter strong,
+:root[data-theme="dark"] .restocker-earnings-note__copy strong,
 :root[data-theme="dark"] .restocker-my-orders-desktop-filters__heading strong,
 :root[data-theme="dark"] .restocker-my-orders-desktop-filters__heading strong::before,
 :root[data-theme="dark"] .restocker-order-card__body strong,
@@ -1025,6 +1027,7 @@
 }
 
 :root[data-theme="dark"] .restocker-order-card__body span,
+:root[data-theme="dark"] .restocker-earnings-note__copy p,
 :root[data-theme="dark"] .restocker-order-dialog__info-subline,
 :root[data-theme="dark"] .restocker-order-dialog__notes-copy,
 :root[data-theme="dark"] .restocker-marketplace-search input,
