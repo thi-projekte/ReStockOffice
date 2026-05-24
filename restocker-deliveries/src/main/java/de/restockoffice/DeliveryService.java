@@ -1,5 +1,7 @@
 package de.restockoffice;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -11,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class DeliveryService {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final int PLANNING_HORIZON_DAYS = 28;
     private static final String TEST_ORDER_PREFIX = "test-delivery-";
     private static final String DEFAULT_TEST_CUSTOMER_ONE = "3e6572a7-3852-42e3-81eb-17e7f9622kk8";
@@ -364,24 +368,26 @@ public class DeliveryService {
     private List<DeliveryDetailDto> toDetailDtos(List<Delivery> deliveries, String authorizationHeader) {
         Map<String, UserDto> userCache = new HashMap<>();
         Map<String, ArticleDto> articleCache = new HashMap<>();
+        AuthenticatedRestocker authenticatedRestocker = authenticatedRestocker(authorizationHeader);
 
         return deliveries.stream()
                 .map(delivery -> {
                     UserDto user = loadCachedUser(delivery.userId, userCache, authorizationHeader);
-                    return toDetailDto(delivery, user, articleCache);
+                    return toDetailDto(delivery, user, articleCache, authenticatedRestocker);
                 })
                 .collect(Collectors.toList());
     }
 
     private DeliveryDetailDto toDetailDtoWithFreshData(Delivery delivery, String authorizationHeader) {
         UserDto user = tryLoadUser(delivery.userId, authorizationHeader);
-        return toDetailDto(delivery, user, new HashMap<>());
+        return toDetailDto(delivery, user, new HashMap<>(), authenticatedRestocker(authorizationHeader));
     }
 
     private DeliveryDetailDto toDetailDto(
             Delivery delivery,
             UserDto user,
-            Map<String, ArticleDto> articleCache
+            Map<String, ArticleDto> articleCache,
+            AuthenticatedRestocker authenticatedRestocker
     ) {
         DeliveryDetailDto dto = new DeliveryDetailDto();
         dto.id = delivery.id;
@@ -392,7 +398,7 @@ public class DeliveryService {
         dto.collectedAt = delivery.collectedAt;
         dto.acceptedAt = delivery.acceptedAt;
         dto.deliveredAt = delivery.deliveredAt;
-        dto.restockerName = delivery.tour != null ? delivery.tour.restockerName : null;
+        dto.restockerName = restockerDisplayName(delivery, authenticatedRestocker);
 
         dto.recipientEmail = valueOrEmpty(user != null ? user.email : null);
         dto.companyName = valueOrEmpty(user != null ? user.companyName : null);
@@ -426,6 +432,64 @@ public class DeliveryService {
         }).collect(Collectors.toList());
 
         return dto;
+    }
+
+    private String restockerDisplayName(Delivery delivery, AuthenticatedRestocker authenticatedRestocker) {
+        if (delivery.tour == null || isBlank(delivery.tour.restockerName)) {
+            return null;
+        }
+
+        if (authenticatedRestocker != null
+                && delivery.tour.restockerName.equals(authenticatedRestocker.username())
+                && !isBlank(authenticatedRestocker.displayName())) {
+            return authenticatedRestocker.displayName();
+        }
+
+        return delivery.tour.restockerName;
+    }
+
+    private AuthenticatedRestocker authenticatedRestocker(String authorizationHeader) {
+        String token = bearerToken(authorizationHeader);
+        if (isBlank(token)) {
+            return null;
+        }
+
+        String[] parts = token.split("\\.");
+        if (parts.length < 2) {
+            return null;
+        }
+
+        try {
+            String payload = new String(Base64.getUrlDecoder().decode(parts[1]), java.nio.charset.StandardCharsets.UTF_8);
+            JsonNode claims = OBJECT_MAPPER.readTree(payload);
+            String username = firstNonBlank(textClaim(claims, "preferred_username"), textClaim(claims, "sub"));
+            String displayName = firstNonBlank(
+                    joinName(textClaim(claims, "given_name"), textClaim(claims, "family_name")),
+                    textClaim(claims, "name")
+            );
+            return new AuthenticatedRestocker(username, displayName);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String bearerToken(String authorizationHeader) {
+        if (isBlank(authorizationHeader) || !authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            return null;
+        }
+        return authorizationHeader.substring(7).trim();
+    }
+
+    private String textClaim(JsonNode claims, String claimName) {
+        JsonNode claim = claims != null ? claims.get(claimName) : null;
+        return claim != null && claim.isTextual() ? claim.asText() : null;
+    }
+
+    private String joinName(String firstName, String lastName) {
+        return firstNonBlank(
+                (valueOrEmpty(firstName) + " " + valueOrEmpty(lastName)).trim(),
+                null
+        );
     }
 
     private Tour findTourOrThrow(UUID tourId) {
@@ -726,6 +790,24 @@ public class DeliveryService {
         return value == null ? "" : value;
     }
 
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+
+        for (String value : values) {
+            if (!isBlank(value)) {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
     private String valueOrFallback(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
     }
@@ -735,6 +817,9 @@ public class DeliveryService {
     }
 
     private record DeliveryGroupKey(String customerId, LocalDate deliveryDate) {
+    }
+
+    private record AuthenticatedRestocker(String username, String displayName) {
     }
 
     private static class DeliveryGroup {

@@ -80,7 +80,7 @@ public class MailDataEnrichmentService {
         LocalDate deliveryDate = resolveDeliveryDate(context);
         setIfBlank(execution, "daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
         setIfBlank(execution, "deliveryDay", formatDayName(deliveryDate));
-        setIfBlank(execution, "supplierName", firstNonBlank(deliveryRestockerName(context.delivery()), "ReStockOffice"));
+        setIfBlank(execution, "supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
         setIfBlank(execution, "deliveryInstructions", firstNonBlank(userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
         setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
@@ -89,7 +89,7 @@ public class MailDataEnrichmentService {
         EnrichmentContext context = loadContext(execution);
         enrichCommonVariables(execution, context);
 
-        setIfBlank(execution, "supplierName", firstNonBlank(deliveryRestockerName(context.delivery()), stringVariable(execution, "restockerName"), "ReStockOffice"));
+        execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
         setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
 
@@ -554,6 +554,15 @@ public class MailDataEnrichmentService {
 
     private String deliveryRestockerName(DeliveryDetailDto delivery) {
         return delivery != null ? delivery.restockerName : null;
+    }
+
+    private String restockerDisplayName(DeliveryDetailDto delivery) {
+        String restockerName = deliveryRestockerName(delivery);
+        if (isBlank(restockerName) || !restockerName.trim().contains(" ")) {
+            return null;
+        }
+
+        return restockerName.trim();
     }
 
     private String deliveryStreet(DeliveryDetailDto delivery) {
