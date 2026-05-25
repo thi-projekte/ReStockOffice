@@ -89,8 +89,8 @@ public class DeliveryService {
                 normalizeOptionalCustomerId(firstCustomerId, DEFAULT_TEST_CUSTOMER_ONE),
                 deliveryDate,
                 List.of(
-                        createTestDeliveryItem("10086", "Kassenbuch A4", 1, "Stueck"),
-                        createTestDeliveryItem("10003", "Textmarker-Set (4 Farben)", 1, "Stueck")
+                        createTestDeliveryItem("10086", "Kassenbuch A4", 1, "Stück"),
+                        createTestDeliveryItem("10003", "Textmarker-Set (4 Farben)", 1, "Stück")
                 )
         );
         Delivery secondDelivery = createOpenTestDelivery(
@@ -98,8 +98,8 @@ public class DeliveryService {
                 normalizeOptionalCustomerId(secondCustomerId, DEFAULT_TEST_CUSTOMER_TWO),
                 deliveryDate,
                 List.of(
-                        createTestDeliveryItem("10088", "Gummizugmappe A3", 1, "Stueck"),
-                        createTestDeliveryItem("10007", "Klarsichthuellen A4 oben offen", 10, "Stueck")
+                        createTestDeliveryItem("10088", "Gummizugmappe A3", 1, "Stück"),
+                        createTestDeliveryItem("10007", "Klarsichthuellen A4 oben offen", 10, "Stück")
                 )
         );
 
@@ -438,7 +438,7 @@ public class DeliveryService {
             detailItem.quantity = item.quantity;
             detailItem.unit = valueOrFallback(
                     item.unit,
-                    article != null ? article.unit : "Stueck"
+                    article != null ? article.unit : "Stück"
             );
             return detailItem;
         }).collect(Collectors.toList());
@@ -658,7 +658,7 @@ public class DeliveryService {
         );
         item.unit = valueOrFallback(
                 article != null ? article.unit : null,
-                "Stueck"
+                "Stück"
         );
         item.quantity = order.quantity != null && order.quantity > 0 ? order.quantity : 1;
         return item;
