@@ -445,7 +445,7 @@ export function DeliveryPage() {
       }
 
       await confirmDelivery({ deliveryId: activeDelivery.id, token: auth.token });
-      await completeProcessTask(CONFIRM_DELIVERY_TASK_DEFINITION_KEY, {
+      const processVariables: Record<string, { value: string | number | boolean; type: string }> = {
         deliveredDeliveryId: {
           value: activeDelivery.id,
           type: "String",
@@ -498,7 +498,16 @@ export function DeliveryPage() {
           value: isLastStop,
           type: "Boolean",
         },
-      });
+      };
+
+      if (auth.token) {
+        processVariables.authorizationHeader = {
+          value: `Bearer ${auth.token}`,
+          type: "String",
+        };
+      }
+
+      await completeProcessTask(CONFIRM_DELIVERY_TASK_DEFINITION_KEY, processVariables);
 
       const deliveredAt = new Date().toISOString();
       setDeliveries((current) =>
