@@ -278,6 +278,28 @@ export function DeliveryPage() {
     return tasks[0];
   }
 
+  async function loadOptionalUserTask(processInstanceId: string, taskDefinitionKey: string) {
+    const query = new URLSearchParams({
+      processInstanceId,
+      taskDefinitionKey,
+    });
+    const response = await fetch(`${CAMUNDA_BASE_URL}/task?${query.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(
+        `Task konnte nicht geladen werden: ${response.status}`,
+      );
+    }
+
+    const tasks = (await response.json()) as CamundaTask[];
+
+    if (tasks.length > 1) {
+      throw new Error("Die Camunda-Task wurde nicht eindeutig gefunden.");
+    }
+
+    return tasks[0] ?? null;
+  }
+
   async function completeUserTask(
     taskId: string,
     variables: Record<string, { value: string | number | boolean; type: string }> = {},
@@ -322,18 +344,20 @@ export function DeliveryPage() {
     try {
       const processInstanceId = searchParams.get("processInstanceId");
 
-      if (processInstanceId) {
-        const startTourTask = await loadUserTask(
-          processInstanceId,
-          START_TOUR_TASK_DEFINITION_KEY,
-        );
-        await completeUserTask(startTourTask.id);
-      }
-
       const startedTour = await startTour({
         tourId: tour.id,
         token: auth.token,
       });
+
+      if (processInstanceId) {
+        const startTourTask = await loadOptionalUserTask(
+          processInstanceId,
+          START_TOUR_TASK_DEFINITION_KEY,
+        );
+        if (startTourTask) {
+          await completeUserTask(startTourTask.id);
+        }
+      }
 
       setTour(startedTour);
 
