@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,7 +20,13 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "deliveries")
+@Table(
+        name = "deliveries",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_deliveries_user_delivery_date",
+                columnNames = {"user_id", "delivery_date"}
+        )
+)
 public class Delivery extends PanacheEntityBase {
 
     @Id

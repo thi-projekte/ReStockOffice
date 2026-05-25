@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
@@ -42,6 +43,9 @@ public class DeliveryService {
     @Inject
     @RestClient
     ArticleClient articleClient;
+
+    @Inject
+    EntityManager entityManager;
 
     @Transactional
     public Tour createTour(Tour tour) {
@@ -220,6 +224,8 @@ public class DeliveryService {
     }
 
     private void ensurePlanningHorizon(String authorizationHeader) {
+        lockPlanningHorizon();
+
         LocalDate today = LocalDate.now();
         LocalDate horizonEnd = today.plusDays(PLANNING_HORIZON_DAYS);
         List<OrderDto> activeOrders = orderClient.getActiveOrders(authorizationHeader);
@@ -246,6 +252,12 @@ public class DeliveryService {
         for (Map.Entry<DeliveryGroupKey, DeliveryGroup> entry : groupedOrders.entrySet()) {
             upsertPlannedDelivery(entry.getKey(), entry.getValue().orders);
         }
+    }
+
+    private void lockPlanningHorizon() {
+        entityManager
+                .createNativeQuery("select pg_advisory_xact_lock(7744288937001)")
+                .getSingleResult();
     }
 
     private void upsertPlannedDelivery(DeliveryGroupKey groupKey, List<OrderDto> orders) {
