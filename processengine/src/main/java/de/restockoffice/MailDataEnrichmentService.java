@@ -24,7 +24,10 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class MailDataEnrichmentService {
@@ -90,6 +93,7 @@ public class MailDataEnrichmentService {
         enrichCommonVariables(execution, context);
 
         execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
+        setDeliveryItemsVariable(execution, context.delivery());
         setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
 
@@ -424,6 +428,23 @@ public class MailDataEnrichmentService {
             return null;
         }
         return delivery.items.get(0);
+    }
+
+    private void setDeliveryItemsVariable(DelegateExecution execution, DeliveryDetailDto delivery) {
+        if (delivery == null || delivery.items == null || delivery.items.isEmpty()) {
+            return;
+        }
+
+        List<Map<String, Object>> deliveryItems = delivery.items.stream()
+                .map(item -> {
+                    Map<String, Object> deliveryItem = new HashMap<>();
+                    deliveryItem.put("name", firstNonBlank(item.name, "Artikel " + item.articleNumber));
+                    deliveryItem.put("articleNumber", item.articleNumber);
+                    deliveryItem.put("quantity", formatDeliveryItemQuantity(item));
+                    return deliveryItem;
+                })
+                .toList();
+        execution.setVariable("deliveryItems", deliveryItems);
     }
 
     private String formatDeliveryItemQuantity(DeliveryItemDetailDto item) {
