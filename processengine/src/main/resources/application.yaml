@@ -25,7 +25,7 @@ management:
     web.exposure.include: env,health,info,metrics
 
 mailservice:
-  base-url: ${MAILSERVICE_BASE_URL:http://localhost:8081}
+  base-url: ${MAILSERVICE_BASE_URL:http://confirmation-mails:8081}
 
 ordersservice:
   base-url: ${ORDERS_SERVICE_URL:https://orders.restockoffice.de}
