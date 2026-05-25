@@ -87,3 +87,7 @@ jobs:
           file: ./users/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
           tags: ${{ steps.image_tags.outputs.tags }}
+          secrets: |
+            "KEYCLOAK_SECRET_TOKEN=${{ secrets.KEYCLOAK_SECRET_TOKEN }}"
+          build-args: |
+            KEYCLOAK_SECRET_TOKEN=${{ secrets.KEYCLOAK_SECRET_TOKEN }}
