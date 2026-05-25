@@ -21,6 +21,10 @@
 ###
 FROM quay.io/quarkus/ubi9-quarkus-micro-image:2.0
 WORKDIR /work/
+
+ARG KEYCLOAK_SECRET_TOKEN
+ENV KEYCLOAK_SECRET_TOKEN=${KEYCLOAK_SECRET_TOKEN}
+
 RUN chown 1001 /work \
     && chmod "g+rwX" /work \
     && chown 1001:root /work
