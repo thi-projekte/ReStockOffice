@@ -635,11 +635,11 @@ public class DeliveryService {
             user.street = "Demoweg";
             user.houseNumber = "7";
             user.postalCode = "90402";
-            user.city = "Nuernberg";
+            user.city = "Nürnberg";
             user.country = "Deutschland";
             user.phoneNumber = "+49 911 987654";
             user.roleInCompany = "Office Management";
-            user.deliveryHint = "Anlieferung ueber Seiteneingang.";
+            user.deliveryHint = "Anlieferung über Seiteneingang.";
             user.deliveryDay = "Samstag";
             user.deliveryTime = "14:00";
             return user;
