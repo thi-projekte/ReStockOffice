@@ -29,6 +29,8 @@ jobs:
 
       - name: Build with Maven
         working-directory: users
+        env:
+          KEYCLOAK_SECRET_TOKEN: ${{ secrets.KEYCLOAK_SECRET_TOKEN }}
         run: |
           chmod +x mvnw
           ./mvnw -B verify
