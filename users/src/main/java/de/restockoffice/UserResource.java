@@ -84,6 +84,7 @@ public class UserResource {
                     .toRepresentation()
                     .getEmail();
         } catch (Exception e) {
+            e.printStackTrace();
             System.err.println("Fehler beim Abrufen der Keycloak-Email: " + e.getMessage());
             customerEmail = "E-Mail nicht verfügbar";
         }
