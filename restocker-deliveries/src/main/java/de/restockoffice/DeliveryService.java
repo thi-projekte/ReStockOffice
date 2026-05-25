@@ -612,7 +612,7 @@ public class DeliveryService {
         if (DEFAULT_TEST_CUSTOMER_ONE.equals(userId)) {
             UserDto user = new UserDto();
             user.userId = userId;
-            user.email = "bachmayerjulia2004@gmail.com";
+            user.email = "corinna.niedermeier01@gmail.com";
             user.companyName = "Muster GmbH";
             user.street = "Teststrasse";
             user.houseNumber = "12";
@@ -630,7 +630,7 @@ public class DeliveryService {
         if (DEFAULT_TEST_CUSTOMER_TWO.equals(userId)) {
             UserDto user = new UserDto();
             user.userId = userId;
-            user.email = "bachmayerjulia2004@gmail.com";
+            user.email = "corinna.niedermeier01@gmail.com";
             user.companyName = "Beispiel Office AG";
             user.street = "Demoweg";
             user.houseNumber = "7";
