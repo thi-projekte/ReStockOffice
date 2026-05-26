@@ -90,4 +90,38 @@ class MailResourceTest {
                 .body("status", equalTo("queued"))
                 .body("messageId", notNullValue());
     }
+
+    @Test
+    void previewDeliveryConfirmationRendersDeliveredItemsWithoutLocationSection() {
+        String payload = """
+                {
+                  "recipientEmail": "max.mustermann@example.com",
+                  "customerName": "Max Mustermann",
+                  "deliveryDate": "Freitag, 15.05.2026",
+                  "deliveryWindow": "um 15:30 Uhr",
+                  "orderNumber": "RSO-2026-004281",
+                  "supplierName": "Sabrina Keller",
+                  "deliveryDetailsUrl": "https://restockoffice.example.com/account/deliveries/RSO-2026-004281",
+                  "deliveryItems": [
+                    {
+                      "name": "Kopierpapier A4 Premium",
+                      "articleNumber": "RS-10023",
+                      "quantity": "4 Pack"
+                    }
+                  ]
+                }
+                """;
+
+        given().contentType(ContentType.JSON)
+                .body(payload)
+                .when()
+                .post("/emails/delivery-confirmation/preview")
+                .then()
+                .statusCode(200)
+                .contentType(containsString("text/html"))
+                .body(containsString("Deine Lieferung ist angekommen."))
+                .body(containsString("Kopierpapier A4 Premium"))
+                .body(org.hamcrest.Matchers.not(containsString("Übergabeort &amp; Platz")))
+                .body(org.hamcrest.Matchers.not(containsString("Ansprechpartner vor Ort")));
+    }
 }

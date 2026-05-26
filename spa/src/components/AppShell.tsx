@@ -544,9 +544,19 @@ export function AppShell({ children }: AppShellProps) {
                       <NavLink
                           className="button button--ghost nav-btn"
                           to="/restocker-orders"
-                          title="Aufträge"
+                          title="Offene Aufträge"
                       >
                         <FaClipboardList  />
+                      </NavLink>
+                  )}
+
+                  {isRestocker && (
+                      <NavLink
+                          className="button button--ghost nav-btn"
+                          to="/restocker-my-orders"
+                          title="Meine Aufträge"
+                      >
+                        <FaCalendarAlt />
                       </NavLink>
                   )}
 
@@ -705,7 +715,17 @@ export function AppShell({ children }: AppShellProps) {
                         to="/restocker-orders"
                         onClick={() => setMenuOpen(false)}
                     >
-                      <FaClipboardList /> Aufträge
+                      <FaClipboardList /> Offene Aufträge
+                    </NavLink>
+                )}
+
+                {isRestocker && (
+                    <NavLink
+                        className="mobile-nav__link"
+                        to="/restocker-my-orders"
+                        onClick={() => setMenuOpen(false)}
+                    >
+                      <FaCalendarAlt /> Meine Aufträge
                     </NavLink>
                 )}
 

@@ -1,0 +1,14 @@
+{
+  "clientId": "restock-orders",
+  "name": "restock-orders",
+  "enabled": true,
+  "protocol": "openid-connect",
+  "publicClient": false,
+  "secret": "restock-secret",
+  "directAccessGrantsEnabled": true,
+  "standardFlowEnabled": true,
+  "serviceAccountsEnabled": true,
+  "authorizationServicesEnabled": false,
+  "redirectUris": ["*"],
+  "webOrigins": ["*"]
+}

@@ -1,7 +1,7 @@
 # ReStockOffice Process Engine
 
-Dieser Service stellt die zentrale CIB seven Process Engine fuer ReStockOffice bereit.
-Es gibt keine UI; andere Services greifen ueber die REST-Schnittstelle zu.
+Dieser Service stellt die zentrale CIB seven Process Engine für ReStockOffice bereit.
+Es gibt keine UI; andere Services greifen über die REST-Schnittstelle zu.
 
 ## Technologien
 
@@ -13,7 +13,7 @@ Es gibt keine UI; andere Services greifen ueber die REST-Schnittstelle zu.
 
 ## Lokaler Start
 
-Die Zugangsdaten fuer das CIB seven Maven Repository muessen lokal in `~/.m2/settings.xml` oder in GitHub Actions als Secrets hinterlegt sein.
+Die Zugangsdaten für das CIB seven Maven Repository müssen lokal in `~/.m2/settings.xml` oder in GitHub Actions als Secrets hinterlegt sein.
 
 ```bash
 mvn -B package -DskipTests
@@ -28,7 +28,7 @@ http://localhost:8080/engine-rest
 
 ## Deployment
 
-Das Docker-Image wird durch GitHub Actions gebaut und in der GitHub Container Registry veroeffentlicht:
+Das Docker-Image wird durch GitHub Actions gebaut und in der GitHub Container Registry veröffentlicht:
 
 ```text
 ghcr.io/thi-projekte/restockoffice-processengine:1.0.0
