@@ -756,17 +756,6 @@ export function AppShell({ children }: AppShellProps) {
                     </NavLink>
                 )}
 
-                {/* Auslieferungen: Nur für Restocker */}
-                {isRestocker && (
-                    <NavLink
-                        className="mobile-nav__link"
-                        to="/restocker-deliveries"
-                        onClick={() => setMenuOpen(false)}
-                    >
-                      <FaTruck /> Auslieferungen
-                    </NavLink>
-                )}
-
                 {/* Account: Für beide gleich */}
                 <NavLink
                     className="mobile-nav__link"
