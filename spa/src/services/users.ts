@@ -5,14 +5,12 @@ import restockerTemplate from "../mocks/restocker.json";
 import type { RestockOrder } from "../types/shop";
 import { useAPIs } from "./products";
 
-const CUSTOMER_ME_API_URL = "https://users.restockoffice.de/customer/me";
-const RESTOCKER_ME_API_URL = "https://users.restockoffice.de/restocker/me";
+const USERS_API_URL = import.meta.env.VITE_USERS_API_URL ?? "https://users.restockoffice.de";
+const CUSTOMER_ME_API_URL = `${USERS_API_URL}/customer/me`;
+const RESTOCKER_ME_API_URL = `${USERS_API_URL}/restocker/me`;
 
-
-export const CUSTOMERS_API_URL = "https://users.restockoffice.de/customers";
-export const RESTOCKERS_API_URL = "https://users.restockoffice.de/restockers";
-
-const USERS_API_URL =  import.meta.env.VITE_USERS_API_URL ?? "https://users.restockoffice.de";
+export const CUSTOMERS_API_URL = `${USERS_API_URL}/customers`;
+export const RESTOCKERS_API_URL = `${USERS_API_URL}/restockers`;
 
 export type UserKind = "customer" | "restocker";
 
@@ -112,10 +110,16 @@ async function resolveToken(token?: string) {
   return keycloak.token;
 }
 
-function createHeaders(token: string) {
+function createJsonHeaders(token: string) {
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
+  };
+}
+
+function createAuthHeaders(token: string) {
+  return {
+    Authorization: `Bearer ${token}`,
   };
 }
 
@@ -321,7 +325,7 @@ async function fetchCurrentUserPayload(context: UserRequestContext = {}): Promis
   try {
     response = await fetch(getMeApiUrl(kind), {
       method: "GET",
-      headers: createHeaders(resolvedToken),
+      headers: createAuthHeaders(resolvedToken),
     });
   } catch {
     throw new Error(buildUsersNetworkErrorMessage("geladen"));
@@ -372,7 +376,7 @@ export async function saveMyUser(
   try {
     response = await fetch(getMeApiUrl(kind), {
       method: "POST",
-      headers: createHeaders(resolvedToken),
+      headers: createJsonHeaders(resolvedToken),
       body: JSON.stringify(user),
     });
   } catch {
@@ -430,9 +434,7 @@ export async function loadCustomerProfile({
       `${USERS_API_URL}/customerForRestocker?userId=${userId}`,
       {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: createAuthHeaders(token),
       },
   );
 
