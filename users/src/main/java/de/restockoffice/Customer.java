@@ -1,6 +1,7 @@
 package de.restockoffice;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.smallrye.common.constraint.NotNull;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
@@ -11,6 +12,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "users")
+@RegisterForReflection
 public class Customer extends PanacheEntityBase {
 
     @Id

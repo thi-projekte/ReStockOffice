@@ -1,6 +1,7 @@
 package de.restockoffice;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.smallrye.common.constraint.NotNull;
 import jakarta.persistence.*;
 
@@ -9,6 +10,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "restockers")
+@RegisterForReflection
 public class Restocker extends PanacheEntityBase {
 
     @Id

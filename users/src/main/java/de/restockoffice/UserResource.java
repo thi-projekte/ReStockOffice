@@ -2,6 +2,7 @@ package de.restockoffice;
 
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
@@ -105,12 +106,14 @@ public class UserResource {
 
     @GET
     @Path("customers")
+    @RolesAllowed("admin")
     public List<Customer> getAllCustomers(){
         return Customer.listAll();
     }
 
     @GET
     @Path("restockers")
+    @RolesAllowed("admin")
     public List<Restocker> getAllRestockers(){
         return Restocker.listAll();
     }
@@ -120,13 +123,14 @@ public class UserResource {
     @Transactional
     public Response createCustomer(Customer newCustomer){
         String userId = jwt.getSubject();
+        newCustomer.userId = userId;
 
         if (Customer.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
 
-        newCustomer.userId = userId;
+
         newCustomer.createdAt = LocalDateTime.now();
 
         newCustomer.persist();
@@ -139,13 +143,14 @@ public class UserResource {
     @Transactional
     public Response createRestocker(Restocker newRestocker){
         String userId = jwt.getSubject();
+        newRestocker.userId = userId;
 
         if (Restocker.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
 
-        newRestocker.userId = userId;
+
         newRestocker.createdAt = LocalDateTime.now();
 
         newRestocker.persist();
@@ -163,11 +168,22 @@ public class UserResource {
     ){
 
         String userId = jwt.getSubject();
-        Customer entity = findCustomerOrThrow(userId);
+        updatedData.userId = userId;
 
+        Customer entity = findCustomerOrThrow(userId);
         boolean hasChanged = applyCustomerChanges(entity, updatedData);
 
         if (file != null && file.uploadedFile() != null) {
+
+            // Prüfung Dateityp
+            if(!file.contentType().startsWith("image/")){
+                throw new WebApplicationException("Ungültiger Dateityp. Nur Bilder sind erlaubt.", 400);
+            }
+            // Prüfung Dateigröße
+            if (file.size() > 5 * 1024 * 1024) {
+                throw new WebApplicationException("Datei ist zu groß. Maximal 5MB erlaubt.", 400);
+            }
+
             entity.profilePictureUrl = uploadProfilePicture(userId, file);
             hasChanged = true;
         }
@@ -189,11 +205,21 @@ public class UserResource {
     ){
 
         String userId = jwt.getSubject();
-        Restocker entity = findRestockerOrThrow(userId);
+        updatedData.userId = userId;
 
+        Restocker entity = findRestockerOrThrow(userId);
         boolean hasChanged = applyRestockerChanges(entity, updatedData);
 
         if (file != null && file.uploadedFile() != null) {
+            // Prüfung Dateityp
+            if(!file.contentType().startsWith("image/")){
+                throw new WebApplicationException("Ungültiger Dateityp. Nur Bilder sind erlaubt.", 400);
+            }
+            // Prüfung Dateigröße
+            if (file.size() > 5 * 1024 * 1024) {
+                throw new WebApplicationException("Datei ist zu groß. Maximal 5MB erlaubt.", 400);
+            }
+
             entity.profilePictureUrl =uploadProfilePicture(userId, file);
             hasChanged = true;
         }

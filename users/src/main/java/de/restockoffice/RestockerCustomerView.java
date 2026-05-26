@@ -1,5 +1,8 @@
 package de.restockoffice;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class RestockerCustomerView {
     public String companyName;
     public String postalCode;
