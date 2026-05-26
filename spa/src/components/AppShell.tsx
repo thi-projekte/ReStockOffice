@@ -587,16 +587,6 @@ export function AppShell({ children }: AppShellProps) {
                       </NavLink>
                   )}
 
-                  {/* Auslieferungen: Nur für Restocker */}
-                  {isRestocker && (
-                      <NavLink
-                          className="button button--ghost nav-btn"
-                          to="/restocker-deliveries"
-                          title="Auslieferungen"
-                      >
-                        <FaTruck  />
-                      </NavLink>
-                  )}
 
                   {/* Hamburger immer sichtbar */}
                   <button
@@ -752,7 +742,7 @@ export function AppShell({ children }: AppShellProps) {
                         to="/restocker-my-orders"
                         onClick={() => setMenuOpen(false)}
                     >
-                      <FaCalendarAlt /> Meine Aufträge
+                      <FaTruck /> Meine Aufträge
                     </NavLink>
                 )}
 
