@@ -13,8 +13,8 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 public interface UserClient {
 
     @GET
-    @Path("/user")
-    UserDto getUserById(
+    @Path("/customerForRestocker")
+    UserDto getCustomerAddressForRestocker(
             @QueryParam("userId") String userId,
             @HeaderParam("Authorization") String authorizationHeader
     );

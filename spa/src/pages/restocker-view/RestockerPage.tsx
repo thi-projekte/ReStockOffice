@@ -1,151 +1,592 @@
+import "../../styles/restocker-home.css";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { acceptRestockOrder, loadOpenRestockOrders } from "../../services/orders";
+import { useAuth } from "../../auth/AuthProvider";
+import type { RestockMarketplaceOrder } from "../../types/shop";
+import { loadAssignedRestockOrders } from "../../services/orders";
+import type { RestockMarketplaceLoadResult } from "../../types/shop";
+import { getDaysUntilDelivery } from "./restockerOrderUi";
+import { useNavigate } from "react-router-dom";
+import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCardDashboard";
+import { RestockerStatisticsCard } from "../../components/restocker/RestockerStatisticsCard";
+import { RestockerOrderDetailDialog } from "../../components/restocker/RestockerOrderDetailDialog";
+import { formatDeliveryWindow } from "./restockerOrderUi";
 
-import { Link } from "react-router-dom";
+const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
+const RESTOCKER_TOUR_PROCESS_DEFINITION_KEY = "Process_0h5mosh";
+
+interface CamundaProcessInstance {
+    id: string;
+}
+
+function currentTourProcessStorageKey(restockerId: string) {
+    const date = new Date();
+    const today = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    return `restocker-tour-process:${restockerId}:${today}`;
+}
+
+function loadStoredTourProcessId(restockerId?: string) {
+    if (!restockerId) {
+        return null;
+    }
+
+    return sessionStorage.getItem(currentTourProcessStorageKey(restockerId));
+}
+
+function storeTourProcessId(restockerId: string, processInstanceId: string) {
+    sessionStorage.setItem(
+        currentTourProcessStorageKey(restockerId),
+        processInstanceId,
+    );
+}
 
 export function RestockerPage() {
+    const auth = useAuth();
+
+    const navigate = useNavigate();
+
+    const [openOrders, setOpenOrders] = useState<RestockMarketplaceOrder[]>([]);
+    const [openLoading, setOpenLoading] = useState(true);
+    const [openError, setOpenError] = useState<string | null>(null);
+
+    const [assignedOrdersResult, setAssignedOrdersResult] =
+        useState<RestockMarketplaceLoadResult>({
+            orders: [],
+            source: "live",
+            hasPlaceholderCustomerData: false,
+        });
+
+    const [assignedLoading, setAssignedLoading] = useState(true);
+    const [assignedError, setAssignedError] = useState<string | null>(null);
+    const [selectedOrder, setSelectedOrder] = useState<RestockMarketplaceOrder | null>(null);
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
+
+
+    /*Daten laden */
+    useEffect(() => {
+        async function load() {
+            if (!auth.token) return;
+
+            try {
+                setOpenLoading(true);
+
+                const result = await loadOpenRestockOrders({
+                    token: auth.token,
+                    restockerName: auth.user?.username ?? auth.user?.id ?? "",
+                });
+
+                setOpenOrders(result.orders);
+            } catch (err) {
+                setOpenError(
+                    err instanceof Error
+                        ? err.message
+                        : "Fehler beim Laden der offenen Aufträge"
+                );
+            } finally {
+                setOpenLoading(false);
+            }
+        }
+
+        load();
+    }, [auth.token]);
+
+    useEffect(() => {
+        async function load() {
+            if (!auth.token || !auth.user?.id) return;
+
+            setAssignedLoading(true);
+            setAssignedError(null);
+
+            try {
+                const result = await loadAssignedRestockOrders({
+                    token: auth.token,
+                    restockerId: auth.user.id,
+                    restockerName:
+                        auth.user?.username ?? auth.user?.id ?? "",
+                });
+
+                setAssignedOrdersResult(result);
+            } catch (err) {
+                setAssignedError(
+                    err instanceof Error
+                        ? err.message
+                        : "Fehler beim Laden deiner zugeordneten Aufträge"
+                );
+            } finally {
+                setAssignedLoading(false);
+            }
+        }
+
+        load();
+    }, [auth.token, auth.user?.id, auth.user?.username]);
+
+    const assignedToday = assignedOrdersResult.orders.filter(
+        (order) => getDaysUntilDelivery(order.deliveryDate) === 0
+    );
+    const totalToday = assignedToday.length;
+
+    const completedToday = assignedToday.filter(
+        (order) => order.assignment?.status === "completed"
+    ).length;
+    const openAssignedToday = assignedToday.filter(
+        (order) =>
+            Boolean(order.assignment && order.assignment.status !== "completed")
+    );
+    const openAssignedTodayCount = openAssignedToday.length;
+    const hasOpenAssignedToday = openAssignedTodayCount > 0;
+
+
+    const earningsPerDelivery = 7;
+    const earningsToday = totalToday * earningsPerDelivery;
+
+    async function loadActiveTourProcess(restockerId: string) {
+        const query = new URLSearchParams({
+            processDefinitionKey: RESTOCKER_TOUR_PROCESS_DEFINITION_KEY,
+            businessKey: restockerId,
+            active: "true",
+        });
+        const res = await fetch(`${CAMUNDA_BASE_URL}/process-instance?${query.toString()}`);
+
+        if (!res.ok) {
+            throw new Error(`Aktiver Tour-Prozess konnte nicht geladen werden: ${res.status}`);
+        }
+
+        const processInstances = (await res.json()) as CamundaProcessInstance[];
+        return processInstances[0]?.id ?? null;
+    }
+
+    async function startTourProcessThroughEngineRest(
+        restockerId: string,
+        todayDeliveryCount: number,
+    ) {
+        const activeProcessId = await loadActiveTourProcess(restockerId);
+
+        if (activeProcessId) {
+            await updateTourProcessVariables(activeProcessId, todayDeliveryCount);
+
+            return activeProcessId;
+        }
+
+        const res = await fetch(
+            `${CAMUNDA_BASE_URL}/process-definition/key/${RESTOCKER_TOUR_PROCESS_DEFINITION_KEY}/start`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    businessKey: restockerId,
+                    variables: {
+                        restockerId: {
+                            value: restockerId,
+                            type: "String",
+                        },
+                        todayDeliveryCount: {
+                            value: todayDeliveryCount,
+                            type: "Integer",
+                        },
+                    },
+                }),
+            },
+        );
+
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || `Tour-Prozess konnte nicht gestartet werden: ${res.status}`);
+        }
+
+        const processInstance = (await res.json()) as CamundaProcessInstance;
+
+        if (!processInstance.id) {
+            throw new Error("Camunda hat keine Prozessinstanz-ID geliefert.");
+        }
+
+        return processInstance.id;
+    }
+
+    async function updateTourProcessVariables(
+        processInstanceId: string,
+        todayDeliveryCount: number,
+    ) {
+        const res = await fetch(
+            `${CAMUNDA_BASE_URL}/process-instance/${processInstanceId}/variables`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    modifications: {
+                        todayDeliveryCount: {
+                            value: todayDeliveryCount,
+                            type: "Integer",
+                        },
+                    },
+                    deletions: [],
+                }),
+            },
+        );
+
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || `Tour-Prozessvariablen konnten nicht aktualisiert werden: ${res.status}`);
+        }
+    }
+
+    async function startTourProcess(
+        restockerId: string,
+        todayDeliveryCount: number,
+    ) {
+        return startTourProcessThroughEngineRest(
+            restockerId,
+            todayDeliveryCount,
+        );
+    }
+
+    const startTourRequestInFlight = useRef(false);
+    const [startingTour, setStartingTour] = useState(false);
+    const [tourProcessId, setTourProcessId] = useState<string | null>(() =>
+        loadStoredTourProcessId(auth.user?.id),
+    );
+
+    useEffect(() => {
+        setTourProcessId(loadStoredTourProcessId(auth.user?.id));
+    }, [auth.user?.id]);
+
+    const startTourButtonLabel = startingTour
+        ? "Tour startet..."
+        : assignedLoading
+            ? "Lieferungen werden geladen..."
+            : !hasOpenAssignedToday
+                ? "Keine offenen Lieferungen heute"
+                : tourProcessId
+                    ? "Zur laufenden Tour wechseln"
+                    : "Tour von heute beginnen";
+
+    async function handleStartTourProcess() {
+        if (startTourRequestInFlight.current) {
+            return;
+        }
+
+        if (!hasOpenAssignedToday) {
+            return;
+        }
+
+        try {
+            startTourRequestInFlight.current = true;
+            setStartingTour(true);
+
+            if (!auth.user?.id) {
+                throw new Error("Eingeloggter Restocker konnte nicht ermittelt werden.");
+            }
+
+            const processInstanceId = await startTourProcess(
+                auth.user.id,
+                openAssignedTodayCount,
+            );
+
+            if (tourProcessId !== processInstanceId) {
+                storeTourProcessId(auth.user.id, processInstanceId);
+                setTourProcessId(processInstanceId);
+            }
+
+            const query = new URLSearchParams({ processInstanceId });
+            navigate(`/restocker-deliveries?${query.toString()}`);
+        } catch (err) {
+            console.error(err);
+            alert("Fehler beim Start der Tour");
+        } finally {
+            startTourRequestInFlight.current = false;
+            setStartingTour(false);
+        }
+    }
+
+    async function handleAcceptOrder(orderToAccept: RestockMarketplaceOrder) {
+        if (!auth.user?.id || !auth.token) {
+            return;
+        }
+
+        try {
+            await acceptRestockOrder({
+                orderKey: orderToAccept.orderKey,
+                restockerId: auth.user.id,
+                restockerName: auth.user?.username ?? auth.user.id,
+                token: auth.token,
+            });
+
+            setOpenOrders((currentOrders) =>
+                currentOrders.filter((order) => order.orderKey !== orderToAccept.orderKey),
+            );
+            setAssignedOrdersResult((currentResult) => ({
+                ...currentResult,
+                orders: [
+                    {
+                        ...orderToAccept,
+                        assignment: {
+                            restockerId: auth.user!.id,
+                            acceptedAt: new Date().toISOString(),
+                            status: "accepted",
+                        },
+                    },
+                    ...currentResult.orders,
+                ],
+            }));
+            setIsConfirmDialogOpen(false);
+            setSelectedOrder(null);
+            toast.success(`Du hast Auftrag #${orderToAccept.orderId} erfolgreich übernommen.`);
+        } catch (acceptError) {
+            toast.error(
+                acceptError instanceof Error
+                    ? acceptError.message
+                    : "Der Auftrag konnte nicht übernommen werden.",
+            );
+        }
+    }
+
+    function openAcceptConfirmation(orderToAccept: RestockMarketplaceOrder) {
+        setSelectedOrder(orderToAccept);
+        setIsConfirmDialogOpen(true);
+    }
+
+    function handleCloseDetailDialog() {
+        setSelectedOrder(null);
+        setIsConfirmDialogOpen(false);
+    }
+
+    function handleAcceptSelectedOrder() {
+        if (!selectedOrder) {
+            return;
+        }
+
+        void handleAcceptOrder(selectedOrder);
+    }
+
     return (
-        <div className="home-showcase">
+        <>
+            <div className="restocker-page">
+                <div className="restocker-inner">
 
-            {/* Button (ohne Funktion aktuell) */}
-            <button className="dashboard-btn button">
-                TOUR VON HEUTE BEGINNEN
-            </button>
+                    <button
+                        className="tour-btn"
+                        disabled={startingTour || assignedLoading || !hasOpenAssignedToday}
+                        onClick={() => void handleStartTourProcess()}
+                    >
+                        {startTourButtonLabel}
+                    </button>
 
+                    {/* Heutige Lieferungen */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <h4>Deine Lieferungen heute</h4>
+                                <h2>Übersicht – Heutige Lieferungen</h2>
+                                <p> Hallo, hier siehst du die wichtigsten Kennzahlen zu deinen heutigen Lieferungen.</p>
+                            </div>
+                        </div>
 
-            {/* //Card Heutige Lieferungen */}
-            <section className="page-card section-space">
+                        <div className="metrics-row-desktop">
 
-                <div className="section-head">
-                    <div>
-                        <span className="eyebrow">Deine Lieferungen heute</span>
-                        <h2>Status Heute: 2 von 10 offen</h2>
-                        <p>Hallo Max, hier siehst du deine heutigen Lieferungen.</p>
+                            <div className="metric-tile">
+                                <div className="metric-label">Abgeschlossen</div>
+                                <div className="metric-value">{completedToday}</div>
+                                <div className="metric-sub">von {totalToday} Lieferungen</div>
+                            </div>
+
+                            <div className="metric-tile">
+                                <div className="metric-label">Heutiger Verdienst</div>
+                                <div className="metric-value">{earningsToday} €</div>
+                                <div className="metric-sub">7€ pro Lieferung</div>
+                            </div>
+
+                        </div>
+
+                        <button
+                            className="tour-btn"
+                            onClick={() => navigate("/restocker-my-orders")}
+                        >
+                            Alle heutigen Lieferungen anzeigen
+                        </button>
                     </div>
 
-                    <Link className="button dashboard-btn" to="/restocker-orders">
-                        Alle heutigen Lieferungen anzeigen →
-                    </Link>
+                    {/* Offene Aufträge */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <h4>Verfügbare Aufträge</h4>
+                                <h2>Offene Lieferungen in deiner Nähe</h2>
+                            </div>
+                        </div>
+
+                        {openLoading ? (
+                            <p>Lade offene Aufträge...</p>
+                        ) : openError ? (
+                            <p style={{ color: "red" }}>{openError}</p>
+                        ) : (
+                            <>
+                                <p>Es gibt weitere Lieferungen in deiner Nähe. </p>
+                                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+                                <div className="open-orders-carousel">
+                                    {openOrders.slice(0, 6).map((order) => (
+                                        <RestockerOrderCard
+                                            key={order.orderKey}
+                                            order={order}
+                                            detailLabel="Auftrag ansehen"
+                                            onClick={() => setSelectedOrder(order)}
+                                            secondaryActionLabel="Fahrt annehmen"
+                                            onSecondaryAction={() => openAcceptConfirmation(order)}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        <button
+                            className="tour-btn"
+                            onClick={() => navigate("/restocker-orders")}
+                        >
+                            Alle offenen Lieferungen anzeigen
+                        </button>
+                    </div>
+
+                    {/* Meine Aufträge */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <h4>Deine Aufträge</h4>
+                                <h2>Deine Übersicht</h2>
+                            </div>
+                        </div>
+
+                        {assignedLoading ? (
+                            <p>Lade deine Aufträge...</p>
+                        ) : assignedError ? (
+                            <p style={{ color: "red" }}>{assignedError}</p>
+                        ) : assignedOrdersResult.orders.length === 0 ? (
+                            <p>Du hast aktuell keine zugeordneten Aufträge.</p>
+                        ) : (
+                            <>
+                                <p>Du hast aktuell {assignedOrdersResult.orders.length} zugeordnete Aufträge.</p>
+                                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+                                <div className="open-orders-carousel">
+                                    {assignedOrdersResult.orders.slice(0, 6).map((order) => (
+                                        <RestockerOrderCard
+                                            key={order.orderKey}
+                                            order={order}
+                                            detailLabel="Auftrag ansehen"
+                                            onClick={() => setSelectedOrder(order)}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        <button
+                            className="tour-btn"
+                            onClick={() => navigate("/restocker-my-orders")}
+                        >
+                            Alle dir zugeordneten Aufträge anzeigen
+                        </button>
+                    </div>
+
+                    <RestockerStatisticsCard
+                        assignedLoading={assignedLoading}
+                        assignedError={assignedError}
+                        assignedOrdersResult={assignedOrdersResult}
+                    />
+
+                    {selectedOrder && !isConfirmDialogOpen ? (
+                        <RestockerOrderDetailDialog
+                            order={selectedOrder}
+                            backLabel="Zurück zur Übersicht"
+                            onClose={handleCloseDetailDialog}
+                            actions={
+                                selectedOrder.assignment ? null : (
+                                    <button
+                                        className="button"
+                                        type="button"
+                                        onClick={() => setIsConfirmDialogOpen(true)}
+                                    >
+                                        Fahrt annehmen
+                                    </button>
+                                )
+                            }
+                        />
+                    ) : null}
+
+                    {selectedOrder && isConfirmDialogOpen ? (
+                        <>
+                            <button
+                                className="subscription-modal__overlay"
+                                type="button"
+                                aria-label="Bestätigungsdialog schließen"
+                                onClick={() => setIsConfirmDialogOpen(false)}
+                            />
+
+                            <section
+                                className="subscription-modal restocker-confirm-dialog"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="restocker-confirm-dialog-title"
+                            >
+                                <div className="subscription-modal__header">
+                                    <div>
+                                        <span className="eyebrow">Bereit für deinen nächsten Einsatz?</span>
+                                        <h2 id="restocker-confirm-dialog-title">Auftrag wirklich übernehmen?</h2>
+                                    </div>
+                                </div>
+
+                                <div className="subscription-modal__body restocker-confirm-dialog__body">
+                                    <p>
+                                        Du bist dabei, die Lieferung für <strong>{selectedOrder.companyName}</strong>{" "}
+                                        am <strong>{selectedOrder.deliveryDate}</strong> zu übernehmen.
+                                    </p>
+
+                                    <div className="restocker-confirm-dialog__facts">
+                                        <div>
+                                            <span>Ziel</span>
+                                            <strong>
+                                                {selectedOrder.addressLine1}, {selectedOrder.postalCode}{" "}
+                                                {selectedOrder.city}
+                                            </strong>
+                                        </div>
+                                        <div>
+                                            <span>Lieferfenster</span>
+                                            <strong>{formatDeliveryWindow(selectedOrder.deliveryTime)}</strong>
+                                        </div>
+                                        <div>
+                                            <span>Artikel</span>
+                                            <strong>{selectedOrder.articleCount}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="subscription-modal__actions">
+                                    <button
+                                        className="button button--ghost"
+                                        type="button"
+                                        onClick={() => setIsConfirmDialogOpen(false)}
+                                    >
+                                        Zurück zur Lieferung
+                                    </button>
+
+                                    <button className="button" type="button" onClick={handleAcceptSelectedOrder}>
+                                        Ja, Fahrt annehmen
+                                    </button>
+                                </div>
+                            </section>
+                        </>
+                    ) : null}
+
+
                 </div>
-
-                <div className="category-grid">
-
-                    <div className="highlight-tile">
-                        <h3>#1234</h3>
-                        <p>Technische Hochschule Ingolstadt</p>
-                        <span>Esplanade 138, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:00 Uhr</small>
-                        <strong>10 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1354</h3>
-                        <p>AUDI AG</p>
-                        <span>Auto-Union-Straße 1, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:20 Uhr</small>
-                        <strong>8 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1355</h3>
-                        <p>COM-IN Telekommunikations GmbH</p>
-                        <span>Mauthstraße 4, 85051 Ingolstadt</span>
-                        <small>13.05.2026 | 11:30 Uhr</small>
-                        <strong>6 Artikel</strong>
-                    </div>
-
-                </div>
-            </section>
-
-            {/* //Card Offene Aufträge */}
-
-            <section className="page-card section-space">
-
-                <div className="section-head">
-                    <div>
-                        <span className="eyebrow">Verfügbare Aufträge</span>
-                        <h2>Offene Lieferungen in deiner Nähe</h2>
-                        <p>Wähle einen Auftrag aus, um die Details zu sehen und die Fahrt zu übernehmen.</p>
-                    </div>
-
-                    <Link className="button dashboard-btn" to="/restocker-orders">
-                        Alle offenen Aufträge anzeigen →
-                    </Link>
-                </div>
-
-                <div className="category-grid">
-
-                    <div className="highlight-tile">
-                        <h3>#1234</h3>
-                        <p>Technische Hochschule Ingolstadt</p>
-                        <span>Esplanade 138, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:00 Uhr</small>
-                        <strong>10 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1354</h3>
-                        <p>AUDI AG</p>
-                        <span>Auto-Union-Straße 1, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:20 Uhr</small>
-                        <strong>8 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1355</h3>
-                        <p>COM-IN Telekommunikations GmbH</p>
-                        <span>Mauthstraße 4, 85051 Ingolstadt</span>
-                        <small>13.05.2026 | 11:30 Uhr</small>
-                        <strong>6 Artikel</strong>
-                    </div>
-
-                </div>
-            </section>
-
-            {/* //Card Meine Aufträge */}
-
-            <section className="page-card section-space">
-
-                <div className="section-head">
-                    <div>
-                        <span className="eyebrow">Deine Aufträge</span>
-                        <h2>Deine Übersicht</h2>
-                        <p>Hier die Aufträge, die du dir gesichert hast.</p>
-                    </div>
-
-                    <Link className="button dashboard-btn" to="/restocker-orders">
-                        Deine Aufträge anzeigen →
-                    </Link>
-                </div>
-
-                <div className="category-grid">
-
-                    <div className="highlight-tile">
-                        <h3>#1234</h3>
-                        <p>Technische Hochschule Ingolstadt</p>
-                        <span>Esplanade 138, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:00 Uhr</small>
-                        <strong>10 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1354</h3>
-                        <p>AUDI AG</p>
-                        <span>Auto-Union-Straße 1, 85049 Ingolstadt</span>
-                        <small>13.05.2026 | 11:20 Uhr</small>
-                        <strong>8 Artikel</strong>
-                    </div>
-
-                    <div className="highlight-tile">
-                        <h3>#1355</h3>
-                        <p>COM-IN Telekommunikations GmbH</p>
-                        <span>Mauthstraße 4, 85051 Ingolstadt</span>
-                        <small>13.05.2026 | 11:30 Uhr</small>
-                        <strong>6 Artikel</strong>
-                    </div>
-
-                </div>
-            </section>
-
-
-        </div>
+            </div >
+        </>
     );
 }

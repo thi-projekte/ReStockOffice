@@ -1,14 +1,24 @@
 package de.restockoffice;
 
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Path("/api/deliveries")
@@ -22,20 +32,22 @@ public class DeliveryResource {
     @Context
     HttpHeaders headers;
 
-    // ── Warehouse ────────────────────────────────
-
-    @GET
-    @Path("/warehouse")
-    public List<WarehouseItem> getAllWarehouseItems() {
-        return deliveryService.getAllWarehouseItems();
-    }
-
-    // ── Tours ────────────────────────────────────
-
     @GET
     @Path("/tours/today")
     public List<Tour> getTodayTours(@QueryParam("restocker") String restockerName) {
         return deliveryService.getTodayToursByRestocker(restockerName);
+    }
+
+    @GET
+    @Path("/open")
+    public List<DeliveryDetailDto> getOpenDeliveries() {
+        return deliveryService.getOpenDeliveries(authorizationHeader());
+    }
+
+    @GET
+    @Path("/assigned")
+    public List<DeliveryDetailDto> getAssignedDeliveries(@QueryParam("restocker") String restockerName) {
+        return deliveryService.getAssignedDeliveries(restockerName, authorizationHeader());
     }
 
     @POST
@@ -43,6 +55,27 @@ public class DeliveryResource {
     public Response createTour(Tour tour) {
         Tour created = deliveryService.createTour(tour);
         return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+
+    @DELETE
+    @Path("/admin/all")
+    public Map<String, Long> deleteAllDeliveries() {
+        return deliveryService.deleteAllDeliveries();
+    }
+
+    @POST
+    @Path("/admin/test-data")
+    public List<DeliveryDetailDto> createTestDeliveries(
+            @QueryParam("deliveryDate") String deliveryDate,
+            @QueryParam("firstCustomerId") String firstCustomerId,
+            @QueryParam("secondCustomerId") String secondCustomerId
+    ) {
+        return deliveryService.createTestDeliveries(
+                deliveryDate,
+                firstCustomerId,
+                secondCustomerId,
+                authorizationHeader()
+        );
     }
 
     @POST
@@ -54,6 +87,15 @@ public class DeliveryResource {
         }
 
         return Response.ok(tour).build();
+    }
+
+    @POST
+    @Path("/{deliveryId}/accept")
+    public DeliveryDetailDto acceptDelivery(
+            @PathParam("deliveryId") UUID deliveryId,
+            @QueryParam("restocker") String restockerName
+    ) {
+        return deliveryService.acceptDelivery(deliveryId, restockerName, authorizationHeader());
     }
 
     @POST
@@ -70,13 +112,6 @@ public class DeliveryResource {
         return Response.ok(tour).build();
     }
 
-    // ── Deliveries — enriched with user + order data ──
-
-    /**
-     * GET /api/deliveries/tours/{tourId}/details
-     * Returns all stops for a tour, each enriched with company info and article list.
-     * Frontend only needs this one call — no separate user/order lookups needed.
-     */
     @GET
     @Path("/tours/{tourId}/details")
     public List<DeliveryDetailDto> getTourDetails(@PathParam("tourId") UUID tourId) {
@@ -89,22 +124,19 @@ public class DeliveryResource {
         return deliveryService.getDeliveryDetail(deliveryId, authorizationHeader());
     }
 
-    // ── Warehouse collection ─────────────────────
-
     @POST
     @Path("/{deliveryId}/collect")
     public Response collectPackage(@PathParam("deliveryId") UUID deliveryId) {
         Delivery delivery = deliveryService.collectPackage(deliveryId);
-        return Response.ok(delivery).build();
+        return Response.ok(deliveryStatusResponse(delivery)).build();
     }
-
-    // ── Item confirmation ────────────────────────
 
     @POST
     @Path("/{deliveryId}/items/{itemId}/delivered")
     public Response markItemDelivered(
             @PathParam("deliveryId") UUID deliveryId,
-            @PathParam("itemId") UUID itemId) {
+            @PathParam("itemId") UUID itemId
+    ) {
         DeliveryItem item = deliveryService.markItemDelivered(itemId);
         return Response.ok(item).build();
     }
@@ -113,7 +145,7 @@ public class DeliveryResource {
     @Path("/{deliveryId}/confirm")
     public Response confirmDelivery(@PathParam("deliveryId") UUID deliveryId) {
         Delivery delivery = deliveryService.confirmDelivery(deliveryId);
-        return Response.ok(delivery).build();
+        return Response.ok(deliveryStatusResponse(delivery)).build();
     }
 
     public static class EndTourRequest {
@@ -122,5 +154,18 @@ public class DeliveryResource {
 
     private String authorizationHeader() {
         return headers.getHeaderString(HttpHeaders.AUTHORIZATION);
+    }
+
+    private Map<String, Object> deliveryStatusResponse(Delivery delivery) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", delivery.id);
+        response.put("collected", delivery.collected);
+        response.put("collectedAt", formatDateTime(delivery.collectedAt));
+        response.put("deliveredAt", formatDateTime(delivery.deliveredAt));
+        return response;
+    }
+
+    private String formatDateTime(LocalDateTime value) {
+        return value != null ? value.toString() : null;
     }
 }

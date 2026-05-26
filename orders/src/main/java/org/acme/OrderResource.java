@@ -11,9 +11,11 @@ import java.util.List;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 
 @Path("/orders")
@@ -25,17 +27,15 @@ public class OrderResource {
     @Inject
     SecurityIdentity securityIdentity;
 
+    @Inject
+    JsonWebToken jwt;
+
     @Context
     HttpHeaders headers;
 
-    String customerId = (securityIdentity != null &&
-            securityIdentity.getPrincipal() != null)
-            ? securityIdentity.getPrincipal().getName()
-            : "anonymous";
-
     @GET
     public List<Order> getAll() {
-        if (securityIdentity == null || securityIdentity.isAnonymous() || !customerId.equals(securityIdentity.getPrincipal().getName())) {
+        if (securityIdentity == null || securityIdentity.isAnonymous()) {
             throw new NotAuthorizedException("Nicht autorisiert");
         }else{
             System.out.println("👤 GET /orders REQUESTED BY: " + securityIdentity.getPrincipal().getName());
@@ -64,7 +64,7 @@ public class OrderResource {
     @GET
     @Path("/{id}")
     public Order getById(@PathParam("id") Long id) {
-        if (securityIdentity == null || securityIdentity.isAnonymous() || !customerId.equals(securityIdentity.getPrincipal().getName())) {
+        if (securityIdentity == null || securityIdentity.isAnonymous()) {
             throw new NotAuthorizedException("Nicht autorisiert");
         }else{
             return Order.findById(id);
@@ -75,8 +75,29 @@ public class OrderResource {
     @Path("/my")
     @Authenticated
     public List<Order> getMyOrders() {
-        return Order.list("customerId", customerId);
+        return Order.list("customerId", resolveCustomerId());
     }
+
+    @PUT
+    @Path("/admin/customer-id")
+    @Transactional
+    public Map<String, Object> replaceCustomerId(Map<String, String> request) {
+        String oldCustomerId = normalizeRequiredCustomerId(request.get("oldCustomerId"), "oldCustomerId");
+        String newCustomerId = normalizeRequiredCustomerId(request.get("newCustomerId"), "newCustomerId");
+
+        long updated = Order.update(
+                "customerId = ?1 where customerId = ?2",
+                newCustomerId,
+                oldCustomerId
+        );
+
+        return Map.of(
+                "oldCustomerId", oldCustomerId,
+                "newCustomerId", newCustomerId,
+                "updated", updated
+        );
+    }
+
 
     //==== Update-Endpoint ==== //
     @PUT
@@ -97,16 +118,12 @@ public class OrderResource {
         String camundaUrl =
                 "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_0ltcqh0/start";
 
+        Map<String, Object> variables = processVariables(order, authHeader);
+        variables.put("updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String"));
+
         Map<String, Object> body = Map.of(
                 "businessKey", order.id.toString(),
-                "variables", Map.of(
-                        "orderId", Map.of("value", order.id, "type", "Long"),
-                        "customerId", Map.of("value", order.customerId, "type", "String"),
-                        "productId", Map.of("value", order.productId, "type", "String"),
-                        "quantity", Map.of("value", order.quantity, "type", "Integer"),
-                        "interval", Map.of("value", order.interval, "type", "Integer"),
-                        "updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String")
-                )
+                "variables", variables
         );
 
         client
@@ -131,10 +148,7 @@ public class OrderResource {
         } catch (Exception e) {
             System.out.println("❌ NO SECURITY IDENTITY (token issue?)");
         }
-        String customerId = (securityIdentity != null &&
-                securityIdentity.getPrincipal() != null)
-                ? securityIdentity.getPrincipal().getName()
-                : "anonymous";
+        String customerId = resolveCustomerId();
 
         //System.out.println(jwt.getName());
 
@@ -158,13 +172,7 @@ public class OrderResource {
 
         Map<String, Object> body = Map.of(
                 "businessKey", order.id.toString(),
-                "variables", Map.of(
-                        "orderId", Map.of("value", order.id, "type", "Long"),
-                        "customerId", Map.of("value", order.customerId, "type", "String"),
-                        "productId", Map.of("value", order.productId, "type", "String"),
-                        "quantity", Map.of("value", order.quantity, "type", "Integer"),
-                        "interval", Map.of("value", order.interval, "type", "Integer")
-                )
+                "variables", processVariables(order, authHeader)
         );
 
         client
@@ -176,5 +184,40 @@ public class OrderResource {
         client.close();
 
         return order;
+    }
+
+    private String normalizeRequiredCustomerId(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new BadRequestException(fieldName + " fehlt.");
+        }
+
+        return value.trim();
+    }
+
+    private Map<String, Object> processVariables(Order order, String authHeader) {
+        Map<String, Object> variables = new LinkedHashMap<>();
+        variables.put("orderId", Map.of("value", order.id, "type", "Long"));
+        variables.put("customerId", Map.of("value", order.customerId, "type", "String"));
+        variables.put("productId", Map.of("value", order.productId, "type", "String"));
+        variables.put("quantity", Map.of("value", order.quantity, "type", "Integer"));
+        variables.put("interval", Map.of("value", order.interval, "type", "Integer"));
+
+        if (authHeader != null && !authHeader.isBlank()) {
+            variables.put("authorizationHeader", Map.of("value", authHeader, "type", "String"));
+        }
+
+        return variables;
+    }
+
+    private String resolveCustomerId() {
+        if (jwt != null && jwt.getSubject() != null && !jwt.getSubject().isBlank()) {
+            return jwt.getSubject();
+        }
+
+        if (securityIdentity != null && securityIdentity.getPrincipal() != null) {
+            return securityIdentity.getPrincipal().getName();
+        }
+
+        return "anonymous";
     }
 }

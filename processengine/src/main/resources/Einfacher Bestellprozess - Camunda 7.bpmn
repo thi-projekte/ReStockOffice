@@ -109,7 +109,7 @@
       <bpmn:incoming>Flow_1o5opel</bpmn:incoming>
       <bpmn:outgoing>Flow_1yi1f0x</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_0pvn1x1" name="Bestell-bestätigung versenden" camunda:delegateExpression="${sendOrderConfirmationDelegate}">
+    <bpmn:serviceTask id="Activity_0pvn1x1" name="Abo-Bestellbestätigung versenden" camunda:delegateExpression="${sendAboConfirmationDelegate}">
       <bpmn:incoming>Flow_1yi1f0x</bpmn:incoming>
       <bpmn:outgoing>Flow_1qxfwa0</bpmn:outgoing>
     </bpmn:serviceTask>

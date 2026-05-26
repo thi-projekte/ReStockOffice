@@ -1,15 +1,32 @@
 package de.restockoffice;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "deliveries")
+@Table(
+        name = "deliveries",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_deliveries_user_delivery_date",
+                columnNames = {"user_id", "delivery_date"}
+        )
+)
 public class Delivery extends PanacheEntityBase {
 
     @Id
@@ -17,16 +34,19 @@ public class Delivery extends PanacheEntityBase {
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     public UUID id;
 
-    // Reference to orders service — no DB join
     @Column(name = "order_id", nullable = false)
     public String orderId;
 
-    // Reference to users service — no DB join
-    // This is the Keycloak userId of the customer company
     @Column(name = "user_id", nullable = false)
     public String userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @Column(name = "delivery_date")
+    public LocalDate deliveryDate;
+
+    @Column(name = "accepted_at")
+    public LocalDateTime acceptedAt;
+
+    @ManyToOne
     @JoinColumn(name = "tour_id")
     @JsonIgnore
     public Tour tour;
@@ -34,25 +54,26 @@ public class Delivery extends PanacheEntityBase {
     @Column(name = "stop_order", nullable = false)
     public int stopOrder;
 
-    // True when restocker checks off package in warehouse → stock decreases
     @Column(name = "collected", nullable = false)
     public boolean collected = false;
 
     @Column(name = "collected_at")
     public LocalDateTime collectedAt;
 
-    // Set when restocker presses "Nächste Zustellung" — timestamp sent to company
     @Column(name = "delivered_at")
     public LocalDateTime deliveredAt;
 
     @OneToMany(mappedBy = "delivery", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<DeliveryItem> items = new ArrayList<>();
 
-    // ── Convenience methods ──────────────────────
-
     public void markCollected() {
         this.collected = true;
         this.collectedAt = LocalDateTime.now();
+    }
+
+    public void markAccepted(Tour tour) {
+        this.tour = tour;
+        this.acceptedAt = LocalDateTime.now();
     }
 
     public void markDelivered() {
@@ -64,7 +85,7 @@ public class Delivery extends PanacheEntityBase {
     }
 
     public boolean allItemsDelivered() {
-        return this.items.stream().allMatch(i -> i.delivered);
+        return this.items.stream().allMatch(item -> item.delivered);
     }
 
     public void addItem(DeliveryItem item) {
@@ -73,6 +94,36 @@ public class Delivery extends PanacheEntityBase {
     }
 
     public static List<Delivery> findByTour(UUID tourId) {
-        return list("tour.id", tourId);
+        return list("tour.id = ?1 order by stopOrder asc", tourId);
+    }
+
+    public static Delivery findByCustomerAndDate(String customerId, LocalDate deliveryDate) {
+        Delivery delivery = find("userId = ?1 and deliveryDate = ?2", customerId, deliveryDate)
+                .firstResult();
+        if (delivery != null) {
+            return delivery;
+        }
+
+        return find(
+                "userId = ?1 and deliveryDate is null and tour is not null and tour.tourDate = ?2",
+                customerId,
+                deliveryDate
+        ).firstResult();
+    }
+
+    public static List<Delivery> findOpenBetween(LocalDate startDate, LocalDate endDate) {
+        return list(
+                "tour is null and deliveredAt is null and deliveryDate >= ?1 and deliveryDate <= ?2 " +
+                        "order by deliveryDate asc, userId asc",
+                startDate,
+                endDate
+        );
+    }
+
+    public static List<Delivery> findAssignedToRestocker(String restockerName) {
+        return list(
+                "tour.restockerName = ?1 and deliveredAt is null order by deliveryDate asc, stopOrder asc",
+                restockerName
+        );
     }
 }

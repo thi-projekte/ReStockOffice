@@ -1,0 +1,203 @@
+.restocker-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Tour-Starten Button */
+.tour-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 32px;
+    background: var(--color-secondary);
+    color: var(--color-grey-100);
+    border: none;
+    border-radius: 14px;
+}
+
+.tour-btn:active {
+    transform: scale(0.98)
+}
+
+.tour-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Cards */
+.card {
+    background: var(--color-grey-100);
+    border-radius: 16px;
+    border: 0.5px solid var(--color-grey-200);
+    padding: 14px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.card h4 {
+    color: var(--color-primary);
+}
+
+/* Metrics card — desktop: metrics + next-tile in one row */
+.metrics-row-desktop {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+
+}
+
+.metric-tile {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-grey-300);
+}
+
+.metric-label {
+    font-size: 18px;
+    color: var(--color-text);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.metric-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--color-text);
+    line-height: 1.1;
+}
+
+.metric-value--compact {
+    font-size: 20px;
+}
+
+.metric-sub {
+    font-size: 11px;
+    color: var(--color-text);
+    margin-top: 4px;
+}
+
+.open-orders-carousel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: 1rem;
+}
+
+.open-orders-carousel+.tour-btn {
+    margin-top: 1rem;
+}
+
+.statistics-tour-grid {
+    margin-top: 1.5rem;
+}
+
+.statistics-tour-summary {
+    display: block;
+}
+
+.restocker-order-card {
+    min-width: 300px;
+}
+
+.mobile-swipe-hint {
+    display: none;
+}
+
+
+/* Responsive — mobile */
+@media (max-width: 768px) {
+    .restocker-page {
+        padding: 16px;
+    }
+
+    .restocker-inner {
+        gap: 14px;
+    }
+
+    .tour-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .card {
+        padding: 14px;
+    }
+
+    .card-header {
+        flex-direction: column;
+        gap: 2px;
+        margin-bottom: 5px;
+    }
+
+    .metrics-row-desktop {
+        grid-template-columns: repeat(2, 1fr);
+        grid-column: span 2;
+    }
+
+    .metric-tile {
+        background:
+            linear-gradient(180deg, var(--color-background), var(--color-background)),
+            radial-gradient(circle at top right, var(--color-secondary), transparent 55%);
+        border: 1px solid var(--color-secondary);
+        border-radius: 1rem;
+        color: var(--color-text);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .metric-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-grey-300);
+    }
+
+    .metric-value {
+        font-size: 1.9rem;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--color-secondary);
+    }
+
+    .metric-sub {
+        font-size: 0.85rem;
+        color: rgba(31, 42, 46, 0.75);
+    }
+
+    .open-orders-carousel {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        padding-bottom: 0.5rem;
+    }
+
+    .open-orders-carousel::-webkit-scrollbar {
+        display: none;
+    }
+
+    .open-orders-carousel .restocker-order-card {
+        min-width: 200px;
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
+
+    .mobile-swipe-hint {
+        display: block;
+    }
+}

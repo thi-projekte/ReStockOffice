@@ -1,24 +1,27 @@
 # ReStockOffice Confirmation Mail Service
 
-Dieser Quarkus-Service verschickt die beiden E-Mails aus dem ReStockOrder-Prozess:
+Dieser Quarkus-Service verschickt die E-Mails aus dem ReStockOffice-Prozess:
 
-- Bestellbestätigung direkt nach erfolgreicher Anlage der ReStockOrder
+- Abo-Bestellbestätigung direkt nach Eingang der Abo-Bestellung
 - Lieferankündigung vor der anstehenden Lieferung
+- Lieferbestätigung nach erfolgreicher Zustellung
 
-Die Mail-Inhalte basieren auf den vorhandenen HTML- und CSS-Vorlagen und werden serverseitig mit Bestell- und Lieferdaten personalisiert. Der Versand erfolgt über die Resend-API.
+Die Mail-Inhalte basieren auf HTML- und CSS-Vorlagen und werden serverseitig mit Bestell- und Lieferdaten personalisiert. Der Versand erfolgt über die Resend-API.
 
 ## REST-Endpunkte
 
 ```text
-POST /emails/order-confirmation
+POST /emails/abo-confirmation
 POST /emails/delivery-announcement
+POST /emails/delivery-confirmation
 ```
 
 Für Vorschau und Template-Tests:
 
 ```text
-POST /emails/order-confirmation/preview
+POST /emails/abo-confirmation/preview
 POST /emails/delivery-announcement/preview
+POST /emails/delivery-confirmation/preview
 ```
 
 ## Konfiguration

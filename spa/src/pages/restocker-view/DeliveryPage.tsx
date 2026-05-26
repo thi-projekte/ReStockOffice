@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   FaBoxOpen,
   FaCheck,
@@ -24,7 +24,14 @@ import {
 } from "../../services/deliveries";
 import "../../styles/restocker-deliveries.css";
 
-const EARNINGS_PER_STOP = 11.425;
+const EARNINGS_PER_COMPANY = 7;
+const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
+const START_TOUR_TASK_DEFINITION_KEY = "Activity_06o1eiy";
+const CONFIRM_DELIVERY_TASK_DEFINITION_KEY = "Activity_1cx1i45";
+
+interface CamundaTask {
+  id: string;
+}
 
 function formatDate(value: string | null) {
   if (!value) return "Heute";
@@ -48,9 +55,64 @@ function findNextOpenStopIndex(deliveries: DeliveryDetail[]) {
   return nextOpenIndex >= 0 ? nextOpenIndex : Math.max(deliveries.length - 1, 0);
 }
 
+function countCompanies(deliveries: DeliveryDetail[]) {
+  const companyKeys = new Set(
+    deliveries.map((delivery) => delivery.userId || delivery.companyName).filter(Boolean),
+  );
+
+  return companyKeys.size;
+}
+
+function buildStreetLine(delivery: DeliveryDetail) {
+  return [delivery.street, delivery.houseNumber].filter(Boolean).join(" ").trim();
+}
+
+function buildCityLine(delivery: DeliveryDetail) {
+  return [delivery.postalCode, delivery.city].filter(Boolean).join(" ").trim();
+}
+
+function formatDeliveryTime(value: DeliveryDetail["deliveryTime"]) {
+  if (value == null) {
+    return "";
+  }
+
+  const normalizedValue = String(value).trim();
+  if (!normalizedValue) {
+    return "";
+  }
+
+  if (
+    normalizedValue.includes("-") ||
+    normalizedValue.toLowerCase().includes("bis") ||
+    normalizedValue.toLowerCase().includes("uhr")
+  ) {
+    return normalizedValue;
+  }
+
+  if (normalizedValue.includes(":")) {
+    const [hoursPart, minutesPart = "00"] = normalizedValue.split(":");
+    const hours = Number(hoursPart);
+    const minutes = Number(minutesPart);
+
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+      return normalizedValue;
+    }
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} Uhr`;
+  }
+
+  const hours = Number(normalizedValue);
+  if (!Number.isFinite(hours)) {
+    return normalizedValue;
+  }
+
+  return `${String(hours).padStart(2, "0")}:00 Uhr`;
+}
+
 export function DeliveryPage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [tour, setTour] = useState<Tour | null>(null);
   const [deliveries, setDeliveries] = useState<DeliveryDetail[]>([]);
   const [activeStopIndex, setActiveStopIndex] = useState(0);
@@ -64,14 +126,26 @@ export function DeliveryPage() {
   const activeDelivery = sortedDeliveries[activeStopIndex] ?? sortedDeliveries[0];
   const allCollected = sortedDeliveries.length > 0 && sortedDeliveries.every((delivery) => delivery.collected);
   const completedStops = sortedDeliveries.filter((delivery) => delivery.deliveredAt).length;
-  const calculatedEarnings = Number((sortedDeliveries.length * EARNINGS_PER_STOP).toFixed(2));
+  const allStopsDelivered =
+    sortedDeliveries.length > 0 && completedStops === sortedDeliveries.length;
+  const companyCount = countCompanies(sortedDeliveries);
+  const calculatedEarnings = Number((companyCount * EARNINGS_PER_COMPANY).toFixed(2));
   const isTourStarted = Boolean(tour?.startTime);
-  const isTourFinished = Boolean(tour?.endTime);
+  const hasTourEndTime = Boolean(tour?.endTime);
+  const isTourFinished = hasTourEndTime && allStopsDelivered;
+  const shouldShowDoneDialog = allStopsDelivered && (showDoneDialog || hasTourEndTime);
   const phase = !isTourStarted ? "warehouse" : isTourFinished ? "finished" : "route";
   const currentItemsReady =
     activeDelivery?.items.length > 0 &&
     activeDelivery.items.every((item) => item.delivered);
   const isLastStop = activeStopIndex >= sortedDeliveries.length - 1;
+  const canFinishDeliveredLastStop =
+    isLastStop && Boolean(activeDelivery?.deliveredAt) && !hasTourEndTime;
+  const activeStreetLine = activeDelivery ? buildStreetLine(activeDelivery) : "";
+  const activeCityLine = activeDelivery ? buildCityLine(activeDelivery) : "";
+  const activeDeliveryTime = activeDelivery ? formatDeliveryTime(activeDelivery.deliveryTime) : "";
+  const activeDeliveryDay =
+    activeDelivery?.deliveryDay || formatDate(activeDelivery?.deliveryDate ?? null);
 
   async function reloadDeliveries(nextTour = tour) {
     if (!nextTour) return;
@@ -98,10 +172,19 @@ export function DeliveryPage() {
       setError(null);
 
       try {
-        await syncTodayOrders({
-          restockerName,
-          token: auth.token,
-        });
+        try {
+          await syncTodayOrders({
+            restockerName,
+            token: auth.token,
+          });
+        } catch (syncError) {
+          if (!isMounted) return;
+          const syncMessage =
+            syncError instanceof Error
+              ? syncError.message
+              : "Die heutige Delivery-Synchronisierung ist fehlgeschlagen.";
+          toast.error(`${syncMessage} Vorhandene Lieferungen werden trotzdem geladen.`);
+        }
 
         const tours = await loadTodayTours({
           restockerName,
@@ -173,19 +256,118 @@ export function DeliveryPage() {
     }
   }
 
+  async function loadUserTask(processInstanceId: string, taskDefinitionKey: string) {
+    const query = new URLSearchParams({
+      processInstanceId,
+      taskDefinitionKey,
+    });
+    const response = await fetch(`${CAMUNDA_BASE_URL}/task?${query.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(
+        `Task konnte nicht geladen werden: ${response.status}`,
+      );
+    }
+
+    const tasks = (await response.json()) as CamundaTask[];
+
+    if (tasks.length !== 1) {
+      throw new Error("Die Camunda-Task wurde nicht eindeutig gefunden.");
+    }
+
+    return tasks[0];
+  }
+
+  async function loadOptionalUserTask(processInstanceId: string, taskDefinitionKey: string) {
+    const query = new URLSearchParams({
+      processInstanceId,
+      taskDefinitionKey,
+    });
+    const response = await fetch(`${CAMUNDA_BASE_URL}/task?${query.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(
+        `Task konnte nicht geladen werden: ${response.status}`,
+      );
+    }
+
+    const tasks = (await response.json()) as CamundaTask[];
+
+    if (tasks.length > 1) {
+      throw new Error("Die Camunda-Task wurde nicht eindeutig gefunden.");
+    }
+
+    return tasks[0] ?? null;
+  }
+
+  async function completeUserTask(
+    taskId: string,
+    variables: Record<string, { value: string | number | boolean; type: string }> = {},
+  ) {
+    const response = await fetch(
+      `${CAMUNDA_BASE_URL}/task/${taskId}/complete`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ variables }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Task konnte nicht abgeschlossen werden: ${response.status}`,
+      );
+    }
+  }
+
+  async function completeProcessTask(
+    taskDefinitionKey: string,
+    variables?: Record<string, { value: string | number | boolean; type: string }>,
+  ) {
+    const processInstanceId = searchParams.get("processInstanceId");
+
+    if (!processInstanceId) {
+      return;
+    }
+
+    const task = await loadUserTask(processInstanceId, taskDefinitionKey);
+    await completeUserTask(task.id, variables);
+  }
+
   async function handleStartTour() {
-    if (!tour || !allCollected || isBusy) return;
+    if (!tour || isBusy) return;
 
     setIsBusy(true);
+
     try {
-      const updatedTour = await startTour({ tourId: tour.id, token: auth.token });
-      setTour(updatedTour);
-      await reloadDeliveries(updatedTour);
+      const processInstanceId = searchParams.get("processInstanceId");
+
+      const startedTour = await startTour({
+        tourId: tour.id,
+        token: auth.token,
+      });
+
+      if (processInstanceId) {
+        const startTourTask = await loadOptionalUserTask(
+          processInstanceId,
+          START_TOUR_TASK_DEFINITION_KEY,
+        );
+        if (startTourTask) {
+          await completeUserTask(startTourTask.id);
+        }
+      }
+
+      setTour(startedTour);
+
+      await reloadDeliveries(startedTour);
+
       toast.success("Tour wurde gestartet.");
-    } catch (startError) {
+    } catch (error) {
       toast.error(
-        startError instanceof Error
-          ? startError.message
+        error instanceof Error
+          ? error.message
           : "Tour konnte nicht gestartet werden.",
       );
     } finally {
@@ -203,11 +385,11 @@ export function DeliveryPage() {
         current.map((delivery) =>
           delivery.id === deliveryId
             ? {
-                ...delivery,
-                items: delivery.items.map((item) =>
-                  item.id === itemId ? { ...item, delivered: true } : item,
-                ),
-              }
+              ...delivery,
+              items: delivery.items.map((item) =>
+                item.id === itemId ? { ...item, delivered: true } : item,
+              ),
+            }
             : delivery,
         ),
       );
@@ -223,11 +405,109 @@ export function DeliveryPage() {
   }
 
   async function handleAdvance() {
-    if (!tour || !activeDelivery || !currentItemsReady || isBusy) return;
+    if (!tour || !activeDelivery || isBusy) return;
+
+    if (canFinishDeliveredLastStop) {
+      setIsBusy(true);
+      try {
+        const finishedTour = await endTour({
+          tourId: tour.id,
+          earnings: calculatedEarnings,
+          token: auth.token,
+        });
+        setTour(finishedTour);
+        setShowDoneDialog(true);
+        toast.success("Tour wurde beendet.");
+      } catch (finishError) {
+        toast.error(
+          finishError instanceof Error
+            ? finishError.message
+            : "Tour konnte nicht beendet werden.",
+        );
+      } finally {
+        setIsBusy(false);
+      }
+      return;
+    }
+
+    if (!currentItemsReady || Boolean(activeDelivery.deliveredAt)) return;
 
     setIsBusy(true);
     try {
+      const firstItem = activeDelivery.items[0];
+      const recipientEmail = activeDelivery.recipientEmail.trim();
+      const deliveryDetailsUrl = `${window.location.origin}/restocker/deliveries?processInstanceId=${encodeURIComponent(
+        searchParams.get("processInstanceId") ?? "",
+      )}`;
+
+      if (!recipientEmail) {
+        throw new Error("Fuer diese Lieferung fehlt die Kunden-E-Mail.");
+      }
+
       await confirmDelivery({ deliveryId: activeDelivery.id, token: auth.token });
+      const processVariables: Record<string, { value: string | number | boolean; type: string }> = {
+        deliveredDeliveryId: {
+          value: activeDelivery.id,
+          type: "String",
+        },
+        deliveredOrderId: {
+          value: activeDelivery.orderId,
+          type: "String",
+        },
+        recipientEmail: {
+          value: recipientEmail,
+          type: "String",
+        },
+        customerName: {
+          value: activeDelivery.companyName,
+          type: "String",
+        },
+        deliveryDate: {
+          value: activeDelivery.deliveryDate ?? "",
+          type: "String",
+        },
+        deliveryWindow: {
+          value: activeDeliveryTime,
+          type: "String",
+        },
+        orderNumber: {
+          value: activeDelivery.orderId,
+          type: "String",
+        },
+        supplierName: {
+          value: restockerName,
+          type: "String",
+        },
+        deliveryDetailsUrl: {
+          value: deliveryDetailsUrl,
+          type: "String",
+        },
+        itemName: {
+          value: firstItem?.name ?? "",
+          type: "String",
+        },
+        itemArticleNumber: {
+          value: firstItem?.articleNumber ?? "",
+          type: "String",
+        },
+        itemQuantity: {
+          value: firstItem ? `${firstItem.quantity} ${firstItem.unit}`.trim() : "",
+          type: "String",
+        },
+        isLastDelivery: {
+          value: isLastStop,
+          type: "Boolean",
+        },
+      };
+
+      if (auth.token) {
+        processVariables.authorizationHeader = {
+          value: `Bearer ${auth.token}`,
+          type: "String",
+        };
+      }
+
+      await completeProcessTask(CONFIRM_DELIVERY_TASK_DEFINITION_KEY, processVariables);
 
       const deliveredAt = new Date().toISOString();
       setDeliveries((current) =>
@@ -309,7 +589,7 @@ export function DeliveryPage() {
           <div className="delivery-table delivery-table--warehouse">
             <div className="delivery-table__row delivery-table__row--head">
               <span>Eingesammelt</span>
-              <span>Auftrag</span>
+              <span>Paket</span>
             </div>
             {sortedDeliveries.map((delivery) => (
               <div className="delivery-table__row" key={delivery.id}>
@@ -318,12 +598,14 @@ export function DeliveryPage() {
                   type="button"
                   onClick={() => void handleCollect(delivery)}
                   disabled={delivery.collected || isBusy}
-                  aria-label={`Auftrag ${delivery.orderId} einsammeln`}
+                  aria-label={`Paket ${delivery.stopOrder} einsammeln`}
                   title="Paket einsammeln"
                 >
                   {delivery.collected ? <FaCheck /> : null}
                 </button>
-                <span className={delivery.collected ? "delivery-line-muted" : ""}>#{delivery.orderId}</span>
+                <span className={delivery.collected ? "delivery-line-muted" : ""}>
+                  Paket #{delivery.stopOrder}
+                </span>
               </div>
             ))}
           </div>
@@ -353,7 +635,9 @@ export function DeliveryPage() {
             <a
               className="button button--ghost delivery-map-link"
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                `${activeDelivery.street}, ${activeDelivery.postalCode} ${activeDelivery.city}`,
+                [activeStreetLine, activeCityLine, activeDelivery.country]
+                  .filter(Boolean)
+                  .join(", "),
               )}`}
               target="_blank"
               rel="noreferrer"
@@ -366,26 +650,29 @@ export function DeliveryPage() {
           <div className="delivery-info-grid">
             <div className="delivery-info-card">
               <span>Unternehmen</span>
-              <strong>{activeDelivery.companyName}</strong>
+              <strong>{activeDelivery.companyName || "Nicht hinterlegt"}</strong>
             </div>
             <div className="delivery-info-card">
               <span>Adresse</span>
-              <strong>{activeDelivery.street}</strong>
-              <small>{activeDelivery.postalCode} {activeDelivery.city}</small>
+              <strong>{activeStreetLine || "Nicht hinterlegt"}</strong>
+              {activeCityLine ? <small>{activeCityLine}</small> : null}
+              {activeDelivery.country ? <small>{activeDelivery.country}</small> : null}
             </div>
             <div className="delivery-info-card">
-              <span>Lieferzeit</span>
-              <strong>{formatDate(activeDelivery.deliveryDate)}</strong>
-              <small>11:00 Uhr</small>
+              <span>Liefertag</span>
+              <strong>{activeDeliveryDay}</strong>
+              {activeDeliveryTime ? <small>{activeDeliveryTime}</small> : null}
             </div>
             <div className="delivery-info-card">
-              <span>Ansprechpartner</span>
-              <strong>{activeDelivery.contactPerson || "Vor Ort"}</strong>
+              <span>Telefonnummer</span>
               {activeDelivery.phoneNumber ? (
                 <a href={`tel:${activeDelivery.phoneNumber}`}>
                   <FaPhoneAlt /> {activeDelivery.phoneNumber}
                 </a>
-              ) : null}
+              ) : (
+                <strong>Nicht hinterlegt</strong>
+              )}
+              {activeDelivery.contactPerson ? <small>{activeDelivery.contactPerson}</small> : null}
             </div>
           </div>
 
@@ -423,7 +710,11 @@ export function DeliveryPage() {
             <button
               className="button delivery-primary-action"
               type="button"
-              disabled={!currentItemsReady || isBusy || Boolean(activeDelivery.deliveredAt)}
+              disabled={
+                isBusy ||
+                (!canFinishDeliveredLastStop &&
+                  (!currentItemsReady || Boolean(activeDelivery.deliveredAt)))
+              }
               onClick={() => void handleAdvance()}
             >
               {isLastStop ? <FaRoute /> : <FaTruck />}
@@ -433,13 +724,13 @@ export function DeliveryPage() {
         </div>
       ) : null}
 
-      {showDoneDialog || isTourFinished ? (
+      {shouldShowDoneDialog ? (
         <div className="delivery-complete-overlay" role="presentation">
           <div className="delivery-complete-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-complete-title">
             <h2 id="delivery-complete-title">Alle Lieferungen erledigt</h2>
             <p>Starke Leistung. Du hast alle Auftraege fuer heute erfolgreich zugestellt.</p>
             <div className="delivery-complete-stats">
-              <span>Abgeschlossene Stopps: {completedStops || sortedDeliveries.length} von {sortedDeliveries.length}</span>
+              <span>Abgeschlossene Stopps: {completedStops} von {sortedDeliveries.length}</span>
               <span>Gesammelte Verguetung: {formatMoney(tour.earnings || calculatedEarnings)}</span>
               <span>Status: Tour beendet</span>
             </div>
