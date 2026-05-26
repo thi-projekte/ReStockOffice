@@ -12,7 +12,7 @@ const RESTOCKER_ME_API_URL = "https://users.restockoffice.de/restocker/me";
 export const CUSTOMERS_API_URL = "https://users.restockoffice.de/customers";
 export const RESTOCKERS_API_URL = "https://users.restockoffice.de/restockers";
 
-const USERS_API_URL = "https://users.restockoffice.de";
+const USERS_API_URL =  import.meta.env.VITE_USERS_API_URL ?? "https://users.restockoffice.de";
 
 export type UserKind = "customer" | "restocker";
 
@@ -425,7 +425,7 @@ export async function loadCustomerProfile({
 }: {
   token: string;
   userId: string;
-}): Promise<UserProfile> {
+}): Promise<CustomerUser> {
   const response = await fetch(
       `${USERS_API_URL}/customerForRestocker?userId=${userId}`,
       {
@@ -440,5 +440,5 @@ export async function loadCustomerProfile({
     throw new Error("Customer konnte nicht geladen werden");
   }
 
-  return response.json();
+  return normalizeCustomer(await response.json());
 }

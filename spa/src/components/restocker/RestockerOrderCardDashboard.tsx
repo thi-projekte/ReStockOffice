@@ -1,11 +1,11 @@
 import type { RestockMarketplaceOrder } from "../../types/shop";
 import { formatDeliveryWindow } from "../../pages/restocker-view/restockerOrderUi";
-import type { UserProfile } from "../../types/user";
+import type { CustomerUser } from "../../services/users";
 
 interface RestockerOrderCardProps {
   order: RestockMarketplaceOrder;
   statusLabel?: string;
-  customer?: UserProfile;
+  customer?: CustomerUser;
   detailLabel?: string;
   onClick?: () => void;
   secondaryActionLabel?: string;

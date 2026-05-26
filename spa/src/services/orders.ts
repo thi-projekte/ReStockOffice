@@ -24,7 +24,7 @@ import {
 } from "./deliveries";
 import { getProducts } from "./products";
 import { loadCustomerProfile } from "./users";
-import type { UserProfile } from "../types/user";
+import type { CustomerUser } from "./users";
 
 const ORDERS_API_URL =
   import.meta.env.VITE_ORDERS_API_URL ?? "https://orders.restockoffice.de/orders";
@@ -399,7 +399,7 @@ function hasMissingCustomerData(order: RestockMarketplaceOrder) {
   );
 }
 
-function buildStreetLineFromProfile(profile: UserProfile) {
+function buildStreetLineFromProfile(profile: CustomerUser) {
   return [profile.street, profile.houseNumber]
     .map((part) => part?.trim())
     .filter(Boolean)
@@ -415,7 +415,7 @@ function profileValueOrCurrent(value: string | null | undefined, currentValue: s
 
 function applyCustomerProfile(
   order: RestockMarketplaceOrder,
-  profile?: UserProfile,
+  profile?: CustomerUser,
 ): RestockMarketplaceOrder {
   if (!profile) {
     return order;
@@ -466,7 +466,7 @@ async function enrichMarketplaceOrdersWithCustomerProfiles(
     return orders;
   }
 
-  const profilesByCustomerId = new Map<string, UserProfile>();
+  const profilesByCustomerId = new Map<string, CustomerUser>();
   await Promise.all(
     missingCustomerIds.map(async (customerId) => {
       try {
