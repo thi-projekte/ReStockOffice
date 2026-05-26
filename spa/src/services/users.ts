@@ -12,6 +12,8 @@ const RESTOCKER_ME_API_URL = "https://users.restockoffice.de/restocker/me";
 export const CUSTOMERS_API_URL = "https://users.restockoffice.de/customers";
 export const RESTOCKERS_API_URL = "https://users.restockoffice.de/restockers";
 
+const USERS_API_URL = "https://users.restockoffice.de";
+
 export type UserKind = "customer" | "restocker";
 
 interface BaseUser {
@@ -413,4 +415,30 @@ export async function getUserRestockOrders({
   const { payload } = await fetchCurrentUserPayload({ token, userId, kind: resolvedKind });
 
   return normalizeUserRestockOrders(payload);
+}
+
+
+// Lädt Infos vom belieferte Kunden
+export async function loadCustomerProfile({
+  token,
+  userId,
+}: {
+  token: string;
+  userId: string;
+}): Promise<UserProfile> {
+  const response = await fetch(
+      `${USERS_API_URL}/customerForRestocker?userId=${userId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+  );
+
+  if (!response.ok) {
+    throw new Error("Customer konnte nicht geladen werden");
+  }
+
+  return response.json();
 }
