@@ -385,7 +385,7 @@
     z-index: 30;
     box-sizing: border-box;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.3rem;
     width: 100%;
     min-height: 4.15rem;

@@ -304,6 +304,7 @@ export function AppShell({ children }: AppShellProps) {
       to: "/restocker",
       label: "Startseite",
       icon: <FaHome />,
+      activePaths: ["/restocker-deliveries"],
     },
     {
       to: "/restocker-orders",
@@ -313,11 +314,6 @@ export function AppShell({ children }: AppShellProps) {
     {
       to: "/restocker-my-orders",
       label: "Meine Auftr\u00e4ge",
-      icon: <FaCalendarAlt />,
-    },
-    {
-      to: "/restocker-deliveries",
-      label: "Auslieferungen",
       icon: <FaTruck />,
     },
     {
@@ -810,9 +806,12 @@ export function AppShell({ children }: AppShellProps) {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) =>
-                  `restocker-mobile-tabbar__item ${isActive ? "active" : ""}`
-                }
+                className={({ isActive }) => {
+                  const isItemActive =
+                    isActive || item.activePaths?.includes(location.pathname);
+
+                  return `restocker-mobile-tabbar__item ${isItemActive ? "active" : ""}`;
+                }}
                 aria-label={item.label}
               >
                 <span className="restocker-mobile-tabbar__icon" aria-hidden="true">
