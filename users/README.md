@@ -11,7 +11,7 @@ Alle Endpunkte erfordern einen gültigen **Bearer Token** von Keycloak im HTTP-H
 
 ## Zugriff auf das eigene Profil
 
-Um die Daten des aktuell über den Token angemeldeten Benutzers zu erhalten, verwende Folgendes:
+Gibt das Profil des aktuell über den Token angemeldeten Benutzers zurück, inklusive der im Token hinterlegten E-Mail-Adresse.
 
 ### Restocker
 ```shell script
@@ -53,7 +53,23 @@ Bsp.:
 https://users.restockoffice.de/customer?userId=88736862-7567-463d-9860-937299a9a304
 ```
 
-Sicherheit: Normale Benutzer können nur ihre eigene ID abfragen (403 bei Fremdzugriff). Admins dürfen jede ID abrufen.
+### Sicherheit:
+- Normale Benutzer können ausschließlich ihre eigene userId abfragen. Bei Fremdzugriff wird ein 403 Forbidden zurückgegeben.
+- Admins sind berechtigt, jede beliebige userId abzurufen.
+
+## Lieferdaten-Abfrage (Admins und Lieferanten only)
+
+Gibt die Lieferadresse und Profildaten eines Customers zusammen mit der in Keycloak hinterlegten E-Mail-Adresse für den Lieferanten frei.
+
+### Restocker
+```shell script
+[url]/customerForRestocker?userId=[userId]
+```
+
+Bsp.:
+```shell script
+https://users.restockoffice.de/customerForRestocker?userId=88736862-7567-463d-9860-937299a9a304
+```
 
 ## Zugriff auf alle Benutzer (Admin Only)
 
@@ -168,3 +184,8 @@ Bsp. für den Inhalt von ```userData```:
     "deliveryHint": "Bitte beim Nachbarn abgeben"
 }
 ````
+
+## Validierungsregeln für den Datei-Upload
+- Dateityp: Muss mit image/ beginnen (z.B. image/jpeg, image/png). Ansonsten Fehler 400 Bad Request
+- Dateigröße: Maximal 5 MB erlaubt. Bei Überschreitung Fehler 400 Bad Request
+- Speicherziel: Hochgeladene Bilder werden unter ````https://restockoffice.nbg1.your-objectstorage.com/users/[userId].jpg```` öffentlich lesbar bereitgestellt.
