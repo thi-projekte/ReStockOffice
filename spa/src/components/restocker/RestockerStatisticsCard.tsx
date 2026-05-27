@@ -108,13 +108,13 @@ export function RestockerStatisticsCard({
             </div>
 
             <div className="metrics-row-desktop">
-                <div className="metric-tile metric-tile--completed">
+                <div className="metric-tile">
                     <div className="metric-label">Gesamtverdienst</div>
                     <div className="metric-value">{totalEarnings} EUR</div>
                     <div className="metric-sub">7 EUR pro abgeschlossener Lieferung</div>
                 </div>
 
-                <div className="metric-tile metric-tile--progress">
+                <div className="metric-tile">
                     <div className="metric-label">Abgeschlossen</div>
                     <div className="metric-value">{totalCompletedDeliveries}</div>
                     <div className="metric-sub">{completedTourDays} Tourtage erledigt</div>
