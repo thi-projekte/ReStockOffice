@@ -1,0 +1,76 @@
+name: CI build restocker-deliveries
+
+on:
+  push:
+    tags:
+      - "restocker-deliveries-v*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build Backend (Quarkus Native)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: graalvm-community
+          cache: maven
+
+      - name: Build and verify
+        working-directory: restocker-deliveries
+        run: |
+          chmod +x mvnw
+          ./mvnw clean verify -B
+
+      - name: Package native
+        working-directory: restocker-deliveries
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -Pnative -DskipTests
+
+      - name: Check native binary exists
+        working-directory: restocker-deliveries
+        run: ls -lah target
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: image_tags
+        run: |
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/restockoffice-restocker-deliveries"
+          VERSION="${GITHUB_REF_NAME#restocker-deliveries-v}"
+          {
+            echo "tags<<EOF"
+            echo "${IMAGE_NAME}:${VERSION}"
+            echo "${IMAGE_NAME}:${GITHUB_REF_NAME}"
+            echo "${IMAGE_NAME}:${GITHUB_SHA}"
+            echo "${IMAGE_NAME}:latest"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./restocker-deliveries
+          file: ./restocker-deliveries/src/main/docker/Dockerfile.native-micro
+          push: true
+          no-cache: true
+          tags: ${{ steps.image_tags.outputs.tags }}
+
+      - name: Check native binary exists
+        working-directory: restocker-deliveries
+        run: ls -lah target

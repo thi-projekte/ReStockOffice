@@ -13,19 +13,15 @@ import static org.hamcrest.Matchers.notNullValue;
 class MailResourceTest {
 
     @Test
-    void previewOrderConfirmationRendersHtmlWithPersonalizedData() {
+    void previewAboConfirmationRendersHtmlWithPersonalizedData() {
         String payload = """
                 {
                   "recipientEmail": "max.mustermann@example.com",
                   "customerName": "Max Mustermann",
                   "orderNumber": "RSO-2026-004281",
                   "orderDate": "29.04.2026, 10:42 Uhr",
-                  "orderedBy": "Max Mustermann",
                   "deliveryWindow": "08:30 bis 10:00 Uhr",
-                  "officeLocation": "HQ Ingolstadt",
                   "deliveryLocation": "ReStockOffice GmbH\\n3. OG, Office West",
-                  "deskDetails": "Arbeitsplatz B-3-17",
-                  "onSiteContact": "Max Mustermann",
                   "changeDeadline": "02.05.2026, 12:00 Uhr",
                   "manageSubscriptionUrl": "https://restockoffice.example.com/account/orders/RSO-2026-004281",
                   "orderItems": [
@@ -43,7 +39,7 @@ class MailResourceTest {
         given().contentType(ContentType.JSON)
                 .body(payload)
                 .when()
-                .post("/emails/order-confirmation/preview")
+                .post("/emails/abo-confirmation/preview")
                 .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
@@ -62,12 +58,9 @@ class MailResourceTest {
                   "deliveryDay": "Montag",
                   "deliveryDate": "04.05.2026",
                   "deliveryWindow": "08:30 bis 10:00 Uhr",
-                  "officeLocation": "HQ Ingolstadt",
                   "orderNumber": "RSO-2026-004281",
                   "supplierName": "Sabrina Keller",
                   "deliveryLocation": "ReStockOffice GmbH\\n3. OG, Office West",
-                  "deskDetails": "Arbeitsplatz B-3-17",
-                  "onSiteContact": "Max Mustermann",
                   "deliveryInstructions": "Bitte am Sideboard abstellen.",
                   "deliveryDetailsUrl": "https://restockoffice.example.com/account/deliveries/RSO-2026-004281",
                   "deliveryItems": [
@@ -89,5 +82,37 @@ class MailResourceTest {
                 .body("template", equalTo("delivery-announcement"))
                 .body("status", equalTo("queued"))
                 .body("messageId", notNullValue());
+    }
+
+    @Test
+    void previewDeliveryConfirmationRendersDeliveredItemsWithoutLocationSection() {
+        String payload = """
+                {
+                  "recipientEmail": "max.mustermann@example.com",
+                  "customerName": "Max Mustermann",
+                  "deliveryDate": "Freitag, 15.05.2026",
+                  "deliveryWindow": "um 15:30 Uhr",
+                  "orderNumber": "RSO-2026-004281",
+                  "supplierName": "Sabrina Keller",
+                  "deliveryDetailsUrl": "https://restockoffice.example.com/account/deliveries/RSO-2026-004281",
+                  "deliveryItems": [
+                    {
+                      "name": "Kopierpapier A4 Premium",
+                      "articleNumber": "RS-10023",
+                      "quantity": "4 Pack"
+                    }
+                  ]
+                }
+                """;
+
+        given().contentType(ContentType.JSON)
+                .body(payload)
+                .when()
+                .post("/emails/delivery-confirmation/preview")
+                .then()
+                .statusCode(200)
+                .contentType(containsString("text/html"))
+                .body(containsString("Deine Lieferung ist angekommen."))
+                .body(containsString("Kopierpapier A4 Premium"));
     }
 }

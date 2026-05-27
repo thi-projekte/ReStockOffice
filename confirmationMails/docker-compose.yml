@@ -1,6 +1,6 @@
 services:
   confirmation-mails:
-    image: ghcr.io/thi-projekte/restockoffice-confirmation-mails:feature-confirmationmails
+    image: ghcr.io/thi-projekte/restockoffice-confirmation-mails:latest
     restart: unless-stopped
 
     networks:

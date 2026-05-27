@@ -8,23 +8,50 @@ import { ProductsPage } from "../pages/ProductsPage";
 import { AccountPage } from "../pages/AccountPage";
 import {SubscriptionPage} from "../pages/SubscriptionPage";
 import { ProtectedRoute } from "../auth/ProtectedRoute";
+import { RestockerPage } from "../pages/restocker-view/RestockerPage";
+import { OrderPage} from "../pages/restocker-view/OrderPage";
+import { MyOrdersPage } from "../pages/restocker-view/MyOrdersPage";
+import { DeliveryPage } from "../pages/restocker-view/DeliveryPage";
+import {IndexPage} from "./IndexPage";
+
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
     children: [
+
+      // Allgemeine Pages
       {
         index: true,
         element: (
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
+            <ProtectedRoute>
+              <IndexPage />
+            </ProtectedRoute>
         ),
       },
       {
         path: "login",
         element: <LoginPage />,
+      },
+
+      {
+        path: "account",
+        element: (
+          <ProtectedRoute>
+            <AccountPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Customer spezifische Pages:
+      {
+        path: "home",
+        element: (
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+        ),
       },
       {
         path: "products",
@@ -35,19 +62,11 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "account",
-        element: (
-          <ProtectedRoute>
-            <AccountPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: "categories/:categorySlug",
         element: (
-          <ProtectedRoute>
-            <CategoryPage />
-          </ProtectedRoute>
+            <ProtectedRoute>
+              <CategoryPage/>
+            </ProtectedRoute>
         ),
       },
       {
@@ -64,6 +83,40 @@ export const router = createBrowserRouter([
           <ProtectedRoute>
             <SubscriptionPage />
           </ProtectedRoute>
+        ),
+      },
+
+      // Restocker spezifische Pages:
+      {
+        path: "restocker",
+        element: (
+            <ProtectedRoute>
+              <RestockerPage />
+            </ProtectedRoute>
+        ),
+      },
+      {
+        path: "restocker-orders",
+        element: (
+            <ProtectedRoute>
+              <OrderPage />
+            </ProtectedRoute>
+        ),
+      },
+      {
+        path: "restocker-my-orders",
+        element: (
+            <ProtectedRoute>
+              <MyOrdersPage />
+            </ProtectedRoute>
+        ),
+      },
+      {
+        path: "restocker-deliveries",
+        element: (
+            <ProtectedRoute>
+              <DeliveryPage />
+            </ProtectedRoute>
         ),
       }
     ],

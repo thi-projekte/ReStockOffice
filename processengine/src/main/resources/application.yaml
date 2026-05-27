@@ -4,6 +4,8 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:processengine}
     password: ${SPRING_DATASOURCE_PASSWORD:processengine}
     driver-class-name: org.postgresql.Driver
+  jersey:
+    application-path: /engine-rest
 
 camunda.bpm:
   database:
@@ -14,13 +16,14 @@ camunda.bpm:
   filter:
     create: All tasks
 
-spring:
-  jersey:
-    application-path: /engine-rest
-
 logging:
   level:
     root: INFO
+
+restockoffice:
+  app-base-url: ${RESTOCKOFFICE_APP_BASE_URL:https://app.restockoffice.de}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,https://app.restockoffice.de}
 
 # Metrics & Health
 management:
@@ -28,5 +31,17 @@ management:
   endpoints:
     web.exposure.include: env,health,info,metrics
 
-mail service:
-  base-url: http://localhost:8081
+mailservice:
+  base-url: ${MAILSERVICE_BASE_URL:http://confirmation-mails:8081}
+
+ordersservice:
+  base-url: ${ORDERS_SERVICE_URL:https://orders.restockoffice.de}
+
+usersservice:
+  base-url: ${USERS_SERVICE_URL:https://users.restockoffice.de}
+
+articlesservice:
+  base-url: ${ARTICLES_SERVICE_URL:https://articles.restockoffice.de}
+
+deliveriesservice:
+  base-url: ${DELIVERIES_SERVICE_URL:https://restocker-deliveries.restockoffice.de}

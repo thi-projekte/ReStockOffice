@@ -23,32 +23,32 @@ public class MailResource {
     NotificationMailService notificationMailService;
 
     @POST
-    @Path("/order-confirmation")
+    @Path("/abo-confirmation")
     @Produces(MediaType.APPLICATION_JSON)
-    public SendMailResponse sendOrderConfirmation(OrderConfirmationRequest request) {
-        log.info("Sending order confirmation to {}", request.recipientEmail());
+    public SendMailResponse sendAboConfirmation(AboConfirmationRequest request) {
+        log.info("Sending abo confirmation to {}", request.recipientEmail());
 
-        RenderedMail renderedMail = notificationMailService.renderOrderConfirmation(request);
-        String messageId = notificationMailService.sendOrderConfirmation(request);
+        RenderedMail renderedMail = notificationMailService.renderAboConfirmation(request);
+        String messageId = notificationMailService.sendAboConfirmation(request);
 
-        log.info("Order confirmation sent successfully - messageId={}, recipient={}",
+        log.info("Abo confirmation sent successfully - messageId={}, recipient={}",
                 messageId, request.recipientEmail());
 
-        return new SendMailResponse("order-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, "queued");
+        return new SendMailResponse("abo-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, "queued");
     }
 
     @POST
-    @Path("/order-confirmation/preview")
+    @Path("/abo-confirmation/preview")
     @Produces(MediaType.TEXT_HTML + ";charset=UTF-8")
-    public String previewOrderConfirmation(OrderConfirmationRequest request) {
-        return notificationMailService.renderOrderConfirmation(request).html();
+    public String previewAboConfirmation(AboConfirmationRequest request) {
+        return notificationMailService.renderAboConfirmation(request).html();
     }
 
     @GET
-    @Path("/order-confirmation/preview")
+    @Path("/abo-confirmation/preview")
     @Produces(MediaType.TEXT_HTML + ";charset=UTF-8")
-    public String previewOrderConfirmationInBrowser() {
-        return notificationMailService.renderOrderConfirmation(exampleOrderConfirmationRequest()).html();
+    public String previewAboConfirmationInBrowser() {
+        return notificationMailService.renderAboConfirmation(exampleAboConfirmationRequest()).html();
     }
 
     @POST
@@ -80,18 +80,43 @@ public class MailResource {
         return notificationMailService.renderDeliveryAnnouncement(exampleDeliveryAnnouncementRequest()).html();
     }
 
-    private OrderConfirmationRequest exampleOrderConfirmationRequest() {
-        return new OrderConfirmationRequest(
+    @POST
+    @Path("/delivery-confirmation")
+    @Produces(MediaType.APPLICATION_JSON)
+    public SendMailResponse sendDeliveryConfirmation(DeliveryConfirmationRequest request) {
+        log.info("Sending delivery confirmation to {}", request.recipientEmail());
+
+        RenderedMail renderedMail = notificationMailService.renderDeliveryConfirmation(request);
+        String messageId = notificationMailService.sendDeliveryConfirmation(request);
+
+        log.info("Delivery confirmation sent successfully - messageId={}, recipient={}",
+                messageId, request.recipientEmail());
+
+        return new SendMailResponse("delivery-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, "queued");
+    }
+
+    @POST
+    @Path("/delivery-confirmation/preview")
+    @Produces(MediaType.TEXT_HTML + ";charset=UTF-8")
+    public String previewDeliveryConfirmation(DeliveryConfirmationRequest request) {
+        return notificationMailService.renderDeliveryConfirmation(request).html();
+    }
+
+    @GET
+    @Path("/delivery-confirmation/preview")
+    @Produces(MediaType.TEXT_HTML + ";charset=UTF-8")
+    public String previewDeliveryConfirmationInBrowser() {
+        return notificationMailService.renderDeliveryConfirmation(exampleDeliveryConfirmationRequest()).html();
+    }
+
+    private AboConfirmationRequest exampleAboConfirmationRequest() {
+        return new AboConfirmationRequest(
                 "max.mustermann@example.com",
                 "Max Mustermann",
                 "RSO-2026-0042",
                 "04.05.2026",
-                "Julia Becker",
                 "Montag, 11.05.2026 zwischen 08:00 und 12:00 Uhr",
-                "Berlin HQ",
                 "3. OG, Küche Nord",
-                "Ablage links neben dem Kaffeevollautomaten",
-                "Nina Schulz, +49 30 123456",
                 "08.05.2026, 12:00 Uhr",
                 null,
                 "https://restockoffice.de/subscription/manage/rso-2026-0042",
@@ -113,12 +138,9 @@ public class MailResource {
                 "Mittwoch",
                 "06.05.2026",
                 "Mittwoch, 06.05.2026 zwischen 09:00 und 11:00 Uhr",
-                "Berlin HQ",
                 "RSO-2026-0042",
                 "ReStockOffice Logistics",
                 "3. OG, Küche Nord",
-                "Ablage links neben dem Kaffeevollautomaten",
-                "Nina Schulz, +49 30 123456",
                 "Bitte Zugang über den Haupteingang anmelden.",
                 null,
                 "https://restockoffice.de/deliveries/rso-2026-0042",
@@ -128,6 +150,26 @@ public class MailResource {
                         new DeliveryItem("Haferdrink Barista", "HD-2048", "12"),
                         new DeliveryItem("Kaffeebohnen House Blend", "KB-1102", "6"),
                         new DeliveryItem("Bio Tee Mix", "TM-7781", "8")
+                )
+        );
+    }
+    
+    private DeliveryConfirmationRequest exampleDeliveryConfirmationRequest() {
+        return new DeliveryConfirmationRequest(
+                "max.mustermann@example.com",
+                "Max Mustermann",
+                "Freitag, 15.05.2026",
+                "um 15:30 Uhr",
+                "RSO-2026-004281",
+                "Sabrina Keller",
+                null,
+                "https://restockoffice.de/deliveries/rso-2026-004281",
+                PREVIEW_LOGO_URL,
+                null,
+                List.of(
+                        new DeliveryItem("Kopierpapier A4 Premium", "RS-10023", "4 Pack"),
+                        new DeliveryItem("Kaffee Crema Office Blend", "RS-20411", "2 Kartons"),
+                        new DeliveryItem("Haferdrink Barista 1L", "RS-41277", "12 Stk")
                 )
         );
     }

@@ -9,7 +9,7 @@ import {
   FaTimes,
   FaUser,
   FaCalendarAlt,
-  FaArchive
+  FaArchive, FaClipboardList, FaTruck
 } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
 import iconColored from "../assets/logos/icon_colored.png";
@@ -22,6 +22,7 @@ import type {
 } from "../types/shop";
 import { ProductGrid } from "./ProductGrid";
 import { SubscriptionDialog } from "./SubscriptionDialog";
+import keycloak from "../auth/keycloak";
 
 interface AppShellProps {
   children: (context: {
@@ -48,6 +49,7 @@ export function AppShell({ children }: AppShellProps) {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [isHeaderAssistOpen, setIsHeaderAssistOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const { hasRole } = useAuth();
   const [activeSubscriptionLayer, setActiveSubscriptionLayer] =
     useState<ActiveSubscriptionLayer>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -121,6 +123,7 @@ export function AppShell({ children }: AppShellProps) {
     return matchesText && matchesArticleType && matchesBrand;
   });
 
+  const isRestocker = hasRole("Restocker");
 
   function resetSubscriptionLayer() {
     setActiveSubscriptionLayer(null);
@@ -245,6 +248,34 @@ export function AppShell({ children }: AppShellProps) {
 
   const onSearchPage = location.pathname === "/products";
   const isDarkMode = theme === "dark";
+  const isHomeActive = isRestocker ? location.pathname === "/restocker" : location.pathname === "/home";
+  const restockerMobileNavItems = [
+    {
+      to: "/restocker",
+      label: "Startseite",
+      icon: <FaHome />,
+    },
+    {
+      to: "/restocker-orders",
+      label: "Offene Auftr\u00e4ge",
+      icon: <FaClipboardList />,
+    },
+    {
+      to: "/restocker-my-orders",
+      label: "Meine Auftr\u00e4ge",
+      icon: <FaCalendarAlt />,
+    },
+    {
+      to: "/restocker-deliveries",
+      label: "Auslieferungen",
+      icon: <FaTruck />,
+    },
+    {
+      to: "/account",
+      label: "Konto",
+      icon: <FaUser />,
+    },
+  ];
 
   function renderSearchControls(source: "header" | "page") {
     const isHeader = source === "header";
@@ -424,7 +455,7 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isLoggedIn && isRestocker ? "app-shell--restocker-nav" : ""}`.trim()}>
       <header className="site-header">
         <div className="container site-header__inner">
           <div className="brand-column">
@@ -453,31 +484,71 @@ export function AppShell({ children }: AppShellProps) {
           <div className="header-actions">
             {isLoggedIn ? (
                 <>
+                  {/* Startseite: Unterschiedliche Seiten für Customer bzw. Restocker  */}
                   <NavLink
-                      className="button button--ghost nav-btn"
-                      to="/"
+                      className={`button button--ghost nav-btn ${isHomeActive ? "active" : ""}`}
+                      to={isRestocker ? "/restocker" : "/"}
                       title="Startseite"
                   >
                     <FaHome />
                   </NavLink>
 
-                  <NavLink
-                      className="button button--ghost nav-btn"
-                      to="/products"
-                      title="Alle Produkte"
-                  >
-                    <FaArchive />
-                  </NavLink>
+                  {/* Produkte: Nur Customer  */}
+                  {!isRestocker && (
+                      <NavLink
+                          className="button button--ghost nav-btn"
+                          to="/products"
+                          title="Alle Produkte"
+                      >
+                        <FaArchive />
+                      </NavLink>
+                  )}
 
-                  <NavLink
-                      className="button button--ghost nav-btn"
-                      to="/subscription"
-                      title="Abo-Übersicht"
-                      aria-label="Abo-Übersicht"
-                  >
-                    <FaCalendarAlt />
-                  </NavLink>
+                  {/* Subscription: Nur für Customer */}
+                  {!isRestocker && (
+                      <NavLink
+                          className="button button--ghost nav-btn"
+                          to="/subscription"
+                          title="Abo-Übersicht"
+                          aria-label="Abo-Übersicht"
+                      >
+                        <FaCalendarAlt />
+                      </NavLink>
+                  )}
 
+                  {/* Aufträge: Nur für Restocker */}
+                  {isRestocker && (
+                      <NavLink
+                          className="button button--ghost nav-btn"
+                          to="/restocker-orders"
+                          title="Offene Aufträge"
+                      >
+                        <FaClipboardList  />
+                      </NavLink>
+                  )}
+
+                  {isRestocker && (
+                      <NavLink
+                          className="button button--ghost nav-btn"
+                          to="/restocker-my-orders"
+                          title="Meine Aufträge"
+                      >
+                        <FaCalendarAlt />
+                      </NavLink>
+                  )}
+
+                  {/* Auslieferungen: Nur für Restocker */}
+                  {isRestocker && (
+                      <NavLink
+                          className="button button--ghost nav-btn"
+                          to="/restocker-deliveries"
+                          title="Auslieferungen"
+                      >
+                        <FaTruck  />
+                      </NavLink>
+                  )}
+
+                  {/* Account: Für beide gleich*/}
                   <NavLink
                       className="button button--ghost nav-btn"
                       to="/account"
@@ -487,8 +558,10 @@ export function AppShell({ children }: AppShellProps) {
                     <FaUser />
                   </NavLink>
 
+
+                  {/* Hamburger immer sichtbar */}
                   <button
-                      className="button button--ghost hamburger-btn"
+                      className={`button button--ghost hamburger-btn ${isRestocker ? "hamburger-btn--restocker" : ""}`.trim()}
                       type="button"
                       onClick={() => setMenuOpen((v) => !v)}
                       aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
@@ -500,40 +573,88 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </div>
 
+        {/* ------------------- MOBILE HEADER MENÜ ------------------ */}
+
         {isLoggedIn && menuOpen ? (
-          <nav className="mobile-nav" aria-label="Mobile Navigation">
-            <div className="container mobile-nav__inner">
-              <NavLink
-                className="mobile-nav__link"
-                to="/"
-                onClick={() => setMenuOpen(false)}
-              >
-                <FaHome /> Startseite
-              </NavLink>
-              <NavLink
-                className="mobile-nav__link"
-                to="/products"
-                onClick={() => setMenuOpen(false)}
-              >
-                <FaArchive /> Alle Produkte
-              </NavLink>
-              <NavLink
-                className="mobile-nav__link"
-                to="/subscription"
-                onClick={() => setMenuOpen(false)}
-              >
-                <FaCalendarAlt /> Aboverwaltung
-              </NavLink>
-              <NavLink
-                className="mobile-nav__link"
-                to="/account"
-                onClick={() => setMenuOpen(false)}
-              >
-                <FaUser /> Konto
-              </NavLink>
-            </div>
-          </nav>
+            <nav className="mobile-nav" aria-label="Mobile Navigation">
+              <div className="container mobile-nav__inner">
+
+                {/* Startseite: Unterschiedliche Seiten für Customer bzw. Restocker */}
+                <NavLink
+                    className="mobile-nav__link"
+                    to={isRestocker ? "/restocker" : "/"}
+                    onClick={() => setMenuOpen(false)}
+                >
+                  <FaHome /> Startseite
+                </NavLink>
+
+                {/* Produkte: Nur Customer */}
+                {!isRestocker && (
+                    <NavLink
+                        className="mobile-nav__link"
+                        to="/products"
+                        onClick={() => setMenuOpen(false)}
+                    >
+                      <FaArchive /> Alle Produkte
+                    </NavLink>
+                )}
+
+                {/* Subscription: Nur für Customer */}
+                {!isRestocker && (
+                    <NavLink
+                        className="mobile-nav__link"
+                        to="/subscription"
+                        onClick={() => setMenuOpen(false)}
+                    >
+                      <FaCalendarAlt /> Aboverwaltung
+                    </NavLink>
+                )}
+
+                {/* Aufträge: Nur für Restocker */}
+                {isRestocker && (
+                    <NavLink
+                        className="mobile-nav__link"
+                        to="/restocker-orders"
+                        onClick={() => setMenuOpen(false)}
+                    >
+                      <FaClipboardList /> Offene Aufträge
+                    </NavLink>
+                )}
+
+                {isRestocker && (
+                    <NavLink
+                        className="mobile-nav__link"
+                        to="/restocker-my-orders"
+                        onClick={() => setMenuOpen(false)}
+                    >
+                      <FaCalendarAlt /> Meine Aufträge
+                    </NavLink>
+                )}
+
+                {/* Auslieferungen: Nur für Restocker */}
+                {isRestocker && (
+                    <NavLink
+                        className="mobile-nav__link"
+                        to="/restocker-deliveries"
+                        onClick={() => setMenuOpen(false)}
+                    >
+                      <FaTruck /> Auslieferungen
+                    </NavLink>
+                )}
+
+                {/* Account: Für beide gleich */}
+                <NavLink
+                    className="mobile-nav__link"
+                    to="/account"
+                    onClick={() => setMenuOpen(false)}
+                >
+                  <FaUser /> Konto
+                </NavLink>
+
+              </div>
+            </nav>
         ) : null}
+
       </header>
 
       {isLoggedIn && menuOpen ? (
@@ -578,6 +699,25 @@ export function AppShell({ children }: AppShellProps) {
 
       <footer className="site-footer">
         <div className="container">© 2026 ReStockOffice</div>
+
+        {isLoggedIn && isRestocker ? (
+          <nav className="restocker-mobile-tabbar" aria-label="Restocker Navigation">
+            {restockerMobileNavItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `restocker-mobile-tabbar__item ${isActive ? "active" : ""}`
+                }
+                aria-label={item.label}
+              >
+                <span className="restocker-mobile-tabbar__icon" aria-hidden="true">
+                  {item.icon}
+                </span>
+              </NavLink>
+            ))}
+          </nav>
+        ) : null}
       </footer>
 
       {isLoggedIn ? (
