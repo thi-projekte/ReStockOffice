@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class DeliveryService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final int PLANNING_HORIZON_DAYS = 28;
+    static final int PLANNING_HORIZON_DAYS = 14;
     private static final String TEST_ORDER_PREFIX = "test-delivery-";
     private static final String DEFAULT_TEST_CUSTOMER_ONE = "3e6572a7-3852-42e3-81eb-17e7f9622kk8";
     private static final String DEFAULT_TEST_CUSTOMER_TWO = "c831fce5-56a3-443e-a27f-cc769a1ed0d7";
@@ -239,6 +239,7 @@ public class DeliveryService {
         }
 
         Map<String, UserDto> customerCache = new HashMap<>();
+        Map<String, List<Delivery>> customerDeliveriesCache = new HashMap<>();
         Map<DeliveryGroupKey, DeliveryGroup> groupedOrders = new LinkedHashMap<>();
 
         for (OrderDto order : activeOrders) {
@@ -247,15 +248,25 @@ public class DeliveryService {
             }
 
             UserDto user = loadCachedUser(order.customerId, customerCache, authorizationHeader);
-            for (LocalDate deliveryDate : calculateDueDates(order, user, today, horizonEnd)) {
+            List<Delivery> customerDeliveries = existingDeliveriesForCustomer(order.customerId, customerDeliveriesCache);
+            List<LocalDate> existingOrderDeliveryDates = existingDeliveryDatesForOrder(order, customerDeliveries);
+            List<LocalDate> existingCustomerDeliveryDates = existingCustomerDeliveryDates(customerDeliveries, today, horizonEnd);
+            for (LocalDate deliveryDate : calculateDueDates(
+                    order,
+                    user,
+                    today,
+                    horizonEnd,
+                    existingOrderDeliveryDates,
+                    existingCustomerDeliveryDates
+            )) {
                 DeliveryGroupKey groupKey = new DeliveryGroupKey(order.customerId, deliveryDate);
                 DeliveryGroup group = groupedOrders.computeIfAbsent(groupKey, ignored -> new DeliveryGroup());
-                group.orders.add(order);
+                group.orders.add(new PlannedOrder(order, existingOrderDeliveryDates.isEmpty()));
             }
         }
 
         for (Map.Entry<DeliveryGroupKey, DeliveryGroup> entry : groupedOrders.entrySet()) {
-            upsertPlannedDelivery(entry.getKey(), entry.getValue().orders);
+            upsertPlannedDelivery(entry.getKey(), entry.getValue().orders, today);
         }
     }
 
@@ -265,10 +276,13 @@ public class DeliveryService {
                 .getSingleResult();
     }
 
-    private void upsertPlannedDelivery(DeliveryGroupKey groupKey, List<OrderDto> orders) {
+    private void upsertPlannedDelivery(DeliveryGroupKey groupKey, List<PlannedOrder> plannedOrders, LocalDate today) {
         Delivery delivery = Delivery.findByCustomerAndDate(groupKey.customerId(), groupKey.deliveryDate());
 
         if (delivery == null) {
+            List<OrderDto> orders = plannedOrders.stream()
+                    .map(PlannedOrder::order)
+                    .collect(Collectors.toList());
             delivery = new Delivery();
             delivery.orderId = joinedOrderIds(orders);
             delivery.userId = groupKey.customerId();
@@ -283,36 +297,128 @@ public class DeliveryService {
             return;
         }
 
-        if (delivery.deliveryDate == null) {
-            delivery.deliveryDate = groupKey.deliveryDate();
+        List<OrderDto> newOrders = plannedOrders.stream()
+                .filter(PlannedOrder::newArticle)
+                .map(PlannedOrder::order)
+                .collect(Collectors.toList());
+        if (newOrders.isEmpty()) {
+            return;
         }
 
-        appendOrdersToDelivery(delivery, orders);
+        if (!canAppendToExistingDelivery(delivery, groupKey.deliveryDate(), today)) {
+            return;
+        }
+
+        appendNewOrdersToDelivery(delivery, newOrders);
     }
 
-    private List<LocalDate> calculateDueDates(
+    boolean canAppendToExistingDelivery(Delivery delivery, LocalDate deliveryDate, LocalDate today) {
+        return delivery != null
+                && !delivery.isDelivered()
+                && deliveryDate != null
+                && deliveryDate.isAfter(today);
+    }
+
+    List<LocalDate> calculateDueDates(
             OrderDto order,
             UserDto user,
             LocalDate startDate,
-            LocalDate endDate
+            LocalDate endDate,
+            List<LocalDate> existingOrderDeliveryDates,
+            List<LocalDate> existingCustomerDeliveryDates
     ) {
         List<LocalDate> dueDates = new ArrayList<>();
         DayOfWeek deliveryDay = resolveDeliveryDay(user, order);
-        LocalDate anchorDate = order.createdAt != null ? order.createdAt.toLocalDate() : startDate;
-        LocalDate firstDeliveryDate = firstDateWithMinimumLeadTime(anchorDate, deliveryDay);
         int intervalWeeks = order.interval != null && order.interval > 0 ? order.interval : 1;
 
-        LocalDate deliveryDate = firstDeliveryDate;
+        if ((existingOrderDeliveryDates == null || existingOrderDeliveryDates.isEmpty())
+                && existingCustomerDeliveryDates != null
+                && !existingCustomerDeliveryDates.isEmpty()) {
+            return existingCustomerDueDatesForNewOrder(
+                    order,
+                    intervalWeeks,
+                    startDate,
+                    endDate,
+                    existingCustomerDeliveryDates
+            );
+        }
+
+        LocalDate deliveryDate = firstPlannableDeliveryDate(
+                order,
+                deliveryDay,
+                intervalWeeks,
+                startDate,
+                existingOrderDeliveryDates
+        );
         while (deliveryDate.isBefore(startDate)) {
-            deliveryDate = deliveryDate.plusWeeks(intervalWeeks);
+            deliveryDate = nextDeliveryDate(deliveryDate, deliveryDay, intervalWeeks);
         }
 
         while (!deliveryDate.isAfter(endDate)) {
             dueDates.add(deliveryDate);
-            deliveryDate = deliveryDate.plusWeeks(intervalWeeks);
+            deliveryDate = nextDeliveryDate(deliveryDate, deliveryDay, intervalWeeks);
         }
 
         return dueDates;
+    }
+
+    private List<LocalDate> existingCustomerDueDatesForNewOrder(
+            OrderDto order,
+            int intervalWeeks,
+            LocalDate startDate,
+            LocalDate endDate,
+            List<LocalDate> existingCustomerDeliveryDates
+    ) {
+        if (existingCustomerDeliveryDates == null || existingCustomerDeliveryDates.isEmpty()) {
+            return List.of();
+        }
+
+        LocalDate anchorDate = order.createdAt != null ? order.createdAt.toLocalDate() : startDate;
+        LocalDate firstEligibleDate = existingCustomerDeliveryDates.stream()
+                .filter(date -> !date.isBefore(startDate))
+                .filter(date -> !date.isAfter(endDate))
+                .filter(date -> completeWorkdaysBetween(anchorDate, date) >= 2)
+                .findFirst()
+                .orElse(null);
+        if (firstEligibleDate == null) {
+            return List.of();
+        }
+
+        return existingCustomerDeliveryDates.stream()
+                .filter(date -> !date.isBefore(firstEligibleDate))
+                .filter(date -> !date.isAfter(endDate))
+                .filter(date -> weeksBetween(firstEligibleDate, date) % intervalWeeks == 0)
+                .collect(Collectors.toList());
+    }
+
+    private long weeksBetween(LocalDate startDate, LocalDate endDate) {
+        return java.time.temporal.ChronoUnit.WEEKS.between(startDate, endDate);
+    }
+
+    private LocalDate firstPlannableDeliveryDate(
+            OrderDto order,
+            DayOfWeek deliveryDay,
+            int intervalWeeks,
+            LocalDate startDate,
+            List<LocalDate> existingDeliveryDates
+    ) {
+        LocalDate latestExistingDeliveryDate = latestDate(existingDeliveryDates);
+        if (latestExistingDeliveryDate != null) {
+            return nextDeliveryDate(latestExistingDeliveryDate, deliveryDay, intervalWeeks);
+        }
+
+        LocalDate anchorDate = order.createdAt != null ? order.createdAt.toLocalDate() : startDate;
+        return firstDateWithMinimumLeadTime(anchorDate, deliveryDay);
+    }
+
+    private LocalDate nextDeliveryDate(LocalDate previousDeliveryDate, DayOfWeek deliveryDay, int intervalWeeks) {
+        LocalDate intervalAnchor = previousDeliveryDate.plusWeeks(intervalWeeks);
+        return dateInSameWeek(intervalAnchor, deliveryDay);
+    }
+
+    private LocalDate dateInSameWeek(LocalDate date, DayOfWeek deliveryDay) {
+        int dayDifference = deliveryDay.getValue() - date.getDayOfWeek().getValue();
+        return date.plusDays(dayDifference);
     }
 
     private DayOfWeek resolveDeliveryDay(UserDto user, OrderDto order) {
@@ -380,6 +486,59 @@ public class DeliveryService {
     private boolean isWorkday(LocalDate date) {
         return date.getDayOfWeek() != DayOfWeek.SATURDAY
                 && date.getDayOfWeek() != DayOfWeek.SUNDAY;
+    }
+
+    private List<Delivery> existingDeliveriesForCustomer(
+            String customerId,
+            Map<String, List<Delivery>> customerDeliveriesCache
+    ) {
+        return customerDeliveriesCache.computeIfAbsent(customerId, Delivery::findByCustomer);
+    }
+
+    private List<LocalDate> existingDeliveryDatesForOrder(OrderDto order, List<Delivery> customerDeliveries) {
+        String orderId = order.id.toString();
+
+        return customerDeliveries.stream()
+                .filter(delivery -> splitOrderIds(delivery.orderId).contains(orderId))
+                .map(this::storedDeliveryDate)
+                .filter(date -> date != null)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    private List<LocalDate> existingCustomerDeliveryDates(
+            List<Delivery> customerDeliveries,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        return customerDeliveries.stream()
+                .map(this::storedDeliveryDate)
+                .filter(date -> date != null)
+                .filter(date -> !date.isBefore(startDate))
+                .filter(date -> !date.isAfter(endDate))
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    private LocalDate latestDate(List<LocalDate> dates) {
+        if (dates == null || dates.isEmpty()) {
+            return null;
+        }
+
+        return dates.stream().max(LocalDate::compareTo).orElse(null);
+    }
+
+    private LocalDate storedDeliveryDate(Delivery delivery) {
+        if (delivery.deliveryDate != null) {
+            return delivery.deliveryDate;
+        }
+
+        if (delivery.tour != null) {
+            return delivery.tour.tourDate;
+        }
+
+        return null;
     }
 
     private List<DeliveryDetailDto> toDetailDtos(List<Delivery> deliveries, String authorizationHeader) {
@@ -744,13 +903,12 @@ public class DeliveryService {
                 : customerId.trim();
     }
 
-    private void appendOrdersToDelivery(Delivery delivery, List<OrderDto> orders) {
+    void appendNewOrdersToDelivery(Delivery delivery, List<OrderDto> orders) {
         List<String> existingOrderIds = splitOrderIds(delivery.orderId);
 
         for (OrderDto order : orders) {
             String orderId = order.id.toString();
             if (existingOrderIds.contains(orderId)) {
-                updateExistingItem(delivery, order);
                 continue;
             }
 
@@ -760,25 +918,6 @@ public class DeliveryService {
         }
 
         delivery.orderId = String.join(",", existingOrderIds);
-    }
-
-    private void updateExistingItem(Delivery delivery, OrderDto order) {
-        if (order.productId == null) {
-            return;
-        }
-
-        DeliveryItem existingItem = delivery.items.stream()
-                .filter(item -> order.productId.equals(item.articleNumber))
-                .findFirst()
-                .orElse(null);
-        if (existingItem == null || existingItem.delivered) {
-            return;
-        }
-
-        DeliveryItem updatedItem = createDeliveryItem(order);
-        existingItem.name = updatedItem.name;
-        existingItem.unit = updatedItem.unit;
-        existingItem.quantity = updatedItem.quantity;
     }
 
     private String joinedOrderIds(List<OrderDto> orders) {
@@ -853,10 +992,13 @@ public class DeliveryService {
     private record DeliveryGroupKey(String customerId, LocalDate deliveryDate) {
     }
 
+    private record PlannedOrder(OrderDto order, boolean newArticle) {
+    }
+
     private record AuthenticatedRestocker(String username, String displayName) {
     }
 
     private static class DeliveryGroup {
-        final List<OrderDto> orders = new ArrayList<>();
+        final List<PlannedOrder> orders = new ArrayList<>();
     }
 }

@@ -111,6 +111,13 @@ public class Delivery extends PanacheEntityBase {
         ).firstResult();
     }
 
+    public static List<Delivery> findByCustomer(String customerId) {
+        return list(
+                "userId = ?1 order by deliveryDate asc",
+                customerId
+        );
+    }
+
     public static List<Delivery> findOpenBetween(LocalDate startDate, LocalDate endDate) {
         return list(
                 "tour is null and deliveredAt is null and deliveryDate >= ?1 and deliveryDate <= ?2 " +

@@ -14,7 +14,7 @@ Die Deliveries werden nicht jeden Tag komplett neu berechnet, sondern beim Laden
 
 ### Grundlogik
 
-* Der `DeliveryService` plant immer einen Horizont von aktuell **28 Tagen im Voraus**.
+* Der `DeliveryService` plant immer einen Horizont von aktuell **14 Tagen im Voraus**.
 * Dafür werden alle aktiven Orders geladen.
 * Anschließend werden passende Liefertermine berechnet.
 * Orders werden nach: `customerId`, `deliveryDate` gruppiert.
@@ -28,19 +28,19 @@ Die Planung läuft aktuell nicht als automatische tägliche Hintergrund-Neuberec
 - Ein Restocker öffnet die Seite mit offenen Lieferungen.
 - Die SPA ruft `GET /api/deliveries/open` auf.
 - Im Backend läuft dabei `ensurePlanningHorizon(...)`.
-- Der Service schaut: „Welche aktiven Orders gibt es, und welche Deliveries müssen zwischen heute und heute + 28 Tage existieren?“
-- Fehlende Deliveries werden angelegt, bestehende werden ergänzt/aktualisiert.
+- Der Service schaut: „Welche aktiven Orders gibt es, und welche Deliveries müssen zwischen heute und heute + 14 Tage existieren?“
+- Fehlende Deliveries werden angelegt, bestehende Deliveries behalten ihr Lieferdatum und ihre bestehenden Positionen. Neue Artikel können zu zukünftigen, nicht ausgelieferten Deliveries ergänzt werden.
 
 Beispiel: Heute ist **26.05.2026**. Dann plant der Service beim API-Aufruf für den Zeitraum:
 
 ```text
-26.05.2026 bis 23.06.2026
+26.05.2026 bis 09.06.2026
 ```
 
 Wenn niemand den Endpoint aufruft, passiert erstmal nichts Neues in der Delivery-Datenbank. Am nächsten Tag, **27.05.2026**, wäre der neue Horizont:
 
 ```text
-27.05.2026 bis 24.06.2026
+27.05.2026 bis 10.06.2026
 ```
 
 Aber auch das wird erst erzeugt/ergänzt, wenn wieder ein relevanter API-Aufruf kommt. Die drei genannten Endpunkte lösen dieses Sicherstellen des Planungshorizonts aus:
@@ -158,11 +158,12 @@ Falls für denselben Restocker und dasselbe Lieferdatum bereits eine offene Tour
 
 ### Neue Artikel bei bereits akzeptierter Delivery
 
-Aktuell können neue Artikel auch zu einer bereits akzeptierten Delivery hinzugefügt werden. Das passiert, wenn:
+Neue Artikel können auch zu einer bereits akzeptierten, zukünftigen Delivery hinzugefügt werden. Das passiert, wenn:
 
 * dieselbe `customerId`
 * dasselbe `deliveryDate`
 * die Mindestvorlaufzeit von 2 vollständigen Werktagen eingehalten ist
+* die Delivery noch nicht ausgeliefert wurde
 
 Beispiel:
 
@@ -173,7 +174,7 @@ Beispiel:
 
 Dann wird das neue Produkt aktuell in die bereits angenommene Delivery vom 09.06 ergänzt. Wenn das neue Produkt erst am 06.06 erstellt wird, reicht der Vorlauf für den 09.06 nicht mehr aus. Dann landet es frühestens in der Delivery vom 16.06. 
 
-D.h. der Code verhindert aktuell nicht, dass eine bereits angenommene oder operativ vorbereitete Delivery nachträglich erweitert wird.
+D.h. eine bereits angenommene oder operativ vorbereitete Delivery darf durch neue Artikel erweitert werden, solange sie noch nicht ausgeliefert wurde.
 
 ---
 
@@ -196,15 +197,10 @@ Existiert für einen Customer und ein Datum bereits eine Delivery:
 
 * wird diese wiederverwendet
 * neue Produkte ergänzt
-* bestehende Positionen aktualisiert
+* bestehende Positionen bleiben unverändert
+* ausgelieferte Deliveries bleiben vollständig unverändert
 
-Solange ein Produkt noch nicht ausgeliefert wurde (`delivered = false`), können:
-
-* Menge
-* Name
-* Einheit
-
-aktualisiert werden.
+Ändert sich der `deliveryDay`, werden bestehende Deliveries nicht verschoben. Der neue Liefertag gilt erst für neu erzeugte Deliveries nach dem bestehenden Planungshorizont. Bei bestehenden Orders wird dafür der letzte gespeicherte Delivery-Termin als Intervall-Anker verwendet, damit ein 4-Wochen-Rhythmus nicht wieder bei Woche 0 startet.
 
 ### Artikel-Stammdaten
 
@@ -219,7 +215,7 @@ Name und Einheit eines Delivery-Items kommen aus dem Article-Service. Falls der 
 
 Der aktuelle Service:
 
-* ergänzt und aktualisiert Deliveries
+* ergänzt Deliveries um neue Artikel
 * löscht jedoch keine alten Positionen automatisch
 * führt keine vollständige Reconciliation gegen den aktuellen Order-Bestand aus
 
