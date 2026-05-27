@@ -8,6 +8,7 @@ import type {
 import { useAPIs } from "../services/products";
 import {
   createSubscription,
+  deleteSubscriptionOrder,
   loadSubscription,
   upsertSubscriptionOrder,
 } from "../services/orders";
@@ -157,6 +158,26 @@ export function useSubscriptionCart({
     return hasExistingItem ? "updated" : "created";
   }
 
+  async function removeItem(item: RestockOrderWithProduct): Promise<void> {
+    if (useAPIs && !token) {
+      throw new Error("Abo kann ohne Keycloak-Token nicht gespeichert werden.");
+    }
+
+    await deleteSubscriptionOrder({
+      customerId: effectiveCustomerId,
+      token,
+      productId: item.productId,
+    });
+
+    setSubscription((previousSubscription) => ({
+      ...previousSubscription,
+      items: previousSubscription.items.filter(
+        (subscriptionItem) => subscriptionItem.productId !== item.productId,
+      ),
+      updatedAt: new Date().toISOString().slice(0, 10),
+    }));
+  }
+
   const items = useMemo<RestockOrderWithProduct[]>(
       () =>
           subscription.items
@@ -200,6 +221,7 @@ export function useSubscriptionCart({
     totalPrice,
     registerProducts,
     addOrUpdateItem,
+    removeItem,
     getExistingItem,
   };
 }

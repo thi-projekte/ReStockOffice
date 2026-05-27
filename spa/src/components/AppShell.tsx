@@ -35,6 +35,7 @@ interface AppShellProps {
     onAddToSubscription: (product: Product) => void;
     onOpenSubscriptionOverview: () => void;
     onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+    onRemoveSubscriptionItem: (item: RestockOrderWithProduct) => Promise<void>;
     subscriptionItems: RestockOrderWithProduct[];
     canModifySubscription: boolean;
     subscriptionProfileStatus: SubscriptionProfileStatus | null;
@@ -180,6 +181,27 @@ export function AppShell({ children }: AppShellProps) {
     setSelectedProduct(item.product);
     setSelectedSubscriptionItem(item);
     setActiveSubscriptionLayer("dialog");
+  }
+
+  async function handleRemoveSubscriptionItem(item: RestockOrderWithProduct) {
+    if (!canModifySubscription) {
+      toast.error(
+        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
+      );
+      return;
+    }
+
+    try {
+      await subscriptionCart.removeItem(item);
+      toast.success(`${item.product.name} wurde aus dem Abo entfernt`);
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Das Produkt konnte nicht aus dem Abo entfernt werden.",
+      );
+    }
   }
 
   function handleSubscriptionProfileUpdated(user: UserProfile) {
@@ -812,6 +834,7 @@ export function AppShell({ children }: AppShellProps) {
              onAddToSubscription: handleAddToSubscription,
              onOpenSubscriptionOverview: openSubscriptionOverview,
              onEditSubscriptionItem: handleEditSubscriptionItem,
+             onRemoveSubscriptionItem: handleRemoveSubscriptionItem,
              subscriptionItems: subscriptionCart.items,
              canModifySubscription,
              subscriptionProfileStatus,

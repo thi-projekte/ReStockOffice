@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate, useOutletContext } from "react-router-dom";
-import { MdEdit, MdSave } from "react-icons/md";
+import { MdDeleteOutline, MdEdit, MdSave } from "react-icons/md";
 import { SubscriptionProfileProgress } from "../components/SubscriptionProfileProgress";
 import type { Product, RestockOrderWithProduct } from "../types/shop";
 import type { SubscriptionProfileStatus } from "../utils/subscriptionProfile";
@@ -10,6 +10,7 @@ interface OutletContext {
   onAddToSubscription: (product: Product) => void;
   onOpenSubscriptionOverview: () => void;
   onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+  onRemoveSubscriptionItem: (item: RestockOrderWithProduct) => Promise<void>;
   subscriptionItems: RestockOrderWithProduct[];
   canModifySubscription: boolean;
   subscriptionProfileStatus: SubscriptionProfileStatus | null;
@@ -27,6 +28,7 @@ export function SubscriptionPage() {
   const {
     isLoggedIn,
     onEditSubscriptionItem,
+    onRemoveSubscriptionItem,
     subscriptionItems,
     canModifySubscription,
     subscriptionProfileStatus,
@@ -94,21 +96,40 @@ export function SubscriptionPage() {
             ) : (
               <div className="subscription-account-list">
                 {subscriptionItems.map((item) => (
-                  <button
+                  <article
                     key={`${item.customerId}-${item.productId}-${item.createdAt}`}
                     className={`subscription-account-item ${
                       canEditSubscription ? "" : "subscription-account-item--disabled"
                     }`.trim()}
-                    type="button"
-                    disabled={!canEditSubscription}
-                    onClick={() => onEditSubscriptionItem(item)}
                   >
                     <div>
                       <strong>{item.product.name}</strong>
                       <div className="muted-text">Menge: {item.quantity}</div>
                     </div>
                     <span>{formatInterval(item.interval)}</span>
-                  </button>
+                    <div className="subscription-account-item__actions">
+                      <button
+                        className="button button--ghost"
+                        type="button"
+                        disabled={!canEditSubscription}
+                        onClick={() => onEditSubscriptionItem(item)}
+                      >
+                        <MdEdit />
+                        Bearbeiten
+                      </button>
+                      <button
+                        className="button button--ghost subscription-account-item__delete"
+                        type="button"
+                        disabled={!canEditSubscription}
+                        onClick={() => {
+                          void onRemoveSubscriptionItem(item);
+                        }}
+                      >
+                        <MdDeleteOutline />
+                        Entfernen
+                      </button>
+                    </div>
+                  </article>
                 ))}
               </div>
             )}

@@ -2109,6 +2109,28 @@
     box-shadow 0.2s ease;
 }
 
+.subscription-account-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.subscription-account-item__actions .button {
+  padding: 0.6rem 0.85rem;
+}
+
+.subscription-account-item__delete {
+  border: 1px solid rgba(211, 47, 47, 0.16);
+  background: rgba(211, 47, 47, 0.08);
+  color: #8f231c;
+}
+
+.subscription-account-item__delete:hover {
+  background: rgba(211, 47, 47, 0.14);
+  color: #7a1d18;
+}
+
 .subscription-overview-item:hover,
 .subscription-account-item:hover,
 .subscription-overview-item--active {
@@ -2181,6 +2203,16 @@
   border-color: rgba(153, 153, 153, 0.16);
   background: #1f2a2e;
   color: var(--color-text);
+}
+
+:root[data-theme="dark"] .subscription-account-item__delete {
+  border-color: rgba(211, 47, 47, 0.28);
+  background: rgba(211, 47, 47, 0.16);
+  color: #ffb4aa;
+}
+
+:root[data-theme="dark"] .subscription-account-item__delete:hover {
+  background: rgba(211, 47, 47, 0.24);
 }
 
 :root[data-theme="dark"] .subscription-profile-progress {
