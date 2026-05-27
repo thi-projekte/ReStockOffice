@@ -150,16 +150,6 @@ export function OrderPage() {
         labelTop: "Nächste",
         labelBottom: "Woche",
       },
-      {
-        value: "week-3" as DeliveryWindowOption,
-        labelTop: "Woche",
-        labelBottom: "3",
-      },
-      {
-        value: "week-4" as DeliveryWindowOption,
-        labelTop: "Woche",
-        labelBottom: "4",
-      },
     ],
     [],
   );
@@ -353,7 +343,7 @@ export function OrderPage() {
 
         <div className="hero-copy">
           <h1>RESTOCKORDER - MARKTPLATZ</h1>
-          <p>Alle verfügbaren Aufträge für die nächsten 4 Wochen.</p>
+          <p>Alle verfügbaren Aufträge für die nächsten zwei Wochen.</p>
 
           <div className="dashboard-strip" aria-label="Marktplatz Üœbersicht">
             <article className="dashboard-stat">
@@ -376,7 +366,7 @@ export function OrderPage() {
             <h2>Alle verfügbaren Aufträge</h2>
             <p className="section-copy">
               Sichere dir offene Lieferaufträge mit einem Liefertermin in den
-              kommenden 4 Wochen.
+              kommenden zwei Wochen.
             </p>
           </div>
         </div>

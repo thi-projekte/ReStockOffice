@@ -157,16 +157,6 @@ export function MyOrdersPage() {
         labelTop: "Nächste",
         labelBottom: "Woche",
       },
-      {
-        value: "week-3" as DeliveryWindowOption,
-        labelTop: "Woche",
-        labelBottom: "3",
-      },
-      {
-        value: "week-4" as DeliveryWindowOption,
-        labelTop: "Woche",
-        labelBottom: "4",
-      },
     ],
     [],
   );
@@ -412,7 +402,7 @@ export function MyOrdersPage() {
         <div className="hero-copy">
           <h1>MEINE AUFTRÄGE</h1>
           <p className="section-copy">
-            Hallo {greetingName}, hier sind deine Aufträge für die nächsten 4 Wochen.
+            Hallo {greetingName}, hier sind deine Aufträge für die nächsten zwei Wochen.
           </p>
 
           <div className="dashboard-strip" aria-label="Meine Aufträge Übersicht">
