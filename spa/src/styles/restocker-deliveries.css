@@ -191,6 +191,7 @@
 .delivery-complete-overlay {
   position: absolute;
   inset: 0;
+  z-index: 5;
   display: grid;
   place-items: center;
   padding: 1rem;
@@ -369,12 +370,7 @@
   }
 
   .delivery-action-row {
-    position: sticky;
-    bottom: calc(4.55rem + env(safe-area-inset-bottom));
-    z-index: 2;
-    margin: 0 -0.2rem;
-    padding: 0.7rem 0.2rem 0.2rem;
-    background: linear-gradient(180deg, transparent, var(--color-surface) 32%);
+    padding-top: 0.45rem;
   }
 
   .delivery-primary-action {
@@ -382,7 +378,6 @@
   }
 
   .delivery-complete-overlay {
-    align-content: end;
     padding: 0.6rem;
   }
 
