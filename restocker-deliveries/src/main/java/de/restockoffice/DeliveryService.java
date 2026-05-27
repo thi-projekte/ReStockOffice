@@ -163,6 +163,16 @@ public class DeliveryService {
     }
 
     @Transactional
+    public CustomerDeliveryOverviewDto getCustomerDeliveryOverview(String customerId) {
+        if (isBlank(customerId)) {
+            throw new BadRequestException("customerId muss angegeben werden.");
+        }
+
+        List<Delivery> deliveries = Delivery.findByCustomer(customerId.trim());
+        return toCustomerDeliveryOverview(deliveries, LocalDate.now());
+    }
+
+    @Transactional
     public List<DeliveryDetailDto> getAssignedDeliveries(String restockerName, String authorizationHeader) {
         validateRestockerName(restockerName);
         ensurePlanningHorizon(authorizationHeader);
@@ -573,6 +583,46 @@ public class DeliveryService {
         return quantitiesByArticle.entrySet().stream()
                 .map(entry -> new DeliveredArticleSummaryDto(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
+    }
+
+    CustomerDeliveryOverviewDto toCustomerDeliveryOverview(List<Delivery> deliveries, LocalDate today) {
+        Delivery lastDelivery = null;
+        Delivery nextDelivery = null;
+
+        if (deliveries != null) {
+            List<Delivery> sortedDeliveries = deliveries.stream()
+                    .filter(delivery -> delivery != null && delivery.deliveryDate != null)
+                    .sorted((left, right) -> left.deliveryDate.compareTo(right.deliveryDate))
+                    .collect(Collectors.toList());
+
+            for (Delivery delivery : sortedDeliveries) {
+                if (delivery.deliveryDate.isBefore(today)) {
+                    lastDelivery = delivery;
+                    continue;
+                }
+
+                if (nextDelivery == null) {
+                    nextDelivery = delivery;
+                }
+            }
+        }
+
+        return new CustomerDeliveryOverviewDto(
+                toDeliverySummary(lastDelivery),
+                toDeliverySummary(nextDelivery)
+        );
+    }
+
+    private DeliverySummaryDto toDeliverySummary(Delivery delivery) {
+        if (delivery == null) {
+            return null;
+        }
+
+        return new DeliverySummaryDto(
+                delivery.id,
+                requireDeliveryDate(delivery).toString(),
+                deliveryStatus(delivery)
+        );
     }
 
     private boolean isDeliveredInPeriod(Delivery delivery, LocalDate periodStart, LocalDate periodEnd) {

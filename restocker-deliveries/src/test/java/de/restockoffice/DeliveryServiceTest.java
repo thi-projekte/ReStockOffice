@@ -5,9 +5,11 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 class DeliveryServiceTest {
@@ -194,6 +196,51 @@ class DeliveryServiceTest {
         assertEquals(3, summary.get(0).quantity);
         assertEquals("10007", summary.get(1).articleNumber);
         assertEquals(20, summary.get(1).quantity);
+    }
+
+    @Test
+    void customerDeliveryOverviewReturnsPreviousAndNextDelivery() {
+        Delivery previous = deliveredDelivery("customer-1", LocalDate.of(2026, 5, 20), item("10001", 1));
+        Delivery older = deliveredDelivery("customer-1", LocalDate.of(2026, 5, 1), item("10002", 1));
+        Delivery today = openDelivery("customer-1", LocalDate.of(2026, 5, 27), item("10003", 1));
+        Delivery future = openDelivery("customer-1", LocalDate.of(2026, 6, 2), item("10004", 1));
+        older.id = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        previous.id = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        today.id = UUID.fromString("00000000-0000-0000-0000-000000000003");
+        future.id = UUID.fromString("00000000-0000-0000-0000-000000000004");
+
+        CustomerDeliveryOverviewDto overview = service.toCustomerDeliveryOverview(
+                List.of(today, future, older, previous),
+                LocalDate.of(2026, 5, 27)
+        );
+
+        assertEquals(previous.id, overview.lastDelivery.id);
+        assertEquals("2026-05-20", overview.lastDelivery.deliveryDate);
+        assertEquals("DELIVERED", overview.lastDelivery.status);
+        assertEquals(today.id, overview.nextDelivery.id);
+        assertEquals("2026-05-27", overview.nextDelivery.deliveryDate);
+        assertEquals("OPEN", overview.nextDelivery.status);
+    }
+
+    @Test
+    void customerDeliveryOverviewReturnsNullWhenOneSideIsMissing() {
+        Delivery future = openDelivery("customer-1", LocalDate.of(2026, 6, 2), item("10001", 1));
+
+        CustomerDeliveryOverviewDto overview = service.toCustomerDeliveryOverview(
+                List.of(future),
+                LocalDate.of(2026, 5, 27)
+        );
+
+        assertNull(overview.lastDelivery);
+        assertEquals("2026-06-02", overview.nextDelivery.deliveryDate);
+
+        overview = service.toCustomerDeliveryOverview(
+                List.of(deliveredDelivery("customer-1", LocalDate.of(2026, 5, 20), item("10001", 1))),
+                LocalDate.of(2026, 5, 27)
+        );
+
+        assertEquals("2026-05-20", overview.lastDelivery.deliveryDate);
+        assertNull(overview.nextDelivery);
     }
 
     private OrderDto order(
