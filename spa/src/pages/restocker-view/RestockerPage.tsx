@@ -400,7 +400,7 @@ export function RestockerPage() {
                             </div>
 
                             <div className="metric-tile">
-                                <div className="metric-label">Heutiger Verdienst</div>
+                                <div className="metric-label">Geplanter Verdienst</div>
                                 <div className="metric-value">{earningsToday} €</div>
                                 <div className="metric-sub">7€ pro Lieferung</div>
                             </div>

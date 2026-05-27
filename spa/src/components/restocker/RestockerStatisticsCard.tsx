@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { RestockerTourCard } from "../../components/restocker/RestockerTourCard";
 import { parseDisplayDate } from "../../pages/restocker-view/restockerOrderUi";
-import type { RestockMarketplaceLoadResult } from "../../types/shop";
-import type { RestockMarketplaceOrder } from "../../types/shop";
+import type { RestockMarketplaceLoadResult, RestockMarketplaceOrder } from "../../types/shop";
 import "../../styles/restocker-home.css";
-
 
 type Props = {
     assignedLoading: boolean;
@@ -12,231 +10,210 @@ type Props = {
     assignedOrdersResult: RestockMarketplaceLoadResult;
 };
 
+function isCompletedOrder(order: RestockMarketplaceOrder) {
+    return order.assignment?.status === "completed";
+}
 
-
-export function RestockerStatisticsCard({
-    assignedLoading,
-    assignedError,
-    assignedOrdersResult,
-}: Props) {
-
-    const earningsPerDelivery = 7;
-
-    /* Aktuellen Monat vorauswählen */
-    const today = new Date();
-
-    const [selectedMonth, setSelectedMonth] = useState(
-        `${today.getFullYear()}-${String(
-            today.getMonth() + 1
-        ).padStart(2, "0")}`
-    );
-
-    /* Monat + Jahr aus Input lesen */
-    const [year, month] = selectedMonth
-        .split("-")
-        .map(Number);
-
-    /* Orders nach ausgewähltem Monat filtern */
-    const monthlyOrders = assignedOrdersResult.orders.filter((order) => {
-
-        const deliveryDate = parseDisplayDate(order.deliveryDate);
-        const orderYear = deliveryDate.getFullYear();
-        const orderMonth = deliveryDate.getMonth() + 1;
-
-        return (
-            orderMonth === month &&
-            orderYear === year
-        );
-    });
-
-    /* Nur abgeschlossene Orders */
-    const completedOrders = monthlyOrders;
-    /*.filter(
-        (order) => order.assignment?.status === "completed"
-    );*/
-
-    /* Gesamtverdienst */
-    const totalEarnings =
-        completedOrders.length * earningsPerDelivery;
-
-    /* Gefahrene Tourtage */
-    const uniqueTourDays = new Set(
-        completedOrders.map((order) => {
-            const date = parseDisplayDate(order.deliveryDate);
-
-            return date.toDateString();
-        })
-    ).size;
-
-    /* Zustellungen */
-    const totalDeliveries = completedOrders.length;
-
-    /* Artikel zählen */
-    const totalItems = completedOrders.reduce((sum, order) => {
-
+function countOrderItems(orders: RestockMarketplaceOrder[]) {
+    return orders.reduce((sum, order) => {
         const orderItemCount =
-            order.items?.reduce(
-                (itemSum, item) =>
-                    itemSum + item.quantity,
-                0
-            ) ?? 0;
+            order.items?.reduce((itemSum, item) => itemSum + item.quantity, 0) ?? 0;
 
         return sum + orderItemCount;
-
     }, 0);
+}
 
-    const groupedTours = Object.values(
-        completedOrders.reduce((acc, order) => {
+function countTourDays(orders: RestockMarketplaceOrder[]) {
+    return new Set(
+        orders.map((order) => parseDisplayDate(order.deliveryDate).toDateString()),
+    ).size;
+}
 
-            const dateKey = parseDisplayDate(order.deliveryDate)
-                .toDateString();
+function groupOrdersByTourDay(orders: RestockMarketplaceOrder[]) {
+    return Object.values(
+        orders.reduce((acc, order) => {
+            const dateKey = parseDisplayDate(order.deliveryDate).toDateString();
 
             if (!acc[dateKey]) {
                 acc[dateKey] = [];
             }
 
             acc[dateKey].push(order);
-
             return acc;
+        }, {} as Record<string, RestockMarketplaceOrder[]>),
+    );
+}
 
-        }, {} as Record<string, RestockMarketplaceOrder[]>)
+function deliveryLabel(count: number) {
+    return count === 1 ? "Lieferung" : "Lieferungen";
+}
+
+export function RestockerStatisticsCard({
+    assignedLoading,
+    assignedError,
+    assignedOrdersResult,
+}: Props) {
+    const earningsPerDelivery = 7;
+    const today = new Date();
+
+    const [selectedMonth, setSelectedMonth] = useState(
+        `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`,
     );
 
-    const totalTours = groupedTours.length;
+    const [year, month] = selectedMonth.split("-").map(Number);
+
+    const monthlyOrders = assignedOrdersResult.orders.filter((order) => {
+        const deliveryDate = parseDisplayDate(order.deliveryDate);
+        const orderYear = deliveryDate.getFullYear();
+        const orderMonth = deliveryDate.getMonth() + 1;
+
+        return orderMonth === month && orderYear === year;
+    });
+
+    const completedOrders = monthlyOrders.filter(isCompletedOrder);
+    const plannedOrders = monthlyOrders.filter((order) => !isCompletedOrder(order));
+
+    const completedTours = groupOrdersByTourDay(completedOrders);
+    const plannedTours = groupOrdersByTourDay(plannedOrders);
+    const totalTours = completedTours.length + plannedTours.length;
+
+    const totalCompletedDeliveries = completedOrders.length;
+    const totalPlannedDeliveries = plannedOrders.length;
+    const totalMonthlyDeliveries = monthlyOrders.length;
+    const completedTourDays = countTourDays(completedOrders);
+    const plannedTourDays = countTourDays(plannedOrders);
+    const totalDeliveredItems = countOrderItems(completedOrders);
+    const totalPlannedItems = countOrderItems(plannedOrders);
+    const totalEarnings = totalCompletedDeliveries * earningsPerDelivery;
+    const completionRate =
+        totalMonthlyDeliveries > 0
+            ? Math.round((totalCompletedDeliveries / totalMonthlyDeliveries) * 100)
+            : 0;
 
     return (
         <div className="card">
-
             <div className="card-header">
                 <div>
                     <h2>Deine Restocker-Statistik</h2>
-
                     <p>
-                        Hallo, hier siehst du deine Performance,
-                        Verdienst und Details zu deinen
-                        abgeschlossenen und geplanten Touren.
+                        Hallo, hier siehst du deine Performance, Verdienst und Details zu
+                        deinen abgeschlossenen und geplanten Touren.
                     </p>
                 </div>
             </div>
 
-            {/* Monatsfilter */}
             <div className="statistics-filter">
-
                 <strong>Monat auswählen:</strong>
-
                 <input
                     type="month"
                     value={selectedMonth}
-                    onChange={(e) =>
-                        setSelectedMonth(e.target.value)
-                    }
+                    onChange={(event) => setSelectedMonth(event.target.value)}
                 />
             </div>
 
-            {/* Statistik Tiles */}
-            <div className="metrics-row-desktop">
-
+            <div className="metrics-row-desktop statistics-metrics">
                 <div className="metric-tile">
-
-                    <div className="metric-label">
-                        Gesamtverdienst
-                    </div>
-
-                    <div className="metric-value">
-                        {totalEarnings}€
-                    </div>
-
-                    <div className="metric-sub">
-                        7€ pro abgeschlossener Lieferung
-                    </div>
+                    <div className="metric-label">Verdienst</div>
+                    <div className="metric-value">{totalEarnings} EUR</div>
+                    <div className="metric-sub">7 EUR pro Lieferung</div>
                 </div>
 
                 <div className="metric-tile">
-
-                    <div className="metric-label">
-                        Angenommene Touren
-                    </div>
-
-                    <div className="metric-value">
-                        {uniqueTourDays}
-                    </div>
-
-                    <div className="metric-sub">
-                        Tage mit angenommenen Touren
-                    </div>
+                    <div className="metric-label">Abgeschlossen</div>
+                    <div className="metric-value">{totalCompletedDeliveries}</div>
+                    <div className="metric-sub">{completedTourDays} Tourtage</div>
                 </div>
 
                 <div className="metric-tile">
-
-                    <div className="metric-label">
-                        Zustellungen
-                    </div>
-
-                    <div className="metric-value">
-                        {totalDeliveries}
-                    </div>
-
-                    <div className="metric-sub">
-                        Ausgewählte Lieferungen
-                    </div>
+                    <div className="metric-label">Geplant</div>
+                    <div className="metric-value">{totalPlannedDeliveries}</div>
+                    <div className="metric-sub">{plannedTourDays} Tourtage</div>
                 </div>
 
                 <div className="metric-tile">
-
-                    <div className="metric-label">
-                        Ausgelieferte Artikel
-                    </div>
-
-                    <div className="metric-value">
-                        {totalItems}
-                    </div>
-
+                    <div className="metric-label">Fortschritt</div>
+                    <div className="metric-value">{completionRate}%</div>
                     <div className="metric-sub">
-                        Gesamtanzahl ausgelieferter Produkte
+                        {totalCompletedDeliveries} von {totalMonthlyDeliveries} erledigt
                     </div>
                 </div>
-
             </div>
 
-            {/* Orders */}
             {assignedLoading ? (
-
                 <p>Lade deine Aufträge...</p>
-
             ) : assignedError ? (
-
-                <p style={{ color: "red" }}>
-                    {assignedError}
-                </p>
-
+                <p style={{ color: "red" }}>{assignedError}</p>
             ) : totalTours === 0 ? (
-
                 <strong>
-                    Du hast in diesem Monat
-                    keine Touren abgeschlossen oder geplant.
+                    Du hast in diesem Monat keine Touren abgeschlossen oder geplant.
                 </strong>
-
             ) : (
-
                 <>
                     <strong className="statistics-tour-summary">
-                        Du hast in diesem Monat{" "}
-                        {totalTours}{" "}
-                        {totalTours === 1 ? "Tour" : "Touren"} abgeschlossen oder geplant.
+                        In diesem Monat sind {totalCompletedDeliveries}{" "}
+                        {deliveryLabel(totalCompletedDeliveries)} abgeschlossen und{" "}
+                        {totalPlannedDeliveries} {deliveryLabel(totalPlannedDeliveries)} geplant.
                     </strong>
+
+                    <div className="statistics-breakdown">
+                        <div className="statistics-breakdown__item statistics-breakdown__item--completed">
+                            <span>Abgeschlossen</span>
+                            <strong>{totalCompletedDeliveries}</strong>
+                            <small>{totalDeliveredItems} ausgelieferte Artikel</small>
+                        </div>
+
+                        <div className="statistics-breakdown__item statistics-breakdown__item--planned">
+                            <span>Geplant</span>
+                            <strong>{totalPlannedDeliveries}</strong>
+                            <small>{totalPlannedItems} geplante Artikel</small>
+                        </div>
+                    </div>
 
                     <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
 
-                    <div className="open-orders-carousel statistics-tour-grid">
+                    {completedTours.length > 0 ? (
+                        <section className="statistics-tour-section">
+                            <div className="statistics-tour-section__header">
+                                <h3>Abgeschlossene Lieferungen</h3>
+                                <span>
+                                    {completedTours.length}{" "}
+                                    {completedTours.length === 1 ? "Tourtag" : "Tourtage"}
+                                </span>
+                            </div>
 
+                            <div className="open-orders-carousel statistics-tour-grid">
+                                {completedTours.map((tourOrders) => (
+                                    <RestockerTourCard
+                                        key={`completed-${tourOrders[0].deliveryDate}`}
+                                        orders={tourOrders}
+                                        statusLabel="Abgeschlossen"
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    ) : null}
 
-                        {groupedTours.map((tourOrders) => (
-                            <RestockerTourCard
-                                key={tourOrders[0].deliveryDate}
-                                orders={tourOrders}
-                            />
-                        ))}
-                    </div>
+                    {plannedTours.length > 0 ? (
+                        <section className="statistics-tour-section">
+                            <div className="statistics-tour-section__header">
+                                <h3>Geplante Lieferungen</h3>
+                                <span>
+                                    {plannedTours.length}{" "}
+                                    {plannedTours.length === 1 ? "Tourtag" : "Tourtage"}
+                                </span>
+                            </div>
+
+                            <div className="open-orders-carousel statistics-tour-grid">
+                                {plannedTours.map((tourOrders) => (
+                                    <RestockerTourCard
+                                        key={`planned-${tourOrders[0].deliveryDate}`}
+                                        orders={tourOrders}
+                                        statusLabel="Geplant"
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    ) : null}
                 </>
             )}
         </div>

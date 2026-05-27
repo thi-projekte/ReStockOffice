@@ -49,7 +49,7 @@
 /* Metrics card — desktop: metrics + next-tile in one row */
 .metrics-row-desktop {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     margin-bottom: 16px;
 
@@ -60,6 +60,9 @@
     border-radius: 12px;
     padding: 16px;
     border: 1px solid var(--color-grey-300);
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
 }
 
 .metric-label {
@@ -67,6 +70,7 @@
     color: var(--color-text);
     margin-bottom: 6px;
     font-weight: 500;
+    overflow-wrap: anywhere;
 }
 
 .metric-value {
@@ -84,6 +88,7 @@
     font-size: 11px;
     color: var(--color-text);
     margin-top: 4px;
+    overflow-wrap: anywhere;
 }
 
 .open-orders-carousel {
@@ -102,6 +107,77 @@
 
 .statistics-tour-summary {
     display: block;
+}
+
+.statistics-metrics {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.statistics-breakdown {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0 4px;
+}
+
+.statistics-breakdown__item {
+    border: 1px solid var(--color-grey-300);
+    border-radius: 12px;
+    display: grid;
+    gap: 4px;
+    padding: 14px;
+}
+
+.statistics-breakdown__item span {
+    color: var(--color-text);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.statistics-breakdown__item strong {
+    color: var(--color-text);
+    font-size: 1.9rem;
+    line-height: 1;
+}
+
+.statistics-breakdown__item small {
+    color: var(--color-text);
+    opacity: 0.72;
+}
+
+.statistics-breakdown__item--completed {
+    background: rgba(102, 189, 164, 0.12);
+    border-color: rgba(102, 189, 164, 0.45);
+}
+
+.statistics-breakdown__item--planned {
+    background: rgba(235, 184, 94, 0.14);
+    border-color: rgba(235, 184, 94, 0.48);
+}
+
+.statistics-tour-section {
+    margin-top: 18px;
+}
+
+.statistics-tour-section__header {
+    align-items: baseline;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.statistics-tour-section__header h3 {
+    color: var(--color-text);
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.statistics-tour-section__header span {
+    color: var(--color-text);
+    font-size: 0.85rem;
+    opacity: 0.72;
 }
 
 .restocker-order-card {
@@ -139,8 +215,21 @@
     }
 
     .metrics-row-desktop {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         grid-column: span 2;
+        width: 100%;
+    }
+
+    .statistics-metrics {
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    .statistics-metrics .metric-label,
+    .statistics-metrics .metric-sub,
+    .statistics-metrics .metric-value {
+        min-width: 0;
+        max-width: 100%;
     }
 
     .metric-tile {
@@ -199,5 +288,15 @@
 
     .mobile-swipe-hint {
         display: block;
+    }
+
+    .statistics-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .statistics-tour-section__header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
     }
 }
