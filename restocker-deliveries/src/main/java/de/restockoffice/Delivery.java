@@ -98,23 +98,29 @@ public class Delivery extends PanacheEntityBase {
     }
 
     public static Delivery findByCustomerAndDate(String customerId, LocalDate deliveryDate) {
-        Delivery delivery = find("userId = ?1 and deliveryDate = ?2", customerId, deliveryDate)
+        return find("userId = ?1 and deliveryDate = ?2", customerId, deliveryDate)
                 .firstResult();
-        if (delivery != null) {
-            return delivery;
-        }
-
-        return find(
-                "userId = ?1 and deliveryDate is null and tour is not null and tour.tourDate = ?2",
-                customerId,
-                deliveryDate
-        ).firstResult();
     }
 
     public static List<Delivery> findByCustomer(String customerId) {
         return list(
                 "userId = ?1 order by deliveryDate asc",
                 customerId
+        );
+    }
+
+    public static List<Delivery> findDeliveredByCustomerBetween(
+            String customerId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        return list(
+                "userId = ?1 and deliveredAt is not null " +
+                        "and deliveryDate >= ?2 and deliveryDate <= ?3 " +
+                        "order by deliveryDate asc",
+                customerId,
+                startDate,
+                endDate
         );
     }
 

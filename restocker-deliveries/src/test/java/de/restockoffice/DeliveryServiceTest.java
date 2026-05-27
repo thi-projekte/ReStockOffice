@@ -153,6 +153,49 @@ class DeliveryServiceTest {
         assertFalse(canAppend);
     }
 
+    @Test
+    void summarizesDeliveredArticlesForPreviousMonthOnly() {
+        Delivery firstDeliveredInPreviousMonth = deliveredDelivery(
+                "customer-1",
+                LocalDate.of(2026, 4, 3),
+                item("10088", 1),
+                item("10007", 5)
+        );
+        Delivery secondDeliveredInPreviousMonth = deliveredDelivery(
+                "customer-1",
+                LocalDate.of(2026, 4, 28),
+                item("10088", 2),
+                item("10007", 15)
+        );
+        Delivery deliveredInOtherMonth = deliveredDelivery(
+                "customer-1",
+                LocalDate.of(2026, 3, 31),
+                item("10088", 100)
+        );
+        Delivery openInPreviousMonth = openDelivery(
+                "customer-1",
+                LocalDate.of(2026, 4, 15),
+                item("10088", 50)
+        );
+
+        List<DeliveredArticleSummaryDto> summary = service.summarizeDeliveredItemsForPeriod(
+                List.of(
+                        firstDeliveredInPreviousMonth,
+                        secondDeliveredInPreviousMonth,
+                        deliveredInOtherMonth,
+                        openInPreviousMonth
+                ),
+                LocalDate.of(2026, 4, 1),
+                LocalDate.of(2026, 4, 30)
+        );
+
+        assertEquals(2, summary.size());
+        assertEquals("10088", summary.get(0).articleNumber);
+        assertEquals(3, summary.get(0).quantity);
+        assertEquals("10007", summary.get(1).articleNumber);
+        assertEquals(20, summary.get(1).quantity);
+    }
+
     private OrderDto order(
             Long id,
             String customerId,
@@ -193,5 +236,34 @@ class DeliveryServiceTest {
         delivery.addItem(item);
 
         return delivery;
+    }
+
+    private Delivery deliveredDelivery(String customerId, LocalDate deliveryDate, DeliveryItem... items) {
+        Delivery delivery = openDelivery(customerId, deliveryDate, items);
+        delivery.deliveredAt = deliveryDate.atTime(14, 0);
+        for (DeliveryItem item : delivery.items) {
+            item.delivered = true;
+        }
+        return delivery;
+    }
+
+    private Delivery openDelivery(String customerId, LocalDate deliveryDate, DeliveryItem... items) {
+        Delivery delivery = new Delivery();
+        delivery.orderId = "test-order";
+        delivery.userId = customerId;
+        delivery.deliveryDate = deliveryDate;
+        for (DeliveryItem item : items) {
+            delivery.addItem(item);
+        }
+        return delivery;
+    }
+
+    private DeliveryItem item(String articleNumber, int quantity) {
+        DeliveryItem item = new DeliveryItem();
+        item.articleNumber = articleNumber;
+        item.name = "Test article " + articleNumber;
+        item.unit = "Stueck";
+        item.quantity = quantity;
+        return item;
     }
 }

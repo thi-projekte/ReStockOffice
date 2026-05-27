@@ -51,6 +51,12 @@ public class DeliveryResource {
     }
 
     @GET
+    @Path("/customers/{customerId}/previous-month-items")
+    public List<DeliveredArticleSummaryDto> getPreviousMonthItems(@PathParam("customerId") String customerId) {
+        return deliveryService.getDeliveredArticleSummaryForPreviousMonth(customerId);
+    }
+
+    @GET
     @Path("/assigned")
     public List<DeliveryDetailDto> getAssignedDeliveries(@QueryParam("restocker") String restockerName) {
         return deliveryService.getAssignedDeliveries(restockerName, authorizationHeader());

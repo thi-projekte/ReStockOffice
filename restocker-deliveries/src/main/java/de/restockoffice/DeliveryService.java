@@ -145,6 +145,24 @@ public class DeliveryService {
     }
 
     @Transactional
+    public List<DeliveredArticleSummaryDto> getDeliveredArticleSummaryForPreviousMonth(String customerId) {
+        if (isBlank(customerId)) {
+            throw new BadRequestException("customerId muss angegeben werden.");
+        }
+
+        LocalDate currentMonthStart = LocalDate.now().withDayOfMonth(1);
+        LocalDate previousMonthStart = currentMonthStart.minusMonths(1);
+        LocalDate previousMonthEnd = currentMonthStart.minusDays(1);
+        List<Delivery> deliveries = Delivery.findDeliveredByCustomerBetween(
+                customerId.trim(),
+                previousMonthStart,
+                previousMonthEnd
+        );
+
+        return summarizeDeliveredItemsForPeriod(deliveries, previousMonthStart, previousMonthEnd);
+    }
+
+    @Transactional
     public List<DeliveryDetailDto> getAssignedDeliveries(String restockerName, String authorizationHeader) {
         validateRestockerName(restockerName);
         ensurePlanningHorizon(authorizationHeader);
@@ -169,8 +187,7 @@ public class DeliveryService {
             return toDetailDtoWithFreshData(delivery, authorizationHeader);
         }
 
-        LocalDate deliveryDate = resolveDeliveryDate(delivery);
-        delivery.deliveryDate = deliveryDate;
+        LocalDate deliveryDate = requireDeliveryDate(delivery);
 
         Tour tour = findOrCreateOpenTour(restockerName, deliveryDate);
         delivery.stopOrder = nextStopOrder(tour);
@@ -500,7 +517,7 @@ public class DeliveryService {
 
         return customerDeliveries.stream()
                 .filter(delivery -> splitOrderIds(delivery.orderId).contains(orderId))
-                .map(this::storedDeliveryDate)
+                .map(delivery -> delivery.deliveryDate)
                 .filter(date -> date != null)
                 .sorted()
                 .collect(Collectors.toList());
@@ -512,7 +529,7 @@ public class DeliveryService {
             LocalDate endDate
     ) {
         return customerDeliveries.stream()
-                .map(this::storedDeliveryDate)
+                .map(delivery -> delivery.deliveryDate)
                 .filter(date -> date != null)
                 .filter(date -> !date.isBefore(startDate))
                 .filter(date -> !date.isAfter(endDate))
@@ -529,16 +546,44 @@ public class DeliveryService {
         return dates.stream().max(LocalDate::compareTo).orElse(null);
     }
 
-    private LocalDate storedDeliveryDate(Delivery delivery) {
-        if (delivery.deliveryDate != null) {
-            return delivery.deliveryDate;
+    List<DeliveredArticleSummaryDto> summarizeDeliveredItemsForPeriod(
+            List<Delivery> deliveries,
+            LocalDate periodStart,
+            LocalDate periodEnd
+    ) {
+        if (deliveries == null || deliveries.isEmpty()) {
+            return List.of();
         }
 
-        if (delivery.tour != null) {
-            return delivery.tour.tourDate;
+        Map<String, Integer> quantitiesByArticle = new LinkedHashMap<>();
+        for (Delivery delivery : deliveries) {
+            if (!isDeliveredInPeriod(delivery, periodStart, periodEnd) || delivery.items == null) {
+                continue;
+            }
+
+            for (DeliveryItem item : delivery.items) {
+                if (item == null || isBlank(item.articleNumber)) {
+                    continue;
+                }
+
+                quantitiesByArticle.merge(item.articleNumber, item.quantity, Integer::sum);
+            }
         }
 
-        return null;
+        return quantitiesByArticle.entrySet().stream()
+                .map(entry -> new DeliveredArticleSummaryDto(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isDeliveredInPeriod(Delivery delivery, LocalDate periodStart, LocalDate periodEnd) {
+        if (delivery == null || !delivery.isDelivered()) {
+            return false;
+        }
+
+        LocalDate deliveryDate = delivery.deliveryDate;
+        return deliveryDate != null
+                && !deliveryDate.isBefore(periodStart)
+                && !deliveryDate.isAfter(periodEnd);
     }
 
     private List<DeliveryDetailDto> toDetailDtos(List<Delivery> deliveries, String authorizationHeader) {
@@ -589,7 +634,7 @@ public class DeliveryService {
         dto.deliveryHint = valueOrEmpty(user != null ? user.deliveryHint : null);
         dto.deliveryDay = valueOrEmpty(user != null ? user.deliveryDay : null);
         dto.deliveryTime = valueOrEmpty(user != null ? user.deliveryTime : null);
-        dto.deliveryDate = resolveDeliveryDate(delivery).toString();
+        dto.deliveryDate = requireDeliveryDate(delivery).toString();
         dto.items = delivery.items.stream().map(item -> {
             DeliveryDetailDto.DeliveryItemDetailDto detailItem = new DeliveryDetailDto.DeliveryItemDetailDto();
             ArticleDto article = loadArticle(item.articleNumber, articleCache);
@@ -727,16 +772,12 @@ public class DeliveryService {
         return tour;
     }
 
-    private LocalDate resolveDeliveryDate(Delivery delivery) {
+    private LocalDate requireDeliveryDate(Delivery delivery) {
         if (delivery.deliveryDate != null) {
             return delivery.deliveryDate;
         }
 
-        if (delivery.tour != null && delivery.tour.tourDate != null) {
-            return delivery.tour.tourDate;
-        }
-
-        return LocalDate.now();
+        throw new IllegalStateException("Delivery hat kein deliveryDate: " + delivery.id);
     }
 
     private int nextStopOrder(Tour tour) {
