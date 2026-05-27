@@ -44,6 +44,10 @@ function groupOrdersByTourDay(orders: RestockMarketplaceOrder[]) {
     );
 }
 
+function deliveryLabel(count: number) {
+    return count === 1 ? "Lieferung" : "Lieferungen";
+}
+
 export function RestockerStatisticsCard({
     assignedLoading,
     assignedError,
@@ -146,8 +150,9 @@ export function RestockerStatisticsCard({
             ) : (
                 <>
                     <strong className="statistics-tour-summary">
-                        In diesem Monat sind {totalCompletedDeliveries} Lieferungen
-                        abgeschlossen und {totalPlannedDeliveries} Lieferungen geplant.
+                        In diesem Monat sind {totalCompletedDeliveries}{" "}
+                        {deliveryLabel(totalCompletedDeliveries)} abgeschlossen und{" "}
+                        {totalPlannedDeliveries} {deliveryLabel(totalPlannedDeliveries)} geplant.
                     </strong>
 
                     <div className="statistics-breakdown">
