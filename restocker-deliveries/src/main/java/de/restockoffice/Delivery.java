@@ -122,7 +122,7 @@ public class Delivery extends PanacheEntityBase {
 
     public static List<Delivery> findAssignedToRestocker(String restockerName) {
         return list(
-                "tour.restockerName = ?1 and deliveredAt is null order by deliveryDate asc, stopOrder asc",
+                "tour.restockerName = ?1 order by deliveryDate asc, stopOrder asc",
                 restockerName
         );
     }
