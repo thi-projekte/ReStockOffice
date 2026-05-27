@@ -441,7 +441,7 @@ export function DeliveryPage() {
       )}`;
 
       if (!recipientEmail) {
-        throw new Error("Fuer diese Lieferung fehlt die Kunden-E-Mail.");
+        throw new Error("Für diese Lieferung fehlt die Kunden-E-Mail.");
       }
 
       await confirmDelivery({ deliveryId: activeDelivery.id, token: auth.token });
@@ -527,13 +527,13 @@ export function DeliveryPage() {
         toast.success("Tour wurde beendet.");
       } else {
         setActiveStopIndex((current) => current + 1);
-        toast.success("Zustellung wurde bestaetigt.");
+        toast.success("Zustellung wurde bestätigt.");
       }
     } catch (advanceError) {
       toast.error(
         advanceError instanceof Error
           ? advanceError.message
-          : "Zustellung konnte nicht bestaetigt werden.",
+          : "Zustellung konnte nicht bestätigt werden.",
       );
     } finally {
       setIsBusy(false);
@@ -578,7 +578,7 @@ export function DeliveryPage() {
             <div>
               <span className="eyebrow">Lager-Dashboard</span>
               <h1>Pakete einsammeln</h1>
-              <p>Alle Pakete fuer deine heutige Tour im Lager bereitstellen.</p>
+              <p>Alle Pakete für deine heutige Tour im Lager bereitstellen.</p>
             </div>
             <div className="delivery-summary-pill">
               <FaBoxOpen />
@@ -629,8 +629,8 @@ export function DeliveryPage() {
           <div className="delivery-flow__head">
             <div>
               <span className="eyebrow">Aktuelle Tour</span>
-              <h1>Zustellung laeuft</h1>
-              <p>Naechster Stopp: {Math.min(activeStopIndex + 1, sortedDeliveries.length)} von {sortedDeliveries.length}</p>
+              <h1>Zustellung läuft</h1>
+              <p>Nächster Stopp: {Math.min(activeStopIndex + 1, sortedDeliveries.length)} von {sortedDeliveries.length}</p>
             </div>
             <a
               className="button button--ghost delivery-map-link"
@@ -682,7 +682,7 @@ export function DeliveryPage() {
 
           <div className="delivery-table delivery-table--items">
             <div className="delivery-table__row delivery-table__row--head">
-              <span>Eingeraeumt</span>
+              <span>Eingeräumt</span>
               <span>Artikelnr</span>
               <span>Bezeichnung</span>
               <span>Menge</span>
@@ -718,7 +718,7 @@ export function DeliveryPage() {
               onClick={() => void handleAdvance()}
             >
               {isLastStop ? <FaRoute /> : <FaTruck />}
-              {isLastStop ? "Tour beenden" : "Naechste Zustellung"}
+              {isLastStop ? "Tour beenden" : "Nächste Zustellung"}
             </button>
           </div>
         </div>
@@ -728,10 +728,10 @@ export function DeliveryPage() {
         <div className="delivery-complete-overlay" role="presentation">
           <div className="delivery-complete-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-complete-title">
             <h2 id="delivery-complete-title">Alle Lieferungen erledigt</h2>
-            <p>Starke Leistung. Du hast alle Auftraege fuer heute erfolgreich zugestellt.</p>
+            <p>Starke Leistung. Du hast alle Aufträge für heute erfolgreich zugestellt.</p>
             <div className="delivery-complete-stats">
               <span>Abgeschlossene Stopps: {completedStops} von {sortedDeliveries.length}</span>
-              <span>Gesammelte Verguetung: {formatMoney(tour.earnings || calculatedEarnings)}</span>
+              <span>Gesammelte Vergütung: {formatMoney(tour.earnings || calculatedEarnings)}</span>
               <span>Status: Tour beendet</span>
             </div>
             <button
@@ -739,7 +739,7 @@ export function DeliveryPage() {
               type="button"
               onClick={() => navigate("/restocker")}
             >
-              Zurueck zum Dashboard
+              Zurück zum Dashboard
             </button>
           </div>
         </div>

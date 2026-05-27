@@ -104,6 +104,72 @@
     display: block;
 }
 
+.statistics-breakdown {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0 4px;
+}
+
+.statistics-breakdown__item {
+    border: 1px solid var(--color-grey-300);
+    border-radius: 12px;
+    display: grid;
+    gap: 4px;
+    padding: 14px;
+}
+
+.statistics-breakdown__item span {
+    color: var(--color-text);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.statistics-breakdown__item strong {
+    color: var(--color-text);
+    font-size: 1.9rem;
+    line-height: 1;
+}
+
+.statistics-breakdown__item small {
+    color: var(--color-text);
+    opacity: 0.72;
+}
+
+.statistics-breakdown__item--completed {
+    background: rgba(102, 189, 164, 0.12);
+    border-color: rgba(102, 189, 164, 0.45);
+}
+
+.statistics-breakdown__item--planned {
+    background: rgba(235, 184, 94, 0.14);
+    border-color: rgba(235, 184, 94, 0.48);
+}
+
+.statistics-tour-section {
+    margin-top: 18px;
+}
+
+.statistics-tour-section__header {
+    align-items: baseline;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.statistics-tour-section__header h3 {
+    color: var(--color-text);
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.statistics-tour-section__header span {
+    color: var(--color-text);
+    font-size: 0.85rem;
+    opacity: 0.72;
+}
+
 .restocker-order-card {
     min-width: 300px;
 }
@@ -199,5 +265,15 @@
 
     .mobile-swipe-hint {
         display: block;
+    }
+
+    .statistics-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .statistics-tour-section__header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
     }
 }
