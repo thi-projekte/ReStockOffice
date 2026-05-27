@@ -45,6 +45,12 @@ public class DeliveryResource {
     }
 
     @GET
+    @Path("/admin/all-deliveries")
+    public List<DeliveryDetailDto> getAllDeliveries() {
+        return deliveryService.getAllDeliveries(authorizationHeader());
+    }
+
+    @GET
     @Path("/assigned")
     public List<DeliveryDetailDto> getAssignedDeliveries(@QueryParam("restocker") String restockerName) {
         return deliveryService.getAssignedDeliveries(restockerName, authorizationHeader());

@@ -251,6 +251,7 @@ Dadurch reduziert sich der Countdown automatisch jeden Tag.
 | Methode | Endpoint | Zweck |
 | ------- | -------- | ----- |
 | `GET` | `/api/deliveries/open` | offene Deliveries laden und Planungshorizont sicherstellen |
+| `GET` | `/api/deliveries/admin/all-deliveries` | alle gespeicherten Deliveries inklusive Status laden |
 | `GET` | `/api/deliveries/assigned?restocker=...` | angenommene Deliveries eines Restockers laden |
 | `POST` | `/api/deliveries/tours/today/sync?restocker=...` | heutige Tour/Planung synchronisieren |
 | `POST` | `/api/deliveries/{deliveryId}/accept?restocker=...` | Delivery annehmen |

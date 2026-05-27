@@ -140,6 +140,11 @@ public class DeliveryService {
     }
 
     @Transactional
+    public List<DeliveryDetailDto> getAllDeliveries(String authorizationHeader) {
+        return toDetailDtos(Delivery.list("order by deliveryDate desc, userId asc"), authorizationHeader);
+    }
+
+    @Transactional
     public List<DeliveryDetailDto> getAssignedDeliveries(String restockerName, String authorizationHeader) {
         validateRestockerName(restockerName);
         ensurePlanningHorizon(authorizationHeader);
@@ -411,6 +416,7 @@ public class DeliveryService {
         dto.acceptedAt = delivery.acceptedAt;
         dto.deliveredAt = delivery.deliveredAt;
         dto.restockerName = restockerDisplayName(delivery, authenticatedRestocker);
+        dto.status = deliveryStatus(delivery);
 
         dto.recipientEmail = valueOrEmpty(user != null ? user.email : null);
         dto.companyName = valueOrEmpty(user != null ? user.companyName : null);
@@ -444,6 +450,22 @@ public class DeliveryService {
         }).collect(Collectors.toList());
 
         return dto;
+    }
+
+    private String deliveryStatus(Delivery delivery) {
+        if (delivery.deliveredAt != null) {
+            return "DELIVERED";
+        }
+
+        if (delivery.collected) {
+            return "COLLECTED";
+        }
+
+        if (delivery.tour != null || delivery.acceptedAt != null) {
+            return "ACCEPTED";
+        }
+
+        return "OPEN";
     }
 
     private String restockerDisplayName(Delivery delivery, AuthenticatedRestocker authenticatedRestocker) {

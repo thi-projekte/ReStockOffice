@@ -21,6 +21,7 @@ public class DeliveryDetailDto {
     public LocalDateTime acceptedAt;
     public LocalDateTime deliveredAt;
     public String restockerName;
+    public String status;
 
     // From users service
     public String recipientEmail;

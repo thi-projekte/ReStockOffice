@@ -15,6 +15,7 @@ export interface DeliveryDetail {
   id: string;
   orderId: string;
   userId: string;
+  status: string;
   stopOrder: number;
   collected: boolean;
   collectedAt: string | null;
@@ -128,6 +129,7 @@ function normalizeDeliveryDetail(rawDetail: unknown): DeliveryDetail {
     id: String(detail.id ?? ""),
     orderId: String(detail.orderId ?? ""),
     userId: String(detail.userId ?? detail.customerId ?? ""),
+    status: String(detail.status ?? deriveDeliveryStatus(detail)),
     stopOrder:
       typeof detail.stopOrder === "number" && Number.isFinite(detail.stopOrder)
         ? detail.stopOrder
@@ -169,6 +171,25 @@ function normalizeDeliveryDetail(rawDetail: unknown): DeliveryDetail {
     deliveryDate: typeof detail.deliveryDate === "string" ? detail.deliveryDate : null,
     items: Array.isArray(detail.items) ? detail.items.map(normalizeDeliveryItem) : [],
   };
+}
+
+function deriveDeliveryStatus(detail: Record<string, unknown>) {
+  if (typeof detail.deliveredAt === "string" && detail.deliveredAt) {
+    return "DELIVERED";
+  }
+
+  if (Boolean(detail.collected)) {
+    return "COLLECTED";
+  }
+
+  if (
+    (typeof detail.acceptedAt === "string" && detail.acceptedAt) ||
+    (typeof detail.restockerName === "string" && detail.restockerName)
+  ) {
+    return "ACCEPTED";
+  }
+
+  return "OPEN";
 }
 
 function resolveToken(token?: string) {
@@ -299,6 +320,25 @@ export async function loadOpenDeliveries({
       headers: createHeaders(resolvedToken),
     },
     "Offene Lieferungen konnten nicht geladen werden",
+  );
+
+  return Array.isArray(rawDetails) ? rawDetails.map(normalizeDeliveryDetail) : [];
+}
+
+export async function loadAllDeliveries({
+  token,
+}: {
+  token?: string;
+}) {
+  const resolvedToken = resolveToken(token);
+
+  const rawDetails = await requestJson<unknown[]>(
+    `${DELIVERIES_API_URL}/admin/all-deliveries`,
+    {
+      method: "GET",
+      headers: createHeaders(resolvedToken),
+    },
+    "Alle Lieferungen konnten nicht geladen werden",
   );
 
   return Array.isArray(rawDetails) ? rawDetails.map(normalizeDeliveryDetail) : [];
