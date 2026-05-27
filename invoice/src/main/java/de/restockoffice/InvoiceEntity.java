@@ -31,4 +31,14 @@ public class InvoiceEntity extends PanacheEntity {
     public byte[] zugferdPdf;
 
     public InvoiceEntity() {}
+
+    public static String generateNextInvoiceNumber(){
+        int year = java.time.Year.now().getValue();
+
+        Long nextVal = (Long) getEntityManager()
+                .createNativeQuery("SELECT nextval('invoice_num_seq')")
+                .getSingleResult();
+
+        return "RE-" + year + "-" + String.format("%05d", nextVal);
+    }
 }

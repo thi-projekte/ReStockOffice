@@ -21,22 +21,40 @@ public class InvoiceService {
     @Inject ResendMailClient mailClient;
 
     @Transactional
-    public void createAndPersistInvoice(InvoiceRequest request) throws IOException{
-        if (InvoiceEntity.find("invoiceNumber", request.invoiceNumber()).firstResult() != null) {
-            log.warn("Invoice {} already exists. Skipping creation.", request.invoiceNumber());
-            return;
-        }
-        log.info("Generating PDF and ZUGFeRD metadata for invoice: {}", request.invoiceNumber());
+    public String createAndPersistInvoice(InvoiceRequest request) throws IOException{
+        int year = java.time.Year.now().getValue();
+        Long nextVal = (Long) InvoiceEntity.getEntityManager()
+                .createNativeQuery("SELECT nextval('invoice_num_seq')")
+                .getSingleResult();
+        String generatedInvoiceNumber = "RE-" + year + "-" + String.format("%05d", nextVal);
+
+        log.info("Automatically generated global invoice number: {}", generatedInvoiceNumber);
+
+        InvoiceRequest updatedRequest = new InvoiceRequest(
+                request.userId(),
+                request.recipientEmail(),
+                request.recipientName(),
+                request.recipientStreet(),
+                request.recipientZip(),
+                request.recipientCity(),
+                generatedInvoiceNumber,
+                request.issueDate(),
+                request.dueDate(),
+                request.netAmount(),
+                request.orderItems()
+        );
+
+        log.info("Generating PDF and ZUGFeRD metadata for invoice: {}", generatedInvoiceNumber);
 
         // PDF Generieren
-        byte[] rawPdf = pdfGenerator.createPDF(request);
+        byte[] rawPdf = pdfGenerator.createPDF(updatedRequest);
 
         // PDF mit eRechnung Metadaten anreichern
-        byte[] eBillingPdf = eBillingService.makeZUGFeRD(rawPdf, request);
+        byte[] eBillingPdf = eBillingService.makeZUGFeRD(rawPdf, updatedRequest);
 
         InvoiceEntity entity = new InvoiceEntity();
         entity.userId = request.userId();
-        entity.invoiceNumber = request.invoiceNumber();
+        entity.invoiceNumber = generatedInvoiceNumber;
         entity.recipientName = request.recipientName();
         entity.recipientEmail = request.recipientEmail();
         entity.issueDate = request.issueDate();
@@ -47,9 +65,12 @@ public class InvoiceService {
         entity.zugferdPdf = eBillingPdf;
 
         entity.persist();
-        log.info("Invoice {} successfully persisted to database.", request.invoiceNumber());
+        log.info("Invoice {} successfully persisted to database.", generatedInvoiceNumber);
+
+        return generatedInvoiceNumber;
     }
 
+    @Transactional(Transactional.TxType.SUPPORTS)
     public void sendInvoiceViaEmail(InvoiceRequest request) throws IOException {
         log.info("Fetching invoice {} from DB to send email to {}", request.invoiceNumber(), request.recipientEmail());
 

@@ -32,8 +32,10 @@ public class InvoiceResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response createInvoice(InvoiceRequest request)throws IOException {
         log.info("Process Engine triggers: Creating invoice {} for user {}", request.invoiceNumber(), request.recipientEmail());
-        invoiceService.createAndPersistInvoice(request);
-        return Response.status(Response.Status.CREATED).build();
+        String generatedNumber = invoiceService.createAndPersistInvoice(request);
+
+        String jsonResponse = String.format("{\"invoiceNumber\":\"%s\"}", generatedNumber);
+        return Response.status(Response.Status.CREATED).entity(jsonResponse).build();
     }
 
     @POST
