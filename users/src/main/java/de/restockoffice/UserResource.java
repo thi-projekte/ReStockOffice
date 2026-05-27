@@ -37,7 +37,7 @@ public class UserResource {
     @Inject
     SecurityIdentity securityIdentity;
 
-    // logged-in User
+    // logged-in Customer
     @GET
     @Path("customer/me")
     public CustomerProfileResponse getMyCustomerData() {
@@ -46,6 +46,7 @@ public class UserResource {
         return new CustomerProfileResponse(customer, email);
     }
 
+    // logged-in Restocker
     @GET
     @Path("restocker/me")
     public RestockerProfileResponse getMyRestockerData() {
@@ -54,6 +55,7 @@ public class UserResource {
         return new RestockerProfileResponse(restocker, email);
     }
 
+    // Any Customer by ID (admin-role or own user needed)
     @GET
     @Path("customer")
     public Customer getCustomerById(@QueryParam("userId") String userId){
@@ -65,10 +67,10 @@ public class UserResource {
         return findCustomerOrThrow(userId);
     }
 
+    // Extra view for Restockers with limited access (only for Restocker and Admin)
     @GET
     @Path("customerForRestocker")
     public RestockerCustomerView getCustomerAddressForRestocker(@QueryParam("userId") String userId){
-        System.out.println("ROLES FOUND BY QUARKUS: " + securityIdentity.getRoles());
         if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("restocker") && !securityIdentity.hasRole("admin")) {
             throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.", 403);
         }
@@ -78,6 +80,8 @@ public class UserResource {
         }
         Customer customer = findCustomerOrThrow(userId);
         String customerEmail = null;
+
+        // Get mail from Keycloak
         try {
             customerEmail = keycloak.realm("restockoffice")
                     .users()
@@ -93,6 +97,7 @@ public class UserResource {
         return new RestockerCustomerView(customer, customerEmail);
     }
 
+    // Any Restocker by ID (admin-role or own user needed)
     @GET
     @Path("restocker")
     public Restocker getRestockerById(@QueryParam("userId") String userId){
@@ -104,6 +109,7 @@ public class UserResource {
         return findRestockerOrThrow(userId);
     }
 
+    // All Customers (Admin Only)
     @GET
     @Path("customers")
     @RolesAllowed("admin")
@@ -111,6 +117,7 @@ public class UserResource {
         return Customer.listAll();
     }
 
+    // All Restockers (Admin Only)
     @GET
     @Path("restockers")
     @RolesAllowed("admin")
@@ -118,6 +125,7 @@ public class UserResource {
         return Restocker.listAll();
     }
 
+    // Create a new Customer
     @POST
     @Path("customer/create")
     @Transactional
@@ -138,6 +146,7 @@ public class UserResource {
         return Response.created(URI.create("customer/me")).entity(newCustomer).build();
     }
 
+    // Create a new Customer
     @POST
     @Path("restocker/create")
     @Transactional
@@ -158,12 +167,15 @@ public class UserResource {
         return Response.created(URI.create("restocker/me")).entity(newRestocker).build();
     }
 
+    // Update existing Customer
     @POST
     @Path("customer/update")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
     public Response updateCustomer(
+            // Userdata as JSON for Fields
             @RestForm("userData") @org.jboss.resteasy.reactive.PartType(MediaType.APPLICATION_JSON) Customer updatedData,
+            // File for Profile-Picture
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
     ){
 
@@ -195,12 +207,15 @@ public class UserResource {
         return Response.ok(entity).build();
     }
 
+    // Update existing Restocker
     @POST
     @Path("restocker/update")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
     public Response updateRestocker(
+            // Userdata as JSON for Fields
             @RestForm("userData") @org.jboss.resteasy.reactive.PartType(MediaType.APPLICATION_JSON) Restocker updatedData,
+            // File for Profile-Picture
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
     ){
 

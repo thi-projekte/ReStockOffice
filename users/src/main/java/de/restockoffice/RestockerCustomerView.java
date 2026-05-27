@@ -2,6 +2,7 @@ package de.restockoffice;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
+// Klasse für eingeschränkte Rückgabe der Customer Daten für Restocker
 @RegisterForReflection
 public class RestockerCustomerView {
     public String companyName;

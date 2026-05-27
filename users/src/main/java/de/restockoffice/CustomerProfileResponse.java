@@ -3,6 +3,7 @@ package de.restockoffice;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
+// Klasse vereint Customer und Keycloak-Daten (bisher Mail)
 @RegisterForReflection
 public class CustomerProfileResponse {
 
