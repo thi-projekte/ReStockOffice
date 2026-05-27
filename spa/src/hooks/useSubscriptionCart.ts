@@ -23,12 +23,15 @@ interface UseSubscriptionCartOptions {
   token?: string;
 }
 
+const MOCK_CUSTOMER_ID = "mock-user";
+
 export function useSubscriptionCart({
-                                      customerId,
-                                      token,
-                                    }: UseSubscriptionCartOptions) {
+                                       customerId,
+                                       token,
+                                     }: UseSubscriptionCartOptions) {
+  const effectiveCustomerId = useAPIs ? customerId : (customerId ?? MOCK_CUSTOMER_ID);
   const [subscription, setSubscription] = useState<Subscription>(() =>
-      createSubscription(customerId),
+      createSubscription(effectiveCustomerId),
   );
   const [isLoaded, setIsLoaded] = useState(false);
   const [productsById, setProductsById] = useState<Record<string, Product>>({});
@@ -41,13 +44,13 @@ export function useSubscriptionCart({
     async function loadCurrentSubscription() {
       if (useAPIs && !token) {
         if (!ignoreResult) {
-          setSubscription(createSubscription(customerId));
+          setSubscription(createSubscription(effectiveCustomerId));
           setIsLoaded(true);
         }
         return;
       }
 
-      const loadedSubscription = await loadSubscription({ customerId, token });
+      const loadedSubscription = await loadSubscription({ customerId: effectiveCustomerId, token });
 
       if (!ignoreResult) {
         setSubscription(loadedSubscription);
@@ -59,7 +62,7 @@ export function useSubscriptionCart({
       console.error(error);
 
       if (!ignoreResult) {
-        setSubscription(createSubscription(customerId));
+        setSubscription(createSubscription(effectiveCustomerId));
         setIsLoaded(true);
       }
     });
@@ -67,7 +70,7 @@ export function useSubscriptionCart({
     return () => {
       ignoreResult = true;
     };
-  }, [customerId, token]);
+  }, [effectiveCustomerId, token]);
 
   function registerProducts(products: Product[]) {
     setProductsById((previousProducts) => {
@@ -99,7 +102,7 @@ export function useSubscriptionCart({
     const hasExistingItem = Boolean(existingItem);
 
     const savedOrder = await upsertSubscriptionOrder({
-      customerId,
+      customerId: effectiveCustomerId,
       token,
       productId,
       quantity,

@@ -6,6 +6,7 @@ interface SubscriptionDialogProps {
   product: Product | null;
   selectedItem?: RestockOrderWithProduct;
   open: boolean;
+  isProfileComplete: boolean;
   onClose: () => void;
   onConfirm: (configuration: { quantity: number; intervalCount: number }) => Promise<void> | void;
   onSelectItem: (item: RestockOrderWithProduct) => void;
@@ -20,6 +21,7 @@ export function SubscriptionDialog({
   product,
   selectedItem,
   open,
+  isProfileComplete,
   onClose,
   onConfirm,
 }: SubscriptionDialogProps) {
@@ -44,6 +46,7 @@ export function SubscriptionDialog({
   }
 
   const hasInvalidQuantity = quantity < 1 || Number.isNaN(quantity);
+  const canConfirmChanges = isProfileComplete && !hasInvalidQuantity;
 
   function getSubscriptionTargetElement() {
     const isMobile = window.matchMedia("(max-width: 720px)").matches;
@@ -96,7 +99,7 @@ export function SubscriptionDialog({
   }
 
   async function handleConfirm() {
-    if (isClosingToHeader) {
+    if (isClosingToHeader || !canConfirmChanges) {
       return;
     }
 
@@ -157,6 +160,13 @@ export function SubscriptionDialog({
             </div>
           ) : null}
 
+          {!isProfileComplete ? (
+            <div className="subscription-modal__warning subscription-modal__warning--locked">
+              Dein Profil ist noch nicht vollständig. Solange Pflichtfelder fehlen, kannst du
+              dein Abo nicht ändern.
+            </div>
+          ) : null}
+
           <label className="subscription-field">
             <span>Menge</span>
             <input
@@ -206,7 +216,7 @@ export function SubscriptionDialog({
           <button
             className="button"
             type="button"
-            disabled={hasInvalidQuantity || isClosingToHeader}
+            disabled={!canConfirmChanges || isClosingToHeader}
             onClick={() => {
               void handleConfirm();
             }}

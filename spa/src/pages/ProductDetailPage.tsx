@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import {Link, Navigate, NavLink, useOutletContext, useParams} from "react-router-dom";
+import { Link, Navigate, NavLink, useOutletContext, useParams } from "react-router-dom";
 import { ProductCarousel } from "../components/ProductCarousel";
+import { SubscriptionProfileProgress } from "../components/SubscriptionProfileProgress";
 import { getProductById, getProducts } from "../services/products";
 import type { Product, RestockOrderWithProduct } from "../types/shop";
+import type { SubscriptionProfileStatus } from "../utils/subscriptionProfile";
 
 interface ProductDetailProps {
   onAddToSubscription: (product: Product) => void;
   onOpenSubscriptionOverview: () => void;
   onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
   subscriptionItems: RestockOrderWithProduct[];
+  canModifySubscription: boolean;
+  subscriptionProfileStatus: SubscriptionProfileStatus | null;
   isLoggedIn: boolean;
   onLogin: (formData: unknown) => Promise<void>;
   onLogout: () => void;
@@ -50,7 +54,14 @@ export function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { onAddToSubscription,subscriptionItems } = useOutletContext<ProductDetailProps>();
+  const {
+    onAddToSubscription,
+    onEditSubscriptionItem,
+    subscriptionItems,
+    canModifySubscription,
+    subscriptionProfileStatus,
+  } =
+    useOutletContext<ProductDetailProps>();
 
   useEffect(() => {
     async function loadProduct() {
@@ -80,9 +91,12 @@ export function ProductDetailPage() {
     return <section className="page-card">Produkt wird geladen...</section>;
   }
 
-  const isInSub = product ? subscriptionItems.some(
-      (item) => item.productId === product.productId.toString(),
-  ) : false;
+  const isInSub = product
+    ? subscriptionItems.some((item) => item.productId === product.productId.toString())
+    : false;
+  const subscriptionItem = product
+    ? subscriptionItems.find((item) => item.productId === product.productId.toString())
+    : undefined;
 
   if (!product) {
     return (
@@ -101,6 +115,11 @@ export function ProductDetailPage() {
 
   return (
     <div className="home-showcase">
+      <SubscriptionProfileProgress
+        status={subscriptionProfileStatus}
+        message="Solange Pflichtfelder fehlen, kannst du kein Produkt zum Abo hinzufügen."
+      />
+
       <section className="page-card product-detail">
         <Link to="/products" className="product-detail__backlink">
           <span className="eyebrow">Zurück zur Artikelsuche</span>
@@ -143,36 +162,49 @@ export function ProductDetailPage() {
           </dl>
 
           <div className="product-detail__actions">
-            {isInSub ? (
-              <div style={{display: "flex", alignItems: "center", width: "100%"}}>
+            {isInSub && canModifySubscription ? (
+              <div className="product-detail__subscription-action">
                 <button
-                    className="button button--ghost"
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                    }}
+                  className="button button--ghost product-detail__subscription-button"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (subscriptionItem) {
+                      onEditSubscriptionItem(subscriptionItem);
+                    }
+                  }}
                 >
-                  Produkt bereits im Abo
+                  Abo-Produkt bearbeiten
                 </button>
-                <NavLink to={"/subscription"} style={{marginLeft: "auto", paddingRight: "0.5rem"}}>
-                  <small className="small-link-text">
-                    Zur Abo-Verwaltung
-                  </small>
+                <NavLink to="/subscription" className="small-link-text">
+                  <small>Dieses Produkt ist bereits Teil deines Abos.</small>
                 </NavLink>
               </div>
-            ) :
-              <div>
+            ) : canModifySubscription ? (
+              <div className="product-detail__subscription-action">
                 <button
-                  className="button"
+                  className="button product-detail__subscription-button"
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
                     onAddToSubscription(product);
                   }}
-                  >
+                >
                   Zum Abo hinzufügen
                 </button>
-              </div>}
+              </div>
+            ) : (
+              <div className="product-detail__subscription-lock">
+                <button className="button product-detail__subscription-button" type="button" disabled>
+                  Zuerst Profil vervollständigen
+                </button>
+                <NavLink to="/account" className="small-link-text">
+                <small>
+                  Solange dein Profil unvollständig ist, kannst du kein Produkt hinzufügen.
+                </small>
+              </NavLink>
+              </div>
+            )}
           </div>
         </div>
       </section>

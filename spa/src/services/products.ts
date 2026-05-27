@@ -2,7 +2,7 @@ import products from "../mocks/products.json";
 import logoColored from "../assets/logos/logo_colored.png";
 import type { Product } from "../types/shop";
 
-export const useAPIs = import.meta.env.VITE_PRODUCTS_USE_API !== "false";
+export const useAPIs = false;
 
 const PRODUCTS_API_URL =
   import.meta.env.VITE_PRODUCTS_API_URL ?? "https://articles.restockoffice.de/articles";
