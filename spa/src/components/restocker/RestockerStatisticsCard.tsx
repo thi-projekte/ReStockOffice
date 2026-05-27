@@ -107,30 +107,30 @@ export function RestockerStatisticsCard({
                 />
             </div>
 
-            <div className="metrics-row-desktop">
+            <div className="metrics-row-desktop statistics-metrics">
                 <div className="metric-tile">
-                    <div className="metric-label">Gesamtverdienst</div>
+                    <div className="metric-label">Verdienst</div>
                     <div className="metric-value">{totalEarnings} EUR</div>
-                    <div className="metric-sub">7 EUR pro abgeschlossener Lieferung</div>
+                    <div className="metric-sub">7 EUR pro Lieferung</div>
                 </div>
 
                 <div className="metric-tile">
                     <div className="metric-label">Abgeschlossen</div>
                     <div className="metric-value">{totalCompletedDeliveries}</div>
-                    <div className="metric-sub">{completedTourDays} Tourtage erledigt</div>
+                    <div className="metric-sub">{completedTourDays} Tourtage</div>
                 </div>
 
                 <div className="metric-tile">
                     <div className="metric-label">Geplant</div>
                     <div className="metric-value">{totalPlannedDeliveries}</div>
-                    <div className="metric-sub">{plannedTourDays} Tourtage offen</div>
+                    <div className="metric-sub">{plannedTourDays} Tourtage</div>
                 </div>
 
                 <div className="metric-tile">
-                    <div className="metric-label">Monatsfortschritt</div>
+                    <div className="metric-label">Fortschritt</div>
                     <div className="metric-value">{completionRate}%</div>
                     <div className="metric-sub">
-                        {totalCompletedDeliveries} von {totalMonthlyDeliveries} Lieferungen erledigt
+                        {totalCompletedDeliveries} von {totalMonthlyDeliveries} erledigt
                     </div>
                 </div>
             </div>
