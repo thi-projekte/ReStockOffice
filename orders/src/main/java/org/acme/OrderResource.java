@@ -78,6 +78,31 @@ public class OrderResource {
         return Order.list("customerId", resolveCustomerId());
     }
 
+    @DELETE
+    @Path("/{id}")
+    @Transactional
+    public Map<String, Object> deleteOrder(@PathParam("id") Long id) {
+        boolean deleted = Order.deleteById(id);
+        if (!deleted) {
+            throw new NotFoundException("Order nicht gefunden: " + id);
+        }
+
+        return Map.of(
+                "id", id,
+                "deleted", true
+        );
+    }
+
+    @DELETE
+    @Transactional
+    public Map<String, Object> deleteAllOrders() {
+        long deleted = Order.deleteAll();
+
+        return Map.of(
+                "deleted", deleted
+        );
+    }
+
     @PUT
     @Path("/admin/customer-id")
     @Transactional
