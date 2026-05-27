@@ -126,7 +126,7 @@ public class DeliveryResource {
     @POST
     @Path("/tours/{tourId}/end")
     public Response endTour(@PathParam("tourId") UUID tourId, EndTourRequest request) {
-        Tour tour = deliveryService.endTour(tourId, request.earnings);
+        Tour tour = deliveryService.endTour(tourId, request.getEarnings());
         return Response.ok(tour).build();
     }
 
@@ -167,7 +167,15 @@ public class DeliveryResource {
     }
 
     public static class EndTourRequest {
-        public BigDecimal earnings;
+        private BigDecimal earnings;
+
+        public BigDecimal getEarnings() {
+            return earnings;
+        }
+
+        public void setEarnings(BigDecimal earnings) {
+            this.earnings = earnings;
+        }
     }
 
     private String authorizationHeader() {

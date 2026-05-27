@@ -65,8 +65,10 @@ public class ResendMailClient {
 
             return objectMapper.readTree(response.body()).get("id").asText();
 
-        }catch (IOException | InterruptedException e) {
-            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new MailValidationException("Fehler beim Resend-Aufruf: " + e.getMessage());
+        } catch (IOException e) {
             throw new MailValidationException("Fehler beim Resend-Aufruf: " + e.getMessage());
         }
     }

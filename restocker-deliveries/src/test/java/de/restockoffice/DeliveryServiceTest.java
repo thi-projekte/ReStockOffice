@@ -14,6 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 class DeliveryServiceTest {
 
+    private static final String CUSTOMER_ID = "customer-1";
+    private static final String DELIVERY_DAY_TUESDAY = "Dienstag";
+    private static final String DELIVERY_DAY_THURSDAY = "Donnerstag";
+    private static final String ARTICLE_NUMBER_10001 = "10001";
+    private static final String ARTICLE_NUMBER_10002 = "10002";
+    private static final String ARTICLE_NUMBER_10007 = "10007";
+    private static final String ARTICLE_NUMBER_10088 = "10088";
+
     private final DeliveryService service = new DeliveryService();
 
     @Test
@@ -23,8 +31,8 @@ class DeliveryServiceTest {
 
     @Test
     void deliveryDayChangeKeepsFourWeekIntervalAnchorFromExistingDeliveries() {
-        OrderDto order = order(1L, "customer-1", "10001", 1, 4, LocalDate.of(2026, 5, 1));
-        UserDto user = user("Donnerstag");
+        OrderDto order = order(1L, CUSTOMER_ID, ARTICLE_NUMBER_10001, 1, 4, LocalDate.of(2026, 5, 1));
+        UserDto user = user(DELIVERY_DAY_THURSDAY);
 
         List<LocalDate> currentHorizonDates = service.calculateDueDates(
                 order,
@@ -49,8 +57,8 @@ class DeliveryServiceTest {
 
     @Test
     void deliveryDayChangeDoesNotCreateAReplacementInsideExistingHorizon() {
-        OrderDto order = order(1L, "customer-1", "10001", 1, 1, LocalDate.of(2026, 5, 1));
-        UserDto user = user("Donnerstag");
+        OrderDto order = order(1L, CUSTOMER_ID, ARTICLE_NUMBER_10001, 1, 1, LocalDate.of(2026, 5, 1));
+        UserDto user = user(DELIVERY_DAY_THURSDAY);
 
         List<LocalDate> dueDates = service.calculateDueDates(
                 order,
@@ -66,8 +74,8 @@ class DeliveryServiceTest {
 
     @Test
     void newOrdersStillHonorTwoCompleteWorkdaysLeadTime() {
-        OrderDto order = order(1L, "customer-1", "10001", 1, 1, LocalDate.of(2026, 6, 5));
-        UserDto user = user("Dienstag");
+        OrderDto order = order(1L, CUSTOMER_ID, ARTICLE_NUMBER_10001, 1, 1, LocalDate.of(2026, 6, 5));
+        UserDto user = user(DELIVERY_DAY_TUESDAY);
 
         List<LocalDate> dueDates = service.calculateDueDates(
                 order,
@@ -83,8 +91,8 @@ class DeliveryServiceTest {
 
     @Test
     void newOrderUsesExistingCustomerDeliveriesInsideCurrentHorizon() {
-        OrderDto order = order(2L, "customer-1", "10002", 1, 1, LocalDate.of(2026, 6, 4));
-        UserDto user = user("Donnerstag");
+        OrderDto order = order(2L, CUSTOMER_ID, ARTICLE_NUMBER_10002, 1, 1, LocalDate.of(2026, 6, 4));
+        UserDto user = user(DELIVERY_DAY_THURSDAY);
 
         List<LocalDate> dueDates = service.calculateDueDates(
                 order,
@@ -100,8 +108,8 @@ class DeliveryServiceTest {
 
     @Test
     void newOrderDoesNotCreateReplacementDateInsideExistingCustomerHorizon() {
-        OrderDto order = order(2L, "customer-1", "10002", 1, 1, LocalDate.of(2026, 6, 8));
-        UserDto user = user("Donnerstag");
+        OrderDto order = order(2L, CUSTOMER_ID, ARTICLE_NUMBER_10002, 1, 1, LocalDate.of(2026, 6, 8));
+        UserDto user = user(DELIVERY_DAY_THURSDAY);
 
         List<LocalDate> dueDates = service.calculateDueDates(
                 order,
@@ -118,7 +126,7 @@ class DeliveryServiceTest {
     @Test
     void existingDeliveryItemsAreNotUpdatedWhenOrderChanges() {
         Delivery delivery = deliveryWithExistingItem();
-        OrderDto changedOrder = order(1L, "customer-1", "10001", 99, 1, LocalDate.of(2026, 5, 1));
+        OrderDto changedOrder = order(1L, CUSTOMER_ID, ARTICLE_NUMBER_10001, 99, 1, LocalDate.of(2026, 5, 1));
 
         service.appendNewOrdersToDelivery(delivery, List.of(changedOrder));
 
@@ -130,14 +138,14 @@ class DeliveryServiceTest {
     @Test
     void newOrdersAreAppendedToExistingFutureDeliveries() {
         Delivery delivery = deliveryWithExistingItem();
-        OrderDto existingOrder = order(1L, "customer-1", "10001", 99, 1, LocalDate.of(2026, 5, 1));
-        OrderDto newOrder = order(2L, "customer-1", "10002", 3, 1, LocalDate.of(2026, 5, 1));
+        OrderDto existingOrder = order(1L, CUSTOMER_ID, ARTICLE_NUMBER_10001, 99, 1, LocalDate.of(2026, 5, 1));
+        OrderDto newOrder = order(2L, CUSTOMER_ID, ARTICLE_NUMBER_10002, 3, 1, LocalDate.of(2026, 5, 1));
 
         service.appendNewOrdersToDelivery(delivery, List.of(existingOrder, newOrder));
 
         assertEquals("1,2", delivery.orderId);
         assertEquals(2, delivery.items.size());
-        assertEquals("10002", delivery.items.get(1).articleNumber);
+        assertEquals(ARTICLE_NUMBER_10002, delivery.items.get(1).articleNumber);
         assertEquals(3, delivery.items.get(1).quantity);
     }
 
@@ -158,26 +166,26 @@ class DeliveryServiceTest {
     @Test
     void summarizesDeliveredArticlesForPreviousMonthOnly() {
         Delivery firstDeliveredInPreviousMonth = deliveredDelivery(
-                "customer-1",
+                CUSTOMER_ID,
                 LocalDate.of(2026, 4, 3),
-                item("10088", 1),
-                item("10007", 5)
+                item(ARTICLE_NUMBER_10088, 1),
+                item(ARTICLE_NUMBER_10007, 5)
         );
         Delivery secondDeliveredInPreviousMonth = deliveredDelivery(
-                "customer-1",
+                CUSTOMER_ID,
                 LocalDate.of(2026, 4, 28),
-                item("10088", 2),
-                item("10007", 15)
+                item(ARTICLE_NUMBER_10088, 2),
+                item(ARTICLE_NUMBER_10007, 15)
         );
         Delivery deliveredInOtherMonth = deliveredDelivery(
-                "customer-1",
+                CUSTOMER_ID,
                 LocalDate.of(2026, 3, 31),
-                item("10088", 100)
+                item(ARTICLE_NUMBER_10088, 100)
         );
         Delivery openInPreviousMonth = openDelivery(
-                "customer-1",
+                CUSTOMER_ID,
                 LocalDate.of(2026, 4, 15),
-                item("10088", 50)
+                item(ARTICLE_NUMBER_10088, 50)
         );
 
         List<DeliveredArticleSummaryDto> summary = service.summarizeDeliveredItemsForPeriod(
@@ -192,18 +200,18 @@ class DeliveryServiceTest {
         );
 
         assertEquals(2, summary.size());
-        assertEquals("10088", summary.get(0).articleNumber);
-        assertEquals(3, summary.get(0).quantity);
-        assertEquals("10007", summary.get(1).articleNumber);
-        assertEquals(20, summary.get(1).quantity);
+        assertEquals(ARTICLE_NUMBER_10088, summary.get(0).getArticleNumber());
+        assertEquals(3, summary.get(0).getQuantity());
+        assertEquals(ARTICLE_NUMBER_10007, summary.get(1).getArticleNumber());
+        assertEquals(20, summary.get(1).getQuantity());
     }
 
     @Test
     void customerDeliveryOverviewReturnsPreviousAndNextDelivery() {
-        Delivery previous = deliveredDelivery("customer-1", LocalDate.of(2026, 5, 20), item("10001", 1));
-        Delivery older = deliveredDelivery("customer-1", LocalDate.of(2026, 5, 1), item("10002", 1));
-        Delivery today = openDelivery("customer-1", LocalDate.of(2026, 5, 27), item("10003", 1));
-        Delivery future = openDelivery("customer-1", LocalDate.of(2026, 6, 2), item("10004", 1));
+        Delivery previous = deliveredDelivery(CUSTOMER_ID, LocalDate.of(2026, 5, 20), item(ARTICLE_NUMBER_10001, 1));
+        Delivery older = deliveredDelivery(CUSTOMER_ID, LocalDate.of(2026, 5, 1), item(ARTICLE_NUMBER_10002, 1));
+        Delivery today = openDelivery(CUSTOMER_ID, LocalDate.of(2026, 5, 27), item("10003", 1));
+        Delivery future = openDelivery(CUSTOMER_ID, LocalDate.of(2026, 6, 2), item("10004", 1));
         older.id = UUID.fromString("00000000-0000-0000-0000-000000000001");
         previous.id = UUID.fromString("00000000-0000-0000-0000-000000000002");
         today.id = UUID.fromString("00000000-0000-0000-0000-000000000003");
@@ -214,33 +222,33 @@ class DeliveryServiceTest {
                 LocalDate.of(2026, 5, 27)
         );
 
-        assertEquals(previous.id, overview.lastDelivery.id);
-        assertEquals("2026-05-20", overview.lastDelivery.deliveryDate);
-        assertEquals("DELIVERED", overview.lastDelivery.status);
-        assertEquals(today.id, overview.nextDelivery.id);
-        assertEquals("2026-05-27", overview.nextDelivery.deliveryDate);
-        assertEquals("OPEN", overview.nextDelivery.status);
+        assertEquals(previous.id, overview.getLastDelivery().getId());
+        assertEquals("2026-05-20", overview.getLastDelivery().getDeliveryDate());
+        assertEquals("DELIVERED", overview.getLastDelivery().getStatus());
+        assertEquals(today.id, overview.getNextDelivery().getId());
+        assertEquals("2026-05-27", overview.getNextDelivery().getDeliveryDate());
+        assertEquals("OPEN", overview.getNextDelivery().getStatus());
     }
 
     @Test
     void customerDeliveryOverviewReturnsNullWhenOneSideIsMissing() {
-        Delivery future = openDelivery("customer-1", LocalDate.of(2026, 6, 2), item("10001", 1));
+        Delivery future = openDelivery(CUSTOMER_ID, LocalDate.of(2026, 6, 2), item(ARTICLE_NUMBER_10001, 1));
 
         CustomerDeliveryOverviewDto overview = service.toCustomerDeliveryOverview(
                 List.of(future),
                 LocalDate.of(2026, 5, 27)
         );
 
-        assertNull(overview.lastDelivery);
-        assertEquals("2026-06-02", overview.nextDelivery.deliveryDate);
+        assertNull(overview.getLastDelivery());
+        assertEquals("2026-06-02", overview.getNextDelivery().getDeliveryDate());
 
         overview = service.toCustomerDeliveryOverview(
-                List.of(deliveredDelivery("customer-1", LocalDate.of(2026, 5, 20), item("10001", 1))),
+                List.of(deliveredDelivery(CUSTOMER_ID, LocalDate.of(2026, 5, 20), item(ARTICLE_NUMBER_10001, 1))),
                 LocalDate.of(2026, 5, 27)
         );
 
-        assertEquals("2026-05-20", overview.lastDelivery.deliveryDate);
-        assertNull(overview.nextDelivery);
+        assertEquals("2026-05-20", overview.getLastDelivery().getDeliveryDate());
+        assertNull(overview.getNextDelivery());
     }
 
     private OrderDto order(
@@ -252,31 +260,31 @@ class DeliveryServiceTest {
             LocalDate createdAt
     ) {
         OrderDto order = new OrderDto();
-        order.id = id;
-        order.customerId = customerId;
-        order.productId = productId;
-        order.quantity = quantity;
-        order.interval = interval;
-        order.status = "ACTIVE";
-        order.createdAt = createdAt.atStartOfDay();
+        order.setId(id);
+        order.setCustomerId(customerId);
+        order.setProductId(productId);
+        order.setQuantity(quantity);
+        order.setInterval(interval);
+        order.setStatus("ACTIVE");
+        order.setCreatedAt(createdAt.atStartOfDay());
         return order;
     }
 
     private UserDto user(String deliveryDay) {
         UserDto user = new UserDto();
-        user.deliveryDay = deliveryDay;
+        user.setDeliveryDay(deliveryDay);
         return user;
     }
 
     private Delivery deliveryWithExistingItem() {
         Delivery delivery = new Delivery();
         delivery.orderId = "1";
-        delivery.userId = "customer-1";
+        delivery.userId = CUSTOMER_ID;
         delivery.deliveryDate = LocalDate.of(2026, 6, 9);
         delivery.acceptedAt = LocalDateTime.of(2026, 6, 1, 10, 0);
 
         DeliveryItem item = new DeliveryItem();
-        item.articleNumber = "10001";
+        item.articleNumber = ARTICLE_NUMBER_10001;
         item.name = "Existing item";
         item.unit = "Stueck";
         item.quantity = 1;

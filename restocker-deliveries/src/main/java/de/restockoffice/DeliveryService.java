@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,7 @@ public class DeliveryService {
     private static final String TEST_ORDER_PREFIX = "test-delivery-";
     private static final String DEFAULT_TEST_CUSTOMER_ONE = "3e6572a7-3852-42e3-81eb-17e7f9622kk8";
     private static final String DEFAULT_TEST_CUSTOMER_TWO = "c831fce5-56a3-443e-a27f-cc769a1ed0d7";
+    private static final String DEFAULT_UNIT = "Stück";
 
     @Inject
     @RestClient
@@ -89,8 +91,8 @@ public class DeliveryService {
                 normalizeOptionalCustomerId(firstCustomerId, DEFAULT_TEST_CUSTOMER_ONE),
                 deliveryDate,
                 List.of(
-                        createTestDeliveryItem("10086", "Kassenbuch A4", 1, "Stück"),
-                        createTestDeliveryItem("10003", "Textmarker-Set (4 Farben)", 1, "Stück")
+                        createTestDeliveryItem("10086", "Kassenbuch A4", 1, DEFAULT_UNIT),
+                        createTestDeliveryItem("10003", "Textmarker-Set (4 Farben)", 1, DEFAULT_UNIT)
                 )
         );
         Delivery secondDelivery = createOpenTestDelivery(
@@ -98,8 +100,8 @@ public class DeliveryService {
                 normalizeOptionalCustomerId(secondCustomerId, DEFAULT_TEST_CUSTOMER_TWO),
                 deliveryDate,
                 List.of(
-                        createTestDeliveryItem("10088", "Gummizugmappe A3", 1, "Stück"),
-                        createTestDeliveryItem("10007", "Klarsichthuellen A4 oben offen", 10, "Stück")
+                        createTestDeliveryItem("10088", "Gummizugmappe A3", 1, DEFAULT_UNIT),
+                        createTestDeliveryItem("10007", "Klarsichthuellen A4 oben offen", 10, DEFAULT_UNIT)
                 )
         );
 
@@ -274,8 +276,8 @@ public class DeliveryService {
                 continue;
             }
 
-            UserDto user = loadCachedUser(order.customerId, customerCache, authorizationHeader);
-            List<Delivery> customerDeliveries = existingDeliveriesForCustomer(order.customerId, customerDeliveriesCache);
+            UserDto user = loadCachedUser(order.getCustomerId(), customerCache, authorizationHeader);
+            List<Delivery> customerDeliveries = existingDeliveriesForCustomer(order.getCustomerId(), customerDeliveriesCache);
             List<LocalDate> existingOrderDeliveryDates = existingDeliveryDatesForOrder(order, customerDeliveries);
             List<LocalDate> existingCustomerDeliveryDates = existingCustomerDeliveryDates(customerDeliveries, today, horizonEnd);
             for (LocalDate deliveryDate : calculateDueDates(
@@ -286,7 +288,7 @@ public class DeliveryService {
                     existingOrderDeliveryDates,
                     existingCustomerDeliveryDates
             )) {
-                DeliveryGroupKey groupKey = new DeliveryGroupKey(order.customerId, deliveryDate);
+                DeliveryGroupKey groupKey = new DeliveryGroupKey(order.getCustomerId(), deliveryDate);
                 DeliveryGroup group = groupedOrders.computeIfAbsent(groupKey, ignored -> new DeliveryGroup());
                 group.orders.add(new PlannedOrder(order, existingOrderDeliveryDates.isEmpty()));
             }
@@ -356,7 +358,7 @@ public class DeliveryService {
     ) {
         List<LocalDate> dueDates = new ArrayList<>();
         DayOfWeek deliveryDay = resolveDeliveryDay(user, order);
-        int intervalWeeks = order.interval != null && order.interval > 0 ? order.interval : 1;
+        int intervalWeeks = order.getInterval() != null && order.getInterval() > 0 ? order.getInterval() : 1;
 
         if ((existingOrderDeliveryDates == null || existingOrderDeliveryDates.isEmpty())
                 && existingCustomerDeliveryDates != null
@@ -400,7 +402,7 @@ public class DeliveryService {
             return List.of();
         }
 
-        LocalDate anchorDate = order.createdAt != null ? order.createdAt.toLocalDate() : startDate;
+        LocalDate anchorDate = order.getCreatedAt() != null ? order.getCreatedAt().toLocalDate() : startDate;
         LocalDate firstEligibleDate = existingCustomerDeliveryDates.stream()
                 .filter(date -> !date.isBefore(startDate))
                 .filter(date -> !date.isAfter(endDate))
@@ -434,7 +436,7 @@ public class DeliveryService {
             return nextDeliveryDate(latestExistingDeliveryDate, deliveryDay, intervalWeeks);
         }
 
-        LocalDate anchorDate = order.createdAt != null ? order.createdAt.toLocalDate() : startDate;
+        LocalDate anchorDate = order.getCreatedAt() != null ? order.getCreatedAt().toLocalDate() : startDate;
         return firstDateWithMinimumLeadTime(anchorDate, deliveryDay);
     }
 
@@ -449,13 +451,13 @@ public class DeliveryService {
     }
 
     private DayOfWeek resolveDeliveryDay(UserDto user, OrderDto order) {
-        DayOfWeek configuredDeliveryDay = parseDeliveryDay(user != null ? user.deliveryDay : null);
+        DayOfWeek configuredDeliveryDay = parseDeliveryDay(user != null ? user.getDeliveryDay() : null);
         if (configuredDeliveryDay != null) {
             return configuredDeliveryDay;
         }
 
-        if (order.createdAt != null) {
-            return order.createdAt.getDayOfWeek();
+        if (order.getCreatedAt() != null) {
+            return order.getCreatedAt().getDayOfWeek();
         }
 
         return LocalDate.now().getDayOfWeek();
@@ -523,12 +525,12 @@ public class DeliveryService {
     }
 
     private List<LocalDate> existingDeliveryDatesForOrder(OrderDto order, List<Delivery> customerDeliveries) {
-        String orderId = order.id.toString();
+        String orderId = order.getId().toString();
 
         return customerDeliveries.stream()
                 .filter(delivery -> splitOrderIds(delivery.orderId).contains(orderId))
                 .map(delivery -> delivery.deliveryDate)
-                .filter(date -> date != null)
+                .filter(Objects::nonNull)
                 .sorted()
                 .collect(Collectors.toList());
     }
@@ -540,7 +542,7 @@ public class DeliveryService {
     ) {
         return customerDeliveries.stream()
                 .map(delivery -> delivery.deliveryDate)
-                .filter(date -> date != null)
+                .filter(Objects::nonNull)
                 .filter(date -> !date.isBefore(startDate))
                 .filter(date -> !date.isAfter(endDate))
                 .distinct()
@@ -661,49 +663,63 @@ public class DeliveryService {
             AuthenticatedRestocker authenticatedRestocker
     ) {
         DeliveryDetailDto dto = new DeliveryDetailDto();
-        dto.id = delivery.id;
-        dto.orderId = delivery.orderId;
-        dto.userId = delivery.userId;
-        dto.stopOrder = delivery.stopOrder;
-        dto.collected = delivery.collected;
-        dto.collectedAt = delivery.collectedAt;
-        dto.acceptedAt = delivery.acceptedAt;
-        dto.deliveredAt = delivery.deliveredAt;
-        dto.restockerName = restockerDisplayName(delivery, authenticatedRestocker);
-        dto.status = deliveryStatus(delivery);
+        dto.setId(delivery.id);
+        dto.setOrderId(delivery.orderId);
+        dto.setUserId(delivery.userId);
+        dto.setStopOrder(delivery.stopOrder);
+        dto.setCollected(delivery.collected);
+        dto.setCollectedAt(delivery.collectedAt);
+        dto.setAcceptedAt(delivery.acceptedAt);
+        dto.setDeliveredAt(delivery.deliveredAt);
+        dto.setRestockerName(restockerDisplayName(delivery, authenticatedRestocker));
+        dto.setStatus(deliveryStatus(delivery));
 
-        dto.recipientEmail = valueOrEmpty(user != null ? user.email : null);
-        dto.companyName = valueOrEmpty(user != null ? user.companyName : null);
-        dto.street = valueOrEmpty(user != null ? user.street : null);
-        dto.houseNumber = valueOrEmpty(user != null ? user.houseNumber : null);
-        dto.postalCode = valueOrEmpty(user != null ? user.postalCode : null);
-        dto.city = valueOrEmpty(user != null ? user.city : null);
-        dto.country = valueOrEmpty(user != null ? user.country : null);
-        dto.phoneNumber = valueOrEmpty(user != null ? user.phoneNumber : null);
-        dto.contactPerson = valueOrEmpty(user != null ? user.roleInCompany : null);
-        dto.deliveryHint = valueOrEmpty(user != null ? user.deliveryHint : null);
-        dto.deliveryDay = valueOrEmpty(user != null ? user.deliveryDay : null);
-        dto.deliveryTime = valueOrEmpty(user != null ? user.deliveryTime : null);
-        dto.deliveryDate = requireDeliveryDate(delivery).toString();
-        dto.items = delivery.items.stream().map(item -> {
-            DeliveryDetailDto.DeliveryItemDetailDto detailItem = new DeliveryDetailDto.DeliveryItemDetailDto();
-            ArticleDto article = loadArticle(item.articleNumber, articleCache);
-            detailItem.id = item.id;
-            detailItem.articleNumber = item.articleNumber;
-            detailItem.delivered = item.delivered;
-            detailItem.name = valueOrFallback(
-                    item.name,
-                    article != null ? article.name : fallbackArticleName(item.articleNumber)
-            );
-            detailItem.quantity = item.quantity;
-            detailItem.unit = valueOrFallback(
-                    item.unit,
-                    article != null ? article.unit : "Stück"
-            );
-            return detailItem;
-        }).collect(Collectors.toList());
+        dto.setRecipientEmail(valueOrEmpty(user != null ? user.getEmail() : null));
+        dto.setCompanyName(valueOrEmpty(user != null ? user.getCompanyName() : null));
+        dto.setStreet(valueOrEmpty(user != null ? user.getStreet() : null));
+        dto.setHouseNumber(valueOrEmpty(user != null ? user.getHouseNumber() : null));
+        dto.setPostalCode(valueOrEmpty(user != null ? user.getPostalCode() : null));
+        dto.setCity(valueOrEmpty(user != null ? user.getCity() : null));
+        dto.setCountry(valueOrEmpty(user != null ? user.getCountry() : null));
+        dto.setPhoneNumber(valueOrEmpty(user != null ? user.getPhoneNumber() : null));
+        dto.setContactPerson(valueOrEmpty(user != null ? user.getRoleInCompany() : null));
+        dto.setDeliveryHint(valueOrEmpty(user != null ? user.getDeliveryHint() : null));
+        dto.setDeliveryDay(valueOrEmpty(user != null ? user.getDeliveryDay() : null));
+        dto.setDeliveryTime(valueOrEmpty(user != null ? user.getDeliveryTime() : null));
+        dto.setDeliveryDate(requireDeliveryDate(delivery).toString());
+        dto.setItems(toDetailItems(delivery, articleCache));
 
         return dto;
+    }
+
+    private List<DeliveryDetailDto.DeliveryItemDetailDto> toDetailItems(
+            Delivery delivery,
+            Map<String, ArticleDto> articleCache
+    ) {
+        return delivery.items.stream()
+                .map(item -> toDetailItem(item, articleCache))
+                .collect(Collectors.toList());
+    }
+
+    private DeliveryDetailDto.DeliveryItemDetailDto toDetailItem(
+            DeliveryItem item,
+            Map<String, ArticleDto> articleCache
+    ) {
+        DeliveryDetailDto.DeliveryItemDetailDto detailItem = new DeliveryDetailDto.DeliveryItemDetailDto();
+        ArticleDto article = loadArticle(item.articleNumber, articleCache);
+        detailItem.setId(item.id);
+        detailItem.setArticleNumber(item.articleNumber);
+        detailItem.setDelivered(item.delivered);
+        detailItem.setName(valueOrFallback(
+                item.name,
+                article != null ? article.getName() : fallbackArticleName(item.articleNumber)
+        ));
+        detailItem.setQuantity(item.quantity);
+        detailItem.setUnit(valueOrFallback(
+                item.unit,
+                article != null ? article.getUnit() : DEFAULT_UNIT
+        ));
+        return detailItem;
     }
 
     private String deliveryStatus(Delivery delivery) {
@@ -843,15 +859,15 @@ public class DeliveryService {
 
     private boolean isPlannableOrder(OrderDto order) {
         return isActiveOrder(order)
-                && order.id != null
-                && order.customerId != null
-                && !order.customerId.isBlank()
-                && order.productId != null
-                && !order.productId.isBlank();
+                && order.getId() != null
+                && order.getCustomerId() != null
+                && !order.getCustomerId().isBlank()
+                && order.getProductId() != null
+                && !order.getProductId().isBlank();
     }
 
     private boolean isActiveOrder(OrderDto order) {
-        return order != null && (order.status == null || "ACTIVE".equalsIgnoreCase(order.status));
+        return order != null && (order.getStatus() == null || "ACTIVE".equalsIgnoreCase(order.getStatus()));
     }
 
     private void validateRestockerName(String restockerName) {
@@ -883,37 +899,37 @@ public class DeliveryService {
     private UserDto createTestCustomerFallback(String userId) {
         if (DEFAULT_TEST_CUSTOMER_ONE.equals(userId)) {
             UserDto user = new UserDto();
-            user.userId = userId;
-            user.email = "corinna.niedermeier01@gmail.com";
-            user.companyName = "Muster GmbH";
-            user.street = "Teststrasse";
-            user.houseNumber = "12";
-            user.postalCode = "85049";
-            user.city = "Ingolstadt";
-            user.country = "Deutschland";
-            user.phoneNumber = "+49 841 123456";
-            user.roleInCompany = "Warenannahme";
-            user.deliveryHint = "Bitte am Empfang melden.";
-            user.deliveryDay = "Samstag";
-            user.deliveryTime = "10:00";
+            user.setUserId(userId);
+            user.setEmail("corinna.niedermeier01@gmail.com");
+            user.setCompanyName("Muster GmbH");
+            user.setStreet("Teststrasse");
+            user.setHouseNumber("12");
+            user.setPostalCode("85049");
+            user.setCity("Ingolstadt");
+            user.setCountry("Deutschland");
+            user.setPhoneNumber("+49 841 123456");
+            user.setRoleInCompany("Warenannahme");
+            user.setDeliveryHint("Bitte am Empfang melden.");
+            user.setDeliveryDay("Samstag");
+            user.setDeliveryTime("10:00");
             return user;
         }
 
         if (DEFAULT_TEST_CUSTOMER_TWO.equals(userId)) {
             UserDto user = new UserDto();
-            user.userId = userId;
-            user.email = "corinna.niedermeier01@gmail.com";
-            user.companyName = "Beispiel Office AG";
-            user.street = "Demoweg";
-            user.houseNumber = "7";
-            user.postalCode = "90402";
-            user.city = "Nürnberg";
-            user.country = "Deutschland";
-            user.phoneNumber = "+49 911 987654";
-            user.roleInCompany = "Office Management";
-            user.deliveryHint = "Anlieferung über Seiteneingang.";
-            user.deliveryDay = "Samstag";
-            user.deliveryTime = "14:00";
+            user.setUserId(userId);
+            user.setEmail("corinna.niedermeier01@gmail.com");
+            user.setCompanyName("Beispiel Office AG");
+            user.setStreet("Demoweg");
+            user.setHouseNumber("7");
+            user.setPostalCode("90402");
+            user.setCity("Nürnberg");
+            user.setCountry("Deutschland");
+            user.setPhoneNumber("+49 911 987654");
+            user.setRoleInCompany("Office Management");
+            user.setDeliveryHint("Anlieferung über Seiteneingang.");
+            user.setDeliveryDay("Samstag");
+            user.setDeliveryTime("14:00");
             return user;
         }
 
@@ -922,17 +938,17 @@ public class DeliveryService {
 
     private DeliveryItem createDeliveryItem(OrderDto order) {
         DeliveryItem item = new DeliveryItem();
-        ArticleDto article = tryLoadArticle(order.productId);
-        item.articleNumber = order.productId;
+        ArticleDto article = tryLoadArticle(order.getProductId());
+        item.articleNumber = order.getProductId();
         item.name = valueOrFallback(
-                article != null ? article.name : null,
-                fallbackArticleName(order.productId)
+                article != null ? article.getName() : null,
+                fallbackArticleName(order.getProductId())
         );
         item.unit = valueOrFallback(
-                article != null ? article.unit : null,
-                "Stück"
+                article != null ? article.getUnit() : null,
+                DEFAULT_UNIT
         );
-        item.quantity = order.quantity != null && order.quantity > 0 ? order.quantity : 1;
+        item.quantity = order.getQuantity() != null && order.getQuantity() > 0 ? order.getQuantity() : 1;
         return item;
     }
 
@@ -998,7 +1014,7 @@ public class DeliveryService {
         List<String> existingOrderIds = splitOrderIds(delivery.orderId);
 
         for (OrderDto order : orders) {
-            String orderId = order.id.toString();
+            String orderId = order.getId().toString();
             if (existingOrderIds.contains(orderId)) {
                 continue;
             }
@@ -1013,7 +1029,7 @@ public class DeliveryService {
 
     private String joinedOrderIds(List<OrderDto> orders) {
         return orders.stream()
-                .map(order -> order.id.toString())
+                .map(order -> order.getId().toString())
                 .collect(Collectors.joining(","));
     }
 
