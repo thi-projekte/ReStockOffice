@@ -9,11 +9,15 @@ import jakarta.enterprise.inject.Alternative;
 @ApplicationScoped
 public class TestResendMailClient extends ResendMailClient {
 
-    static String lastHtml;
+    private String lastHtml;
 
     @Override
     public String send(String recipientEmail, String subject, String html) {
         lastHtml = html;
         return "test-message-id";
+    }
+
+    String lastHtml() {
+        return lastHtml;
     }
 }

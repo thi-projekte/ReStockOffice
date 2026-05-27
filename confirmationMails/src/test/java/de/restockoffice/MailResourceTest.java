@@ -1,8 +1,10 @@
 package de.restockoffice;
 
+import jakarta.inject.Inject;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
@@ -11,6 +13,14 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @QuarkusTest
 class MailResourceTest {
+
+    private static final String TEMPLATE_FIELD = "template";
+    private static final String STATUS_FIELD = "status";
+    private static final String QUEUED_STATUS = "queued";
+    private static final String INLINE_LOGO_SRC = "src=\"cid:restockoffice-logo\"";
+
+    @Inject
+    TestResendMailClient testResendMailClient;
 
     @Test
     void previewAboConfirmationRendersHtmlWithPersonalizedData() {
@@ -79,12 +89,12 @@ class MailResourceTest {
                 .post("/emails/delivery-announcement")
                 .then()
                 .statusCode(200)
-                .body("template", equalTo("delivery-announcement"))
-                .body("status", equalTo("queued"))
+                .body(TEMPLATE_FIELD, equalTo("delivery-announcement"))
+                .body(STATUS_FIELD, equalTo(QUEUED_STATUS))
                 .body("messageId", notNullValue());
 
-        org.junit.jupiter.api.Assertions.assertTrue(
-                TestResendMailClient.lastHtml.contains("src=\"cid:restockoffice-logo\""),
+        Assertions.assertTrue(
+                testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
                 "delivery announcement mail should use an inline logo CID"
         );
     }
@@ -118,11 +128,11 @@ class MailResourceTest {
                 .post("/emails/abo-confirmation")
                 .then()
                 .statusCode(200)
-                .body("template", equalTo("abo-confirmation"))
-                .body("status", equalTo("queued"));
+                .body(TEMPLATE_FIELD, equalTo("abo-confirmation"))
+                .body(STATUS_FIELD, equalTo(QUEUED_STATUS));
 
-        org.junit.jupiter.api.Assertions.assertTrue(
-                TestResendMailClient.lastHtml.contains("src=\"cid:restockoffice-logo\""),
+        Assertions.assertTrue(
+                testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
                 "abo confirmation mail should use an inline logo CID"
         );
     }
@@ -185,11 +195,11 @@ class MailResourceTest {
                 .post("/emails/delivery-confirmation")
                 .then()
                 .statusCode(200)
-                .body("template", equalTo("delivery-confirmation"))
-                .body("status", equalTo("queued"));
+                .body(TEMPLATE_FIELD, equalTo("delivery-confirmation"))
+                .body(STATUS_FIELD, equalTo(QUEUED_STATUS));
 
-        org.junit.jupiter.api.Assertions.assertTrue(
-                TestResendMailClient.lastHtml.contains("src=\"cid:restockoffice-logo\""),
+        Assertions.assertTrue(
+                testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
                 "delivery confirmation mail should use an inline logo CID"
         );
     }
