@@ -15,6 +15,7 @@ public class NotificationMailService {
     private static final String DELIVERY_TEMPLATE = "templates/delivery-announcement.html";
     private static final String DELIVERY_CONFIRMATION_TEMPLATE = "templates/delivery-confirmation.html";
     private static final String SUBSCRIPTION_URL = "https://app.restockoffice.de/subscription";
+    private static final String INLINE_LOGO_URL = "cid:restockoffice-logo";
 
     @Inject
     TemplateService templateService;
@@ -27,9 +28,14 @@ public class NotificationMailService {
 
     public RenderedMail renderAboConfirmation(AboConfirmationRequest request) {
         validateAboConfirmation(request);
+        return renderAboConfirmation(request, defaultIfBlank(request.logoUrl(), mailSettings.logoUrl()));
+    }
+
+    private RenderedMail renderAboConfirmation(AboConfirmationRequest request, String logoUrl) {
+        validateAboConfirmation(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
+        values.put("logoUrl", escapeHtml(logoUrl));
         values.put("customerName", escapeHtml(request.customerName()));
         values.put("orderNumber", escapeHtml(request.orderNumber()));
         values.put("orderDate", escapeHtml(request.orderDate()));
@@ -46,9 +52,14 @@ public class NotificationMailService {
 
     public RenderedMail renderDeliveryAnnouncement(DeliveryAnnouncementRequest request) {
         validateDeliveryAnnouncement(request);
+        return renderDeliveryAnnouncement(request, defaultIfBlank(request.logoUrl(), mailSettings.logoUrl()));
+    }
+
+    private RenderedMail renderDeliveryAnnouncement(DeliveryAnnouncementRequest request, String logoUrl) {
+        validateDeliveryAnnouncement(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
+        values.put("logoUrl", escapeHtml(logoUrl));
         values.put("customerName", escapeHtml(request.customerName()));
         values.put("daysUntilDelivery", escapeHtml(request.daysUntilDelivery()));
         values.put("deliveryDay", escapeHtml(request.deliveryDay()));
@@ -68,9 +79,14 @@ public class NotificationMailService {
 
     public RenderedMail renderDeliveryConfirmation(DeliveryConfirmationRequest request) {
         validateDeliveryConfirmation(request);
+        return renderDeliveryConfirmation(request, defaultIfBlank(request.logoUrl(), mailSettings.logoUrl()));
+    }
+
+    private RenderedMail renderDeliveryConfirmation(DeliveryConfirmationRequest request, String logoUrl) {
+        validateDeliveryConfirmation(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
+        values.put("logoUrl", escapeHtml(logoUrl));
         values.put("customerName", escapeHtml(request.customerName()));
         values.put("deliveryDate", escapeHtml(request.deliveryDate()));
         values.put("deliveryWindow", escapeHtml(request.deliveryWindow()));
@@ -85,17 +101,17 @@ public class NotificationMailService {
     }
 
     public String sendAboConfirmation(AboConfirmationRequest request) {
-        RenderedMail renderedMail = renderAboConfirmation(request);
+        RenderedMail renderedMail = renderAboConfirmation(request, INLINE_LOGO_URL);
         return resendMailClient.send(request.recipientEmail(), renderedMail.subject(), renderedMail.html());
     }
 
     public String sendDeliveryAnnouncement(DeliveryAnnouncementRequest request) {
-        RenderedMail renderedMail = renderDeliveryAnnouncement(request);
+        RenderedMail renderedMail = renderDeliveryAnnouncement(request, INLINE_LOGO_URL);
         return resendMailClient.send(request.recipientEmail(), renderedMail.subject(), renderedMail.html());
     }
 
     public String sendDeliveryConfirmation(DeliveryConfirmationRequest request) {
-        RenderedMail renderedMail = renderDeliveryConfirmation(request);
+        RenderedMail renderedMail = renderDeliveryConfirmation(request, INLINE_LOGO_URL);
         return resendMailClient.send(request.recipientEmail(), renderedMail.subject(), renderedMail.html());
     }
 

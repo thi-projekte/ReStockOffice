@@ -82,6 +82,49 @@ class MailResourceTest {
                 .body("template", equalTo("delivery-announcement"))
                 .body("status", equalTo("queued"))
                 .body("messageId", notNullValue());
+
+        org.junit.jupiter.api.Assertions.assertTrue(
+                TestResendMailClient.lastHtml.contains("src=\"cid:restockoffice-logo\""),
+                "delivery announcement mail should use an inline logo CID"
+        );
+    }
+
+    @Test
+    void sendAboConfirmationUsesInlineLogoCid() {
+        String payload = """
+                {
+                  "recipientEmail": "max.mustermann@example.com",
+                  "customerName": "Max Mustermann",
+                  "orderNumber": "RSO-2026-004281",
+                  "orderDate": "29.04.2026, 10:42 Uhr",
+                  "deliveryWindow": "08:30 bis 10:00 Uhr",
+                  "deliveryLocation": "ReStockOffice GmbH\\n3. OG, Office West",
+                  "changeDeadline": "02.05.2026, 12:00 Uhr",
+                  "orderItems": [
+                    {
+                      "name": "Kopierpapier A4 Premium",
+                      "articleNumber": "RS-10023",
+                      "quantity": "4 Pack",
+                      "intervalDescription": "Montag alle 2 Wochen",
+                      "nextDeliveryDate": "04.05.2026"
+                    }
+                  ]
+                }
+                """;
+
+        given().contentType(ContentType.JSON)
+                .body(payload)
+                .when()
+                .post("/emails/abo-confirmation")
+                .then()
+                .statusCode(200)
+                .body("template", equalTo("abo-confirmation"))
+                .body("status", equalTo("queued"));
+
+        org.junit.jupiter.api.Assertions.assertTrue(
+                TestResendMailClient.lastHtml.contains("src=\"cid:restockoffice-logo\""),
+                "abo confirmation mail should use an inline logo CID"
+        );
     }
 
     @Test
@@ -114,5 +157,40 @@ class MailResourceTest {
                 .contentType(containsString("text/html"))
                 .body(containsString("Deine Lieferung ist angekommen."))
                 .body(containsString("Kopierpapier A4 Premium"));
+    }
+
+    @Test
+    void sendDeliveryConfirmationUsesInlineLogoCid() {
+        String payload = """
+                {
+                  "recipientEmail": "max.mustermann@example.com",
+                  "customerName": "Max Mustermann",
+                  "deliveryDate": "Freitag, 15.05.2026",
+                  "deliveryWindow": "um 15:30 Uhr",
+                  "orderNumber": "RSO-2026-004281",
+                  "supplierName": "Sabrina Keller",
+                  "deliveryItems": [
+                    {
+                      "name": "Kopierpapier A4 Premium",
+                      "articleNumber": "RS-10023",
+                      "quantity": "4 Pack"
+                    }
+                  ]
+                }
+                """;
+
+        given().contentType(ContentType.JSON)
+                .body(payload)
+                .when()
+                .post("/emails/delivery-confirmation")
+                .then()
+                .statusCode(200)
+                .body("template", equalTo("delivery-confirmation"))
+                .body("status", equalTo("queued"));
+
+        org.junit.jupiter.api.Assertions.assertTrue(
+                TestResendMailClient.lastHtml.contains("src=\"cid:restockoffice-logo\""),
+                "delivery confirmation mail should use an inline logo CID"
+        );
     }
 }
