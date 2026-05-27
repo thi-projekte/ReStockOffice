@@ -15,6 +15,7 @@ import type {
 } from "../types/shop";
 import {
   acceptDelivery,
+  loadAllDeliveries,
   loadAssignedDeliveries,
   loadOpenDeliveries,
   loadTodayTours,
@@ -527,6 +528,55 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
       assignment,
     };
   });
+}
+
+function normalizeRestockerIdentifier(value?: string | null) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function readTokenClaim(claimName: string) {
+  const tokenParsed = keycloak.tokenParsed as Record<string, unknown> | undefined;
+  const claimValue = tokenParsed?.[claimName];
+
+  return typeof claimValue === "string" ? claimValue.trim() : "";
+}
+
+function getRestockerIdentifierCandidates(restockerId: string, restockerName?: string) {
+  const givenName = readTokenClaim("given_name");
+  const familyName = readTokenClaim("family_name");
+
+  return new Set(
+    [
+      restockerId,
+      restockerName,
+      readTokenClaim("preferred_username"),
+      readTokenClaim("sub"),
+      readTokenClaim("name"),
+      [givenName, familyName].filter(Boolean).join(" "),
+    ]
+      .map(normalizeRestockerIdentifier)
+      .filter(Boolean),
+  );
+}
+
+function isCompletedDeliveryForRestocker(
+  detail: DeliveryDetail,
+  restockerIdentifiers: Set<string>,
+) {
+  const assignedRestocker = normalizeRestockerIdentifier(detail.restockerName);
+  const isCompleted =
+    Boolean(detail.deliveredAt) || detail.status.toUpperCase() === "DELIVERED";
+
+  return isCompleted && restockerIdentifiers.has(assignedRestocker);
+}
+
+function mergeDeliveryDetailsById(deliveryDetails: DeliveryDetail[]) {
+  return Array.from(
+    deliveryDetails.reduce((lookup, detail) => {
+      lookup.set(detail.id, detail);
+      return lookup;
+    }, new Map<string, DeliveryDetail>()).values(),
+  );
 }
 
 const mockRestockOrders: RestockOrder[] = [];
@@ -1087,6 +1137,10 @@ export async function loadAssignedRestockOrders({
   );
   const products = await getProducts().catch(() => []);
   const productsById = createProductLookup(products);
+  const restockerIdentifierCandidates = getRestockerIdentifierCandidates(
+    restockerId,
+    restockerName,
+  );
 
   await syncStoredDeliveryAssignments({
     assignments,
@@ -1095,13 +1149,26 @@ export async function loadAssignedRestockOrders({
   });
 
   try {
+    const assignedDeliveryDetails = await loadAssignedDeliveries({
+      token: resolvedToken,
+      restockerName: restockerName?.trim() || restockerId,
+    });
+    const todayTourDeliveryDetails = await loadDeliveryDetailsForRestocker(
+      resolvedToken,
+      restockerName?.trim() || restockerId,
+    );
+    const completedDeliveryDetails = (await loadAllDeliveries({
+      token: resolvedToken,
+    }).catch(() => [])).filter((detail) =>
+      isCompletedDeliveryForRestocker(detail, restockerIdentifierCandidates),
+    );
+    const deliveryDetails = mergeDeliveryDetailsById([
+      ...assignedDeliveryDetails,
+      ...todayTourDeliveryDetails,
+      ...completedDeliveryDetails,
+    ]);
     const marketplaceOrders = await enrichMarketplaceOrdersWithCustomerProfiles(
-      deriveMarketplaceOrdersFromDeliveryDetails(
-        await loadAssignedDeliveries({
-          token: resolvedToken,
-          restockerName: restockerName?.trim() || restockerId,
-        }),
-      ),
+      deriveMarketplaceOrdersFromDeliveryDetails(deliveryDetails),
       resolvedToken,
     );
 
