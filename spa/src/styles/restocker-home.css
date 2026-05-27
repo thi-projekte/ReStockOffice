@@ -242,6 +242,29 @@
         color: rgba(31, 42, 46, 0.75);
     }
 
+    .metric-tile--completed,
+    .metric-tile--progress {
+        padding: 12px;
+        gap: 4px;
+    }
+
+    .metric-tile--completed .metric-label,
+    .metric-tile--progress .metric-label {
+        font-size: 0.68rem;
+        line-height: 1.15;
+    }
+
+    .metric-tile--completed .metric-value,
+    .metric-tile--progress .metric-value {
+        font-size: 1.45rem;
+    }
+
+    .metric-tile--completed .metric-sub,
+    .metric-tile--progress .metric-sub {
+        font-size: 0.72rem;
+        line-height: 1.25;
+    }
+
     .open-orders-carousel {
         display: flex;
         overflow-x: auto;
