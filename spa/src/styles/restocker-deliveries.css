@@ -254,26 +254,104 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .delivery-table--items .delivery-table__row {
-    grid-template-columns: 4.2rem minmax(0, 1fr);
+  .delivery-table--items {
+    gap: 0.75rem;
   }
 
-  .delivery-table--items .delivery-table__row--head span:nth-child(3),
-  .delivery-table--items .delivery-table__row--head span:nth-child(4),
-  .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) span:nth-child(4) {
+  .delivery-table--items .delivery-table__row--head {
     display: none;
+  }
+
+  .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) {
+    grid-template-columns: 3.1rem minmax(0, 1fr) auto;
+    grid-template-areas:
+      "check description amount"
+      "check article amount";
+    gap: 0.2rem 0.65rem;
+    min-height: 4.65rem;
+    padding: 0.65rem;
+    border: 1px solid rgba(38, 64, 55, 0.12);
+    border-radius: 0.8rem;
+    background: rgba(255, 255, 255, 0.56);
+  }
+
+  .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) .delivery-check {
+    grid-area: check;
+    align-self: center;
+  }
+
+  .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) > span {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) > span:nth-child(2) {
+    grid-area: article;
+    color: var(--color-grey-300);
+    font-size: 0.86rem;
+  }
+
+  .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) > span:nth-child(3) {
+    grid-area: description;
+    align-self: end;
+    font-weight: 700;
+  }
+
+  .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) > span:nth-child(4) {
+    grid-area: amount;
+    align-self: center;
+    justify-self: end;
+    padding-left: 0.55rem;
+    color: var(--color-secondary);
+    white-space: nowrap;
+  }
+
+  :root[data-theme="dark"] .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) {
+    border-color: rgba(153, 153, 153, 0.16);
+    background: rgba(31, 42, 46, 0.86);
   }
 }
 
 @media (max-width: 620px) {
   .restocker-delivery-page {
     min-height: 560px;
-    padding: 1rem;
+    padding: 1rem 0.85rem calc(5.3rem + env(safe-area-inset-bottom));
   }
 
-  .delivery-info-grid,
+  .delivery-flow {
+    gap: 1rem;
+  }
+
+  .delivery-flow__head {
+    gap: 0.8rem;
+  }
+
+  .delivery-flow__head h1 {
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+
+  .delivery-summary-pill {
+    min-height: 2.4rem;
+    padding: 0.55rem 0.8rem;
+  }
+
+  .delivery-info-grid {
+    gap: 0.65rem;
+  }
+
+  .delivery-info-card {
+    min-height: 0;
+    padding: 0.8rem;
+    border-radius: 0.75rem;
+  }
+
   .delivery-table--warehouse .delivery-table__row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 0.6rem;
   }
 
   .delivery-table--warehouse .delivery-table__row--head {
@@ -281,11 +359,57 @@
   }
 
   .delivery-check {
-    width: 100%;
+    width: 3rem;
+    min-height: 2.7rem;
   }
 
   .delivery-map-link,
   .delivery-primary-action {
     width: 100%;
+  }
+
+  .delivery-action-row {
+    position: sticky;
+    bottom: calc(4.55rem + env(safe-area-inset-bottom));
+    z-index: 2;
+    margin: 0 -0.2rem;
+    padding: 0.7rem 0.2rem 0.2rem;
+    background: linear-gradient(180deg, transparent, var(--color-surface) 32%);
+  }
+
+  .delivery-primary-action {
+    min-width: 0;
+  }
+
+  .delivery-complete-overlay {
+    align-content: end;
+    padding: 0.6rem;
+  }
+
+  .delivery-complete-modal {
+    gap: 0.85rem;
+    padding: 1.25rem 1rem;
+    border-radius: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .delivery-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) {
+    grid-template-columns: 2.8rem minmax(0, 1fr);
+    grid-template-areas:
+      "check description"
+      "check article"
+      "check amount";
+    gap: 0.18rem 0.6rem;
+  }
+
+  .delivery-table--items .delivery-table__row:not(.delivery-table__row--head) > span:nth-child(4) {
+    justify-self: start;
+    padding-left: 0;
+    padding-top: 0.15rem;
   }
 }
