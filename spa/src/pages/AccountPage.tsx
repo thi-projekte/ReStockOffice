@@ -758,46 +758,52 @@ export function AccountPage() {
             <div>
               <span className="eyebrow">Finanzen</span>
               <h2>Monatliche Abrechnungen</h2>
-              <p className="section-copy">Deine zuletzt bereitgestellten Rechnungen der letzten Monate.</p>
+              <p className="section-copy">
+                {visibleInvoices.length > 0
+                    ? "Deine zuletzt bereitgestellten Rechnungen der letzten Monate."
+                    : "Es sind noch keine Rechnungen vorhanden."}
+              </p>
             </div>
           </div>
 
-          <div className="account-settings-shell">
-            <div className="account-settings-section">
-              <div className="account-invoice-list" role="list">
-                {visibleInvoices.map((invoice) => (
-                    <button
-                        key={invoice.invoiceId}
-                        className="account-invoice-item"
-                        type="button"
-                        onClick={() => {
-                          void handleInvoiceOpen(invoice);
-                        }}
-                        disabled={loadingInvoiceId === invoice.invoiceId}
-                    >
-                      <div className="account-invoice-item__copy">
-                        <span>{invoice.monthLabel}</span>
-                        <strong>{invoice.title}</strong>
-                      </div>
-                      <span className="account-invoice-pill">
-                    <MdReceiptLong />
-                        {formatInvoiceAmount(invoice)}
-                  </span>
-                    </button>
-                ))}
+          {visibleInvoices.length > 0 && (
+              <div className="account-settings-shell">
+                <div className="account-settings-section">
+                  <div className="account-invoice-list" role="list">
+                    {visibleInvoices.map((invoice) => (
+                        <button
+                            key={invoice.invoiceId}
+                            className="account-invoice-item"
+                            type="button"
+                            onClick={() => {
+                              void handleInvoiceOpen(invoice);
+                            }}
+                            disabled={loadingInvoiceId === invoice.invoiceId}
+                        >
+                          <div className="account-invoice-item__copy">
+                            <span>{invoice.monthLabel}</span>
+                            <strong>{invoice.title}</strong>
+                          </div>
+                          <span className="account-invoice-pill">
+                <MdReceiptLong />
+                            {formatInvoiceAmount(invoice)}
+              </span>
+                        </button>
+                    ))}
+                  </div>
+
+                  {hasMoreInvoices ? (
+                      <button
+                          className="button button--ghost account-invoice-more"
+                          type="button"
+                          onClick={handleLoadMoreInvoices}
+                      >
+                        Mehr anzeigen
+                      </button>
+                  ) : null}
+                </div>
               </div>
-
-              {hasMoreInvoices ? (
-                  <button
-                      className="button button--ghost account-invoice-more"
-                      type="button"
-                      onClick={handleLoadMoreInvoices}
-                  >
-                    Mehr anzeigen
-                  </button>
-              ) : null}
-            </div>
-          </div>
+          )}
         </section>
 
         <section id="security" className="page-card section-space">
