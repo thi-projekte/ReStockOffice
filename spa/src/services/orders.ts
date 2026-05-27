@@ -59,6 +59,10 @@ interface UpsertOrderPayload extends OrdersRequestContext {
   existingItem?: Pick<RestockOrder, "createdAt" | "status">;
 }
 
+interface DeleteOrderPayload extends OrdersRequestContext {
+  productId: string;
+}
+
 interface MarketplaceCustomerData {
   companyName: string;
   street: string;
@@ -1020,6 +1024,55 @@ export async function upsertSubscriptionOrder({
   }
 
   return normalizeRestockOrder(responseBody);
+}
+
+export async function deleteSubscriptionOrder({
+  customerId,
+  token,
+  productId,
+}: DeleteOrderPayload): Promise<void> {
+  if (!useAPIs) {
+    if (!customerId) {
+      throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
+    }
+
+    const existingMockOrderIndex = mockRestockOrders.findIndex(
+      (order) => order.customerId === customerId && order.productId === productId,
+    );
+
+    if (existingMockOrderIndex >= 0) {
+      mockRestockOrders.splice(existingMockOrderIndex, 1);
+    }
+
+    return;
+  }
+
+  const resolvedToken = await resolveToken(token);
+
+  let response: Response;
+
+  try {
+    response = await fetch(ORDERS_API_URL, {
+      method: "POST",
+      headers: createHeaders(resolvedToken),
+      body: JSON.stringify({
+        productId,
+        status: "CANCELLED",
+        quantity: 0,
+        interval: 1,
+      }),
+    });
+  } catch {
+    throw new Error(buildOrdersNetworkErrorMessage("gespeichert"));
+  }
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Die Orders-API hat das Speichern abgelehnt. Bitte pruefe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.");
+    }
+
+    throw new Error(`RestockOrder konnte nicht gespeichert werden (HTTP ${response.status}).`);
+  }
 }
 
 export async function loadOpenRestockOrders({

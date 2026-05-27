@@ -7,6 +7,7 @@ import keycloak from "../auth/keycloak";
 import { useAuth } from "../auth/AuthProvider";
 import { getInvoices, requestInvoicePdf, type InvoiceSummary } from "../services/invoices";
 import { getMyUser, saveMyUser, type UserProfile } from "../services/users";
+import type { SubscriptionProfileStatus } from "../utils/subscriptionProfile";
 
 interface OutletContext {
   isLoggedIn: boolean;
@@ -14,6 +15,8 @@ interface OutletContext {
   onOpenSubscriptionOverview: () => void;
   onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
   subscriptionItems: RestockOrderWithProduct[];
+  subscriptionProfileStatus: SubscriptionProfileStatus | null;
+  onSubscriptionProfileUpdated: (user: UserProfile) => void;
   onLogout: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
@@ -47,23 +50,20 @@ interface NotificationState {
 // Pflichtfelder
 const REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
   "phone",
+  "company",
+  "country",
   "street",
   "houseNumber",
   "postalCode",
   "city",
-  "country",
 ];
 
 const RESTOCKER_REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
   ...REQUIRED_FIELDS,
-  "iban",
-  "bic",
-  "accountHolder",
 ];
 
 const CUSTOMER_REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
   ...REQUIRED_FIELDS,
-  "company",
 ];
 
 const INVOICE_PAGE_SIZE = 3;
@@ -87,7 +87,14 @@ const EMPTY_FORM: ProfileFormState = {
 };
 
 export function AccountPage() {
-  const { isLoggedIn, onLogout, onSetTheme, theme } = useOutletContext<OutletContext>();
+  const {
+    isLoggedIn,
+    onLogout,
+    onSetTheme,
+    theme,
+    subscriptionProfileStatus,
+    onSubscriptionProfileUpdated,
+  } = useOutletContext<OutletContext>();
   const { hasRole, token } = useAuth();
   const isRestocker = hasRole("Restocker");
   const location = useLocation();
@@ -258,6 +265,7 @@ export function AccountPage() {
               );
 
       setLoadedUser(savedUser);
+      onSubscriptionProfileUpdated(savedUser);
       lastSavedForm.current = form;
     } catch (error) {
       console.error("Benutzerdaten konnten nicht gespeichert werden.", error);
@@ -331,9 +339,47 @@ export function AccountPage() {
 
   const visibleInvoices = invoices.slice(0, visibleInvoiceCount);
   const hasMoreInvoices = visibleInvoiceCount < invoices.length;
+  const showProfileProgress = subscriptionProfileStatus?.isComplete === false;
 
   return (
       <div className="home-showcase account-page">
+        {showProfileProgress ? (
+          <section className="page-card subscription-profile-progress">
+            <div className="subscription-profile-progress__copy">
+              <div>
+                <strong>Profil noch nicht vollständig</strong>
+                <p>
+                  Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen,
+                  sind Änderungen am Abo gesperrt.
+                </p>
+              </div>
+              <span className="subscription-profile-progress__percent">
+                {subscriptionProfileStatus?.completionPercentage ?? 0}%
+              </span>
+            </div>
+
+            <div
+              className="subscription-profile-progress__bar"
+              role="progressbar"
+              aria-label="Profilfortschritt"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={subscriptionProfileStatus?.completionPercentage ?? 0}
+            >
+              <div
+                className="subscription-profile-progress__fill"
+                style={{ width: `${subscriptionProfileStatus?.completionPercentage ?? 0}%` }}
+              />
+            </div>
+
+            {subscriptionProfileStatus?.missingFields.length ? (
+              <p className="subscription-profile-progress__missing">
+                Fehlt noch: {subscriptionProfileStatus.missingFields.join(", ")}.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
         <section className="page-card section-space account-hero">
           <div className="account-hero__copy">
             <span className="eyebrow">Kontoübersicht</span>

@@ -758,9 +758,6 @@
 }
 
 .small-link-text:hover {
-  border-color: rgba(59, 107, 97, 0.22);
-  box-shadow: var(--shadow-soft);
-  background: rgba(244, 247, 242, 0.98);
   text-decoration: underline;
 }
 
@@ -1376,6 +1373,26 @@
   margin-top: auto;
 }
 
+.product-detail__subscription-action {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.product-detail__subscription-button {
+  width: 100%;
+  min-height: 2.85rem;
+  white-space: normal;
+}
+
+.product-detail__subscription-action .small-link-text,
+.product-detail__subscription-lock .small-link-text {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
 .product-specs__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1935,6 +1952,12 @@
   line-height: 1.5;
 }
 
+.subscription-modal__warning--locked {
+  border: 1px solid rgba(211, 47, 47, 0.16);
+  background: rgba(211, 47, 47, 0.08);
+  color: #8f231c;
+}
+
 .subscription-modal__section {
   display: grid;
   gap: 0.9rem;
@@ -2007,6 +2030,65 @@
   gap: 0.75rem;
 }
 
+.subscription-profile-progress {
+  display: grid;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(211, 47, 47, 0.18);
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(circle at top right, rgba(211, 47, 47, 0.08), transparent 34%),
+    rgba(255, 247, 245, 0.94);
+}
+
+.subscription-profile-progress__copy {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.subscription-profile-progress__copy strong {
+  color: #8f231c;
+  font-size: 0.95rem;
+}
+
+.subscription-profile-progress__copy p {
+  margin-top: 0.15rem;
+  color: rgba(96, 37, 31, 0.88);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.subscription-profile-progress__percent {
+  color: #8f231c;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.subscription-profile-progress__bar {
+  overflow: hidden;
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(211, 47, 47, 0.12);
+}
+
+.subscription-profile-progress__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d4554d, #f08a4d);
+  transition: width 0.28s ease;
+}
+
+.subscription-profile-progress__missing {
+  margin: 0;
+  color: rgba(96, 37, 31, 0.82);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
 .subscription-overview-item,
 .subscription-account-item {
   display: flex;
@@ -2027,6 +2109,28 @@
     box-shadow 0.2s ease;
 }
 
+.subscription-account-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.subscription-account-item__actions .button {
+  padding: 0.6rem 0.85rem;
+}
+
+.subscription-account-item__delete {
+  border: 1px solid rgba(211, 47, 47, 0.16);
+  background: rgba(211, 47, 47, 0.08);
+  color: #8f231c;
+}
+
+.subscription-account-item__delete:hover {
+  background: rgba(211, 47, 47, 0.14);
+  color: #7a1d18;
+}
+
 .subscription-overview-item:hover,
 .subscription-account-item:hover,
 .subscription-overview-item--active {
@@ -2045,6 +2149,13 @@
   transform: none;
   border-color: rgba(38, 64, 55, 0.12);
   box-shadow: none;
+}
+
+.product-detail__subscription-lock {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  width: 100%;
 }
 
 .subscription-overview-list--compact .subscription-overview-item {
@@ -2092,6 +2203,43 @@
   border-color: rgba(153, 153, 153, 0.16);
   background: #1f2a2e;
   color: var(--color-text);
+}
+
+:root[data-theme="dark"] .subscription-account-item__delete {
+  border-color: rgba(211, 47, 47, 0.28);
+  background: rgba(211, 47, 47, 0.16);
+  color: #ffb4aa;
+}
+
+:root[data-theme="dark"] .subscription-account-item__delete:hover {
+  background: rgba(211, 47, 47, 0.24);
+}
+
+:root[data-theme="dark"] .subscription-profile-progress {
+  border-color: rgba(211, 47, 47, 0.28);
+  background:
+    radial-gradient(circle at top right, rgba(211, 47, 47, 0.12), transparent 34%),
+    rgba(61, 30, 30, 0.94);
+}
+
+:root[data-theme="dark"] .subscription-profile-progress__copy strong,
+:root[data-theme="dark"] .subscription-profile-progress__percent {
+  color: #ffb4aa;
+}
+
+:root[data-theme="dark"] .subscription-profile-progress__copy p,
+:root[data-theme="dark"] .subscription-profile-progress__missing {
+  color: rgba(255, 224, 220, 0.84);
+}
+
+:root[data-theme="dark"] .subscription-profile-progress__bar {
+  background: rgba(212, 85, 77, 0.18);
+}
+
+:root[data-theme="dark"] .subscription-modal__warning--locked {
+  border-color: rgba(211, 47, 47, 0.28);
+  background: rgba(211, 47, 47, 0.16);
+  color: #ffb4aa;
 }
 
 :root[data-theme="dark"] .subscription-account-item--disabled:hover {

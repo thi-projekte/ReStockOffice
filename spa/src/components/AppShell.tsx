@@ -16,13 +16,18 @@ import iconColored from "../assets/logos/icon_colored.png";
 import { useAuth } from "../auth/AuthProvider";
 import { useSubscriptionCart } from "../hooks/useSubscriptionCart";
 import { getProducts } from "../services/products";
-import { getMyUser } from "../services/users";
+import { getMyUser, type UserProfile } from "../services/users";
 import type {
   Product,
   RestockOrderWithProduct,
 } from "../types/shop";
+import {
+  getSubscriptionProfileStatus,
+  type SubscriptionProfileStatus,
+} from "../utils/subscriptionProfile";
 import { ProductGrid } from "./ProductGrid";
 import { SubscriptionDialog } from "./SubscriptionDialog";
+import { SubscriptionProfileProgress } from "./SubscriptionProfileProgress";
 
 interface AppShellProps {
   children: (context: {
@@ -30,7 +35,11 @@ interface AppShellProps {
     onAddToSubscription: (product: Product) => void;
     onOpenSubscriptionOverview: () => void;
     onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+    onRemoveSubscriptionItem: (item: RestockOrderWithProduct) => Promise<void>;
     subscriptionItems: RestockOrderWithProduct[];
+    canModifySubscription: boolean;
+    subscriptionProfileStatus: SubscriptionProfileStatus | null;
+    onSubscriptionProfileUpdated: (user: UserProfile) => void;
     onLogout: () => void;
     theme: "light" | "dark";
     onToggleTheme: () => void;
@@ -51,6 +60,8 @@ export function AppShell({ children }: AppShellProps) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>();
+  const [subscriptionProfileStatus, setSubscriptionProfileStatus] =
+    useState<SubscriptionProfileStatus | null>(null);
   const { hasRole } = useAuth();
   const [activeSubscriptionLayer, setActiveSubscriptionLayer] =
     useState<ActiveSubscriptionLayer>(null);
@@ -127,6 +138,7 @@ export function AppShell({ children }: AppShellProps) {
   });
 
   const isRestocker = hasRole("Restocker");
+  const canModifySubscription = subscriptionProfileStatus?.isComplete !== false;
 
   function resetSubscriptionLayer() {
     setActiveSubscriptionLayer(null);
@@ -140,6 +152,13 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   function handleAddToSubscription(product: Product) {
+    if (!canModifySubscription) {
+      toast.error(
+        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
+      );
+      return;
+    }
+
     setSelectedProduct(product);
     setSelectedSubscriptionItem(undefined);
     setActiveSubscriptionLayer("dialog");
@@ -152,9 +171,41 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   function handleEditSubscriptionItem(item: RestockOrderWithProduct) {
+    if (!canModifySubscription) {
+      toast.error(
+        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
+      );
+      return;
+    }
+
     setSelectedProduct(item.product);
     setSelectedSubscriptionItem(item);
     setActiveSubscriptionLayer("dialog");
+  }
+
+  async function handleRemoveSubscriptionItem(item: RestockOrderWithProduct) {
+    if (!canModifySubscription) {
+      toast.error(
+        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
+      );
+      return;
+    }
+
+    try {
+      await subscriptionCart.removeItem(item);
+      toast.success(`${item.product.name} wurde aus dem Abo entfernt`);
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Das Produkt konnte nicht aus dem Abo entfernt werden.",
+      );
+    }
+  }
+
+  function handleSubscriptionProfileUpdated(user: UserProfile) {
+    setSubscriptionProfileStatus(getSubscriptionProfileStatus(user));
   }
 
   function handleQueryChange(value: string) {
@@ -226,6 +277,7 @@ export function AppShell({ children }: AppShellProps) {
   useEffect(() => {
     if (!isLoggedIn) {
       setProfilePictureUrl(undefined);
+      setSubscriptionProfileStatus(null);
       return;
     }
 
@@ -235,11 +287,13 @@ export function AppShell({ children }: AppShellProps) {
     })
       .then((loadedUser) => {
         setProfilePictureUrl(loadedUser.profilePictureUrl);
+        setSubscriptionProfileStatus(getSubscriptionProfileStatus(loadedUser));
       })
       .catch(() => {
         setProfilePictureUrl(undefined);
+        setSubscriptionProfileStatus(null);
       });
-  }, [auth.token, isLoggedIn, isRestocker]);
+  }, [auth.token, isLoggedIn, isRestocker, location.pathname]);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -768,12 +822,23 @@ export function AppShell({ children }: AppShellProps) {
 
       <main className="site-main">
         <div className="container">
+          {isLoggedIn && onSearchPage ? (
+            <SubscriptionProfileProgress
+              status={subscriptionProfileStatus}
+              message="Solange Pflichtfelder fehlen, kannst du kein Produkt zum Abo hinzufügen."
+            />
+          ) : null}
+
            {children({
              isLoggedIn,
              onAddToSubscription: handleAddToSubscription,
              onOpenSubscriptionOverview: openSubscriptionOverview,
              onEditSubscriptionItem: handleEditSubscriptionItem,
+             onRemoveSubscriptionItem: handleRemoveSubscriptionItem,
              subscriptionItems: subscriptionCart.items,
+             canModifySubscription,
+             subscriptionProfileStatus,
+             onSubscriptionProfileUpdated: handleSubscriptionProfileUpdated,
              onLogout: handleLogout,
              theme,
              onToggleTheme: () => setTheme(isDarkMode ? "light" : "dark"),
@@ -832,8 +897,16 @@ export function AppShell({ children }: AppShellProps) {
           onClose={resetSubscriptionLayer}
           onSelectItem={handleEditSubscriptionItem}
           onOpenOverview={openSubscriptionOverview}
+          isProfileComplete={canModifySubscription}
           onConfirm={async ({ quantity, intervalCount }) => {
             if (!selectedProduct) {
+              return;
+            }
+
+            if (!canModifySubscription) {
+              toast.error(
+                "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
+              );
               return;
             }
 
