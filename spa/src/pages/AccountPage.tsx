@@ -101,7 +101,7 @@ export function AccountPage() {
     subscriptionProfileStatus,
     onSubscriptionProfileUpdated,
   } = useOutletContext<OutletContext>();
-  const { hasRole, token } = useAuth();
+  const { hasRole, token, user } = useAuth();
   const isRestocker = hasRole("Restocker");
   const location = useLocation();
 
@@ -128,7 +128,7 @@ export function AccountPage() {
   const [loadingInvoiceId, setLoadingInvoiceId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn || !user) {
       return;
     }
 
@@ -165,7 +165,7 @@ export function AccountPage() {
   }, [isLoggedIn, isRestocker, token]);
 
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn || !user) {
       return;
     }
 
