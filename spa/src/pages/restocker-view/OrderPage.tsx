@@ -1,12 +1,10 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
-  FaCheck,
   FaChevronDown,
   FaFilter,
   FaSearch,
   FaTruck,
-  FaTruckLoading,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCard";
@@ -25,6 +23,472 @@ import {
   getDeliveryWindowKey,
   sortOrders,
 } from "./restockerOrderUi";
+
+interface Option<Value extends string> {
+  value: Value;
+  label: string;
+}
+
+interface DeliveryWindowDisplayOption {
+  value: DeliveryWindowOption;
+  labelTop: string;
+  labelBottom: string;
+}
+
+const DELIVERY_WINDOW_OPTIONS: DeliveryWindowDisplayOption[] = [
+  {
+    value: "week-1",
+    labelTop: "Diese",
+    labelBottom: "Woche",
+  },
+  {
+    value: "week-2",
+    labelTop: "Nächste",
+    labelBottom: "Woche",
+  },
+];
+
+const SORT_OPTIONS: Array<Option<SortOption>> = [
+  { value: "delivery-asc", label: "Frühester Liefertermin" },
+  { value: "delivery-desc", label: "Spätester Liefertermin" },
+  { value: "company-asc", label: "Unternehmen (A-Z)" },
+];
+
+function isDeliveryWindowOption(value: string): value is DeliveryWindowOption {
+  return value === "week-1" || value === "week-2";
+}
+
+function isSortOption(value: string): value is SortOption {
+  return value === "delivery-asc" || value === "delivery-desc" || value === "company-asc";
+}
+
+function getSelectedDeliveryWindows(value: string): DeliveryWindowOption[] {
+  return isDeliveryWindowOption(value) ? [value] : [];
+}
+
+function matchesDeliveryWindow(
+  deliveryDate: string,
+  selectedDeliveryWindows: DeliveryWindowOption[],
+) {
+  const deliveryWindowKey = getDeliveryWindowKey(deliveryDate);
+
+  return (
+    selectedDeliveryWindows.length === 0 ||
+    (deliveryWindowKey !== null && selectedDeliveryWindows.includes(deliveryWindowKey))
+  );
+}
+
+function matchesMarketplaceFilters({
+  order,
+  normalizedQuery,
+  selectedCity,
+  selectedDeliveryWindows,
+}: {
+  order: RestockMarketplaceOrder;
+  normalizedQuery: string;
+  selectedCity: string;
+  selectedDeliveryWindows: DeliveryWindowOption[];
+}) {
+  const matchesQuery =
+    normalizedQuery.length === 0 ||
+    [order.companyName, order.city, order.addressLine1, order.orderId]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedQuery);
+  const matchesCity = selectedCity.length === 0 || order.city === selectedCity;
+
+  return matchesQuery && matchesCity && matchesDeliveryWindow(
+    order.deliveryDate,
+    selectedDeliveryWindows,
+  );
+}
+
+function DesktopFilters({
+  availableCities,
+  cityOptions,
+  desktopDeliveryWindowOptions,
+  hasActiveFilters,
+  selectedCity,
+  selectedDeliveryWindows,
+  sortOption,
+  onCityChange,
+  onDeliveryWindowsChange,
+  onReset,
+  onSortChange,
+  onToggleDeliveryWindow,
+}: Readonly<{
+  availableCities: string[];
+  cityOptions: Array<Option<string>>;
+  desktopDeliveryWindowOptions: Array<Option<DeliveryWindowOption>>;
+  hasActiveFilters: boolean;
+  selectedCity: string;
+  selectedDeliveryWindows: DeliveryWindowOption[];
+  sortOption: SortOption;
+  onCityChange: (city: string) => void;
+  onDeliveryWindowsChange: (deliveryWindows: DeliveryWindowOption[]) => void;
+  onReset: () => void;
+  onSortChange: (sortOption: SortOption) => void;
+  onToggleDeliveryWindow: (deliveryWindow: DeliveryWindowOption) => void;
+}>) {
+  return (
+    <div className="restocker-my-orders-desktop-filters">
+      <div className="restocker-my-orders-desktop-filters__header">
+        <div className="restocker-my-orders-desktop-filters__heading">
+          <span className="restocker-my-orders-desktop-filters__eyebrow">Filter</span>
+          <strong>Weitere Filter</strong>
+        </div>
+
+        <button
+          className="restocker-my-orders-desktop-filters__reset-link"
+          type="button"
+          onClick={onReset}
+          disabled={!hasActiveFilters}
+        >
+          Zurücksetzen
+        </button>
+      </div>
+
+      <div className="restocker-my-orders-desktop-filters__toolbar">
+        <div className="restocker-my-orders-desktop-filters__filter-row">
+          <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--delivery">
+            <span className="restocker-my-orders-desktop-field__label">
+              Lieferzeitraum
+            </span>
+
+            <fieldset className="restocker-my-orders-desktop-segmented-control" aria-label="Lieferzeitraum auswählen">
+              {desktopDeliveryWindowOptions.map((deliveryWindow) => {
+                const isActive = selectedDeliveryWindows.includes(deliveryWindow.value);
+
+                return (
+                  <button
+                    key={deliveryWindow.value}
+                    className={`restocker-my-orders-desktop-segment ${isActive ? "is-active" : ""}`.trim()}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => onToggleDeliveryWindow(deliveryWindow.value)}
+                  >
+                    {deliveryWindow.label}
+                  </button>
+                );
+              })}
+            </fieldset>
+          </label>
+
+          <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--city">
+            <span className="restocker-my-orders-desktop-field__label">Stadt</span>
+
+            <span className="restocker-my-orders-desktop-select-shell">
+              <select
+                className="restocker-my-orders-desktop-select"
+                value={selectedCity}
+                onChange={(event) => onCityChange(event.target.value)}
+              >
+                {cityOptions.map((cityOption) => (
+                  <option key={cityOption.value || "all-cities"} value={cityOption.value}>
+                    {cityOption.label}
+                  </option>
+                ))}
+              </select>
+
+              <FaChevronDown aria-hidden="true" />
+            </span>
+          </label>
+        </div>
+
+        <div className="restocker-my-orders-desktop-filters__sort-row">
+          <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--sort">
+            <span className="restocker-my-orders-desktop-field__label">Sortieren nach</span>
+
+            <span className="restocker-my-orders-desktop-select-shell restocker-my-orders-desktop-select-shell--sort">
+              <select
+                className="restocker-my-orders-desktop-select restocker-my-orders-desktop-select--sort"
+                value={sortOption}
+                onChange={(event) => {
+                  if (isSortOption(event.target.value)) {
+                    onSortChange(event.target.value);
+                  }
+                }}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <FaChevronDown aria-hidden="true" />
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div className="restocker-my-orders-desktop-filters__legacy" aria-hidden="true">
+        <label className="restocker-filter-field">
+          <span>Lieferzeitraum</span>
+          <select
+            value={selectedDeliveryWindows[0] ?? ""}
+            onChange={(event) =>
+              onDeliveryWindowsChange(getSelectedDeliveryWindows(event.target.value))
+            }
+          >
+            <option value="">Alle Zeiträume</option>
+            {desktopDeliveryWindowOptions.map((deliveryWindow) => (
+              <option key={deliveryWindow.value} value={deliveryWindow.value}>
+                {deliveryWindow.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="restocker-filter-field">
+          <span>Stadt</span>
+          <select
+            value={selectedCity}
+            onChange={(event) => onCityChange(event.target.value)}
+          >
+            <option value="">Alle Städte</option>
+            {availableCities.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="restocker-filter-field">
+          <span>Sortieren</span>
+          <select
+            value={sortOption}
+            onChange={(event) => {
+              if (isSortOption(event.target.value)) {
+                onSortChange(event.target.value);
+              }
+            }}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function MobileFilterSheet({
+  cityOptions,
+  deliveryWindowOptions,
+  draftSearchQuery,
+  draftSelectedCity,
+  draftSelectedDeliveryWindows,
+  draftSortOption,
+  onApply,
+  onClose,
+  onDraftCityChange,
+  onDraftSearchChange,
+  onDraftSortChange,
+  onReset,
+  onToggleDraftDeliveryWindow,
+}: Readonly<{
+  cityOptions: Array<Option<string>>;
+  deliveryWindowOptions: DeliveryWindowDisplayOption[];
+  draftSearchQuery: string;
+  draftSelectedCity: string;
+  draftSelectedDeliveryWindows: DeliveryWindowOption[];
+  draftSortOption: SortOption;
+  onApply: () => void;
+  onClose: () => void;
+  onDraftCityChange: (city: string) => void;
+  onDraftSearchChange: (searchQuery: string) => void;
+  onDraftSortChange: (sortOption: SortOption) => void;
+  onReset: () => void;
+  onToggleDraftDeliveryWindow: (deliveryWindow: DeliveryWindowOption) => void;
+}>) {
+  return (
+    <>
+      <button
+        className="subscription-modal__overlay"
+        type="button"
+        aria-label="Filter schließen"
+        onClick={onClose}
+      />
+
+      <dialog
+        open
+        className="restocker-mobile-filter-sheet"
+        aria-modal="true"
+        aria-labelledby="restocker-mobile-filter-title"
+      >
+        <div className="restocker-mobile-filter-sheet__handle" aria-hidden="true" />
+
+        <div className="restocker-mobile-filter-sheet__header">
+          <h2 id="restocker-mobile-filter-title">Filter</h2>
+        </div>
+
+        <div className="restocker-mobile-filter-sheet__body">
+          <label
+            className="restocker-marketplace-search restocker-marketplace-search--sheet"
+            htmlFor="restocker-marketplace-search-mobile"
+          >
+            <FaSearch aria-hidden="true" />
+            <input
+              id="restocker-marketplace-search-mobile"
+              type="search"
+              placeholder="Nach Unternehmen suchen ..."
+              value={draftSearchQuery}
+              onChange={(event) => onDraftSearchChange(event.target.value)}
+            />
+          </label>
+
+          <div className="restocker-mobile-filter-group">
+            <span className="restocker-mobile-filter-group__label">Lieferzeitraum</span>
+            <div className="restocker-mobile-filter-chip-grid restocker-mobile-filter-chip-grid--weeks">
+              {deliveryWindowOptions.map((deliveryWindow) => (
+                <button
+                  key={deliveryWindow.value}
+                  className={`restocker-mobile-filter-chip restocker-mobile-filter-week-chip ${draftSelectedDeliveryWindows.includes(deliveryWindow.value) ? "is-active" : ""}`.trim()}
+                  type="button"
+                  onClick={() => onToggleDraftDeliveryWindow(deliveryWindow.value)}
+                >
+                  <span className="restocker-mobile-filter-week-chip__label">
+                    <span>{deliveryWindow.labelTop}</span>
+                    <span>{deliveryWindow.labelBottom}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="restocker-mobile-filter-group">
+            <span className="restocker-mobile-filter-group__label">Stadt</span>
+            <span className="restocker-mobile-select-shell">
+              <select
+                className="restocker-mobile-select-trigger"
+                value={draftSelectedCity}
+                onChange={(event) => onDraftCityChange(event.target.value)}
+                aria-label="Stadt auswählen"
+              >
+                {cityOptions.map((cityOption) => (
+                  <option key={cityOption.value || "all-cities"} value={cityOption.value}>
+                    {cityOption.label}
+                  </option>
+                ))}
+              </select>
+            </span>
+          </div>
+
+          <div className="restocker-mobile-filter-group">
+            <span className="restocker-mobile-filter-group__label">Sortieren</span>
+            <div className="restocker-mobile-sort-shell">
+              {SORT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  className={`restocker-mobile-sort-option restocker-mobile-sort-option--stacked ${draftSortOption === option.value ? "is-active" : ""}`.trim()}
+                  type="button"
+                  onClick={() => onDraftSortChange(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="restocker-mobile-filter-sheet__actions">
+          <button
+            className="button button--ghost"
+            type="button"
+            onClick={onReset}
+          >
+            Zurücksetzen
+          </button>
+
+          <button className="button" type="button" onClick={onApply}>
+            Anwenden
+          </button>
+        </div>
+      </dialog>
+    </>
+  );
+}
+
+function ConfirmAcceptDialog({
+  selectedOrder,
+  onBack,
+  onClose,
+  onConfirm,
+}: Readonly<{
+  selectedOrder: RestockMarketplaceOrder;
+  onBack: () => void;
+  onClose: () => void;
+  onConfirm: () => void;
+}>) {
+  return (
+    <>
+      <button
+        className="subscription-modal__overlay"
+        type="button"
+        aria-label="Bestätigungsdialog schließen"
+        onClick={onClose}
+      />
+
+      <dialog
+        open
+        className="subscription-modal restocker-confirm-dialog"
+        aria-modal="true"
+        aria-labelledby="restocker-confirm-dialog-title"
+      >
+        <div className="subscription-modal__header">
+          <div>
+            <span className="eyebrow">Bereit für deinen nächsten Einsatz?</span>
+            <h2 id="restocker-confirm-dialog-title">Auftrag wirklich übernehmen?</h2>
+          </div>
+        </div>
+
+        <div className="subscription-modal__body restocker-confirm-dialog__body">
+          <p>
+            Du bist dabei, die Lieferung für <strong>{selectedOrder.companyName}</strong>{" "}
+            am <strong>{selectedOrder.deliveryDate}</strong> zu übernehmen.
+          </p>
+
+          <div className="restocker-confirm-dialog__facts">
+            <div>
+              <span>Ziel</span>
+              <strong>
+                {selectedOrder.addressLine1}, {selectedOrder.postalCode}{" "}
+                {selectedOrder.city}
+              </strong>
+            </div>
+            <div>
+              <span>Lieferfenster</span>
+              <strong>{formatDeliveryWindow(selectedOrder.deliveryTime)}</strong>
+            </div>
+            <div>
+              <span>Artikel</span>
+              <strong>{selectedOrder.articleCount}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="subscription-modal__actions">
+          <button
+            className="button button--ghost"
+            type="button"
+            onClick={onBack}
+          >
+            Zurück zur Lieferung
+          </button>
+
+          <button className="button" type="button" onClick={onConfirm}>
+            Ja, Fahrt annehmen
+          </button>
+        </div>
+      </dialog>
+    </>
+  );
+}
 
 export function OrderPage() {
   const auth = useAuth();
@@ -48,12 +512,11 @@ export function OrderPage() {
   const [draftSelectedDeliveryWindows, setDraftSelectedDeliveryWindows] =
     useState<DeliveryWindowOption[]>([]);
   const [draftSortOption, setDraftSortOption] = useState<SortOption>("delivery-asc");
-  const [isCityMenuOpen, setIsCityMenuOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<RestockMarketplaceOrder | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 720px)");
+    const mediaQuery = globalThis.matchMedia("(max-width: 720px)");
 
     const updateViewportMatch = () => {
       setIsMobileViewport(mediaQuery.matches);
@@ -118,16 +581,16 @@ export function OrderPage() {
   }, [auth.token, restockerName]);
 
   useEffect(() => {
-    if (!isMobileViewport || !isFilterOpen) {
-      return;
+    if (isMobileViewport && isFilterOpen) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+
+      return () => {
+        document.body.style.overflow = previousOverflow;
+      };
     }
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
+    return undefined;
   }, [isFilterOpen, isMobileViewport]);
 
   const availableCities = useMemo(
@@ -138,29 +601,13 @@ export function OrderPage() {
     [marketplaceResult.orders],
   );
 
-  const deliveryWindowOptions = useMemo(
-    () => [
-      {
-        value: "week-1" as DeliveryWindowOption,
-        labelTop: "Diese",
-        labelBottom: "Woche",
-      },
-      {
-        value: "week-2" as DeliveryWindowOption,
-        labelTop: "Nächste",
-        labelBottom: "Woche",
-      },
-    ],
-    [],
-  );
-
   const desktopDeliveryWindowOptions = useMemo(
     () =>
-      deliveryWindowOptions.map((deliveryWindow) => ({
+      DELIVERY_WINDOW_OPTIONS.map((deliveryWindow) => ({
         value: deliveryWindow.value,
         label: formatDeliveryWindowOption(deliveryWindow.value),
       })),
-    [deliveryWindowOptions],
+    [],
   );
 
   const cityOptions = useMemo(
@@ -171,36 +618,20 @@ export function OrderPage() {
     [availableCities],
   );
 
-  const sortOptions: Array<{ value: SortOption; label: string }> = [
-    { value: "delivery-asc", label: "Frühester Liefertermin" },
-    { value: "delivery-desc", label: "Spätester Liefertermin" },
-    { value: "company-asc", label: "Unternehmen (A-Z)" },
-  ];
-
   const filteredOrders = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    const visibleOrders = marketplaceResult.orders.filter((order) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        [order.companyName, order.city, order.addressLine1, order.orderId]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedQuery);
-      const matchesCity = !selectedCity || order.city === selectedCity;
-      const matchesDeliveryWindow =
-        selectedDeliveryWindows.length === 0 ||
-        selectedDeliveryWindows.includes(getDeliveryWindowKey(order.deliveryDate) as DeliveryWindowOption);
-
-      return matchesQuery && matchesCity && matchesDeliveryWindow;
-    });
+    const visibleOrders = marketplaceResult.orders.filter((order) =>
+      matchesMarketplaceFilters({
+        order,
+        normalizedQuery,
+        selectedCity,
+        selectedDeliveryWindows,
+      }),
+    );
 
     return sortOrders(visibleOrders, sortOption);
   }, [marketplaceResult.orders, searchQuery, selectedCity, selectedDeliveryWindows, sortOption]);
-
-  const selectedDraftCityLabel =
-    cityOptions.find((cityOption) => cityOption.value === draftSelectedCity)?.label ??
-    "Alle Städte";
 
   const hasActiveDesktopFilters =
     searchQuery.trim().length > 0 ||
@@ -272,27 +703,25 @@ export function OrderPage() {
     setDraftSelectedCity(selectedCity);
     setDraftSelectedDeliveryWindows(selectedDeliveryWindows);
     setDraftSortOption(sortOption);
-    setIsCityMenuOpen(false);
     setIsFilterOpen(true);
   }
 
   function closeMobileFilter() {
-    setIsCityMenuOpen(false);
     setIsFilterOpen(false);
   }
 
   function handleFilterToggle() {
-    if (!isMobileViewport) {
-      setIsFilterOpen((currentState) => !currentState);
+    if (isMobileViewport) {
+      if (isFilterOpen) {
+        closeMobileFilter();
+        return;
+      }
+
+      openMobileFilter();
       return;
     }
 
-    if (isFilterOpen) {
-      closeMobileFilter();
-      return;
-    }
-
-    openMobileFilter();
+    setIsFilterOpen((currentState) => !currentState);
   }
 
   function handleApplyMobileFilters() {
@@ -308,7 +737,6 @@ export function OrderPage() {
     setDraftSelectedCity("");
     setDraftSelectedDeliveryWindows([]);
     setDraftSortOption("delivery-asc");
-    setIsCityMenuOpen(false);
   }
 
   function handleResetDesktopFilters() {
@@ -331,6 +759,36 @@ export function OrderPage() {
       currentWindows.includes(deliveryWindow)
         ? currentWindows.filter((windowValue) => windowValue !== deliveryWindow)
         : [...currentWindows, deliveryWindow],
+    );
+  }
+
+  let selectedOrderDialog = null;
+
+  if (selectedOrder && isConfirmDialogOpen) {
+    selectedOrderDialog = (
+      <ConfirmAcceptDialog
+        selectedOrder={selectedOrder}
+        onBack={() => setIsConfirmDialogOpen(false)}
+        onClose={() => setIsConfirmDialogOpen(false)}
+        onConfirm={handleAcceptSelectedOrder}
+      />
+    );
+  } else if (selectedOrder) {
+    selectedOrderDialog = (
+      <RestockerOrderDetailDialog
+        order={selectedOrder}
+        backLabel="Zurück zu allen Aufträgen"
+        onClose={handleCloseDetailDialog}
+        actions={
+          <button
+            className="button"
+            type="button"
+            onClick={() => setIsConfirmDialogOpen(true)}
+          >
+            Fahrt annehmen
+          </button>
+        }
+      />
     );
   }
 
@@ -386,7 +844,7 @@ export function OrderPage() {
         {error ? <div className="error-box">{error}</div> : null}
 
         <div className="restocker-marketplace-toolbar">
-          {!isMobileViewport ? (
+          {isMobileViewport ? null : (
             <label
               className="restocker-marketplace-search"
               htmlFor="restocker-marketplace-search"
@@ -400,7 +858,7 @@ export function OrderPage() {
                 onChange={(event) => setSearchQuery(event.target.value)}
               />
             </label>
-          ) : null}
+          )}
 
           <button
             className={`button button--ghost restocker-filter-button ${isFilterOpen ? "active" : ""}`.trim()}
@@ -412,146 +870,21 @@ export function OrderPage() {
           </button>
         </div>
 
-        {isFilterOpen && !isMobileViewport ? (
-          <div className="restocker-my-orders-desktop-filters">
-            <div className="restocker-my-orders-desktop-filters__header">
-              <div className="restocker-my-orders-desktop-filters__heading">
-                <span className="restocker-my-orders-desktop-filters__eyebrow">Filter</span>
-                <strong>Weitere Filter</strong>
-              </div>
-
-              <button
-                className="restocker-my-orders-desktop-filters__reset-link"
-                type="button"
-                onClick={handleResetDesktopFilters}
-                disabled={!hasActiveDesktopFilters}
-              >
-                Zurücksetzen
-              </button>
-            </div>
-
-            <div className="restocker-my-orders-desktop-filters__toolbar">
-              <div className="restocker-my-orders-desktop-filters__filter-row">
-                <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--delivery">
-                  <span className="restocker-my-orders-desktop-field__label">
-                    Lieferzeitraum
-                  </span>
-
-                  <div className="restocker-my-orders-desktop-segmented-control" role="group" aria-label="Lieferzeitraum auswählen">
-                    {desktopDeliveryWindowOptions.map((deliveryWindow) => {
-                      const isActive = selectedDeliveryWindows.includes(deliveryWindow.value);
-
-                      return (
-                        <button
-                          key={deliveryWindow.value}
-                          className={`restocker-my-orders-desktop-segment ${isActive ? "is-active" : ""}`.trim()}
-                          type="button"
-                          aria-pressed={isActive}
-                          onClick={() => toggleDesktopDeliveryWindow(deliveryWindow.value)}
-                        >
-                          {deliveryWindow.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </label>
-
-                <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--city">
-                  <span className="restocker-my-orders-desktop-field__label">Stadt</span>
-
-                  <span className="restocker-my-orders-desktop-select-shell">
-                    <select
-                      className="restocker-my-orders-desktop-select"
-                      value={selectedCity}
-                      onChange={(event) => setSelectedCity(event.target.value)}
-                    >
-                      {cityOptions.map((cityOption) => (
-                        <option key={cityOption.value || "all-cities"} value={cityOption.value}>
-                          {cityOption.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <FaChevronDown aria-hidden="true" />
-                  </span>
-                </label>
-              </div>
-
-              <div className="restocker-my-orders-desktop-filters__sort-row">
-                <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--sort">
-                  <span className="restocker-my-orders-desktop-field__label">Sortieren nach</span>
-
-                  <span className="restocker-my-orders-desktop-select-shell restocker-my-orders-desktop-select-shell--sort">
-                    <select
-                      className="restocker-my-orders-desktop-select restocker-my-orders-desktop-select--sort"
-                      value={sortOption}
-                      onChange={(event) => setSortOption(event.target.value as SortOption)}
-                    >
-                      {sortOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <FaChevronDown aria-hidden="true" />
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            <div className="restocker-my-orders-desktop-filters__legacy" aria-hidden="true">
-            <label className="restocker-filter-field">
-              <span>Lieferzeitraum</span>
-              <select
-                value={selectedDeliveryWindows[0] ?? ""}
-                onChange={(event) =>
-                  setSelectedDeliveryWindows(
-                    event.target.value
-                      ? [event.target.value as DeliveryWindowOption]
-                      : [],
-                  )
-                }
-              >
-                <option value="">Alle Zeiträume</option>
-                {desktopDeliveryWindowOptions.map((deliveryWindow) => (
-                  <option key={deliveryWindow.value} value={deliveryWindow.value}>
-                    {deliveryWindow.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="restocker-filter-field">
-              <span>Stadt</span>
-              <select
-                value={selectedCity}
-                onChange={(event) => setSelectedCity(event.target.value)}
-              >
-                <option value="">Alle Städte</option>
-                {availableCities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="restocker-filter-field">
-              <span>Sortieren</span>
-              <select
-                value={sortOption}
-                onChange={(event) => setSortOption(event.target.value as SortOption)}
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            </div>
-          </div>
+        {isFilterOpen && isMobileViewport === false ? (
+          <DesktopFilters
+            availableCities={availableCities}
+            cityOptions={cityOptions}
+            desktopDeliveryWindowOptions={desktopDeliveryWindowOptions}
+            hasActiveFilters={hasActiveDesktopFilters}
+            selectedCity={selectedCity}
+            selectedDeliveryWindows={selectedDeliveryWindows}
+            sortOption={sortOption}
+            onCityChange={setSelectedCity}
+            onDeliveryWindowsChange={setSelectedDeliveryWindows}
+            onReset={handleResetDesktopFilters}
+            onSortChange={setSortOption}
+            onToggleDeliveryWindow={toggleDesktopDeliveryWindow}
+          />
         ) : null}
 
         {filteredOrders.length === 0 ? (
@@ -582,214 +915,24 @@ export function OrderPage() {
       </section>
 
       {isMobileViewport && isFilterOpen ? (
-        <>
-          <button
-            className="subscription-modal__overlay"
-            type="button"
-            aria-label="Filter schließen"
-            onClick={closeMobileFilter}
-          />
-
-          <section
-            className="restocker-mobile-filter-sheet"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="restocker-mobile-filter-title"
-          >
-            <div className="restocker-mobile-filter-sheet__handle" aria-hidden="true" />
-
-            <div className="restocker-mobile-filter-sheet__header">
-              <h2 id="restocker-mobile-filter-title">Filter</h2>
-            </div>
-
-            <div className="restocker-mobile-filter-sheet__body">
-              <label
-                className="restocker-marketplace-search restocker-marketplace-search--sheet"
-                htmlFor="restocker-marketplace-search-mobile"
-              >
-                <FaSearch aria-hidden="true" />
-                <input
-                  id="restocker-marketplace-search-mobile"
-                  type="search"
-                  placeholder="Nach Unternehmen suchen ..."
-                  value={draftSearchQuery}
-                  onChange={(event) => setDraftSearchQuery(event.target.value)}
-                />
-              </label>
-
-              <div className="restocker-mobile-filter-group">
-                <span className="restocker-mobile-filter-group__label">Lieferzeitraum</span>
-                <div className="restocker-mobile-filter-chip-grid restocker-mobile-filter-chip-grid--weeks">
-                  {deliveryWindowOptions.map((deliveryWindow) => (
-                    <button
-                      key={deliveryWindow.value}
-                      className={`restocker-mobile-filter-chip restocker-mobile-filter-week-chip ${draftSelectedDeliveryWindows.includes(deliveryWindow.value) ? "is-active" : ""}`.trim()}
-                      type="button"
-                      onClick={() => toggleDraftDeliveryWindow(deliveryWindow.value)}
-                    >
-                      <span className="restocker-mobile-filter-week-chip__label">
-                        <span>{deliveryWindow.labelTop}</span>
-                        <span>{deliveryWindow.labelBottom}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="restocker-mobile-filter-group">
-                <span className="restocker-mobile-filter-group__label">Stadt</span>
-                <div className="restocker-mobile-select-shell">
-                  <button
-                    className={`restocker-mobile-select-trigger ${isCityMenuOpen ? "is-open" : ""}`.trim()}
-                    type="button"
-                    onClick={() => setIsCityMenuOpen((currentState) => !currentState)}
-                    aria-expanded={isCityMenuOpen}
-                    aria-haspopup="listbox"
-                  >
-                    <span>{selectedDraftCityLabel}</span>
-                    <FaChevronDown aria-hidden="true" />
-                  </button>
-
-                  {isCityMenuOpen ? (
-                    <div
-                      className="restocker-mobile-select-menu"
-                      role="listbox"
-                      aria-label="Stadt auswählen"
-                    >
-                      {cityOptions.map((cityOption) => (
-                        <button
-                          key={cityOption.value || "all-cities"}
-                          className={`restocker-mobile-select-option ${draftSelectedCity === cityOption.value ? "is-active" : ""}`.trim()}
-                          type="button"
-                          onClick={() => {
-                            setDraftSelectedCity(cityOption.value);
-                            setIsCityMenuOpen(false);
-                          }}
-                        >
-                          <span>{cityOption.label}</span>
-                          {draftSelectedCity === cityOption.value ? <FaCheck aria-hidden="true" /> : null}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="restocker-mobile-filter-group">
-                <span className="restocker-mobile-filter-group__label">Sortieren</span>
-                <div className="restocker-mobile-sort-shell">
-                  {sortOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      className={`restocker-mobile-sort-option restocker-mobile-sort-option--stacked ${draftSortOption === option.value ? "is-active" : ""}`.trim()}
-                      type="button"
-                      onClick={() => setDraftSortOption(option.value)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="restocker-mobile-filter-sheet__actions">
-              <button
-                className="button button--ghost"
-                type="button"
-                onClick={handleResetMobileFilters}
-              >
-                Zurücksetzen
-              </button>
-
-              <button className="button" type="button" onClick={handleApplyMobileFilters}>
-                Anwenden
-              </button>
-            </div>
-          </section>
-        </>
-      ) : null}
-
-      {selectedOrder && !isConfirmDialogOpen ? (
-        <RestockerOrderDetailDialog
-          order={selectedOrder}
-          backLabel="Zurück zu allen Aufträgen"
-          onClose={handleCloseDetailDialog}
-          actions={
-            <button
-              className="button"
-              type="button"
-              onClick={() => setIsConfirmDialogOpen(true)}
-            >
-              Fahrt annehmen
-            </button>
-          }
+        <MobileFilterSheet
+          cityOptions={cityOptions}
+          deliveryWindowOptions={DELIVERY_WINDOW_OPTIONS}
+          draftSearchQuery={draftSearchQuery}
+          draftSelectedCity={draftSelectedCity}
+          draftSelectedDeliveryWindows={draftSelectedDeliveryWindows}
+          draftSortOption={draftSortOption}
+          onApply={handleApplyMobileFilters}
+          onClose={closeMobileFilter}
+          onDraftCityChange={setDraftSelectedCity}
+          onDraftSearchChange={setDraftSearchQuery}
+          onDraftSortChange={setDraftSortOption}
+          onReset={handleResetMobileFilters}
+          onToggleDraftDeliveryWindow={toggleDraftDeliveryWindow}
         />
       ) : null}
 
-      {selectedOrder && isConfirmDialogOpen ? (
-        <>
-          <button
-            className="subscription-modal__overlay"
-            type="button"
-            aria-label="Bestätigungsdialog schließen"
-            onClick={() => setIsConfirmDialogOpen(false)}
-          />
-
-          <section
-            className="subscription-modal restocker-confirm-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="restocker-confirm-dialog-title"
-          >
-            <div className="subscription-modal__header">
-              <div>
-                <span className="eyebrow">Bereit für deinen nächsten Einsatz?</span>
-                <h2 id="restocker-confirm-dialog-title">Auftrag wirklich übernehmen?</h2>
-              </div>
-            </div>
-
-            <div className="subscription-modal__body restocker-confirm-dialog__body">
-              <p>
-                Du bist dabei, die Lieferung für <strong>{selectedOrder.companyName}</strong>{" "}
-                am <strong>{selectedOrder.deliveryDate}</strong> zu übernehmen.
-              </p>
-
-              <div className="restocker-confirm-dialog__facts">
-                <div>
-                  <span>Ziel</span>
-                  <strong>
-                    {selectedOrder.addressLine1}, {selectedOrder.postalCode}{" "}
-                    {selectedOrder.city}
-                  </strong>
-                </div>
-                <div>
-                  <span>Lieferfenster</span>
-                  <strong>{formatDeliveryWindow(selectedOrder.deliveryTime)}</strong>
-                </div>
-                <div>
-                  <span>Artikel</span>
-                  <strong>{selectedOrder.articleCount}</strong>
-                </div>
-              </div>
-
-            </div>
-
-            <div className="subscription-modal__actions">
-              <button
-                className="button button--ghost"
-                type="button"
-                onClick={() => setIsConfirmDialogOpen(false)}
-              >
-                Zurück zur Lieferung
-              </button>
-
-              <button className="button" type="button" onClick={handleAcceptSelectedOrder}>
-                Ja, Fahrt annehmen
-              </button>
-            </div>
-          </section>
-        </>
-      ) : null}
+      {selectedOrderDialog}
     </div>
   );
 }
