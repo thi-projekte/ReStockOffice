@@ -217,6 +217,40 @@ export function AccountPage() {
     return getRequiredFields().includes(field) ? `${label} *` : label;
   }
 
+  function sanitizeFieldValue(field: keyof ProfileFormState, value: string) {
+    switch (field) {
+      case "phone":
+        return value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "").slice(0, 20);
+      case "houseNumber":
+        return value.replace(/\D/g, "").slice(0, 6);
+      case "postalCode":
+        return value.replace(/\D/g, "").slice(0, 5);
+      case "deliveryTime": {
+        const numericValue = value.replace(/\D/g, "").slice(0, 2);
+        return numericValue === "" ? "" : String(Math.min(Number(numericValue), 24));
+      }
+      case "iban":
+        return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 34);
+      case "bic":
+        return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11);
+      case "country":
+      case "city":
+        return value.replace(/[^A-Za-zÄÖÜäöüß\s-]/g, "").slice(0, 80);
+      case "street":
+        return value.replace(/[^A-Za-zÄÖÜäöüß\s.'-]/g, "").slice(0, 120);
+      case "accountHolder":
+      case "role":
+      case "deliveryDay":
+        return value.replace(/[^A-Za-zÄÖÜäöüß\s.'\/-]/g, "").slice(0, 80);
+      case "company":
+        return value.replace(/[^A-Za-z0-9ÄÖÜäöüß\s&.,'()+\/-]/g, "").slice(0, 120);
+      case "note":
+        return value.slice(0, 500);
+      default:
+        return value;
+    }
+  }
+
   function hasUnsavedChanges(): boolean {
     return (Object.keys(profileForm) as (keyof ProfileFormState)[]).some(
         (key) => profileForm[key] !== lastSavedForm.current[key],
@@ -295,7 +329,7 @@ export function AccountPage() {
   ) {
     setProfileForm((current) => ({
       ...current,
-      [field]: value,
+      [field]: sanitizeFieldValue(field, value),
     }));
   }
 
@@ -337,7 +371,7 @@ export function AccountPage() {
       return;
     }
 
-    // Nur speichern, wenn Ã„nderungen vorliegen
+    // Nur speichern, wenn Änderungen vorliegen
     if (hasUnsavedChanges()) {
       const wasSaved = await persistUser(profileForm);
 
@@ -350,7 +384,7 @@ export function AccountPage() {
   }
 
   async function handleFieldBlur() {
-    // Automatisches Speichern beim Verlassen eines Feldes, wenn Ã„nderungen vorliegen
+    // Automatisches Speichern beim Verlassen eines Feldes, wenn Änderungen vorliegen
     if (isEditingProfile && hasUnsavedChanges()) {
       await persistUser(profileForm);
     }
@@ -366,7 +400,7 @@ export function AccountPage() {
           <section className="page-card subscription-profile-progress">
             <div className="subscription-profile-progress__copy">
               <div>
-                <strong>Profil noch nicht vollstÃ¤ndig</strong>
+                <strong>Profil noch nicht vollständig</strong>
                 <p>
                   {isRestocker
                       ? "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, kannst du keine RestockOrders ausliefern."
@@ -402,10 +436,10 @@ export function AccountPage() {
 
         <section className="page-card section-space account-hero">
           <div className="account-hero__copy">
-            <span className="eyebrow">KontoÃ¼bersicht</span>
+            <span className="eyebrow">Kontoübersicht</span>
             <h1>Kontoeinstellungen und Profilverwaltung</h1>
             <p className="section-copy">
-              Verwalte deine persÃ¶nlichen Daten, Systemeinstellungen und
+              Verwalte deine persönlichen Daten, Systemeinstellungen und
               sicherheitsrelevanten Funktionen zentral an einem Ort.
             </p>
           </div>
@@ -432,7 +466,7 @@ export function AccountPage() {
               <span className="eyebrow">Benutzerdaten</span>
               <h2>Profilinformationen</h2>
               <p className="section-copy">
-                Deine Kontaktdaten und Organisationsinformationen fÃ¼r Kommunikation
+                Deine Kontaktdaten und Organisationsinformationen für Kommunikation
                 und Auftragsabwicklung.
               </p>
             </div>
@@ -440,7 +474,7 @@ export function AccountPage() {
             <button
                 className={`button ${isEditingProfile ? "" : "button--ghost"}`.trim()}
                 type="button"
-                title={isEditingProfile ? "Ã„nderungen speichern" : "Profil bearbeiten"}
+                title={isEditingProfile ? "Änderungen speichern" : "Profil bearbeiten"}
                 disabled={isSavingProfile}
                 onClick={() => {
                   void handleProfileAction();
@@ -448,22 +482,22 @@ export function AccountPage() {
             >
               {isEditingProfile ? <MdSave /> : <MdEdit />}
               {isSavingProfile
-                  ? "Wird gespeichertâ€¦"
+                  ? "Wird gespeichert"
                   : isEditingProfile
-                      ? "Ã„nderungen speichern"
+                      ? "Änderungen speichern"
                       : "Profil bearbeiten"}
             </button>
           </div>
 
           <div className="account-profile-grid">
-            {/* PersÃ¶nliche Daten */}
+            {/* Persönliche Daten */}
             <div className="account-panel">
               <div className="account-panel__head">
-                <h3 style={{ paddingBottom: "1rem" }}>PersÃ¶nliche Daten</h3>
+                <h3 style={{ paddingBottom: "1rem" }}>Persönliche Daten</h3>
               </div>
 
               <div className="account-form-grid">
-                {/* Keycloak-Felder â€“ immer disabled, keine Validierung */}
+                {/* Keycloak-Felder – immer disabled, keine Validierung */}
                 <label className="account-field">
                   <span>Benutzername</span>
                   <input value={username} disabled />
@@ -501,6 +535,9 @@ export function AccountPage() {
                   <input
                       value={profileForm.phone}
                       disabled={!isEditingProfile}
+                      inputMode="tel"
+                      pattern="\+?[0-9]*"
+                      maxLength={20}
                       className={isFieldInvalid("phone") ? "input--invalid" : ""}
                       onChange={(e) => updateField("phone", e.target.value)}
                       onBlur={() => void handleFieldBlur()}
@@ -516,6 +553,7 @@ export function AccountPage() {
                   <input
                       value={isRestocker ? profileForm.accountHolder : profileForm.role}
                       disabled={!isEditingProfile}
+                      maxLength={80}
                       className={
                         isRestocker && isFieldInvalid("accountHolder") ? "input--invalid" : ""
                       }
@@ -543,6 +581,7 @@ export function AccountPage() {
                       <input
                           value={profileForm.company}
                           disabled={!isEditingProfile}
+                          maxLength={120}
                           className={isFieldInvalid("company") ? "input--invalid" : ""}
                           onChange={(e) => updateField("company", e.target.value)}
                           onBlur={() => void handleFieldBlur()}
@@ -555,6 +594,7 @@ export function AccountPage() {
                 <input
                     value={profileForm.country}
                     disabled={!isEditingProfile}
+                    maxLength={80}
                     className={isFieldInvalid("country") ? "input--invalid" : ""}
                     onChange={(e) => updateField("country", e.target.value)}
                     onBlur={() => void handleFieldBlur()}
@@ -566,6 +606,7 @@ export function AccountPage() {
                   <input
                       value={profileForm.street}
                       disabled={!isEditingProfile}
+                      maxLength={120}
                       className={isFieldInvalid("street") ? "input--invalid" : ""}
                       onChange={(e) => updateField("street", e.target.value)}
                       onBlur={() => void handleFieldBlur()}
@@ -577,6 +618,9 @@ export function AccountPage() {
                   <input
                       value={profileForm.houseNumber}
                       disabled={!isEditingProfile}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
                       className={isFieldInvalid("houseNumber") ? "input--invalid" : ""}
                       onChange={(e) => updateField("houseNumber", e.target.value)}
                       onBlur={() => void handleFieldBlur()}
@@ -588,6 +632,9 @@ export function AccountPage() {
                   <input
                       value={profileForm.postalCode}
                       disabled={!isEditingProfile}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={5}
                       className={isFieldInvalid("postalCode") ? "input--invalid" : ""}
                       onChange={(e) => updateField("postalCode", e.target.value)}
                       onBlur={() => void handleFieldBlur()}
@@ -599,6 +646,7 @@ export function AccountPage() {
                   <input
                       value={profileForm.city}
                       disabled={!isEditingProfile}
+                      maxLength={80}
                       className={isFieldInvalid("city") ? "input--invalid" : ""}
                       onChange={(e) => updateField("city", e.target.value)}
                       onBlur={() => void handleFieldBlur()}
@@ -612,6 +660,7 @@ export function AccountPage() {
                       <input
                           value={profileForm.deliveryDay}
                           disabled={!isEditingProfile}
+                          maxLength={80}
                           onChange={(e) => updateField("deliveryDay", e.target.value)}
                           onBlur={() => void handleFieldBlur()}
                       />
@@ -625,6 +674,8 @@ export function AccountPage() {
                           type="number"
                           min={0}
                           max={24}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           value={profileForm.deliveryTime}
                           disabled={!isEditingProfile}
                           onChange={(e) => updateField("deliveryTime", e.target.value)}
@@ -638,6 +689,8 @@ export function AccountPage() {
                   <input
                       value={profileForm.iban}
                       disabled={!isEditingProfile}
+                      autoCapitalize="characters"
+                      maxLength={34}
                       className={isFieldInvalid("iban") ? "input--invalid" : ""}
                       onChange={(e) => updateField("iban", e.target.value)}
                       onBlur={() => void handleFieldBlur()}
@@ -650,6 +703,8 @@ export function AccountPage() {
                       <input
                           value={profileForm.bic}
                           disabled={!isEditingProfile}
+                          autoCapitalize="characters"
+                          maxLength={11}
                           className={isFieldInvalid("bic") ? "input--invalid" : ""}
                           onChange={(e) => updateField("bic", e.target.value)}
                           onBlur={() => void handleFieldBlur()}
@@ -664,6 +719,7 @@ export function AccountPage() {
                           rows={4}
                           value={profileForm.note}
                           disabled={!isEditingProfile}
+                          maxLength={500}
                           onChange={(e) => updateField("note", e.target.value)}
                           onBlur={() => void handleFieldBlur()}
                       />
@@ -680,7 +736,7 @@ export function AccountPage() {
               <span className="eyebrow">Systemeinstellungen</span>
               <h2>Darstellung und Benachrichtigungen</h2>
               <p className="section-copy">
-                Konfiguriere OberflÃ¤che und InformationskanÃ¤le entsprechend deiner Arbeitsweise.
+                Konfiguriere Oberfläche und Informationskanäle entsprechend deiner Arbeitsweise.
               </p>
             </div>
           </div>
@@ -749,7 +805,7 @@ export function AccountPage() {
                     onClick={() => toggleNotification("confirmations")}
                 >
                   <div>
-                    <strong>AuftragsbestÃ¤tigungen</strong>
+                    <strong>Auftragsbestätigungen</strong>
                     <span>Benachrichtigung nach jeder Bestellung</span>
                   </div>
                   <span className="account-toggle-pill">
@@ -836,14 +892,14 @@ export function AccountPage() {
               <span className="eyebrow">Sicherheit</span>
               <h2>Zugriff und Kontoverwaltung</h2>
               <p className="section-copy">
-                Sicherheits- und Zugriffsfunktionen fÃ¼r dein Benutzerkonto.
+                Sicherheits- und Zugriffsfunktionen für dein Benutzerkonto.
               </p>
             </div>
           </div>
 
           <div className="account-action-row">
             <button className="button button--ghost" type="button">
-              Passwort zurÃ¼cksetzen
+              Passwort zurücksetzen
             </button>
 
             <button
@@ -873,7 +929,7 @@ export function AccountPage() {
                   className="button account-danger-button account-danger-button--secondary"
                   type="button"
               >
-                Konto lÃ¶schen
+                Konto löschen
               </button>
             </div>
           </div>
