@@ -179,7 +179,10 @@ public class DeliveryService {
         validateRestockerName(restockerName);
         ensurePlanningHorizon(authorizationHeader);
 
-        return toDetailDtos(Delivery.findAssignedToRestocker(restockerName), authorizationHeader);
+        return toDetailDtos(
+                Delivery.findAssignedToRestockerFrom(restockerName, LocalDate.now()),
+                authorizationHeader
+        );
     }
 
     @Transactional

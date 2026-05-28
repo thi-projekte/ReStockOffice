@@ -133,10 +133,11 @@ public class Delivery extends PanacheEntityBase {
         );
     }
 
-    public static List<Delivery> findAssignedToRestocker(String restockerName) {
+    public static List<Delivery> findAssignedToRestockerFrom(String restockerName, LocalDate startDate) {
         return list(
-                "tour.restockerName = ?1 order by deliveryDate asc, stopOrder asc",
-                restockerName
+                "tour.restockerName = ?1 and deliveryDate >= ?2 order by deliveryDate asc, stopOrder asc",
+                restockerName,
+                startDate
         );
     }
 }

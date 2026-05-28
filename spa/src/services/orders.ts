@@ -79,6 +79,25 @@ function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function formatLocalIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function isDeliveryDateInPast(dateValue?: string | null, referenceDate = new Date()) {
+  if (!dateValue) {
+    return false;
+  }
+
+  const normalizedDate = dateValue.trim().slice(0, 10);
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalizedDate) &&
+    normalizedDate < formatLocalIsoDate(referenceDate);
+}
+
 function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert") {
   return `Die Orders-API konnte nicht erreicht werden. Bitte pruefe Netzwerk, CORS oder Proxy-Konfiguration, falls Orders nicht ${action} werden konnten.`;
 }
@@ -491,47 +510,49 @@ async function enrichMarketplaceOrdersWithCustomerProfiles(
 function deriveMarketplaceOrdersFromDeliveryDetails(
   deliveryDetails: DeliveryDetail[],
 ): RestockMarketplaceOrder[] {
-  return deliveryDetails.map((detail) => {
-    const deliveryTime = formatMarketplaceDeliveryTime(detail.deliveryTime);
-    const deliveryNotes = normalizeMarketplaceText(detail.deliveryHint);
-    const assignment = detail.acceptedAt || detail.restockerName
-      ? {
-        restockerId: detail.restockerName ?? "",
-        acceptedAt: detail.acceptedAt ?? "",
-        status: detail.deliveredAt ? "completed" : "accepted",
-      } satisfies RestockMarketplaceAssignment
-      : undefined;
-    const items = detail.items.map((item, index) => ({
-      position: index + 1,
-      articleNumber: item.articleNumber,
-      productId: item.articleNumber,
-      name: normalizeMarketplaceText(item.name),
-      quantity: item.quantity,
-      quantityLabel: `${item.quantity} ${normalizeMarketplaceText(item.unit)}`,
-      interval: 1,
-    }));
+  return deliveryDetails
+    .filter((detail) => !isDeliveryDateInPast(detail.deliveryDate))
+    .map((detail) => {
+      const deliveryTime = formatMarketplaceDeliveryTime(detail.deliveryTime);
+      const deliveryNotes = normalizeMarketplaceText(detail.deliveryHint);
+      const assignment = detail.acceptedAt || detail.restockerName
+        ? {
+          restockerId: detail.restockerName ?? "",
+          acceptedAt: detail.acceptedAt ?? "",
+          status: detail.deliveredAt ? "completed" : "accepted",
+        } satisfies RestockMarketplaceAssignment
+        : undefined;
+      const items = detail.items.map((item, index) => ({
+        position: index + 1,
+        articleNumber: item.articleNumber,
+        productId: item.articleNumber,
+        name: normalizeMarketplaceText(item.name),
+        quantity: item.quantity,
+        quantityLabel: `${item.quantity} ${normalizeMarketplaceText(item.unit)}`,
+        interval: 1,
+      }));
 
-    return {
-      orderId: buildDeliveryDisplayId(detail.id),
-      orderKey: `delivery__${detail.id}`,
-      customerId: detail.userId,
-      companyName: normalizeMarketplaceText(detail.companyName),
-      addressLine1: buildStreetLine(detail),
-      postalCode: normalizeMarketplaceText(detail.postalCode),
-      city: normalizeMarketplaceText(detail.city),
-      deliveryDate: formatIsoDateForDisplay(detail.deliveryDate),
-      deliveryTime,
-      deliveryNotes,
-      articleCount: detail.items.length,
-      items,
-      isPlaceholderCustomerData:
-        deliveryTime === MISSING_MARKETPLACE_VALUE ||
-        [detail.companyName, detail.street, detail.postalCode, detail.city].some(
-          (value) => !value?.trim(),
-        ),
-      assignment,
-    };
-  });
+      return {
+        orderId: buildDeliveryDisplayId(detail.id),
+        orderKey: `delivery__${detail.id}`,
+        customerId: detail.userId,
+        companyName: normalizeMarketplaceText(detail.companyName),
+        addressLine1: buildStreetLine(detail),
+        postalCode: normalizeMarketplaceText(detail.postalCode),
+        city: normalizeMarketplaceText(detail.city),
+        deliveryDate: formatIsoDateForDisplay(detail.deliveryDate),
+        deliveryTime,
+        deliveryNotes,
+        articleCount: detail.items.length,
+        items,
+        isPlaceholderCustomerData:
+          deliveryTime === MISSING_MARKETPLACE_VALUE ||
+          [detail.companyName, detail.street, detail.postalCode, detail.city].some(
+            (value) => !value?.trim(),
+          ),
+        assignment,
+      };
+    });
 }
 
 function normalizeRestockerIdentifier(value?: string | null) {
