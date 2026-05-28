@@ -2089,6 +2089,13 @@
   line-height: 1.35;
 }
 
+.profile-progress-banner:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 107, 97, 0.22);
+  box-shadow: var(--shadow-soft);
+  background: rgba(244, 247, 242, 0.98);
+}
+
 .subscription-overview-item,
 .subscription-account-item {
   display: flex;

@@ -16,7 +16,7 @@ export function SubscriptionProfileProgress({
 
   return (
     <section className="page-card subscription-profile-progress">
-        <NavLink to="/profile">
+        <NavLink to="/account" className="profile-progress-banner">
           <div className="subscription-profile-progress__copy">
             <div>
               <strong>Profil noch nicht vollständig</strong>
