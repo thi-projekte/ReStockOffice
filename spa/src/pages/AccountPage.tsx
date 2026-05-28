@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useOutletContext } from "react-router-dom";
 import { MdEdit, MdLogout, MdOutlineWarningAmber, MdReceiptLong, MdSave } from "react-icons/md";
 import { FaBell, FaMoon, FaSun } from "react-icons/fa";
+import toast from "react-hot-toast";
 import type { Product, RestockOrderWithProduct } from "../types/shop";
 import keycloak from "../auth/keycloak";
 import { useAuth } from "../auth/AuthProvider";
@@ -70,6 +71,8 @@ const CUSTOMER_REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
 ];
 
 const INVOICE_PAGE_SIZE = 3;
+const UNSAVED_PROFILE_CHANGES_MESSAGE =
+  "Du hast ungespeicherte Änderungen. Wenn du die Seite verlässt, gehen sie verloren.";
 
 const EMPTY_FORM: ProfileFormState = {
   phone: "",
@@ -317,6 +320,7 @@ export function AccountPage() {
       return true;
     } catch (error) {
       console.error("Benutzerdaten konnten nicht gespeichert werden.", error);
+      toast.error("Deine Änderungen konnten nicht gespeichert werden.");
       return false;
     } finally {
       setIsSavingProfile(false);
@@ -378,16 +382,11 @@ export function AccountPage() {
       if (!wasSaved) {
         return;
       }
+
+      toast.success("Deine Änderungen wurden gespeichert.");
     }
 
     setIsEditingProfile(false);
-  }
-
-  async function handleFieldBlur() {
-    // Automatisches Speichern beim Verlassen eines Feldes, wenn Änderungen vorliegen
-    if (isEditingProfile && hasUnsavedChanges()) {
-      await persistUser(profileForm);
-    }
   }
 
   const visibleInvoices = invoices.slice(0, visibleInvoiceCount);
@@ -526,7 +525,6 @@ export function AccountPage() {
                       value={profileForm.birthDate}
                       disabled={!isEditingProfile}
                       onChange={(e) => updateField("birthDate", e.target.value)}
-                      onBlur={() => void handleFieldBlur()}
                   />
                 </label>
 
@@ -540,7 +538,6 @@ export function AccountPage() {
                       maxLength={20}
                       className={isFieldInvalid("phone") ? "input--invalid" : ""}
                       onChange={(e) => updateField("phone", e.target.value)}
-                      onBlur={() => void handleFieldBlur()}
                   />
                 </label>
 
@@ -560,7 +557,6 @@ export function AccountPage() {
                       onChange={(e) =>
                           updateField(isRestocker ? "accountHolder" : "role", e.target.value)
                       }
-                      onBlur={() => void handleFieldBlur()}
                   />
                 </label>
               </div>
@@ -584,7 +580,6 @@ export function AccountPage() {
                           maxLength={120}
                           className={isFieldInvalid("company") ? "input--invalid" : ""}
                           onChange={(e) => updateField("company", e.target.value)}
-                          onBlur={() => void handleFieldBlur()}
                       />
                     </label>
                 )}
@@ -597,7 +592,6 @@ export function AccountPage() {
                     maxLength={80}
                     className={isFieldInvalid("country") ? "input--invalid" : ""}
                     onChange={(e) => updateField("country", e.target.value)}
-                    onBlur={() => void handleFieldBlur()}
                 />
               </label>
 
@@ -609,7 +603,6 @@ export function AccountPage() {
                       maxLength={120}
                       className={isFieldInvalid("street") ? "input--invalid" : ""}
                       onChange={(e) => updateField("street", e.target.value)}
-                      onBlur={() => void handleFieldBlur()}
                   />
                 </label>
 
@@ -623,7 +616,6 @@ export function AccountPage() {
                       maxLength={6}
                       className={isFieldInvalid("houseNumber") ? "input--invalid" : ""}
                       onChange={(e) => updateField("houseNumber", e.target.value)}
-                      onBlur={() => void handleFieldBlur()}
                   />
                 </label>
 
@@ -637,7 +629,6 @@ export function AccountPage() {
                       maxLength={5}
                       className={isFieldInvalid("postalCode") ? "input--invalid" : ""}
                       onChange={(e) => updateField("postalCode", e.target.value)}
-                      onBlur={() => void handleFieldBlur()}
                   />
                 </label>
 
@@ -649,7 +640,6 @@ export function AccountPage() {
                       maxLength={80}
                       className={isFieldInvalid("city") ? "input--invalid" : ""}
                       onChange={(e) => updateField("city", e.target.value)}
-                      onBlur={() => void handleFieldBlur()}
                   />
                 </label>
 
@@ -662,7 +652,6 @@ export function AccountPage() {
                           disabled={!isEditingProfile}
                           maxLength={80}
                           onChange={(e) => updateField("deliveryDay", e.target.value)}
-                          onBlur={() => void handleFieldBlur()}
                       />
                     </label>
                 )}
@@ -679,7 +668,6 @@ export function AccountPage() {
                           value={profileForm.deliveryTime}
                           disabled={!isEditingProfile}
                           onChange={(e) => updateField("deliveryTime", e.target.value)}
-                          onBlur={() => void handleFieldBlur()}
                       />
                     </label>
                 )}
@@ -693,7 +681,6 @@ export function AccountPage() {
                       maxLength={34}
                       className={isFieldInvalid("iban") ? "input--invalid" : ""}
                       onChange={(e) => updateField("iban", e.target.value)}
-                      onBlur={() => void handleFieldBlur()}
                   />
                 </label>
 
@@ -707,7 +694,6 @@ export function AccountPage() {
                           maxLength={11}
                           className={isFieldInvalid("bic") ? "input--invalid" : ""}
                           onChange={(e) => updateField("bic", e.target.value)}
-                          onBlur={() => void handleFieldBlur()}
                       />
                     </label>
                 )}
@@ -721,7 +707,6 @@ export function AccountPage() {
                           disabled={!isEditingProfile}
                           maxLength={500}
                           onChange={(e) => updateField("note", e.target.value)}
-                          onBlur={() => void handleFieldBlur()}
                       />
                     </label>
                 )}
