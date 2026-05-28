@@ -4,6 +4,7 @@ import customerTemplate from "../mocks/customer.json";
 import restockerTemplate from "../mocks/restocker.json";
 import type { RestockOrder } from "../types/shop";
 import { useAPIs } from "./products";
+import { keycloakConfig } from "../auth/keycloakConfig";
 
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL ?? "https://users.restockoffice.de";
 const CUSTOMER_ME_API_URL = `${USERS_API_URL}/customer/me`;
@@ -160,8 +161,20 @@ function resolveProfileImageUrl(value: unknown) {
   return imageUrl;
 }
 
+function normalizeRoleName(role: unknown) {
+  return String(role ?? "").trim().toLowerCase();
+}
+
+function collectKeycloakRoles() {
+  const realmRoles = keycloak.tokenParsed?.realm_access?.roles ?? [];
+  const clientRoles =
+    keycloak.tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
+
+  return [...realmRoles, ...clientRoles];
+}
+
 function isRestockerRole(value: unknown) {
-  return String(value ?? "").toLowerCase() === "restocker";
+  return normalizeRoleName(value) === "restocker";
 }
 
 function resolveUserKind(context: UserRequestContext = {}): UserKind {
@@ -169,12 +182,7 @@ function resolveUserKind(context: UserRequestContext = {}): UserKind {
     return context.kind;
   }
 
-  const realmRoles = keycloak.tokenParsed?.realm_access?.roles ?? [];
-  const clientRoles = Object.values(keycloak.tokenParsed?.resource_access ?? {}).flatMap(
-    (entry) => entry.roles ?? [],
-  );
-
-  return [...realmRoles, ...clientRoles].some(isRestockerRole) ? "restocker" : "customer";
+  return collectKeycloakRoles().some(isRestockerRole) ? "restocker" : "customer";
 }
 
 function getMeApiUrl(kind: UserKind) {
@@ -446,7 +454,7 @@ export async function saveMyUser(
   user: SaveUserPayload,
   context: UserRequestContext = {},
 ): Promise<UserProfile> {
-  const kind = user.kind ?? resolveUserKind(context);
+  const kind = context.kind ?? user.kind ?? resolveUserKind(context);
   const isCreateRequest = user.existsInUserService === false;
 
   if (!useAPIs) {
