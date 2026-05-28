@@ -9,20 +9,20 @@
     <bpmn:startEvent id="Event_1ei9gyc" name="Täglich 6 Uhr">
       <bpmn:outgoing>Flow_1v7yd16</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_0qpbx4x">
-        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression" />
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 6 * * 1-5</bpmn:timeCycle>
       </bpmn:timerEventDefinition>
     </bpmn:startEvent>
     <bpmn:endEvent id="Event_0yyd139" name="Liefertag erfolgreich">
       <bpmn:incoming>Flow_1iam9gw</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:serviceTask id="Activity_1ufhn6u" name="Auszuliefernde Lieferungen holen">
+    <bpmn:serviceTask id="Activity_1ufhn6u" name="Auszuliefernde Lieferungen holen" camunda:delegateExpression="${fetchDeliveriesDelegate}">
       <bpmn:incoming>Flow_1v7yd16</bpmn:incoming>
       <bpmn:outgoing>Flow_0gboknd</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:subProcess id="Activity_0rly7yk" name="Für jede Lieferung">
       <bpmn:incoming>Flow_0gboknd</bpmn:incoming>
       <bpmn:outgoing>Flow_1iam9gw</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics />
+      <bpmn:multiInstanceLoopCharacteristics camunda:asyncBefore="true" camunda:collection="${customers}" camunda:elementVariable="customer" />
       <bpmn:startEvent id="Event_1qro21j">
         <bpmn:outgoing>Flow_0h0mjes</bpmn:outgoing>
       </bpmn:startEvent>
