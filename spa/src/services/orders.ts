@@ -1,5 +1,5 @@
 import mockRestockOrderTemplates from "../mocks/restockOrders.json";
-import { useAPIs } from "./products";
+import { getProducts, useAPIs } from "./products";
 import keycloak from "../auth/keycloak";
 
 import { createDemoRestockOrders, getRestockerCustomerProfile } from "../mocks/restockerMarketplace";
@@ -23,7 +23,6 @@ import {
   syncTodayOrders,
   type DeliveryDetail,
 } from "./deliveries";
-import { getProducts } from "./products";
 import { loadCustomerProfile } from "./users";
 import type { CustomerUser } from "./users";
 
@@ -191,7 +190,7 @@ function getNextDeliveryDate(order: RestockOrder, today: Date) {
 function buildOrderNumber(customerId: string, deliveryDateKey: string) {
   const hashValue = `${customerId}-${deliveryDateKey}`
     .split("")
-    .reduce((sum, character) => sum + character.charCodeAt(0), 0);
+    .reduce((sum, character) => sum + (character.codePointAt(0) ?? 0), 0);
 
   return String(1000 + (hashValue % 9000));
 }
@@ -211,8 +210,7 @@ function buildQuantityLabel(product: Product | undefined, quantity: number) {
 }
 
 function normalizeMarketplaceText(value: string | null | undefined) {
-  const normalizedValue = value?.trim();
-  return normalizedValue ? normalizedValue : MISSING_MARKETPLACE_VALUE;
+  return value?.trim() || MISSING_MARKETPLACE_VALUE;
 }
 
 function buildStreetLine(detail?: DeliveryDetail) {
@@ -379,9 +377,7 @@ function resolveMarketplaceCustomerData({
 
     return {
       ...customerData,
-      isPlaceholder: Object.values(customerData).some(
-        (value) => value === MISSING_MARKETPLACE_VALUE,
-      ),
+      isPlaceholder: Object.values(customerData).includes(MISSING_MARKETPLACE_VALUE),
     };
   }
 
@@ -419,7 +415,7 @@ function hasMissingCustomerData(order: RestockMarketplaceOrder) {
       order.city,
       order.deliveryTime,
       order.deliveryNotes,
-    ].some((value) => value === MISSING_MARKETPLACE_VALUE)
+    ].includes(MISSING_MARKETPLACE_VALUE)
   );
 }
 
@@ -432,9 +428,9 @@ function buildStreetLineFromProfile(profile: CustomerUser) {
 
 function profileValueOrCurrent(value: string | null | undefined, currentValue: string) {
   const normalizedValue = normalizeMarketplaceText(value);
-  return normalizedValue !== MISSING_MARKETPLACE_VALUE
-    ? normalizedValue
-    : currentValue;
+  return normalizedValue === MISSING_MARKETPLACE_VALUE
+    ? currentValue
+    : normalizedValue;
 }
 
 function applyCustomerProfile(
@@ -458,9 +454,9 @@ function applyCustomerProfile(
     postalCode: profileValueOrCurrent(profile.postalCode, order.postalCode),
     city: profileValueOrCurrent(profile.city, order.city),
     deliveryTime:
-      profileDeliveryTime !== MISSING_MARKETPLACE_VALUE
-        ? profileDeliveryTime
-        : order.deliveryTime,
+      profileDeliveryTime === MISSING_MARKETPLACE_VALUE
+        ? order.deliveryTime
+        : profileDeliveryTime,
     deliveryNotes: profileValueOrCurrent(
       profile.deliveryHint,
       order.deliveryNotes,
@@ -665,11 +661,11 @@ function createSubscriptionFromOrders(
 }
 
 function readRestockerAssignments(): RestockerOrderAssignment[] {
-  if (typeof window === "undefined") {
+  if (globalThis.window === undefined) {
     return [];
   }
 
-  const storedAssignments = window.localStorage.getItem(
+  const storedAssignments = globalThis.window.localStorage.getItem(
     RESTOCKER_ASSIGNMENTS_STORAGE_KEY,
   );
 
@@ -711,11 +707,11 @@ function readRestockerAssignments(): RestockerOrderAssignment[] {
 }
 
 function writeRestockerAssignments(assignments: RestockerOrderAssignment[]) {
-  if (typeof window === "undefined") {
+  if (globalThis.window === undefined) {
     return;
   }
 
-  window.localStorage.setItem(
+  globalThis.window.localStorage.setItem(
     RESTOCKER_ASSIGNMENTS_STORAGE_KEY,
     JSON.stringify(assignments),
   );

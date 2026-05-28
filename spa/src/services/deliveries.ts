@@ -53,6 +53,42 @@ export interface Tour {
   }>;
 }
 
+function stringifyPrimitive(value: unknown) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value.toString();
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "true" : "false";
+  }
+
+  return "";
+}
+
+function readStringValue(value: unknown) {
+  return stringifyPrimitive(value).trim();
+}
+
+function readBooleanValue(value: unknown) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return value === 1;
+  }
+
+  if (typeof value === "string") {
+    return value.trim().toLowerCase() === "true";
+  }
+
+  return false;
+}
+
 function readString(
   source: Record<string, unknown> | undefined,
   keys: string[],
@@ -104,15 +140,15 @@ function normalizeDeliveryItem(rawItem: unknown): DeliveryItemDetail {
   const item = rawItem as Record<string, unknown>;
 
   return {
-    id: String(item.id ?? ""),
-    articleNumber: String(item.articleNumber ?? item.productId ?? ""),
-    name: String(item.name ?? ""),
+    id: readStringValue(item.id),
+    articleNumber: readStringValue(item.articleNumber) || readStringValue(item.productId),
+    name: readStringValue(item.name),
     quantity:
       typeof item.quantity === "number" && Number.isFinite(item.quantity)
         ? item.quantity
         : Number(item.quantity ?? 0),
-    unit: String(item.unit ?? ""),
-    delivered: Boolean(item.delivered),
+    unit: readStringValue(item.unit),
+    delivered: readBooleanValue(item.delivered),
   };
 }
 
@@ -126,15 +162,15 @@ function normalizeDeliveryDetail(rawDetail: unknown): DeliveryDetail {
   ) as Record<string, unknown> | undefined;
 
   return {
-    id: String(detail.id ?? ""),
-    orderId: String(detail.orderId ?? ""),
-    userId: String(detail.userId ?? detail.customerId ?? ""),
-    status: String(detail.status ?? deriveDeliveryStatus(detail)),
+    id: readStringValue(detail.id),
+    orderId: readStringValue(detail.orderId),
+    userId: readStringValue(detail.userId) || readStringValue(detail.customerId),
+    status: readStringValue(detail.status) || deriveDeliveryStatus(detail),
     stopOrder:
       typeof detail.stopOrder === "number" && Number.isFinite(detail.stopOrder)
         ? detail.stopOrder
         : Number(detail.stopOrder ?? 0),
-    collected: Boolean(detail.collected),
+    collected: readBooleanValue(detail.collected),
     collectedAt:
       typeof detail.collectedAt === "string" ? detail.collectedAt : null,
     acceptedAt:
@@ -178,7 +214,7 @@ function deriveDeliveryStatus(detail: Record<string, unknown>) {
     return "DELIVERED";
   }
 
-  if (Boolean(detail.collected)) {
+  if (readBooleanValue(detail.collected)) {
     return "COLLECTED";
   }
 
