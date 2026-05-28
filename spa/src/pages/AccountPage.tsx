@@ -162,7 +162,7 @@ export function AccountPage() {
         .catch((error) => {
           console.error("Benutzerdaten konnten nicht geladen werden.", error);
         });
-  }, [isLoggedIn, isRestocker, token]);
+  }, [isLoggedIn, isRestocker, token, user]);
 
   useEffect(() => {
     if (!isLoggedIn || !user) {
@@ -177,7 +177,7 @@ export function AccountPage() {
         .catch((error) => {
           console.error("Rechnungen konnten nicht geladen werden.", error);
         });
-  }, [isLoggedIn, isRestocker, token]);
+  }, [isLoggedIn, isRestocker, token, user]);
 
   useEffect(() => {
     if (!location.hash) {
