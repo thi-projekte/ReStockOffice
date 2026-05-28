@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1bnm3cz" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1bnm3cz" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Collaboration_021nnii">
     <bpmn:participant id="Participant_0a0ayn7" name="Rechnungspozess" processRef="Process_07xl1x2" />
     <bpmn:participant id="Participant_19d2kll" name="Kunde" />
@@ -8,7 +8,9 @@
   <bpmn:process id="Process_07xl1x2" name="Rechnungsprozess" isExecutable="true">
     <bpmn:startEvent id="Event_03zh8qr" name="Monatsende">
       <bpmn:outgoing>Flow_169oy2d</bpmn:outgoing>
-      <bpmn:timerEventDefinition id="TimerEventDefinition_18slh4e" />
+      <bpmn:timerEventDefinition id="TimerEventDefinition_18slh4e">
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 0 8 1W * ?</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
     </bpmn:startEvent>
     <bpmn:sequenceFlow id="Flow_169oy2d" sourceRef="Event_03zh8qr" targetRef="Activity_1g5qyyq" />
     <bpmn:serviceTask id="Activity_1g5qyyq" name="Rechnung generieren">
