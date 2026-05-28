@@ -143,14 +143,14 @@ export function AccountPage() {
             country: user.country ?? "",
             iban: user.iban ?? "",
             // customer-only
-            company: user.kind === "customer" ? (user.companyName ?? "") : "",
-            role: user.kind === "customer" ? (user.roleInCompany ?? "") : "",
-            note: user.kind === "customer" ? (user.deliveryHint ?? "") : "",
-            deliveryDay: user.kind === "customer" ? (user.deliveryDay ?? "") : "",
-            deliveryTime: user.kind === "customer" ? String(user.deliveryTime || "") : "",
+            company: !isRestocker && user.kind === "customer" ? (user.companyName ?? "") : "",
+            role: !isRestocker && user.kind === "customer" ? (user.roleInCompany ?? "") : "",
+            note: !isRestocker && user.kind === "customer" ? (user.deliveryHint ?? "") : "",
+            deliveryDay: !isRestocker && user.kind === "customer" ? (user.deliveryDay ?? "") : "",
+            deliveryTime: !isRestocker && user.kind === "customer" ? String(user.deliveryTime || "") : "",
             // restocker-only
-            bic: user.kind === "restocker" ? (user.bic ?? "") : "",
-            accountHolder: user.kind === "restocker" ? (user.accountHolder ?? "") : "",
+            bic: isRestocker && user.kind === "restocker" ? (user.bic ?? "") : "",
+            accountHolder: isRestocker && user.kind === "restocker" ? (user.accountHolder ?? "") : "",
           };
 
           setProfileForm(form);
@@ -268,7 +268,7 @@ export function AccountPage() {
 
     try {
       const savedUser =
-          loadedUser.kind === "restocker"
+          isRestocker
               ? await saveMyUser(
                   {
                     kind: "restocker",
