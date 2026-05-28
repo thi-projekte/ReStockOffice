@@ -98,19 +98,18 @@ function isDeliveryDateInPast(dateValue?: string | null, referenceDate = new Dat
 }
 
 function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert") {
-  return `Die Orders-API konnte nicht erreicht werden. Bitte pruefe Netzwerk, CORS oder Proxy-Konfiguration, falls Orders nicht ${action} werden konnten.`;
+  return `Die Orders-API konnte nicht erreicht werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration, falls Orders nicht ${action} werden konnten.`;
 }
 
 async function resolveToken(token?: string) {
 
   if (token) {
-    console.log("[Orders] Debug: Token length:", token.length);
     return token;
   }
 
   // Fallback: direkt aus Keycloak holen + refreshen
   if (!keycloak.authenticated) {
-    throw new Error("Kein Keycloak-Token fuer Orders-Requests verfuegbar.");
+    throw new Error("Kein Keycloak-Token für Orders-Requests verfügbar.");
   }
 
   try {
