@@ -55,18 +55,18 @@ export type UserProfile = CustomerUser | RestockerUser;
 export type User = UserProfile;
 
 type CreatePayloadFor<T extends UserProfile> = Omit<T, "createdAt" | "updatedAt"> &
-  Partial<Pick<T, "createdAt" | "updatedAt">>;
+    Partial<Pick<T, "createdAt" | "updatedAt">>;
 
 type UpdatePayloadFor<T extends UserProfile> = Partial<Omit<T, "userId" | "kind">> &
-  Pick<T, "userId" | "kind">;
+    Pick<T, "userId" | "kind">;
 
 export type CreateUserPayload =
-  | CreatePayloadFor<CustomerUser>
-  | CreatePayloadFor<RestockerUser>;
+    | CreatePayloadFor<CustomerUser>
+    | CreatePayloadFor<RestockerUser>;
 
 export type UpdateUserPayload =
-  | UpdatePayloadFor<CustomerUser>
-  | UpdatePayloadFor<RestockerUser>;
+    | UpdatePayloadFor<CustomerUser>
+    | UpdatePayloadFor<RestockerUser>;
 
 export type SaveUserPayload = (CreateUserPayload | UpdateUserPayload) & {
   profilePictureFile?: File;
@@ -161,20 +161,12 @@ function resolveProfileImageUrl(value: unknown) {
   return imageUrl;
 }
 
-function normalizeRoleName(role: unknown) {
-  return String(role ?? "").trim().toLowerCase();
-}
-
-function collectKeycloakRoles() {
+function collectKeycloakRoles(): string[] {
   const realmRoles = keycloak.tokenParsed?.realm_access?.roles ?? [];
   const clientRoles =
-    keycloak.tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
+      keycloak.tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
 
   return [...realmRoles, ...clientRoles];
-}
-
-function isRestockerRole(value: unknown) {
-  return normalizeRoleName(value) === "restocker";
 }
 
 function resolveUserKind(context: UserRequestContext = {}): UserKind {
@@ -182,7 +174,9 @@ function resolveUserKind(context: UserRequestContext = {}): UserKind {
     return context.kind;
   }
 
-  return collectKeycloakRoles().some(isRestockerRole) ? "restocker" : "customer";
+  return collectKeycloakRoles().some(
+      (role) => role.trim().toLowerCase() === "restocker"
+  ) ? "restocker" : "customer";
 }
 
 function getMeApiUrl(kind: UserKind) {
@@ -210,7 +204,7 @@ export function getAdminUsersApiUrl(kind: UserKind, userId?: string) {
 function normalizeCustomer(rawUser: unknown): CustomerUser {
   const payload = rawUser as Record<string, unknown>;
   const source = (
-    payload.customer && typeof payload.customer === "object" ? payload.customer : payload
+      payload.customer && typeof payload.customer === "object" ? payload.customer : payload
   ) as Record<string, unknown>;
 
   return {
@@ -239,7 +233,7 @@ function normalizeCustomer(rawUser: unknown): CustomerUser {
 function normalizeRestocker(rawUser: unknown): RestockerUser {
   const payload = rawUser as Record<string, unknown>;
   const source = (
-    payload.restocker && typeof payload.restocker === "object" ? payload.restocker : payload
+      payload.restocker && typeof payload.restocker === "object" ? payload.restocker : payload
   ) as Record<string, unknown>;
 
   return {
@@ -283,49 +277,49 @@ function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
 function normalizeUserRestockOrders(payload: unknown): RestockOrder[] {
   const source = payload as Record<string, unknown>;
   const rawOrders = Array.isArray(payload)
-    ? payload
-    : Array.isArray(source.restockOrders)
-      ? source.restockOrders
-      : Array.isArray(source.orders)
-        ? source.orders
-        : [];
+      ? payload
+      : Array.isArray(source.restockOrders)
+          ? source.restockOrders
+          : Array.isArray(source.orders)
+              ? source.orders
+              : [];
 
   return rawOrders.map(normalizeRestockOrder);
 }
 
 function createMockUser(userId: string, kind: UserKind): UserProfile {
   return normalizeUser(
-    {
-      ...(kind === "restocker" ? restockerTemplate : customerTemplate),
-      userId,
-    },
-    kind,
+      {
+        ...(kind === "restocker" ? restockerTemplate : customerTemplate),
+        userId,
+      },
+      kind,
   );
 }
 
 function createEmptyUserProfile(kind: UserKind): UserProfile {
   return normalizeUser(
-    {
-      userId: keycloak.tokenParsed?.sub ?? "",
-      postalCode: "",
-      city: "",
-      street: "",
-      houseNumber: "",
-      country: "",
-      companyName: "",
-      phoneNumber: "",
-      roleInCompany: "",
-      birthDate: "",
-      deliveryHint: "",
-      deliveryDay: "",
-      deliveryTime: 0,
-      iban: "",
-      bic: "",
-      accountHolder: "",
-      createdAt: "",
-      existsInUserService: false,
-    },
-    kind,
+      {
+        userId: keycloak.tokenParsed?.sub ?? "",
+        postalCode: "",
+        city: "",
+        street: "",
+        houseNumber: "",
+        country: "",
+        companyName: "",
+        phoneNumber: "",
+        roleInCompany: "",
+        birthDate: "",
+        deliveryHint: "",
+        deliveryDay: "",
+        deliveryTime: 0,
+        iban: "",
+        bic: "",
+        accountHolder: "",
+        createdAt: "",
+        existsInUserService: false,
+      },
+      kind,
   );
 }
 
@@ -437,10 +431,10 @@ function createUserData(user: SaveUserPayload, isCreateRequest: boolean) {
 function createMultipartUserBody(user: SaveUserPayload) {
   const formData = new FormData();
   formData.append(
-    "userData",
-    new Blob([JSON.stringify(createUserData(user, false))], {
-      type: "application/json",
-    }),
+      "userData",
+      new Blob([JSON.stringify(createUserData(user, false))], {
+        type: "application/json",
+      }),
   );
 
   if (user.profilePictureFile) {
@@ -451,8 +445,8 @@ function createMultipartUserBody(user: SaveUserPayload) {
 }
 
 export async function saveMyUser(
-  user: SaveUserPayload,
-  context: UserRequestContext = {},
+    user: SaveUserPayload,
+    context: UserRequestContext = {},
 ): Promise<UserProfile> {
   const kind = context.kind ?? user.kind ?? resolveUserKind(context);
   const isCreateRequest = user.existsInUserService === false;
@@ -461,13 +455,13 @@ export async function saveMyUser(
     const currentUserId = user.userId ?? context.userId ?? keycloak.tokenParsed?.sub ?? "mock-user";
     const existingUser = getMockUser(currentUserId, kind);
     const updatedUser = normalizeUser(
-      {
-        ...existingUser,
-        ...user,
-        userId: currentUserId,
-        updatedAt: new Date().toISOString(),
-      },
-      kind,
+        {
+          ...existingUser,
+          ...user,
+          userId: currentUserId,
+          updatedAt: new Date().toISOString(),
+        },
+        kind,
     );
 
     mockUsers.set(`${kind}:${currentUserId}`, updatedUser);
@@ -482,8 +476,8 @@ export async function saveMyUser(
       method: "POST",
       headers: isCreateRequest ? createJsonHeaders(resolvedToken) : createAuthHeaders(resolvedToken),
       body: isCreateRequest
-        ? JSON.stringify(createUserData(user, true))
-        : createMultipartUserBody(user),
+          ? JSON.stringify(createUserData(user, true))
+          : createMultipartUserBody(user),
     });
   } catch {
     throw new Error(buildUsersNetworkErrorMessage("gespeichert"));
@@ -496,8 +490,8 @@ export async function saveMyUser(
 }
 
 export async function getUserbyId(
-  userId: string,
-  context: UserRequestContext = {},
+    userId: string,
+    context: UserRequestContext = {},
 ): Promise<UserProfile> {
   if (useAPIs) {
     return getMyUser(context);
@@ -512,10 +506,10 @@ export const createUser = saveMyUser;
 export const updateUser = saveMyUser;
 
 export async function getUserRestockOrders({
-  userId,
-  token,
-  kind,
-}: UserRestockOrdersRequestContext): Promise<RestockOrder[]> {
+   userId,
+   token,
+   kind,
+ }: UserRestockOrdersRequestContext): Promise<RestockOrder[]> {
   if (!useAPIs) {
     getMockUser(userId, "customer");
     return mockUserRestockOrders[userId] ?? [];
@@ -527,12 +521,10 @@ export async function getUserRestockOrders({
   return normalizeUserRestockOrders(payload);
 }
 
-
-// Lädt Infos vom belieferte Kunden
 export async function loadCustomerProfile({
-  token,
-  userId,
-}: {
+                                            token,
+                                            userId,
+                                          }: {
   token: string;
   userId: string;
 }): Promise<CustomerUser> {
