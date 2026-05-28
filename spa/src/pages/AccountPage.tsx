@@ -50,7 +50,6 @@ interface NotificationState {
 // Pflichtfelder
 const REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
   "phone",
-  "company",
   "country",
   "street",
   "houseNumber",
@@ -59,11 +58,15 @@ const REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
 ];
 
 const RESTOCKER_REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
-  ...REQUIRED_FIELDS,
+  "phone",
+  "iban",
+  "bic",
+  "accountHolder",
 ];
 
 const CUSTOMER_REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
   ...REQUIRED_FIELDS,
+  "company",
 ];
 
 const INVOICE_PAGE_SIZE = 3;
@@ -210,6 +213,10 @@ export function AccountPage() {
     return  getRequiredFields().includes(field) && isFieldEmpty(field);
   }
 
+  function getFieldLabel(field: keyof ProfileFormState, label: string) {
+    return getRequiredFields().includes(field) ? `${label} *` : label;
+  }
+
   function hasUnsavedChanges(): boolean {
     return (Object.keys(profileForm) as (keyof ProfileFormState)[]).some(
         (key) => profileForm[key] !== lastSavedForm.current[key],
@@ -217,7 +224,11 @@ export function AccountPage() {
   }
 
   async function persistUser(form: ProfileFormState) {
-    if (!loadedUser) return;
+    if (!loadedUser) return false;
+
+    if (loadedUser.existsInUserService === false && getRequiredFields().some(isFieldEmpty)) {
+      return false;
+    }
 
     setIsSavingProfile(true);
 
@@ -239,6 +250,7 @@ export function AccountPage() {
                     iban: form.iban,
                     bic: form.bic,
                     accountHolder: form.accountHolder,
+                    existsInUserService: loadedUser.existsInUserService,
                   },
                   { token, kind: "restocker" },
               )
@@ -260,6 +272,7 @@ export function AccountPage() {
                     deliveryDay: form.deliveryDay || undefined,
                     deliveryTime: Number(form.deliveryTime || 0),
                     iban: form.iban || undefined,
+                    existsInUserService: loadedUser.existsInUserService,
                   },
                   { token, kind: "customer" },
               );
@@ -267,8 +280,10 @@ export function AccountPage() {
       setLoadedUser(savedUser);
       onSubscriptionProfileUpdated(savedUser);
       lastSavedForm.current = form;
+      return true;
     } catch (error) {
       console.error("Benutzerdaten konnten nicht gespeichert werden.", error);
+      return false;
     } finally {
       setIsSavingProfile(false);
     }
@@ -322,16 +337,20 @@ export function AccountPage() {
       return;
     }
 
-    // Nur speichern, wenn Änderungen vorliegen
+    // Nur speichern, wenn Ã„nderungen vorliegen
     if (hasUnsavedChanges()) {
-      await persistUser(profileForm);
+      const wasSaved = await persistUser(profileForm);
+
+      if (!wasSaved) {
+        return;
+      }
     }
 
     setIsEditingProfile(false);
   }
 
   async function handleFieldBlur() {
-    // Automatisches Speichern beim Verlassen eines Feldes, wenn Änderungen vorliegen
+    // Automatisches Speichern beim Verlassen eines Feldes, wenn Ã„nderungen vorliegen
     if (isEditingProfile && hasUnsavedChanges()) {
       await persistUser(profileForm);
     }
@@ -347,10 +366,11 @@ export function AccountPage() {
           <section className="page-card subscription-profile-progress">
             <div className="subscription-profile-progress__copy">
               <div>
-                <strong>Profil noch nicht vollständig</strong>
+                <strong>Profil noch nicht vollstÃ¤ndig</strong>
                 <p>
-                  Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen,
-                  sind Änderungen am Abo gesperrt.
+                  {isRestocker
+                      ? "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, kannst du keine RestockOrders ausliefern."
+                      : "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, sind Änderungen am Abo gesperrt."}
                 </p>
               </div>
               <span className="subscription-profile-progress__percent">
@@ -382,10 +402,10 @@ export function AccountPage() {
 
         <section className="page-card section-space account-hero">
           <div className="account-hero__copy">
-            <span className="eyebrow">Kontoübersicht</span>
+            <span className="eyebrow">KontoÃ¼bersicht</span>
             <h1>Kontoeinstellungen und Profilverwaltung</h1>
             <p className="section-copy">
-              Verwalte deine persönlichen Daten, Systemeinstellungen und
+              Verwalte deine persÃ¶nlichen Daten, Systemeinstellungen und
               sicherheitsrelevanten Funktionen zentral an einem Ort.
             </p>
           </div>
@@ -412,7 +432,7 @@ export function AccountPage() {
               <span className="eyebrow">Benutzerdaten</span>
               <h2>Profilinformationen</h2>
               <p className="section-copy">
-                Deine Kontaktdaten und Organisationsinformationen für Kommunikation
+                Deine Kontaktdaten und Organisationsinformationen fÃ¼r Kommunikation
                 und Auftragsabwicklung.
               </p>
             </div>
@@ -420,7 +440,7 @@ export function AccountPage() {
             <button
                 className={`button ${isEditingProfile ? "" : "button--ghost"}`.trim()}
                 type="button"
-                title={isEditingProfile ? "Änderungen speichern" : "Profil bearbeiten"}
+                title={isEditingProfile ? "Ã„nderungen speichern" : "Profil bearbeiten"}
                 disabled={isSavingProfile}
                 onClick={() => {
                   void handleProfileAction();
@@ -428,22 +448,22 @@ export function AccountPage() {
             >
               {isEditingProfile ? <MdSave /> : <MdEdit />}
               {isSavingProfile
-                  ? "Wird gespeichert…"
+                  ? "Wird gespeichertâ€¦"
                   : isEditingProfile
-                      ? "Änderungen speichern"
+                      ? "Ã„nderungen speichern"
                       : "Profil bearbeiten"}
             </button>
           </div>
 
           <div className="account-profile-grid">
-            {/* Persönliche Daten */}
+            {/* PersÃ¶nliche Daten */}
             <div className="account-panel">
               <div className="account-panel__head">
-                <h3 style={{ paddingBottom: "1rem" }}>Persönliche Daten</h3>
+                <h3 style={{ paddingBottom: "1rem" }}>PersÃ¶nliche Daten</h3>
               </div>
 
               <div className="account-form-grid">
-                {/* Keycloak-Felder – immer disabled, keine Validierung */}
+                {/* Keycloak-Felder â€“ immer disabled, keine Validierung */}
                 <label className="account-field">
                   <span>Benutzername</span>
                   <input value={username} disabled />
@@ -477,7 +497,7 @@ export function AccountPage() {
                 </label>
 
                 <label className="account-field">
-                  <span>Telefon</span>
+                  <span>{getFieldLabel("phone", "Telefon")}</span>
                   <input
                       value={profileForm.phone}
                       disabled={!isEditingProfile}
@@ -488,7 +508,11 @@ export function AccountPage() {
                 </label>
 
                 <label className="account-field account-field--full">
-                  <span>{isRestocker ? "Kontoinhaber" : "Position"}</span>
+                  <span>
+                    {isRestocker
+                        ? getFieldLabel("accountHolder", "Kontoinhaber")
+                        : getFieldLabel("role", "Position")}
+                  </span>
                   <input
                       value={isRestocker ? profileForm.accountHolder : profileForm.role}
                       disabled={!isEditingProfile}
@@ -515,7 +539,7 @@ export function AccountPage() {
               <div className="account-form-grid">
                 {!isRestocker && (
                     <label className="account-field">
-                      <span>Unternehmen</span>
+                      <span>{getFieldLabel("company", "Unternehmen")}</span>
                       <input
                           value={profileForm.company}
                           disabled={!isEditingProfile}
@@ -527,7 +551,7 @@ export function AccountPage() {
                 )}
 
                 <label className="account-field">
-                <span>Land</span>
+                <span>{getFieldLabel("country", "Land")}</span>
                 <input
                     value={profileForm.country}
                     disabled={!isEditingProfile}
@@ -538,7 +562,7 @@ export function AccountPage() {
               </label>
 
                 <label className="account-field">
-                  <span>Straße</span>
+                  <span>{getFieldLabel("street", "Straße")}</span>
                   <input
                       value={profileForm.street}
                       disabled={!isEditingProfile}
@@ -549,7 +573,7 @@ export function AccountPage() {
                 </label>
 
                 <label className="account-field">
-                  <span>Hausnummer</span>
+                  <span>{getFieldLabel("houseNumber", "Hausnummer")}</span>
                   <input
                       value={profileForm.houseNumber}
                       disabled={!isEditingProfile}
@@ -560,7 +584,7 @@ export function AccountPage() {
                 </label>
 
                 <label className="account-field">
-                  <span>PLZ</span>
+                  <span>{getFieldLabel("postalCode", "PLZ")}</span>
                   <input
                       value={profileForm.postalCode}
                       disabled={!isEditingProfile}
@@ -571,7 +595,7 @@ export function AccountPage() {
                 </label>
 
                 <label className="account-field">
-                  <span>Ort</span>
+                  <span>{getFieldLabel("city", "Ort")}</span>
                   <input
                       value={profileForm.city}
                       disabled={!isEditingProfile}
@@ -610,7 +634,7 @@ export function AccountPage() {
                 )}
 
                 <label className="account-field">
-                  <span>IBAN</span>
+                  <span>{getFieldLabel("iban", "IBAN")}</span>
                   <input
                       value={profileForm.iban}
                       disabled={!isEditingProfile}
@@ -622,7 +646,7 @@ export function AccountPage() {
 
                 {isRestocker && (
                     <label className="account-field">
-                      <span>BIC</span>
+                      <span>{getFieldLabel("bic", "BIC")}</span>
                       <input
                           value={profileForm.bic}
                           disabled={!isEditingProfile}
@@ -656,7 +680,7 @@ export function AccountPage() {
               <span className="eyebrow">Systemeinstellungen</span>
               <h2>Darstellung und Benachrichtigungen</h2>
               <p className="section-copy">
-                Konfiguriere Oberfläche und Informationskanäle entsprechend deiner Arbeitsweise.
+                Konfiguriere OberflÃ¤che und InformationskanÃ¤le entsprechend deiner Arbeitsweise.
               </p>
             </div>
           </div>
@@ -725,7 +749,7 @@ export function AccountPage() {
                     onClick={() => toggleNotification("confirmations")}
                 >
                   <div>
-                    <strong>Auftragsbestätigungen</strong>
+                    <strong>AuftragsbestÃ¤tigungen</strong>
                     <span>Benachrichtigung nach jeder Bestellung</span>
                   </div>
                   <span className="account-toggle-pill">
@@ -812,14 +836,14 @@ export function AccountPage() {
               <span className="eyebrow">Sicherheit</span>
               <h2>Zugriff und Kontoverwaltung</h2>
               <p className="section-copy">
-                Sicherheits- und Zugriffsfunktionen für dein Benutzerkonto.
+                Sicherheits- und Zugriffsfunktionen fÃ¼r dein Benutzerkonto.
               </p>
             </div>
           </div>
 
           <div className="account-action-row">
             <button className="button button--ghost" type="button">
-              Passwort zurücksetzen
+              Passwort zurÃ¼cksetzen
             </button>
 
             <button
@@ -849,7 +873,7 @@ export function AccountPage() {
                   className="button account-danger-button account-danger-button--secondary"
                   type="button"
               >
-                Konto löschen
+                Konto lÃ¶schen
               </button>
             </div>
           </div>

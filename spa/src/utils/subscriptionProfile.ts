@@ -23,7 +23,12 @@ const CUSTOMER_REQUIRED_FIELDS = [
   { keys: ["city"], label: "Ort" },
 ] as const satisfies readonly RequiredFieldDefinition[];
 
-const RESTOCKER_REQUIRED_FIELDS = CUSTOMER_REQUIRED_FIELDS;
+const RESTOCKER_REQUIRED_FIELDS = [
+  { keys: ["phoneNumber", "phone"], label: "Telefon" },
+  { keys: ["iban", "IBAN"], label: "IBAN" },
+  { keys: ["bic", "BIC"], label: "BIC" },
+  { keys: ["accountHolder"], label: "Kontoinhaber" },
+] as const satisfies readonly RequiredFieldDefinition[];
 
 function hasValue(value: unknown) {
   return String(value ?? "").trim().length > 0;

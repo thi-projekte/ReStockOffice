@@ -8,6 +8,10 @@ import { useAPIs } from "./products";
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL ?? "https://users.restockoffice.de";
 const CUSTOMER_ME_API_URL = `${USERS_API_URL}/customer/me`;
 const RESTOCKER_ME_API_URL = `${USERS_API_URL}/restocker/me`;
+const CUSTOMER_CREATE_API_URL = `${USERS_API_URL}/customer/create`;
+const RESTOCKER_CREATE_API_URL = `${USERS_API_URL}/restocker/create`;
+const CUSTOMER_UPDATE_API_URL = `${USERS_API_URL}/customer/update`;
+const RESTOCKER_UPDATE_API_URL = `${USERS_API_URL}/restocker/update`;
 
 export const CUSTOMERS_API_URL = `${USERS_API_URL}/customers`;
 export const RESTOCKERS_API_URL = `${USERS_API_URL}/restockers`;
@@ -26,6 +30,7 @@ interface BaseUser {
   profilePictureUrl?: string;
   createdAt: string;
   updatedAt?: string;
+  existsInUserService?: boolean;
 }
 
 export interface CustomerUser extends BaseUser {
@@ -62,6 +67,10 @@ export type UpdateUserPayload =
   | UpdatePayloadFor<CustomerUser>
   | UpdatePayloadFor<RestockerUser>;
 
+export type SaveUserPayload = (CreateUserPayload | UpdateUserPayload) & {
+  profilePictureFile?: File;
+};
+
 export interface UserRequestContext {
   token?: string;
   userId?: string;
@@ -82,6 +91,12 @@ const mockUserRestockOrders: Record<string, RestockOrder[]> = {};
 
 function buildUsersNetworkErrorMessage(action: "geladen" | "gespeichert") {
   return "Die Users-API konnte nicht erreicht werden.";
+}
+
+class UserProfileNotFoundError extends Error {
+  constructor() {
+    super("Für diesen Keycloak-Nutzer existiert noch kein Profil im User-Service.");
+  }
 }
 
 async function resolveToken(token?: string) {
@@ -166,6 +181,14 @@ function getMeApiUrl(kind: UserKind) {
   return kind === "restocker" ? RESTOCKER_ME_API_URL : CUSTOMER_ME_API_URL;
 }
 
+function getCreateApiUrl(kind: UserKind) {
+  return kind === "restocker" ? RESTOCKER_CREATE_API_URL : CUSTOMER_CREATE_API_URL;
+}
+
+function getUpdateApiUrl(kind: UserKind) {
+  return kind === "restocker" ? RESTOCKER_UPDATE_API_URL : CUSTOMER_UPDATE_API_URL;
+}
+
 export function getAdminUsersApiUrl(kind: UserKind, userId?: string) {
   const baseUrl = kind === "restocker" ? RESTOCKERS_API_URL : CUSTOMERS_API_URL;
 
@@ -201,6 +224,7 @@ function normalizeCustomer(rawUser: unknown): CustomerUser {
     profilePictureUrl: resolveProfileImageUrl(source.profilePictureUrl ?? source.profileImageUrl),
     createdAt: String(source.createdAt ?? new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
+    existsInUserService: source.existsInUserService !== false,
   };
 }
 
@@ -226,6 +250,7 @@ function normalizeRestocker(rawUser: unknown): RestockerUser {
     profilePictureUrl: resolveProfileImageUrl(source.profilePictureUrl ?? source.profileImageUrl),
     createdAt: String(source.createdAt ?? new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
+    existsInUserService: source.existsInUserService !== false,
   };
 }
 
@@ -270,6 +295,32 @@ function createMockUser(userId: string, kind: UserKind): UserProfile {
   );
 }
 
+function createEmptyUserProfile(kind: UserKind): UserProfile {
+  return normalizeUser(
+    {
+      userId: keycloak.tokenParsed?.sub ?? "",
+      postalCode: "",
+      city: "",
+      street: "",
+      houseNumber: "",
+      country: "",
+      companyName: "",
+      phoneNumber: "",
+      roleInCompany: "",
+      birthDate: "",
+      deliveryHint: "",
+      deliveryDay: "",
+      deliveryTime: 0,
+      iban: "",
+      bic: "",
+      accountHolder: "",
+      createdAt: "",
+      existsInUserService: false,
+    },
+    kind,
+  );
+}
+
 function getMockUser(userId: string, kind: UserKind) {
   const cacheKey = `${kind}:${userId}`;
   let mockUser = mockUsers.get(cacheKey);
@@ -296,6 +347,10 @@ async function readJsonResponse(response: Response) {
 function assertSuccessfulResponse(response: Response, action: "geladen" | "gespeichert") {
   if (response.ok) {
     return;
+  }
+
+  if (response.status === 404 && action === "geladen") {
+    throw new UserProfileNotFoundError();
   }
 
   if (response.status === 401 || response.status === 403) {
@@ -343,15 +398,56 @@ async function fetchCurrentUserPayload(context: UserRequestContext = {}): Promis
 }
 
 export async function getMyUser(context: UserRequestContext = {}): Promise<UserProfile> {
-  const { payload, kind } = await fetchCurrentUserPayload(context);
-  return normalizeUser(payload, kind);
+  try {
+    const { payload, kind } = await fetchCurrentUserPayload(context);
+    return normalizeUser(payload, kind);
+  } catch (error) {
+    if (error instanceof UserProfileNotFoundError) {
+      return createEmptyUserProfile(resolveUserKind(context));
+    }
+
+    throw error;
+  }
+}
+
+function createUserData(user: SaveUserPayload, isCreateRequest: boolean) {
+  const userData = { ...user } as Record<string, unknown>;
+  delete userData.kind;
+  delete userData.profilePictureFile;
+  delete userData.existsInUserService;
+  delete userData.createdAt;
+  delete userData.updatedAt;
+
+  if (isCreateRequest) {
+    delete userData.userId;
+    delete userData.profilePictureUrl;
+  }
+
+  return userData;
+}
+
+function createMultipartUserBody(user: SaveUserPayload) {
+  const formData = new FormData();
+  formData.append(
+    "userData",
+    new Blob([JSON.stringify(createUserData(user, false))], {
+      type: "application/json",
+    }),
+  );
+
+  if (user.profilePictureFile) {
+    formData.append("file", user.profilePictureFile);
+  }
+
+  return formData;
 }
 
 export async function saveMyUser(
-  user: CreateUserPayload | UpdateUserPayload,
+  user: SaveUserPayload,
   context: UserRequestContext = {},
 ): Promise<UserProfile> {
   const kind = user.kind ?? resolveUserKind(context);
+  const isCreateRequest = user.existsInUserService === false;
 
   if (!useAPIs) {
     const currentUserId = user.userId ?? context.userId ?? keycloak.tokenParsed?.sub ?? "mock-user";
@@ -374,10 +470,12 @@ export async function saveMyUser(
   let response: Response;
 
   try {
-    response = await fetch(getMeApiUrl(kind), {
+    response = await fetch(isCreateRequest ? getCreateApiUrl(kind) : getUpdateApiUrl(kind), {
       method: "POST",
-      headers: createJsonHeaders(resolvedToken),
-      body: JSON.stringify(user),
+      headers: isCreateRequest ? createJsonHeaders(resolvedToken) : createAuthHeaders(resolvedToken),
+      body: isCreateRequest
+        ? JSON.stringify(createUserData(user, true))
+        : createMultipartUserBody(user),
     });
   } catch {
     throw new Error(buildUsersNetworkErrorMessage("gespeichert"));
@@ -386,7 +484,7 @@ export async function saveMyUser(
   assertSuccessfulResponse(response, "gespeichert");
 
   const payload = await readJsonResponse(response);
-  return normalizeUser(payload ?? user, kind);
+  return normalizeUser(payload ?? { ...user, existsInUserService: true }, kind);
 }
 
 export async function getUserbyId(
