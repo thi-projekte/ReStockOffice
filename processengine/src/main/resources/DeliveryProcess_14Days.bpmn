@@ -5,7 +5,7 @@
   <bpmn:collaboration id="Collaboration_FourteenDaysDeliveryPublication">
     <bpmn:participant id="Participant_FourteenDaysPublication" name="14-Tage-Veröffentlichungsprozess" processRef="fourteenDaysDeliveryPublicationProcess" />
     <bpmn:participant id="Participant_FourteenDaysDelivery" name="Einzelner Auslieferungsprozess" processRef="fourteenDaysDeliveryProcess" />
-    <bpmn:messageFlow id="MessageFlow_FourteenDaysPublishStartsDelivery" name="DeliveryPublished" targetRef="Start_FourteenDaysDeliveryPublished" />
+    <bpmn:messageFlow id="MessageFlow_FourteenDaysPublishStartsDelivery" name="DeliveryPublished" sourceRef="Task_DailyPublishDelivery" targetRef="Start_FourteenDaysDeliveryPublished" />
   </bpmn:collaboration>
   <bpmn:process id="fourteenDaysDeliveryPublicationProcess" name="Option B: Rollierende 14-Tage-Veröffentlichung" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:startEvent id="Start_FourteenDaysPublicationTimer" name="Täglich 6 Uhr">
@@ -23,8 +23,8 @@
       <bpmn:outgoing>Flow_1ofngvk</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:sequenceFlow id="Flow_FourteenDaysStartToFetch" sourceRef="Start_FourteenDaysPublicationTimer" targetRef="Task_FetchFourteenDaysDeliveries" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysFetchToMulti" sourceRef="Task_FetchFourteenDaysDeliveries" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysMultiToEnd" targetRef="End_FourteenDaysPublication" />
+    <bpmn:sequenceFlow id="Flow_FourteenDaysFetchToMulti" sourceRef="Task_FetchFourteenDaysDeliveries" targetRef="Activity_07ujw4v" />
+    <bpmn:sequenceFlow id="Flow_FourteenDaysMultiToEnd" sourceRef="Activity_07ujw4v" targetRef="End_FourteenDaysPublication" />
     <bpmn:sequenceFlow id="Flow_1ofngvk" sourceRef="Task_FetchFourteenDaysDeliveries" targetRef="Activity_07ujw4v" />
     <bpmn:sequenceFlow id="Flow_0gcehjs" sourceRef="Start_FourteenDaysPublicationTimer" targetRef="Task_FetchFourteenDaysDeliveries" />
     <bpmn:subProcess id="Activity_07ujw4v" name="Für jede zu veröffentlichende Lieferung">
