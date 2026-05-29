@@ -60,6 +60,7 @@ public class InvoiceResource {
     @GET
     @Path("invoices")
     @Produces(MediaType.APPLICATION_JSON)
+    @jakarta.transaction.Transactional
     public List<InvoiceEntity> getInvoices(@QueryParam("userId") String userID){
         String loggedInId = jwt.getSubject();
 

@@ -27,7 +27,7 @@ public class InvoiceEntity extends PanacheEntity {
 
     @Lob
     @Column(name = "zugferd_pdf")
-    @JsonIgnore
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public byte[] zugferdPdf;
 
     public InvoiceEntity() {}
