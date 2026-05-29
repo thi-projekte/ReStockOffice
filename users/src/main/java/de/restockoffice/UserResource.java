@@ -196,7 +196,7 @@ public class UserResource {
                 throw new WebApplicationException("Datei ist zu groß. Maximal 5MB erlaubt.", 400);
             }
 
-            entity.profilePictureUrl = uploadProfilePicture(userId, file);
+            entity.profilePictureUrl = "https://restockoffice.hel1.nbg1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";//uploadProfilePicture(userId, file);
             hasChanged = true;
         }
 
@@ -235,7 +235,7 @@ public class UserResource {
                 throw new WebApplicationException("Datei ist zu groß. Maximal 5MB erlaubt.", 400);
             }
 
-            entity.profilePictureUrl =uploadProfilePicture(userId, file);
+            entity.profilePictureUrl ="https://restockoffice.hel1.nbg1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";//uploadProfilePicture(userId, file);
             hasChanged = true;
         }
 
