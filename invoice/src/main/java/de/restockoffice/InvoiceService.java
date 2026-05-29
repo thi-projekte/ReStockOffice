@@ -116,6 +116,7 @@ public class InvoiceService {
         entity.persist();
     }
 
+    @jakarta.transaction.Transactional
     public List<InvoiceEntity> getInvoicesForAccount(String userId) {
         return InvoiceEntity.list("userId", userId);
     }

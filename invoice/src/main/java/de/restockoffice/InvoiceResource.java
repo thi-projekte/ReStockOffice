@@ -78,6 +78,7 @@ public class InvoiceResource {
     @GET
     @Path("invoices/download")
     @Produces("application/pdf")
+    @jakarta.transaction.Transactional
     public Response downloadInvoicePdf(
             @QueryParam("userId") String userId,
             @QueryParam("invoiceNumber") String invoiceNumber){
