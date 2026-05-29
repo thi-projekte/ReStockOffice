@@ -5,7 +5,7 @@
   <bpmn:collaboration id="Collaboration_FourteenDaysDeliveryPublication">
     <bpmn:participant id="Participant_FourteenDaysPublication" name="14-Tage-Veröffentlichungsprozess" processRef="fourteenDaysDeliveryPublicationProcess" />
     <bpmn:participant id="Participant_FourteenDaysDelivery" name="Einzelner Auslieferungsprozess" processRef="fourteenDaysDeliveryProcess" />
-    <bpmn:messageFlow id="MessageFlow_FourteenDaysPublishStartsDelivery" name="DeliveryPublished" sourceRef="Task_DailyPublishDelivery" targetRef="Start_FourteenDaysDeliveryPublished" />
+    <bpmn:messageFlow id="MessageFlow_FourteenDaysPublishStartsDelivery" name="DeliveryPublished" targetRef="Start_FourteenDaysDeliveryPublished" />
   </bpmn:collaboration>
   <bpmn:process id="fourteenDaysDeliveryPublicationProcess" name="Option B: Rollierende 14-Tage-Veröffentlichung" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:startEvent id="Start_FourteenDaysPublicationTimer" name="Täglich 6 Uhr">
@@ -15,7 +15,7 @@
         <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 0 6 * * ?</bpmn:timeCycle>
       </bpmn:timerEventDefinition>
     </bpmn:startEvent>
-    <bpmn:serviceTask id="Task_FetchFourteenDaysDeliveries" name="Lieferungen der nächsten 14 Tage holen" camunda:delegateExpression="${fetchDeliveriesForPublicationDelegate}">
+    <bpmn:serviceTask id="Task_FetchFourteenDaysDeliveries" name="Neue Lieferungen der nächsten 14 Tage holen" camunda:delegateExpression="${fetchDeliveriesForPublicationDelegate}">
       <bpmn:documentation>Query-Idee: delivery_date BETWEEN today AND today + 14 days AND published=false.</bpmn:documentation>
       <bpmn:incoming>Flow_FourteenDaysStartToFetch</bpmn:incoming>
       <bpmn:incoming>Flow_0gcehjs</bpmn:incoming>
@@ -23,8 +23,8 @@
       <bpmn:outgoing>Flow_1ofngvk</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:sequenceFlow id="Flow_FourteenDaysStartToFetch" sourceRef="Start_FourteenDaysPublicationTimer" targetRef="Task_FetchFourteenDaysDeliveries" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysFetchToMulti" sourceRef="Task_FetchFourteenDaysDeliveries" targetRef="Activity_07ujw4v" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysMultiToEnd" sourceRef="Activity_07ujw4v" targetRef="End_FourteenDaysPublication" />
+    <bpmn:sequenceFlow id="Flow_FourteenDaysFetchToMulti" sourceRef="Task_FetchFourteenDaysDeliveries" />
+    <bpmn:sequenceFlow id="Flow_FourteenDaysMultiToEnd" targetRef="End_FourteenDaysPublication" />
     <bpmn:sequenceFlow id="Flow_1ofngvk" sourceRef="Task_FetchFourteenDaysDeliveries" targetRef="Activity_07ujw4v" />
     <bpmn:sequenceFlow id="Flow_0gcehjs" sourceRef="Start_FourteenDaysPublicationTimer" targetRef="Task_FetchFourteenDaysDeliveries" />
     <bpmn:subProcess id="Activity_07ujw4v" name="Für jede zu veröffentlichende Lieferung">
@@ -119,6 +119,7 @@ Business Key: delivery.deliveryId. Variablen: deliveryId, customerId, deliveryDa
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_FetchFourteenDaysDeliveries_di" bpmnElement="Task_FetchFourteenDaysDeliveries">
         <dc:Bounds x="290" y="165" width="140" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_07ujw4v_di" bpmnElement="Activity_07ujw4v" isExpanded="true">
         <dc:Bounds x="540" y="105" width="410" height="200" />

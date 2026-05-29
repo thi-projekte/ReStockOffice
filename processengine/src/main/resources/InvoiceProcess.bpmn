@@ -5,7 +5,7 @@
     <bpmn:participant id="Participant_19d2kll" name="Kunde" />
     <bpmn:messageFlow id="Flow_0ng3c89" sourceRef="Activity_0hwt1d3" targetRef="Participant_19d2kll" />
   </bpmn:collaboration>
-  <bpmn:process id="Process_07xl1x2" name="Rechnungsprozess" isExecutable="true">
+  <bpmn:process id="Process_07xl1x2" name="Rechnungsprozess" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:sequenceFlow id="Flow_0eho9xw" sourceRef="Event_03zh8qr" targetRef="Activity_0gobvgs" />
     <bpmn:sequenceFlow id="Flow_08k3m79" sourceRef="Activity_1fbfcfa" targetRef="Event_00tbsd8" />
     <bpmn:serviceTask id="Activity_0gobvgs" name="Kundendaten laden" camunda:delegateExpression="${loadAllCustomersDelegate}">
