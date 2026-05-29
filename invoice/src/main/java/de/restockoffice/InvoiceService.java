@@ -70,7 +70,7 @@ public class InvoiceService {
         return generatedInvoiceNumber;
     }
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional
     public void sendInvoiceViaEmail(InvoiceRequest request) throws IOException {
         log.info("Fetching invoice {} from DB to send email to {}", request.invoiceNumber(), request.recipientEmail());
 

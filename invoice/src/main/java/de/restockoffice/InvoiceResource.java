@@ -41,6 +41,7 @@ public class InvoiceResource {
     @POST
     @Path("invoices/send-mail")
     @Produces(MediaType.APPLICATION_JSON)
+    @jakarta.transaction.Transactional
     public Response sendInvoiceMail(InvoiceRequest request) throws IOException{
         invoiceService.sendInvoiceViaEmail(request);
 
