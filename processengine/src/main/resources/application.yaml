@@ -7,7 +7,7 @@ spring:
   jersey:
     application-path: /engine-rest
 
-camunda.bpm:
+cibseven.bpm:
   database:
     schema-update: true
   history-level: audit
