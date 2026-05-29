@@ -5,11 +5,10 @@
   <bpmn:collaboration id="Collaboration_FourteenDaysDeliveryPublication">
     <bpmn:participant id="Participant_FourteenDaysPublication" name="14-Tage-Veröffentlichungsprozess" processRef="fourteenDaysDeliveryPublicationProcess" />
     <bpmn:participant id="Participant_FourteenDaysDelivery" name="Einzelner Auslieferungsprozess" processRef="fourteenDaysDeliveryProcess" />
-    <bpmn:messageFlow id="MessageFlow_FourteenDaysPublishStartsDelivery" name="DeliveryPublished" targetRef="Start_FourteenDaysDeliveryPublished" />
+    <bpmn:messageFlow id="MessageFlow_FourteenDaysPublishStartsDelivery" name="DeliveryPublished" sourceRef="Task_DailyPublishDelivery" targetRef="Start_FourteenDaysDeliveryPublished" />
   </bpmn:collaboration>
   <bpmn:process id="fourteenDaysDeliveryPublicationProcess" name="Option B: Rollierende 14-Tage-Veröffentlichung" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:startEvent id="Start_FourteenDaysPublicationTimer" name="Täglich 6 Uhr">
-      <bpmn:outgoing>Flow_FourteenDaysStartToFetch</bpmn:outgoing>
       <bpmn:outgoing>Flow_0gcehjs</bpmn:outgoing>
       <bpmn:timerEventDefinition id="Timer_FourteenDaysPublication">
         <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 0 6 * * ?</bpmn:timeCycle>
@@ -17,14 +16,9 @@
     </bpmn:startEvent>
     <bpmn:serviceTask id="Task_FetchFourteenDaysDeliveries" name="Neue Lieferungen der nächsten 14 Tage holen" camunda:delegateExpression="${fetchDeliveriesForPublicationDelegate}">
       <bpmn:documentation>Query-Idee: delivery_date BETWEEN today AND today + 14 days AND published=false.</bpmn:documentation>
-      <bpmn:incoming>Flow_FourteenDaysStartToFetch</bpmn:incoming>
       <bpmn:incoming>Flow_0gcehjs</bpmn:incoming>
-      <bpmn:outgoing>Flow_FourteenDaysFetchToMulti</bpmn:outgoing>
       <bpmn:outgoing>Flow_1ofngvk</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:sequenceFlow id="Flow_FourteenDaysStartToFetch" sourceRef="Start_FourteenDaysPublicationTimer" targetRef="Task_FetchFourteenDaysDeliveries" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysFetchToMulti" sourceRef="Task_FetchFourteenDaysDeliveries" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysMultiToEnd" targetRef="End_FourteenDaysPublication" />
     <bpmn:sequenceFlow id="Flow_1ofngvk" sourceRef="Task_FetchFourteenDaysDeliveries" targetRef="Activity_07ujw4v" />
     <bpmn:sequenceFlow id="Flow_0gcehjs" sourceRef="Start_FourteenDaysPublicationTimer" targetRef="Task_FetchFourteenDaysDeliveries" />
     <bpmn:subProcess id="Activity_07ujw4v" name="Für jede zu veröffentlichende Lieferung">
@@ -48,60 +42,41 @@ Business Key: delivery.deliveryId. Variablen: deliveryId, customerId, deliveryDa
     </bpmn:subProcess>
     <bpmn:sequenceFlow id="Flow_1xnacjz" sourceRef="Activity_07ujw4v" targetRef="End_FourteenDaysPublication" />
     <bpmn:endEvent id="End_FourteenDaysPublication" name="14-Tage-Veröffentlichung beendet">
-      <bpmn:incoming>Flow_FourteenDaysMultiToEnd</bpmn:incoming>
       <bpmn:incoming>Flow_1xnacjz</bpmn:incoming>
     </bpmn:endEvent>
   </bpmn:process>
   <bpmn:process id="fourteenDaysDeliveryProcess" name="Option B: Einzelner Auslieferungsprozess" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:startEvent id="Start_FourteenDaysDeliveryPublished" name="Lieferung veröffentlicht">
-      <bpmn:outgoing>Flow_FourteenDaysDeliveryStartToAccept</bpmn:outgoing>
       <bpmn:outgoing>Flow_0utjut3</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEvent_FourteenDaysDeliveryPublished" messageRef="Message_FourteenDaysDeliveryPublished" />
     </bpmn:startEvent>
     <bpmn:userTask id="Task_FourteenDaysAcceptDelivery" name="Lieferung als Restocker annehmen">
-      <bpmn:incoming>Flow_FourteenDaysDeliveryStartToAccept</bpmn:incoming>
       <bpmn:incoming>Flow_0utjut3</bpmn:incoming>
-      <bpmn:outgoing>Flow_FourteenDaysAcceptToAnnouncementTimer</bpmn:outgoing>
       <bpmn:outgoing>Flow_0jbud7k</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:intermediateCatchEvent id="Timer_FourteenDaysWaitUntilAnnouncement" name="Warten bis 2 Tage vor Liefertag">
-      <bpmn:incoming>Flow_FourteenDaysAcceptToAnnouncementTimer</bpmn:incoming>
       <bpmn:incoming>Flow_0jbud7k</bpmn:incoming>
-      <bpmn:outgoing>Flow_FourteenDaysTimerToAnnouncement</bpmn:outgoing>
       <bpmn:outgoing>Flow_0t1k7q5</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerDefinition_FourteenDaysAnnouncementDate">
         <bpmn:timeDate xsi:type="bpmn:tFormalExpression">${announcementDate}</bpmn:timeDate>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
     <bpmn:serviceTask id="Task_FourteenDaysSendAnnouncement" name="Lieferankündigung versenden" camunda:delegateExpression="${sendDeliveryAnnouncementDelegate}">
-      <bpmn:incoming>Flow_FourteenDaysTimerToAnnouncement</bpmn:incoming>
       <bpmn:incoming>Flow_0t1k7q5</bpmn:incoming>
-      <bpmn:outgoing>Flow_FourteenDaysAnnouncementToConfirmationWait</bpmn:outgoing>
       <bpmn:outgoing>Flow_02j3b25</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:intermediateCatchEvent id="Catch_FourteenDaysDeliveryConfirmed" name="Auslieferung bestätigt">
-      <bpmn:incoming>Flow_FourteenDaysAnnouncementToConfirmationWait</bpmn:incoming>
       <bpmn:incoming>Flow_02j3b25</bpmn:incoming>
-      <bpmn:outgoing>Flow_FourteenDaysConfirmedToConfirmationMail</bpmn:outgoing>
       <bpmn:outgoing>Flow_07m1561</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEvent_FourteenDaysDeliveryConfirmed" messageRef="Message_FourteenDaysDeliveryConfirmed" />
     </bpmn:intermediateCatchEvent>
     <bpmn:serviceTask id="Task_FourteenDaysSendConfirmation" name="Lieferbestätigung versenden" camunda:delegateExpression="${sendDeliveryConfirmationDelegate}">
-      <bpmn:incoming>Flow_FourteenDaysConfirmedToConfirmationMail</bpmn:incoming>
       <bpmn:incoming>Flow_07m1561</bpmn:incoming>
-      <bpmn:outgoing>Flow_FourteenDaysConfirmationMailToEnd</bpmn:outgoing>
       <bpmn:outgoing>Flow_0vr1nat</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:endEvent id="End_FourteenDaysDeliveryProcess" name="Auslieferung beendet">
-      <bpmn:incoming>Flow_FourteenDaysConfirmationMailToEnd</bpmn:incoming>
       <bpmn:incoming>Flow_0vr1nat</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_FourteenDaysDeliveryStartToAccept" sourceRef="Start_FourteenDaysDeliveryPublished" targetRef="Task_FourteenDaysAcceptDelivery" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysAcceptToAnnouncementTimer" sourceRef="Task_FourteenDaysAcceptDelivery" targetRef="Timer_FourteenDaysWaitUntilAnnouncement" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysTimerToAnnouncement" sourceRef="Timer_FourteenDaysWaitUntilAnnouncement" targetRef="Task_FourteenDaysSendAnnouncement" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysAnnouncementToConfirmationWait" sourceRef="Task_FourteenDaysSendAnnouncement" targetRef="Catch_FourteenDaysDeliveryConfirmed" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysConfirmedToConfirmationMail" sourceRef="Catch_FourteenDaysDeliveryConfirmed" targetRef="Task_FourteenDaysSendConfirmation" />
-    <bpmn:sequenceFlow id="Flow_FourteenDaysConfirmationMailToEnd" sourceRef="Task_FourteenDaysSendConfirmation" targetRef="End_FourteenDaysDeliveryProcess" />
     <bpmn:sequenceFlow id="Flow_0utjut3" sourceRef="Start_FourteenDaysDeliveryPublished" targetRef="Task_FourteenDaysAcceptDelivery" />
     <bpmn:sequenceFlow id="Flow_0jbud7k" sourceRef="Task_FourteenDaysAcceptDelivery" targetRef="Timer_FourteenDaysWaitUntilAnnouncement" />
     <bpmn:sequenceFlow id="Flow_0t1k7q5" sourceRef="Timer_FourteenDaysWaitUntilAnnouncement" targetRef="Task_FourteenDaysSendAnnouncement" />
@@ -165,6 +140,12 @@ Business Key: delivery.deliveryId. Variablen: deliveryId, customerId, deliveryDa
       <bpmndi:BPMNEdge id="Flow_1xnacjz_di" bpmnElement="Flow_1xnacjz">
         <di:waypoint x="950" y="205" />
         <di:waypoint x="1022" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_FourteenDaysPublishStartsDelivery_di" bpmnElement="MessageFlow_FourteenDaysPublishStartsDelivery">
+        <di:waypoint x="760" y="245" />
+        <di:waypoint x="760" y="370" />
+        <di:waypoint x="208" y="370" />
+        <di:waypoint x="208" y="497" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Participant_FourteenDaysDelivery_di" bpmnElement="Participant_FourteenDaysDelivery" isHorizontal="true">
         <dc:Bounds x="120" y="390" width="1050" height="250" />
