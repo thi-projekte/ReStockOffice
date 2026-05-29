@@ -20,6 +20,19 @@ public class InvoiceService {
     @Inject EBillingService eBillingService;
     @Inject ResendMailClient mailClient;
 
+    @jakarta.transaction.Transactional
+    void onStart(@jakarta.enterprise.event.Observes io.quarkus.runtime.StartupEvent ev) {
+        log.info("Checking/Creating database sequences for Invoice Service...");
+        try {
+            InvoiceEntity.getEntityManager()
+                    .createNativeQuery("CREATE SEQUENCE IF NOT EXISTS invoice_num_seq START WITH 1 INCREMENT BY 1")
+                    .executeUpdate();
+            log.info("Database sequence 'invoice_num_seq' is ready.");
+        } catch (Exception e) {
+            log.error("Failed to automatically create database sequence", e);
+        }
+    }
+
     @Transactional
     public String createAndPersistInvoice(InvoiceRequest request) throws IOException{
         int year = java.time.Year.now().getValue();
