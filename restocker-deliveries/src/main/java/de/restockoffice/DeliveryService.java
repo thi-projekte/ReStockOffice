@@ -140,6 +140,17 @@ public class DeliveryService {
     }
 
     @Transactional
+    public List<DeliveryPublicationDto> getPublicationCandidates(int days, String authorizationHeader) {
+        ensurePlanningHorizon(authorizationHeader);
+
+        LocalDate today = LocalDate.now();
+        LocalDate horizonEnd = today.plusDays(Math.max(0, days));
+        return Delivery.findUnpublishedBetween(today, horizonEnd).stream()
+                .map(this::toPublicationDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
     public List<DeliveryDetailDto> getAssignedDeliveries(String restockerName, String authorizationHeader) {
         validateRestockerName(restockerName);
         ensurePlanningHorizon(authorizationHeader);
@@ -210,6 +221,15 @@ public class DeliveryService {
         }
         delivery.markDelivered();
         return delivery;
+    }
+
+    @Transactional
+    public DeliveryPublicationDto markPublished(UUID deliveryId) {
+        Delivery delivery = findDeliveryOrThrow(deliveryId);
+        if (!delivery.published) {
+            delivery.markPublished();
+        }
+        return toPublicationDto(delivery);
     }
 
     @Transactional
@@ -410,6 +430,8 @@ public class DeliveryService {
         dto.collectedAt = delivery.collectedAt;
         dto.acceptedAt = delivery.acceptedAt;
         dto.deliveredAt = delivery.deliveredAt;
+        dto.published = delivery.published;
+        dto.publishedAt = delivery.publishedAt;
         dto.restockerName = restockerDisplayName(delivery, authenticatedRestocker);
 
         dto.recipientEmail = valueOrEmpty(user != null ? user.email : null);
@@ -443,6 +465,18 @@ public class DeliveryService {
             return detailItem;
         }).collect(Collectors.toList());
 
+        return dto;
+    }
+
+    private DeliveryPublicationDto toPublicationDto(Delivery delivery) {
+        DeliveryPublicationDto dto = new DeliveryPublicationDto();
+        dto.deliveryId = delivery.id;
+        dto.orderId = delivery.orderId;
+        dto.customerId = delivery.userId;
+        dto.aboId = delivery.orderId;
+        dto.deliveryDate = resolveDeliveryDate(delivery);
+        dto.published = delivery.published;
+        dto.publishedAt = delivery.publishedAt;
         return dto;
     }
 

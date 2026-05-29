@@ -55,7 +55,7 @@
     <bpmn:sequenceFlow id="Flow_16u15k1" sourceRef="Gateway_0uu5cas" targetRef="Event_1dl63d6">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${isLastDelivery}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:serviceTask id="Activity_0d48wl5" name="Lieferbestätigung versenden" camunda:delegateExpression="${sendDeliveryConfirmationDelegate}">
+    <bpmn:serviceTask id="Activity_0d48wl5" name="DeliveryProcess bestätigen" camunda:delegateExpression="${correlateDeliveryConfirmedDelegate}">
       <bpmn:incoming>Flow_0fg8myo</bpmn:incoming>
       <bpmn:outgoing>Flow_1gq00nq</bpmn:outgoing>
     </bpmn:serviceTask>

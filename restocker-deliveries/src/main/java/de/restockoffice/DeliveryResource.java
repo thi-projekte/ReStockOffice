@@ -29,6 +29,9 @@ public class DeliveryResource {
     @Inject
     DeliveryService deliveryService;
 
+    @Inject
+    DeliveryProcessClient deliveryProcessClient;
+
     @Context
     HttpHeaders headers;
 
@@ -42,6 +45,12 @@ public class DeliveryResource {
     @Path("/open")
     public List<DeliveryDetailDto> getOpenDeliveries() {
         return deliveryService.getOpenDeliveries(authorizationHeader());
+    }
+
+    @GET
+    @Path("/publication-candidates")
+    public List<DeliveryPublicationDto> getPublicationCandidates(@QueryParam("days") Integer days) {
+        return deliveryService.getPublicationCandidates(days != null ? days : 14, authorizationHeader());
     }
 
     @GET
@@ -145,7 +154,14 @@ public class DeliveryResource {
     @Path("/{deliveryId}/confirm")
     public Response confirmDelivery(@PathParam("deliveryId") UUID deliveryId) {
         Delivery delivery = deliveryService.confirmDelivery(deliveryId);
+        deliveryProcessClient.correlateDeliveryConfirmed(deliveryId);
         return Response.ok(deliveryStatusResponse(delivery)).build();
+    }
+
+    @POST
+    @Path("/{deliveryId}/published")
+    public DeliveryPublicationDto markPublished(@PathParam("deliveryId") UUID deliveryId) {
+        return deliveryService.markPublished(deliveryId);
     }
 
     public static class EndTourRequest {

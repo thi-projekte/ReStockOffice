@@ -20,6 +20,8 @@ public class DeliveryDetailDto {
     public LocalDateTime collectedAt;
     public LocalDateTime acceptedAt;
     public LocalDateTime deliveredAt;
+    public boolean published;
+    public LocalDateTime publishedAt;
     public String restockerName;
 
     // From users service

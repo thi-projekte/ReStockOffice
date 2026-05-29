@@ -63,6 +63,12 @@ public class Delivery extends PanacheEntityBase {
     @Column(name = "delivered_at")
     public LocalDateTime deliveredAt;
 
+    @Column(name = "published", nullable = false)
+    public boolean published = false;
+
+    @Column(name = "published_at")
+    public LocalDateTime publishedAt;
+
     @OneToMany(mappedBy = "delivery", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<DeliveryItem> items = new ArrayList<>();
 
@@ -78,6 +84,11 @@ public class Delivery extends PanacheEntityBase {
 
     public void markDelivered() {
         this.deliveredAt = LocalDateTime.now();
+    }
+
+    public void markPublished() {
+        this.published = true;
+        this.publishedAt = LocalDateTime.now();
     }
 
     public boolean isDelivered() {
@@ -114,6 +125,15 @@ public class Delivery extends PanacheEntityBase {
     public static List<Delivery> findOpenBetween(LocalDate startDate, LocalDate endDate) {
         return list(
                 "tour is null and deliveredAt is null and deliveryDate >= ?1 and deliveryDate <= ?2 " +
+                        "order by deliveryDate asc, userId asc",
+                startDate,
+                endDate
+        );
+    }
+
+    public static List<Delivery> findUnpublishedBetween(LocalDate startDate, LocalDate endDate) {
+        return list(
+                "published = false and deliveredAt is null and deliveryDate >= ?1 and deliveryDate <= ?2 " +
                         "order by deliveryDate asc, userId asc",
                 startDate,
                 endDate
