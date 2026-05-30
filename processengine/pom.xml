@@ -49,6 +49,19 @@
     </dependency>
   </dependencies>
 
+  <profiles>
+    <profile>
+      <id>local-webapp</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.cibseven.bpm.springboot</groupId>
+          <artifactId>cibseven-bpm-spring-boot-starter-webapp</artifactId>
+          <version>${cibseven.version.enterprise}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
+
    <build>
     <plugins>
       <plugin>

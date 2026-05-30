@@ -1,0 +1,14 @@
+camunda.bpm:
+  admin-user:
+    id: demo
+    password: demo
+    first-name: Local
+    last-name: Admin
+    email: demo@restockoffice.local
+  webapp:
+    application-path: /webapp
+    index-redirect-enabled: true
+
+cibseven.webclient:
+  authentication:
+    jwtSecret: M7LY1Qb8pRbeI0qJsqq37fQ7CBhL+ov8GOfkEHhFyVQ3Bn3RikqntClltNBMHIjIGAavGhzRnyvCRMeosQofP8wYRm7IIH9mYkDPmpzP6EZpTQIx1DUIde2GegnlmzVVQ3wZX1uuVY5rD/+VPagLoWlvMxTlaeApubVcQvqGPOE=
