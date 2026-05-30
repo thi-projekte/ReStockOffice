@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1lhxb24" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Collaboration_1410n7q">
-    <bpmn:participant id="Participant_02ir530" name="Restocker" processRef="Process_0h5mosh" />
+    <bpmn:participant id="Participant_02ir530" name="Restocker" processRef="Process_restocker" />
   </bpmn:collaboration>
-  <bpmn:process id="Process_0h5mosh" isExecutable="true" camunda:historyTimeToLive="180">
+  <bpmn:process id="Process_restocker" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:sequenceFlow id="Flow_10k14az" sourceRef="Activity_1470j1f" targetRef="Activity_1rm9yy3" />
     <bpmn:sequenceFlow id="Flow_0gtek7y" sourceRef="Activity_1rm9yy3" targetRef="Activity_06o1eiy" />
     <bpmn:sequenceFlow id="Flow_0olirm0" sourceRef="Activity_1adfj76" targetRef="Activity_1cx1i45" />

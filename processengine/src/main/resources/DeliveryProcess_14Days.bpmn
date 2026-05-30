@@ -3,11 +3,11 @@
   <bpmn:message id="Message_FourteenDaysDeliveryPublished" name="DeliveryPublished" />
   <bpmn:message id="Message_FourteenDaysDeliveryConfirmed" name="DeliveryConfirmed" />
   <bpmn:collaboration id="Collaboration_FourteenDaysDeliveryPublication">
-    <bpmn:participant id="Participant_FourteenDaysPublication" name="14-Tage-Veröffentlichungsprozess" processRef="fourteenDaysDeliveryPublicationProcess" />
-    <bpmn:participant id="Participant_FourteenDaysDelivery" name="Einzelner Auslieferungsprozess" processRef="fourteenDaysDeliveryProcess" />
+    <bpmn:participant id="Participant_FourteenDaysPublication" name="14-Tage-Veröffentlichungsprozess" processRef="Process_deliveryPublication" />
+    <bpmn:participant id="Participant_FourteenDaysDelivery" name="Einzelner Auslieferungsprozess" processRef="Process_delivery" />
     <bpmn:messageFlow id="MessageFlow_FourteenDaysPublishStartsDelivery" name="DeliveryPublished" sourceRef="Task_DailyPublishDelivery" targetRef="Start_FourteenDaysDeliveryPublished" />
   </bpmn:collaboration>
-  <bpmn:process id="fourteenDaysDeliveryPublicationProcess" name="Option B: Rollierende 14-Tage-Veröffentlichung" isExecutable="true" camunda:historyTimeToLive="180">
+  <bpmn:process id="Process_deliveryPublication" name="Option B: Rollierende 14-Tage-Veröffentlichung" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:startEvent id="Start_FourteenDaysPublicationTimer" name="Täglich 6 Uhr">
       <bpmn:outgoing>Flow_0gcehjs</bpmn:outgoing>
       <bpmn:timerEventDefinition id="Timer_FourteenDaysPublication">
@@ -45,7 +45,7 @@ Business Key: delivery.deliveryId. Variablen: deliveryId, customerId, deliveryDa
       <bpmn:incoming>Flow_1xnacjz</bpmn:incoming>
     </bpmn:endEvent>
   </bpmn:process>
-  <bpmn:process id="fourteenDaysDeliveryProcess" name="Option B: Einzelner Auslieferungsprozess" isExecutable="true" camunda:historyTimeToLive="180">
+  <bpmn:process id="Process_delivery" name="Option B: Einzelner Auslieferungsprozess" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:startEvent id="Start_FourteenDaysDeliveryPublished" name="Lieferung veröffentlicht">
       <bpmn:outgoing>Flow_0utjut3</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEvent_FourteenDaysDeliveryPublished" messageRef="Message_FourteenDaysDeliveryPublished" />
@@ -141,12 +141,6 @@ Business Key: delivery.deliveryId. Variablen: deliveryId, customerId, deliveryDa
         <di:waypoint x="950" y="205" />
         <di:waypoint x="1022" y="205" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="MessageFlow_FourteenDaysPublishStartsDelivery_di" bpmnElement="MessageFlow_FourteenDaysPublishStartsDelivery">
-        <di:waypoint x="760" y="245" />
-        <di:waypoint x="760" y="370" />
-        <di:waypoint x="208" y="370" />
-        <di:waypoint x="208" y="497" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Participant_FourteenDaysDelivery_di" bpmnElement="Participant_FourteenDaysDelivery" isHorizontal="true">
         <dc:Bounds x="120" y="390" width="1050" height="250" />
       </bpmndi:BPMNShape>
@@ -194,6 +188,12 @@ Business Key: delivery.deliveryId. Variablen: deliveryId, customerId, deliveryDa
       <bpmndi:BPMNEdge id="Flow_0vr1nat_di" bpmnElement="Flow_0vr1nat">
         <di:waypoint x="930" y="515" />
         <di:waypoint x="990" y="515" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_FourteenDaysPublishStartsDelivery_di" bpmnElement="MessageFlow_FourteenDaysPublishStartsDelivery">
+        <di:waypoint x="760" y="245" />
+        <di:waypoint x="760" y="370" />
+        <di:waypoint x="208" y="370" />
+        <di:waypoint x="208" y="497" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
