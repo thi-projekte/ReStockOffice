@@ -9,7 +9,7 @@ export default function CtaSection() {
           Starten Sie noch heute!<br />
         </h2>
         <p className={styles.subtitle}>
-          30 Tage gratis testen. Kein Risiko, keine Kreditkarte.
+          Jetzt loslegen und Büromaterial smarter verwalten.
         </p>
         <button className={styles.cta} onClick={redirectToRegister}>
           Jetzt registrieren

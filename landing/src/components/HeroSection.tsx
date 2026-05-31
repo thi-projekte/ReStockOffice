@@ -94,7 +94,7 @@ export default function HeroSection() {
             </svg>
           </button>
 
-          <p className={styles.trust}>Kostenlos testen · DSGVO-konform</p>
+          <p className={styles.trust}>DSGVO-konform</p>
         </div>
 
       </div>
@@ -113,13 +113,13 @@ const BuildingIllustration = memo(function BuildingIllustration() {
     >
       <rect x="130" y="60" width="140" height="220" rx="4" fill="#2B7A6A"/>
       <rect x="130" y="60" width="10" height="220" fill="#3d9e8a" opacity="0.4"/>
-      {[0,1,2,3,4,5].map(row =>
+      {[0,1,2,3,4].map(row =>
         [0,1,2,3].map(col => (
           <rect
             key={`w-${row}-${col}`}
             x={148 + col * 28} y={80 + row * 32}
             width={16} height={20} rx="2"
-            fill={row === 5 && col === 3 ? '#3EB89A' : row % 2 === col % 2 ? '#a8d8cc' : '#d4ede8'}
+            fill={row % 2 === col % 2 ? '#a8d8cc' : '#d4ede8'}
           />
         ))
       )}
