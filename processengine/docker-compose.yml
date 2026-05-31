@@ -10,6 +10,11 @@ services:
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
       CORS_ORIGINS: https://app.restockoffice.de
       MAILSERVICE_BASE_URL: http://confirmation-mails:8081
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      USERS_SERVICE_URL: https://users.restockoffice.de
+      ORDERS_SERVICE_URL: https://orders.restockoffice.de
+      ARTICLES_SERVICE_URL: https://articles.restockoffice.de
+      DELIVERIES_SERVICE_URL: https://restocker-deliveries.restockoffice.de
     ports:
       - "8080:8080"
     networks:

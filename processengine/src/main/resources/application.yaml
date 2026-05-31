@@ -7,6 +7,19 @@ spring:
   jersey:
     application-path: /engine-rest
 
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: restockoffice-backend
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            token-uri: ${KEYCLOAK_TOKEN_URL:https://id.restockoffice.de/realms/restockoffice/protocol/openid-connect/token}
+
+
 cibseven.bpm:
   database:
     schema-update: true
