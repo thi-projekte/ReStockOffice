@@ -10,22 +10,22 @@ const steps: Step[] = [
   {
     number: '01',
     title: 'Konto erstellen',
-    description: 'Registrierung in unter 2 Minuten. Keine Kreditkarte, keine Vertragsbindung.',
+    description: 'Registrierung in unter 2 Minuten. Direkt loslegen, ohne Aufwand.',
   },
   {
     number: '02',
-    title: 'Artikel & Mindestbestände einrichten',
-    description: 'Legen Sie Ihre Büroartikel an und definieren Sie, ab wann nachbestellt werden soll.',
+    title: 'Artikel abonnieren',
+    description: 'Gewünschte Büroartikel auswählen und ein Lieferintervall festlegen – einmalig, fertig.',
   },
   {
     number: '03',
-    title: 'Lieferant verbinden',
-    description: 'Anbindung an Ihren bevorzugten Lieferanten – oder nutzen Sie unsere Partnernetzwerk.',
+    title: 'Öffnungszeiten hinterlegen',
+    description: 'Teilt uns eure Bürozeiten mit, damit der Restocker zur richtigen Zeit liefern kann.',
   },
   {
     number: '04',
-    title: 'Fertig – ReStockOffice übernimmt',
-    description: 'Das System überwacht Ihre Bestände und löst Bestellungen automatisch und rechtzeitig aus.',
+    title: 'Fertig – wir liefern automatisch',
+    description: 'ReStockOffice kündigt jede Lieferung rechtzeitig per Mail an und bestätigt die Ankunft.',
   },
 ]
 

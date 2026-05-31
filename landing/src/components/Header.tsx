@@ -34,6 +34,7 @@ export default function Header() {
                 <span className={styles.userName}>
                   {auth.name ?? auth.email ?? 'Angemeldet'}
                 </span>
+                <a href="https://app.restockoffice.de" className="btn-primary">Zur App</a>
                 <button className="btn-outline" onClick={logout}>Abmelden</button>
               </>
             ) : (

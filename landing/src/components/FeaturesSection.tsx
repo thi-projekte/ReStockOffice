@@ -9,39 +9,39 @@ type Feature = {
 
 const features: Feature[] = [
   {
-    icon: AutoIcon,
-    title: 'Automatische Nachbestellung',
+    icon: AboIcon,
+    title: 'Abo-Bestellungen',
     points: [
-      'Lagerstand wird laufend überwacht',
-      'Bestellung erfolgt bei Unterschreitung des Mindestbestands',
-      'Keine manuelle Eingriffe notwendig',
+      'Artikel einmalig auswählen und Intervall festlegen',
+      'Automatische Lieferung ohne manuelles Nachbestellen',
+      'Bereits abonnierte Artikel sind klar gekennzeichnet',
     ],
   },
   {
-    icon: DashboardIcon,
-    title: 'Übersichtliches Dashboard',
+    icon: DeliveryIcon,
+    title: 'Zuverlässige Lieferung',
     points: [
-      'Alle Artikel auf einen Blick',
-      'Status je Produkt in Echtzeit',
-      'Bestellhistorie & Auswertungen',
+      'Lieferankündigung 2 Tage vor dem Liefertermin',
+      'Restocker bringt die Ware direkt ins Büro',
+      'Bestätigung per Mail nach erfolgreicher Lieferung',
     ],
   },
   {
-    icon: SupplierIcon,
-    title: 'Flexible Lieferantenanbindung',
+    icon: OverviewIcon,
+    title: 'Übersicht & Transparenz',
     points: [
-      'Mehrere Lieferanten gleichzeitig',
-      'Preisvergleich automatisiert',
-      'Eigene Verträge bleiben erhalten',
+      'Alle aktiven Abos auf einen Blick',
+      'Bevorstehende Lieferungen im Dashboard',
+      'Vollständige Lieferhistorie abrufbar',
     ],
   },
   {
-    icon: TeamIcon,
-    title: 'Teamverwaltung',
+    icon: AccountIcon,
+    title: 'Einfache Kontoverwaltung',
     points: [
-      'Rollen & Berechtigungen',
-      'Freigabeprozesse konfigurierbar',
-      'Abteilungsweises Budgetmanagement',
+      'Öffnungszeiten hinterlegen für die Lieferung',
+      'Abos jederzeit einsehbar',
+      'Benachrichtigungen per Mail inklusive',
     ],
   },
 ]
@@ -52,10 +52,9 @@ export default function FeaturesSection() {
       <div className="container">
         <div className={styles.header}>
           <span className={styles.label}>Vorteile</span>
-          <h2 className={styles.title}>Alles, was Ihr Büro braucht</h2>
+          <h2 className={styles.title}>Büromaterial auf Autopilot</h2>
           <p className={styles.subtitle}>
-            Von der Bestandsüberwachung bis zur Lieferung –
-            ReStockOffice übernimmt den gesamten Prozess.
+            Einmal abonnieren – ReStockOffice kümmert sich um den Rest.
           </p>
         </div>
         <ul className={styles.grid}>
@@ -79,7 +78,7 @@ export default function FeaturesSection() {
   )
 }
 
-function AutoIcon() {
+function AboIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
       <path d="M14 4v4M14 20v4M4 14h4M20 14h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -89,18 +88,7 @@ function AutoIcon() {
   )
 }
 
-function DashboardIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
-      <rect x="4" y="4" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
-      <rect x="16" y="4" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
-      <rect x="4" y="16" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
-      <rect x="16" y="16" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  )
-}
-
-function SupplierIcon() {
+function DeliveryIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
       <path d="M4 8h14l3 8H7L4 8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
@@ -111,13 +99,22 @@ function SupplierIcon() {
   )
 }
 
-function TeamIcon() {
+function OverviewIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
-      <circle cx="10" cy="10" r="4" stroke="currentColor" strokeWidth="2"/>
-      <path d="M3 24c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="21" cy="10" r="3" stroke="currentColor" strokeWidth="2"/>
-      <path d="M25 24c0-3.314-1.79-6-4-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <rect x="4" y="4" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
+      <rect x="16" y="4" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
+      <rect x="4" y="16" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
+      <rect x="16" y="16" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
+    </svg>
+  )
+}
+
+function AccountIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
+      <circle cx="14" cy="10" r="4" stroke="currentColor" strokeWidth="2"/>
+      <path d="M6 24c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )
 }

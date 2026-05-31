@@ -28,14 +28,16 @@ export async function getAuthState(): Promise<{ authenticated: boolean; name?: s
   }
 }
 
+const APP_URL = 'https://app.restockoffice.de'
+
 export async function redirectToRegister(): Promise<void> {
   await init()
-  keycloak.register()
+  keycloak.register({ redirectUri: APP_URL })
 }
 
 export async function redirectToLogin(): Promise<void> {
   await init()
-  keycloak.login()
+  keycloak.login({ redirectUri: APP_URL })
 }
 
 export async function logout(): Promise<void> {
