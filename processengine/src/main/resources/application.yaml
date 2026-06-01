@@ -14,6 +14,10 @@ spring:
     application-path: /engine-rest
     type: filter
 
+  user:
+    name: admin
+    password: test-password-123
+
   security:
     mandatory-web-filter-logging: true
     oauth2:
