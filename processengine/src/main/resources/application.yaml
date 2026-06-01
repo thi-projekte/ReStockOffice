@@ -29,6 +29,12 @@ spring:
     security:
       enabled: false
 
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
+
 
 cibseven.bpm:
   database:
@@ -68,3 +74,5 @@ articlesservice:
 
 deliveriesservice:
   base-url: ${DELIVERIES_SERVICE_URL:https://restocker-deliveries.restockoffice.de}
+
+
