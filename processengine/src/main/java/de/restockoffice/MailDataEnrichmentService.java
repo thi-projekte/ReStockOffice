@@ -79,6 +79,7 @@ public class MailDataEnrichmentService {
     public void enrichDeliveryAnnouncement(DelegateExecution execution) {
         EnrichmentContext context = loadContext(execution);
         enrichCommonVariables(execution, context);
+        setDeliveryItemsVariable(execution, context.delivery());
 
         LocalDate deliveryDate = resolveDeliveryDate(context);
         setIfBlank(execution, "daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));

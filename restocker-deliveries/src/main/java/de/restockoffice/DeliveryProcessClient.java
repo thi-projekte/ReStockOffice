@@ -31,7 +31,9 @@ public class DeliveryProcessClient {
         try {
             Map<String, Object> payload = Map.of(
                     "messageName", "DeliveryConfirmed",
-                    "businessKey", deliveryId.toString(),
+                    "localCorrelationKeys", Map.of(
+                            "deliveryId", variable(deliveryId.toString())
+                    ),
                     "processVariables", Map.of(
                             "deliveryId", variable(deliveryId.toString()),
                             "deliveredDeliveryId", variable(deliveryId.toString())

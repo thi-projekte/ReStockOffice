@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_FourteenDaysPublicationOption" targetNamespace="http://restockoffice.de/process/delivery/fourteen-days" exporter="Camunda Modeler" exporterVersion="5.45.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
-  <bpmn:message id="Message_FourteenDaysDeliveryPublished" name="DeliveryPublished" />
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_FourteenDaysPublicationOption" targetNamespace="http://restockoffice.de/process/delivery/fourteen-days" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:message id="Message_FourteenDaysDeliveryConfirmed" name="DeliveryConfirmed" />
   <bpmn:collaboration id="Collaboration_FourteenDaysDeliveryPublication">
     <bpmn:participant id="Participant_FourteenDaysDelivery" name="Auslieferungsankündigungs- und überwachungsprozess" processRef="Process_delivery" />
@@ -15,6 +14,9 @@
   <bpmn:process id="Process_delivery" name="Auslieferungsprozess einer einzelnen Lieferung" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:dataStoreReference id="DataStoreReference_1ltnadl" name="Abonnierte Artikel" />
     <bpmn:sendTask id="Task_FourteenDaysSendAnnouncement" name="Lieferankündigung versenden" camunda:delegateExpression="${sendDeliveryAnnouncementDelegate}">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start" delegateExpression="${prepareDeliveryMonitoringContextDelegate}" />
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_0jbud7k</bpmn:incoming>
       <bpmn:outgoing>Flow_198461e</bpmn:outgoing>
       <bpmn:property id="Property_163bdf5" name="__targetRef_placeholder" />
@@ -22,13 +24,15 @@
         <bpmn:sourceRef>DataObjectReference_0i9dae9</bpmn:sourceRef>
         <bpmn:targetRef>Property_163bdf5</bpmn:targetRef>
       </bpmn:dataInputAssociation>
-      <bpmn:multiInstanceLoopCharacteristics />
+      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${deliveries}" camunda:elementVariable="delivery" />
     </bpmn:sendTask>
     <bpmn:startEvent id="Start_FourteenDaysDeliveryPublished" name="Täglich 6 Uhr">
       <bpmn:outgoing>Flow_0utjut3</bpmn:outgoing>
-      <bpmn:timerEventDefinition id="TimerEventDefinition_1nqqlxs" />
+      <bpmn:timerEventDefinition id="TimerEventDefinition_1nqqlxs">
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 0 6 * * ?</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
     </bpmn:startEvent>
-    <bpmn:serviceTask id="Task_FourteenDaysAcceptDelivery" name="Alle Lieferungen in 2 Tagen ermitteln">
+    <bpmn:serviceTask id="Task_FourteenDaysAcceptDelivery" name="Alle Lieferungen in 2 Tagen ermitteln" camunda:delegateExpression="${fetchDeliveriesForAnnouncementDelegate}">
       <bpmn:incoming>Flow_0utjut3</bpmn:incoming>
       <bpmn:outgoing>Flow_0jbud7k</bpmn:outgoing>
       <bpmn:property id="Property_1sh2e8m" name="__targetRef_placeholder" />
@@ -53,8 +57,11 @@
         <bpmn:sourceRef>DataObjectReference_0i9dae9</bpmn:sourceRef>
         <bpmn:targetRef>Property_10okcpi</bpmn:targetRef>
       </bpmn:dataInputAssociation>
-      <bpmn:multiInstanceLoopCharacteristics />
+      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${deliveries}" camunda:elementVariable="delivery" />
       <bpmn:startEvent id="Event_1yw2nk2">
+        <bpmn:extensionElements>
+          <camunda:executionListener event="start" delegateExpression="${prepareDeliveryMonitoringContextDelegate}" />
+        </bpmn:extensionElements>
         <bpmn:outgoing>Flow_1ssdjng</bpmn:outgoing>
       </bpmn:startEvent>
       <bpmn:intermediateCatchEvent id="Catch_FourteenDaysDeliveryConfirmed" name="Auslieferung bestätigt">
@@ -113,6 +120,9 @@
         <dc:Bounds x="740" y="105" width="450" height="200" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1yw2nk2_di" bpmnElement="Event_1yw2nk2">
+        <dc:Bounds x="762" y="187" width="36" height="36" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Catch_FourteenDaysDeliveryConfirmed_di" bpmnElement="Catch_FourteenDaysDeliveryConfirmed">
         <dc:Bounds x="850" y="187" width="36" height="36" />
         <bpmndi:BPMNLabel>
@@ -122,19 +132,16 @@
       <bpmndi:BPMNShape id="Activity_0eckojb_di" bpmnElement="Task_FourteenDaysSendConfirmation">
         <dc:Bounds x="950" y="165" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_1yw2nk2_di" bpmnElement="Event_1yw2nk2">
-        <dc:Bounds x="762" y="187" width="36" height="36" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0x9ldd4_di" bpmnElement="Event_0x9ldd4">
         <dc:Bounds x="1122" y="187" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_1ssdjng_di" bpmnElement="Flow_1ssdjng">
-        <di:waypoint x="798" y="205" />
-        <di:waypoint x="850" y="205" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_07m1561_di" bpmnElement="Flow_07m1561">
         <di:waypoint x="886" y="205" />
         <di:waypoint x="950" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ssdjng_di" bpmnElement="Flow_1ssdjng">
+        <di:waypoint x="798" y="205" />
+        <di:waypoint x="850" y="205" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0bnn5o4_di" bpmnElement="Flow_0bnn5o4">
         <di:waypoint x="1050" y="205" />
@@ -156,6 +163,12 @@
         <di:waypoint x="1190" y="205" />
         <di:waypoint x="1282" y="205" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="DataStoreReference_1ltnadl_di" bpmnElement="DataStoreReference_1ltnadl">
+        <dc:Bounds x="305" y="385" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="287" y="442" width="86" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_1ah049t_di" bpmnElement="Participant_1a0azq8" isHorizontal="true">
         <dc:Bounds x="440" y="400" width="300" height="60" />
         <bpmndi:BPMNLabel />
@@ -164,22 +177,9 @@
         <dc:Bounds x="790" y="400" width="340" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="DataStoreReference_1ltnadl_di" bpmnElement="DataStoreReference_1ltnadl">
-        <dc:Bounds x="305" y="385" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="287" y="442" width="86" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="DataInputAssociation_0dll1ec_di" bpmnElement="DataInputAssociation_0dll1ec">
         <di:waypoint x="458" y="129" />
         <di:waypoint x="546" y="173" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_10wir6g_di" bpmnElement="Flow_10wir6g">
-        <di:waypoint x="595" y="245" />
-        <di:waypoint x="595" y="400" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="568" y="323" width="85" height="27" />
-        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataInputAssociation_061h7k5_di" bpmnElement="DataInputAssociation_061h7k5">
         <di:waypoint x="330" y="385" />
@@ -193,11 +193,11 @@
         <di:waypoint x="458" y="120" />
         <di:waypoint x="740" y="125" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_131fvtn_di" bpmnElement="Flow_131fvtn">
-        <di:waypoint x="868" y="400" />
-        <di:waypoint x="868" y="223" />
+      <bpmndi:BPMNEdge id="Flow_10wir6g_di" bpmnElement="Flow_10wir6g">
+        <di:waypoint x="595" y="245" />
+        <di:waypoint x="595" y="400" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="820" y="340" width="88" height="27" />
+          <dc:Bounds x="568" y="323" width="85" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_114zd5h_di" bpmnElement="Flow_114zd5h">
@@ -207,6 +207,13 @@
         <di:waypoint x="720" y="400" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="823" y="312" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_131fvtn_di" bpmnElement="Flow_131fvtn">
+        <di:waypoint x="868" y="400" />
+        <di:waypoint x="868" y="223" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="820" y="340" width="88" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>

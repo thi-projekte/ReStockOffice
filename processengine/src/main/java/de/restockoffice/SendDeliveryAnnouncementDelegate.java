@@ -43,11 +43,7 @@ public class SendDeliveryAnnouncementDelegate implements JavaDelegate {
         request.put("deliveryLocation", execution.getVariable("deliveryLocation"));
         request.put("deliveryInstructions", execution.getVariable("deliveryInstructions"));
         request.put("deliveryDetailsUrl", execution.getVariable("deliveryDetailsUrl"));
-        Map<String, Object> deliveryItem = new HashMap<>();
-        deliveryItem.put("name", execution.getVariable("itemName"));
-        deliveryItem.put("articleNumber", execution.getVariable("itemArticleNumber"));
-        deliveryItem.put("quantity", execution.getVariable("itemQuantity"));
-        request.put("deliveryItems", List.of(deliveryItem));
+        request.put("deliveryItems", deliveryItems(execution));
 
         new RestTemplate().postForEntity(
                 mailServiceBaseUrl + "/emails/delivery-announcement",
@@ -61,5 +57,18 @@ public class SendDeliveryAnnouncementDelegate implements JavaDelegate {
     private Object mailValue(DelegateExecution execution, String preferredVariable, String fallbackVariable) {
         Object preferredValue = execution.getVariable(preferredVariable);
         return preferredValue != null ? preferredValue : execution.getVariable(fallbackVariable);
+    }
+
+    private Object deliveryItems(DelegateExecution execution) {
+        Object deliveryItems = execution.getVariable("deliveryItems");
+        if (deliveryItems instanceof List<?> list && !list.isEmpty()) {
+            return deliveryItems;
+        }
+
+        Map<String, Object> deliveryItem = new HashMap<>();
+        deliveryItem.put("name", execution.getVariable("itemName"));
+        deliveryItem.put("articleNumber", execution.getVariable("itemArticleNumber"));
+        deliveryItem.put("quantity", execution.getVariable("itemQuantity"));
+        return List.of(deliveryItem);
     }
 }
