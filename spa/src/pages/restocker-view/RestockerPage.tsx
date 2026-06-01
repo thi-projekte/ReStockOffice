@@ -412,7 +412,6 @@ export function RestockerPage() {
                                 </div>
                             </>
                         )}
-
                         <button
                             className="tour-btn"
                             onClick={() => navigate("/restocker-my-orders")}
