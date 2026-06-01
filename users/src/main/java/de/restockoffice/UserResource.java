@@ -152,7 +152,7 @@ public class UserResource {
     public Response updateProfilePictureUrl() {
 
         String userId = jwt.getSubject();
-        String newImageUrl = "https://hel1.your-objectstorage.com/restockoffice/users/" + userId;
+        String newImageUrl = "https://hel1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";
         boolean foundAndUpdated = false;
 
         Customer customer = Customer.findById(userId);
