@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -48,6 +49,14 @@ public class RestockerTourProcessResource {
       @RequestBody String requestBody) throws JsonProcessingException {
     return startOrGetActiveTourProcessFromRequest(
         objectMapper.readValue(requestBody, StartTourProcessRequest.class));
+  }
+
+  @PostMapping(value = "/start", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  public ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcessFromForm(
+      @RequestParam String restockerId,
+      @RequestParam(required = false) Integer todayDeliveryCount) {
+    return startOrGetActiveTourProcessFromRequest(
+        new StartTourProcessRequest(restockerId, todayDeliveryCount));
   }
 
   private ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcessFromRequest(
@@ -98,6 +107,13 @@ public class RestockerTourProcessResource {
     return findTaskFromRequest(objectMapper.readValue(requestBody, TaskLookupRequest.class));
   }
 
+  @PostMapping(value = "/task/find", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  public ResponseEntity<TaskLookupResponse> findTaskFromForm(
+      @RequestParam String processInstanceId,
+      @RequestParam String taskDefinitionKey) {
+    return findTaskFromRequest(new TaskLookupRequest(processInstanceId, taskDefinitionKey));
+  }
+
   private ResponseEntity<TaskLookupResponse> findTaskFromRequest(TaskLookupRequest request) {
     if (request == null || isBlank(request.processInstanceId()) || isBlank(request.taskDefinitionKey())) {
       return ResponseEntity.badRequest().build();
@@ -122,6 +138,22 @@ public class RestockerTourProcessResource {
   public ResponseEntity<Void> completeTaskFromText(@RequestBody String requestBody)
       throws JsonProcessingException {
     return completeTaskFromRequest(objectMapper.readValue(requestBody, CompleteTaskRequest.class));
+  }
+
+  @PostMapping(value = "/task/complete", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  public ResponseEntity<Void> completeTaskFromForm(
+      @RequestParam String taskId,
+      @RequestParam(required = false) String variablesJson) throws JsonProcessingException {
+    Map<String, ProcessVariable> variables = isBlank(variablesJson)
+        ? Map.of()
+        : objectMapper.readValue(
+            variablesJson,
+            objectMapper.getTypeFactory().constructMapType(
+                Map.class,
+                String.class,
+                ProcessVariable.class));
+
+    return completeTaskFromRequest(new CompleteTaskRequest(taskId, variables));
   }
 
   private ResponseEntity<Void> completeTaskFromRequest(CompleteTaskRequest request) {

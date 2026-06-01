@@ -261,10 +261,7 @@ export function DeliveryPage() {
   async function loadUserTask(processInstanceId: string, taskDefinitionKey: string) {
     const response = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/task/find`, {
       method: "POST",
-      headers: {
-        "Content-Type": "text/plain",
-      },
-      body: JSON.stringify({
+      body: new URLSearchParams({
         processInstanceId,
         taskDefinitionKey,
       }),
@@ -288,12 +285,9 @@ export function DeliveryPage() {
   async function loadOptionalUserTask(processInstanceId: string, taskDefinitionKey: string) {
     const response = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/task/find`, {
       method: "POST",
-      headers: {
-        "Content-Type": "text/plain",
-      },
-      body: JSON.stringify({
-      processInstanceId,
-      taskDefinitionKey,
+      body: new URLSearchParams({
+        processInstanceId,
+        taskDefinitionKey,
       }),
     });
 
@@ -318,10 +312,10 @@ export function DeliveryPage() {
   ) {
     const response = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/task/complete`, {
       method: "POST",
-      headers: {
-        "Content-Type": "text/plain",
-      },
-      body: JSON.stringify({ taskId, variables }),
+      body: new URLSearchParams({
+        taskId,
+        variablesJson: JSON.stringify(variables),
+      }),
     });
 
     if (!response.ok) {
