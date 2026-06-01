@@ -666,6 +666,7 @@ export function AppShell({ children }: AppShellProps) {
                           className="header-profile-avatar"
                           src={profilePictureUrl}
                           alt="Profilbild"
+                          onError={() => setProfilePictureUrl(undefined)}
                         />
                       ) : (
                         <FaUser />

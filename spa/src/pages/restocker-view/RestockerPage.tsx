@@ -13,11 +13,12 @@ import { RestockerStatisticsCard } from "../../components/restocker/RestockerSta
 import { RestockerOrderDetailDialog } from "../../components/restocker/RestockerOrderDetailDialog";
 import { formatDeliveryWindow } from "./restockerOrderUi";
 
-const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
-const RESTOCKER_TOUR_PROCESS_DEFINITION_KEY = "Process_0h5mosh";
+const RESTOCKER_TOUR_PROCESS_API_URL =
+    "https://pe.restockoffice.de/api/restocker-tour-process";
 
-interface CamundaProcessInstance {
+interface RestockerTourProcessResponse {
     id: string;
+    started: boolean;
 }
 
 function currentTourProcessStorageKey(restockerId: string) {
@@ -146,108 +147,33 @@ export function RestockerPage() {
     const earningsPerDelivery = 7;
     const earningsToday = totalToday * earningsPerDelivery;
 
-    async function loadActiveTourProcess(restockerId: string) {
-        const query = new URLSearchParams({
-            processDefinitionKey: RESTOCKER_TOUR_PROCESS_DEFINITION_KEY,
-            businessKey: restockerId,
-            active: "true",
-        });
-        const res = await fetch(`${CAMUNDA_BASE_URL}/process-instance?${query.toString()}`);
-
-        if (!res.ok) {
-            throw new Error(`Aktiver Tour-Prozess konnte nicht geladen werden: ${res.status}`);
-        }
-
-        const processInstances = (await res.json()) as CamundaProcessInstance[];
-        return processInstances[0]?.id ?? null;
-    }
-
-    async function startTourProcessThroughEngineRest(
+    async function startTourProcess(
         restockerId: string,
         todayDeliveryCount: number,
     ) {
-        const activeProcessId = await loadActiveTourProcess(restockerId);
-
-        if (activeProcessId) {
-            await updateTourProcessVariables(activeProcessId, todayDeliveryCount);
-
-            return activeProcessId;
-        }
-
-        const res = await fetch(
-            `${CAMUNDA_BASE_URL}/process-definition/key/${RESTOCKER_TOUR_PROCESS_DEFINITION_KEY}/start`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    businessKey: restockerId,
-                    variables: {
-                        restockerId: {
-                            value: restockerId,
-                            type: "String",
-                        },
-                        todayDeliveryCount: {
-                            value: todayDeliveryCount,
-                            type: "Integer",
-                        },
-                    },
-                }),
+        const res = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/start`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
             },
-        );
+            body: JSON.stringify({
+                restockerId,
+                todayDeliveryCount,
+            }),
+        });
 
         if (!res.ok) {
             const text = await res.text();
             throw new Error(text || `Tour-Prozess konnte nicht gestartet werden: ${res.status}`);
         }
 
-        const processInstance = (await res.json()) as CamundaProcessInstance;
+        const processInstance = (await res.json()) as RestockerTourProcessResponse;
 
         if (!processInstance.id) {
-            throw new Error("Camunda hat keine Prozessinstanz-ID geliefert.");
+            throw new Error("Die Process-Engine hat keine Prozessinstanz-ID geliefert.");
         }
 
         return processInstance.id;
-    }
-
-    async function updateTourProcessVariables(
-        processInstanceId: string,
-        todayDeliveryCount: number,
-    ) {
-        const res = await fetch(
-            `${CAMUNDA_BASE_URL}/process-instance/${processInstanceId}/variables`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    modifications: {
-                        todayDeliveryCount: {
-                            value: todayDeliveryCount,
-                            type: "Integer",
-                        },
-                    },
-                    deletions: [],
-                }),
-            },
-        );
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text || `Tour-Prozessvariablen konnten nicht aktualisiert werden: ${res.status}`);
-        }
-    }
-
-    async function startTourProcess(
-        restockerId: string,
-        todayDeliveryCount: number,
-    ) {
-        return startTourProcessThroughEngineRest(
-            restockerId,
-            todayDeliveryCount,
-        );
     }
 
     const startTourRequestInFlight = useRef(false);
