@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1bnm3cz" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Collaboration_021nnii">
-    <bpmn:participant id="Participant_0a0ayn7" name="Rechnungspozess" processRef="Process_invoice" />
+    <bpmn:participant id="Participant_0a0ayn7" name="Rechnungspozess" processRef="Process_invoice_old" />
     <bpmn:participant id="Participant_19d2kll" name="Kunde" />
     <bpmn:messageFlow id="Flow_0ng3c89" sourceRef="Activity_0hwt1d3" targetRef="Participant_19d2kll" />
   </bpmn:collaboration>
-  <bpmn:process id="Process_invoice" name="Rechnungsprozess" isExecutable="true" camunda:historyTimeToLive="180">
+  <bpmn:process id="Process_invoice_old" name="Rechnungsprozess_alt" isExecutable="false" camunda:historyTimeToLive="180">
     <bpmn:sequenceFlow id="Flow_0eho9xw" sourceRef="Event_03zh8qr" targetRef="Activity_0gobvgs" />
     <bpmn:sequenceFlow id="Flow_08k3m79" sourceRef="Activity_1fbfcfa" targetRef="Event_00tbsd8" />
     <bpmn:serviceTask id="Activity_0gobvgs" name="Kundendaten laden" camunda:delegateExpression="${loadAllCustomersDelegate}">

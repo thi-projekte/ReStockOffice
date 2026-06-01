@@ -6,7 +6,7 @@
     <bpmn:messageFlow id="Flow_0r2zu57" sourceRef="Activity_098v8bj" targetRef="Participant_1p5oqzg" />
     <bpmn:messageFlow id="Flow_1qd1ori" sourceRef="Participant_1p5oqzg" targetRef="StartEvent_1" />
   </bpmn:collaboration>
-  <bpmn:process id="Process_04cuxo0" isExecutable="false">
+  <bpmn:process id="Process_04cuxo0" name="Aboprozess_alt" isExecutable="false">
     <bpmn:laneSet id="LaneSet_0f201o4">
       <bpmn:lane id="Lane_11at471">
         <bpmn:flowNodeRef>Activity_0gasjxq</bpmn:flowNodeRef>
