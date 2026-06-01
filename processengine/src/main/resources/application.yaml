@@ -14,6 +14,7 @@ spring:
     application-path: /engine-rest
 
   security:
+    mandatory-web-filter-logging: true
     oauth2:
       client:
         registration:
@@ -24,6 +25,9 @@ spring:
         provider:
           keycloak:
             token-uri: ${KEYCLOAK_TOKEN_URL:https://id.restockoffice.de/realms/restockoffice/protocol/openid-connect/token}
+  management:
+    security:
+      enabled: false
 
 
 cibseven.bpm:
