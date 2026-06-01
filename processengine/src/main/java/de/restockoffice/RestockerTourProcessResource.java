@@ -14,10 +14,8 @@ import org.cibseven.bpm.engine.task.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,22 +43,7 @@ public class RestockerTourProcessResource {
     this.objectMapper = objectMapper;
   }
 
-  @PostMapping(value = "/start", consumes = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcess(
-      @RequestBody StartTourProcessRequest request) {
-    return startOrGetActiveTourProcessFromRequest(request);
-  }
-
-  // text/plain und form-urlencoded werden zusätzlich unterstützt, damit Browser-
-  // Requests ohne problematische CORS-Preflights möglich bleiben.
-  @PostMapping(value = "/start", consumes = MediaType.TEXT_PLAIN_VALUE)
-  public ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcessFromText(
-      @RequestBody String requestBody) throws JsonProcessingException {
-    return startOrGetActiveTourProcessFromRequest(
-        objectMapper.readValue(requestBody, StartTourProcessRequest.class));
-  }
-
-  @PostMapping(value = "/start", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  @PostMapping("/start")
   public ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcessFromForm(
       @RequestParam("restockerId") String restockerId,
       @RequestParam(value = "todayDeliveryCount", required = false) Integer todayDeliveryCount) {
@@ -120,18 +103,7 @@ public class RestockerTourProcessResource {
     }
   }
 
-  @PostMapping(value = "/task/find", consumes = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<TaskLookupResponse> findTask(@RequestBody TaskLookupRequest request) {
-    return findTaskFromRequest(request);
-  }
-
-  @PostMapping(value = "/task/find", consumes = MediaType.TEXT_PLAIN_VALUE)
-  public ResponseEntity<TaskLookupResponse> findTaskFromText(@RequestBody String requestBody)
-      throws JsonProcessingException {
-    return findTaskFromRequest(objectMapper.readValue(requestBody, TaskLookupRequest.class));
-  }
-
-  @PostMapping(value = "/task/find", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  @PostMapping("/task/find")
   public ResponseEntity<TaskLookupResponse> findTaskFromForm(
       @RequestParam("processInstanceId") String processInstanceId,
       @RequestParam("taskDefinitionKey") String taskDefinitionKey) {
@@ -155,18 +127,7 @@ public class RestockerTourProcessResource {
     return ResponseEntity.ok(new TaskLookupResponse(taskId, tasks.size()));
   }
 
-  @PostMapping(value = "/task/complete", consumes = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<Void> completeTask(@RequestBody CompleteTaskRequest request) {
-    return completeTaskFromRequest(request);
-  }
-
-  @PostMapping(value = "/task/complete", consumes = MediaType.TEXT_PLAIN_VALUE)
-  public ResponseEntity<Void> completeTaskFromText(@RequestBody String requestBody)
-      throws JsonProcessingException {
-    return completeTaskFromRequest(objectMapper.readValue(requestBody, CompleteTaskRequest.class));
-  }
-
-  @PostMapping(value = "/task/complete", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  @PostMapping("/task/complete")
   public ResponseEntity<Void> completeTaskFromForm(
       @RequestParam("taskId") String taskId,
       @RequestParam(value = "variablesJson", required = false) String variablesJson) throws JsonProcessingException {
