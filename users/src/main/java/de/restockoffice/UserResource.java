@@ -302,7 +302,7 @@ public class UserResource {
                             .acl(software.amazon.awssdk.services.s3.model.ObjectCannedACL.PUBLIC_READ)
                             .contentType(file.contentType()).build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromFile(file.uploadedFile()));
-            return "https://"+ bucketName +".hel1.nbg1.your-objectstorage.com/" +bucketName+ "/"+ fileName;
+            return "https://hel1.nbg1.your-objectstorage.com/" +bucketName+ "/"+ fileName;
         } catch (Exception e) {
             throw new WebApplicationException("S3 Fehler beim Upload des Profilbilds", 500);
         }
