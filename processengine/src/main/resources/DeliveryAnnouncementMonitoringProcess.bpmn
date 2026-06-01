@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_FourteenDaysPublicationOption" targetNamespace="http://restockoffice.de/process/delivery/fourteen-days" exporter="Camunda Modeler" exporterVersion="5.45.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+  <bpmn:message id="Message_FourteenDaysDeliveryPublished" name="DeliveryPublished" />
+  <bpmn:message id="Message_FourteenDaysDeliveryConfirmed" name="DeliveryConfirmed" />
+  <bpmn:collaboration id="Collaboration_FourteenDaysDeliveryPublication">
+    <bpmn:participant id="Participant_FourteenDaysDelivery" name="Auslieferungsankündigungs- und überwachungsprozess" processRef="Process_delivery" />
+    <bpmn:participant id="Participant_1a0azq8" name="Kunde">
+      <bpmn:participantMultiplicity />
+    </bpmn:participant>
+    <bpmn:participant id="Participant_1p9tbou" name="Restocker" />
+    <bpmn:messageFlow id="Flow_10wir6g" name="Lieferankündigung" sourceRef="Task_FourteenDaysSendAnnouncement" targetRef="Participant_1a0azq8" />
+    <bpmn:messageFlow id="Flow_114zd5h" name="Lieferbestätigung" sourceRef="Task_FourteenDaysSendConfirmation" targetRef="Participant_1a0azq8" />
+    <bpmn:messageFlow id="Flow_131fvtn" name="Auslieferungsbestätigung" sourceRef="Participant_1p9tbou" targetRef="Catch_FourteenDaysDeliveryConfirmed" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_delivery" name="Auslieferungsprozess einer einzelnen Lieferung" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:dataStoreReference id="DataStoreReference_1ltnadl" name="Abonnierte Artikel" />
+    <bpmn:sendTask id="Task_FourteenDaysSendAnnouncement" name="Lieferankündigung versenden" camunda:delegateExpression="${sendDeliveryAnnouncementDelegate}">
+      <bpmn:incoming>Flow_0jbud7k</bpmn:incoming>
+      <bpmn:outgoing>Flow_198461e</bpmn:outgoing>
+      <bpmn:property id="Property_163bdf5" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_0dll1ec">
+        <bpmn:sourceRef>DataObjectReference_0i9dae9</bpmn:sourceRef>
+        <bpmn:targetRef>Property_163bdf5</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+      <bpmn:multiInstanceLoopCharacteristics />
+    </bpmn:sendTask>
+    <bpmn:startEvent id="Start_FourteenDaysDeliveryPublished" name="Täglich 6 Uhr">
+      <bpmn:outgoing>Flow_0utjut3</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_1nqqlxs" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_FourteenDaysAcceptDelivery" name="Alle Lieferungen in 2 Tagen ermitteln">
+      <bpmn:incoming>Flow_0utjut3</bpmn:incoming>
+      <bpmn:outgoing>Flow_0jbud7k</bpmn:outgoing>
+      <bpmn:property id="Property_1sh2e8m" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_061h7k5">
+        <bpmn:sourceRef>DataStoreReference_1ltnadl</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1sh2e8m</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_0wvsyyf">
+        <bpmn:targetRef>DataObjectReference_0i9dae9</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:dataObjectReference id="DataObjectReference_0i9dae9" name="Lieferungen" dataObjectRef="DataObject_0bnl51k" />
+    <bpmn:dataObject id="DataObject_0bnl51k" isCollection="true" />
+    <bpmn:endEvent id="End_FourteenDaysDeliveryProcess" name="Auslieferung beendet">
+      <bpmn:incoming>Flow_1gexmzl</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:subProcess id="Activity_0hbni48" name="Auslieferungsüberwachung">
+      <bpmn:incoming>Flow_198461e</bpmn:incoming>
+      <bpmn:outgoing>Flow_1gexmzl</bpmn:outgoing>
+      <bpmn:property id="Property_10okcpi" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_0evrsjj">
+        <bpmn:sourceRef>DataObjectReference_0i9dae9</bpmn:sourceRef>
+        <bpmn:targetRef>Property_10okcpi</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+      <bpmn:multiInstanceLoopCharacteristics />
+      <bpmn:startEvent id="Event_1yw2nk2">
+        <bpmn:outgoing>Flow_1ssdjng</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:intermediateCatchEvent id="Catch_FourteenDaysDeliveryConfirmed" name="Auslieferung bestätigt">
+        <bpmn:incoming>Flow_1ssdjng</bpmn:incoming>
+        <bpmn:outgoing>Flow_07m1561</bpmn:outgoing>
+        <bpmn:messageEventDefinition id="MessageEvent_FourteenDaysDeliveryConfirmed" messageRef="Message_FourteenDaysDeliveryConfirmed" />
+      </bpmn:intermediateCatchEvent>
+      <bpmn:sendTask id="Task_FourteenDaysSendConfirmation" name="Lieferbestätigung versenden" camunda:delegateExpression="${sendDeliveryConfirmationDelegate}">
+        <bpmn:incoming>Flow_07m1561</bpmn:incoming>
+        <bpmn:outgoing>Flow_0bnn5o4</bpmn:outgoing>
+      </bpmn:sendTask>
+      <bpmn:sequenceFlow id="Flow_07m1561" sourceRef="Catch_FourteenDaysDeliveryConfirmed" targetRef="Task_FourteenDaysSendConfirmation" />
+      <bpmn:sequenceFlow id="Flow_1ssdjng" sourceRef="Event_1yw2nk2" targetRef="Catch_FourteenDaysDeliveryConfirmed" />
+      <bpmn:endEvent id="Event_0x9ldd4">
+        <bpmn:incoming>Flow_0bnn5o4</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_0bnn5o4" sourceRef="Task_FourteenDaysSendConfirmation" targetRef="Event_0x9ldd4" />
+    </bpmn:subProcess>
+    <bpmn:sequenceFlow id="Flow_0jbud7k" sourceRef="Task_FourteenDaysAcceptDelivery" targetRef="Task_FourteenDaysSendAnnouncement" />
+    <bpmn:sequenceFlow id="Flow_198461e" sourceRef="Task_FourteenDaysSendAnnouncement" targetRef="Activity_0hbni48" />
+    <bpmn:sequenceFlow id="Flow_0utjut3" sourceRef="Start_FourteenDaysDeliveryPublished" targetRef="Task_FourteenDaysAcceptDelivery" />
+    <bpmn:sequenceFlow id="Flow_1gexmzl" sourceRef="Activity_0hbni48" targetRef="End_FourteenDaysDeliveryProcess" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_FourteenDaysPublicationOption">
+    <bpmndi:BPMNPlane id="BPMNPlane_FourteenDaysPublicationOption" bpmnElement="Collaboration_FourteenDaysDeliveryPublication">
+      <bpmndi:BPMNShape id="Participant_FourteenDaysDelivery_di" bpmnElement="Participant_FourteenDaysDelivery" isHorizontal="true">
+        <dc:Bounds x="120" y="80" width="1250" height="280" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1cvetbj_di" bpmnElement="Task_FourteenDaysSendAnnouncement">
+        <dc:Bounds x="545" y="165" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0k96l12_di" bpmnElement="Start_FourteenDaysDeliveryPublished">
+        <dc:Bounds x="190" y="187" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="176" y="223" width="66" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0q81lko_di" bpmnElement="Task_FourteenDaysAcceptDelivery">
+        <dc:Bounds x="280" y="165" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_0i9dae9_di" bpmnElement="DataObjectReference_0i9dae9">
+        <dc:Bounds x="422" y="95" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="411" y="152" width="59" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_FourteenDaysDeliveryProcess_di" bpmnElement="End_FourteenDaysDeliveryProcess">
+        <dc:Bounds x="1282" y="187" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1270" y="223" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0hbni48_di" bpmnElement="Activity_0hbni48" isExpanded="true">
+        <dc:Bounds x="740" y="105" width="450" height="200" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_FourteenDaysDeliveryConfirmed_di" bpmnElement="Catch_FourteenDaysDeliveryConfirmed">
+        <dc:Bounds x="850" y="187" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="837" y="149.5" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0eckojb_di" bpmnElement="Task_FourteenDaysSendConfirmation">
+        <dc:Bounds x="950" y="165" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1yw2nk2_di" bpmnElement="Event_1yw2nk2">
+        <dc:Bounds x="762" y="187" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0x9ldd4_di" bpmnElement="Event_0x9ldd4">
+        <dc:Bounds x="1122" y="187" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1ssdjng_di" bpmnElement="Flow_1ssdjng">
+        <di:waypoint x="798" y="205" />
+        <di:waypoint x="850" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07m1561_di" bpmnElement="Flow_07m1561">
+        <di:waypoint x="886" y="205" />
+        <di:waypoint x="950" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0bnn5o4_di" bpmnElement="Flow_0bnn5o4">
+        <di:waypoint x="1050" y="205" />
+        <di:waypoint x="1122" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0jbud7k_di" bpmnElement="Flow_0jbud7k">
+        <di:waypoint x="380" y="205" />
+        <di:waypoint x="545" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_198461e_di" bpmnElement="Flow_198461e">
+        <di:waypoint x="645" y="205" />
+        <di:waypoint x="740" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0utjut3_di" bpmnElement="Flow_0utjut3">
+        <di:waypoint x="226" y="205" />
+        <di:waypoint x="280" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1gexmzl_di" bpmnElement="Flow_1gexmzl">
+        <di:waypoint x="1190" y="205" />
+        <di:waypoint x="1282" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_1ah049t_di" bpmnElement="Participant_1a0azq8" isHorizontal="true">
+        <dc:Bounds x="440" y="400" width="300" height="60" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_00w9uhb_di" bpmnElement="Participant_1p9tbou" isHorizontal="true">
+        <dc:Bounds x="790" y="400" width="340" height="60" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_1ltnadl_di" bpmnElement="DataStoreReference_1ltnadl">
+        <dc:Bounds x="305" y="385" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="287" y="442" width="86" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DataInputAssociation_0dll1ec_di" bpmnElement="DataInputAssociation_0dll1ec">
+        <di:waypoint x="458" y="129" />
+        <di:waypoint x="546" y="173" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10wir6g_di" bpmnElement="Flow_10wir6g">
+        <di:waypoint x="595" y="245" />
+        <di:waypoint x="595" y="400" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="568" y="323" width="85" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_061h7k5_di" bpmnElement="DataInputAssociation_061h7k5">
+        <di:waypoint x="330" y="385" />
+        <di:waypoint x="330" y="245" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0wvsyyf_di" bpmnElement="DataOutputAssociation_0wvsyyf">
+        <di:waypoint x="378" y="169" />
+        <di:waypoint x="422" y="137" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_0evrsjj_di" bpmnElement="DataInputAssociation_0evrsjj">
+        <di:waypoint x="458" y="120" />
+        <di:waypoint x="740" y="125" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_131fvtn_di" bpmnElement="Flow_131fvtn">
+        <di:waypoint x="868" y="400" />
+        <di:waypoint x="868" y="223" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="820" y="340" width="88" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_114zd5h_di" bpmnElement="Flow_114zd5h">
+        <di:waypoint x="1010" y="245" />
+        <di:waypoint x="1010" y="330" />
+        <di:waypoint x="720" y="330" />
+        <di:waypoint x="720" y="400" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="823" y="312" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
