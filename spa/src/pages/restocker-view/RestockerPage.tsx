@@ -16,11 +16,13 @@ import { formatDeliveryWindow } from "./restockerOrderUi";
 const RESTOCKER_TOUR_PROCESS_API_URL =
     "https://pe.restockoffice.de/api/restocker-tour-process";
 
+// Interface, um zu prüfen, ob bereits ein Prozess läuft
 interface RestockerTourProcessResponse {
     id: string;
     started: boolean;
 }
 
+// Speichern der Prozess-ID als Storage Key, um mehrfaches starten zu verhindern
 function currentTourProcessStorageKey(restockerId: string) {
     const date = new Date();
     const today = [
@@ -70,7 +72,7 @@ export function RestockerPage() {
 
 
 
-    /*Daten laden */
+    // Lädt verfügbare Marktplatz-Aufträge, die der Restocker noch annehmen kann
     useEffect(() => {
         async function load() {
             if (!auth.token) return;
@@ -98,6 +100,7 @@ export function RestockerPage() {
         load();
     }, [auth.token]);
 
+    // Lädt Aufträge, die diesem Restocker bereits zugeordnet sind
     useEffect(() => {
         async function load() {
             if (!auth.token || !auth.user?.id) return;
@@ -147,6 +150,7 @@ export function RestockerPage() {
     const earningsPerDelivery = 7;
     const earningsToday = totalToday * earningsPerDelivery;
 
+    // Startet den BPMN-Tourprozess über die Process-Engine-API-Wrapper
     async function startTourProcess(
         restockerId: string,
         todayDeliveryCount: number,
@@ -179,6 +183,7 @@ export function RestockerPage() {
         loadStoredTourProcessId(auth.user?.id),
     );
 
+    // Holen der gespeicherte Prozess-ID für den eingeloggten Restocker 
     useEffect(() => {
         setTourProcessId(loadStoredTourProcessId(auth.user?.id));
     }, [auth.user?.id]);
@@ -194,10 +199,12 @@ export function RestockerPage() {
                     : "Tour von heute beginnen";
 
     async function handleStartTourProcess() {
+        // Verhindert, dass ein Doppelklick zwei Prozess-Start-Requests sendet.
         if (startTourRequestInFlight.current) {
             return;
         }
 
+        // Eine Tour ergibt nur Sinn, wenn es heute noch offene zugeordnete Lieferungen gibt.
         if (!hasOpenAssignedToday) {
             return;
         }
@@ -215,11 +222,15 @@ export function RestockerPage() {
                 openAssignedTodayCount,
             );
 
+            // Speichert die ID lokal, damit das Dashboard in dieser Browser-Sitzung
+            // wieder zur laufenden Tour wechseln kann.
             if (tourProcessId !== processInstanceId) {
                 storeTourProcessId(auth.user.id, processInstanceId);
                 setTourProcessId(processInstanceId);
             }
 
+            // Die DeliveryPage nutzt die processInstanceId, um BPMN-User-Tasks
+            // abzuschließen. Die eigentlichen Lieferdaten kommen weiter vom Delivery-Service.
             const query = new URLSearchParams({ processInstanceId });
             navigate(`/restocker-deliveries?${query.toString()}`);
         } catch (err) {
@@ -244,6 +255,8 @@ export function RestockerPage() {
                 token: auth.token,
             });
 
+            // Verschiebt den angenommenen Auftrag direkt aus der Marktplatzliste
+            // in die zugeordneten Aufträge, damit die UI sofort den neuen Zustand zeigt.
             setOpenOrders((currentOrders) =>
                 currentOrders.filter((order) => order.orderKey !== orderToAccept.orderKey),
             );
