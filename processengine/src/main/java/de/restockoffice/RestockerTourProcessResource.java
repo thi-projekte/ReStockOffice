@@ -1,9 +1,12 @@
 package de.restockoffice;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 
 import org.cibseven.bpm.engine.RuntimeService;
 import org.cibseven.bpm.engine.runtime.ProcessInstance;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,15 +20,29 @@ public class RestockerTourProcessResource {
   private static final String PROCESS_DEFINITION_KEY = "Process_0h5mosh";
 
   private final RuntimeService runtimeService;
+  private final ObjectMapper objectMapper;
   private final Object startLock = new Object();
 
-  public RestockerTourProcessResource(RuntimeService runtimeService) {
+  public RestockerTourProcessResource(RuntimeService runtimeService, ObjectMapper objectMapper) {
     this.runtimeService = runtimeService;
+    this.objectMapper = objectMapper;
   }
 
-  @PostMapping("/start")
+  @PostMapping(value = "/start", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcess(
       @RequestBody StartTourProcessRequest request) {
+    return startOrGetActiveTourProcessFromRequest(request);
+  }
+
+  @PostMapping(value = "/start", consumes = MediaType.TEXT_PLAIN_VALUE)
+  public ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcessFromText(
+      @RequestBody String requestBody) throws JsonProcessingException {
+    return startOrGetActiveTourProcessFromRequest(
+        objectMapper.readValue(requestBody, StartTourProcessRequest.class));
+  }
+
+  private ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcessFromRequest(
+      StartTourProcessRequest request) {
     String restockerId = request != null ? request.restockerId() : null;
     Integer todayDeliveryCount = request != null ? request.todayDeliveryCount() : null;
 

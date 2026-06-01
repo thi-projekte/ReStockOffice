@@ -154,7 +154,7 @@ export function RestockerPage() {
         const res = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/start`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "text/plain",
             },
             body: JSON.stringify({
                 restockerId,
