@@ -73,28 +73,27 @@
 
 @media (max-width: 680px) {
   .inner {
+    flex-direction: column;
+    align-items: center;
     height: auto;
-    padding: 10px 16px 8px;
-    flex-wrap: wrap;
-    gap: 6px;
+    padding: 14px 16px 10px;
+    gap: 10px;
   }
   .logoImg { height: 72px; width: auto; }
   .nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    flex-direction: column;
     align-items: center;
-    gap: 6px;
-  }
-  .navActions { gap: 6px; order: 0; }
-  .navLinks {
     gap: 10px;
-    order: 1;
     width: 100%;
-    justify-content: center;
-    padding-bottom: 4px;
   }
-  .navLink { font-size: 0.8rem; }
+  .navActions { gap: 8px; order: 0; justify-content: center; }
+  .navLinks {
+    gap: 16px;
+    order: 1;
+    justify-content: center;
+    padding-bottom: 2px;
+  }
+  .navLink { font-size: 0.85rem; }
   .userName { display: none; }
-  .authPlaceholder { width: 120px; height: 36px; }
+  .authPlaceholder { width: 160px; height: 36px; }
 }
