@@ -12,6 +12,7 @@ spring:
 
   jersey:
     application-path: /engine-rest
+    type: filter
 
   security:
     mandatory-web-filter-logging: true
@@ -25,15 +26,10 @@ spring:
         provider:
           keycloak:
             token-uri: ${KEYCLOAK_TOKEN_URL:https://id.restockoffice.de/realms/restockoffice/protocol/openid-connect/token}
+
   management:
     security:
       enabled: false
-
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
 
 
 cibseven.bpm:
