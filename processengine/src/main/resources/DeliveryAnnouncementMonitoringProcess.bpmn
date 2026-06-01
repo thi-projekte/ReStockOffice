@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_FourteenDaysPublicationOption" targetNamespace="http://restockoffice.de/process/delivery/fourteen-days" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+  <bpmn:message id="Message_FourteenDaysDeliveryPublished" name="DeliveryPublished" />
   <bpmn:message id="Message_FourteenDaysDeliveryConfirmed" name="DeliveryConfirmed" />
   <bpmn:collaboration id="Collaboration_FourteenDaysDeliveryPublication">
     <bpmn:participant id="Participant_FourteenDaysDelivery" name="Auslieferungsankündigungs- und überwachungsprozess" processRef="Process_delivery" />
@@ -11,7 +12,7 @@
     <bpmn:messageFlow id="Flow_114zd5h" name="Lieferbestätigung" sourceRef="Task_FourteenDaysSendConfirmation" targetRef="Participant_1a0azq8" />
     <bpmn:messageFlow id="Flow_131fvtn" name="Auslieferungsbestätigung" sourceRef="Participant_1p9tbou" targetRef="Catch_FourteenDaysDeliveryConfirmed" />
   </bpmn:collaboration>
-  <bpmn:process id="Process_delivery" name="Auslieferungsprozess einer einzelnen Lieferung" isExecutable="true" camunda:historyTimeToLive="180">
+  <bpmn:process id="Process_delivery" name="Auslieferungs- und überwachungsprozess" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:dataStoreReference id="DataStoreReference_1ltnadl" name="Abonnierte Artikel" />
     <bpmn:sendTask id="Task_FourteenDaysSendAnnouncement" name="Lieferankündigung versenden" camunda:delegateExpression="${sendDeliveryAnnouncementDelegate}">
       <bpmn:extensionElements>

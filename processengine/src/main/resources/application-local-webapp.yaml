@@ -1,3 +1,10 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
+
 camunda.bpm:
   admin-user:
     id: demo
@@ -10,5 +17,11 @@ camunda.bpm:
     index-redirect-enabled: true
 
 cibseven.webclient:
+  engineRest:
+    url: http://localhost:8080
+    path: /engine-rest
+  engine-rest:
+    url: http://localhost:8080
+    path: /engine-rest
   authentication:
     jwtSecret: M7LY1Qb8pRbeI0qJsqq37fQ7CBhL+ov8GOfkEHhFyVQ3Bn3RikqntClltNBMHIjIGAavGhzRnyvCRMeosQofP8wYRm7IIH9mYkDPmpzP6EZpTQIx1DUIde2GegnlmzVVQ3wZX1uuVY5rD/+VPagLoWlvMxTlaeApubVcQvqGPOE=
