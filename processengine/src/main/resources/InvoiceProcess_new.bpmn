@@ -90,6 +90,9 @@
     </bpmn:endEvent>
     <bpmn:startEvent id="Event_03zh8qr" name="Monatsanfang">
       <bpmn:outgoing>Flow_0eho9xw</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_0z2hmml">
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 0 8 2 * ?</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
     </bpmn:startEvent>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
@@ -108,7 +111,7 @@
           <dc:Bounds x="1229" y="405" width="63" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_13i1is2_di" bpmnElement="Event_03zh8qr">
+      <bpmndi:BPMNShape id="Event_0q3sq4a_di" bpmnElement="Event_03zh8qr">
         <dc:Bounds x="250" y="362" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="234" y="405" width="70" height="14" />
