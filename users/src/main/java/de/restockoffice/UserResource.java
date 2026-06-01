@@ -146,6 +146,9 @@ public class UserResource {
         return Response.created(URI.create("customer/me")).entity(newCustomer).build();
     }
 
+    @POST
+    @Path("url")
+    @Transactional
     public Response updateProfilePictureUrl() {
 
         String userId = jwt.getSubject();
