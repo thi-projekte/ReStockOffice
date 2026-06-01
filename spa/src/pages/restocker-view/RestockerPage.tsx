@@ -20,6 +20,7 @@ interface RestockerTourProcessResponse {
     id: string;
     started: boolean;
 }
+
 function currentTourProcessStorageKey(restockerId: string) {
     const date = new Date();
     const today = [
