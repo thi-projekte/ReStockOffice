@@ -146,6 +146,40 @@ public class UserResource {
         return Response.created(URI.create("customer/me")).entity(newCustomer).build();
     }
 
+    public Response updateProfilePictureUrl() {
+
+        String userId = jwt.getSubject();
+        String newImageUrl = "https://hel1.your-objectstorage.com/restockoffice/users/" + userId;
+        boolean foundAndUpdated = false;
+
+        Customer customer = Customer.findById(userId);
+        if (customer != null) {
+            customer.profilePictureUrl = newImageUrl;
+            customer.updatedAt = LocalDateTime.now();
+            customer.persist();
+            foundAndUpdated = true;
+        }
+
+        if (!foundAndUpdated) {
+            Restocker restocker = Restocker.findById(userId);
+            if (restocker != null) {
+                restocker.profilePictureUrl = newImageUrl;
+                restocker.updatedAt = LocalDateTime.now();
+                restocker.persist();
+                foundAndUpdated = true;
+            }
+        }
+
+        if (!foundAndUpdated) {
+            throw new WebApplicationException("Kein aktives Benutzerprofil (Customer/Restocker) für diese ID gefunden.", 404);
+        }
+
+        return Response.ok()
+                .entity("{\"message\":\"Profilbild-URL erfolgreich aktualisiert.\",\"url\":\"" + newImageUrl + "\"}")
+                .build();
+    }
+
+
     // Create a new Customer
     @POST
     @Path("restocker/create")
