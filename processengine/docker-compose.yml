@@ -4,7 +4,7 @@ services:
     restart: unless-stopped
     environment:
       SERVER_FORWARD_HEADERS_STRATEGY: framework
-      SPRING_DATASOURCE_URL: jdbc:postgresql://restockoffice-db:5432/processengine
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/processengine
       SPRING_DATASOURCE_USERNAME: processengine
       SPRING_DATASOURCE_PASSWORD: processengine
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
