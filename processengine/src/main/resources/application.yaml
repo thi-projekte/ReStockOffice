@@ -4,6 +4,12 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:processengine}
     password: ${SPRING_DATASOURCE_PASSWORD:processengine}
     driver-class-name: org.postgresql.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+
+  transaction:
+    reactive:
+      enabled: false
+
   jersey:
     application-path: /engine-rest
 
