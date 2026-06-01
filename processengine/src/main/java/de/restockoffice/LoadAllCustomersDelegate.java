@@ -13,13 +13,17 @@ public class LoadAllCustomersDelegate implements JavaDelegate {
 
     private final RestClient userServiceClient;
 
-    public LoadAllCustomersDelegate(@Value("${usersservice.base-url}") String usersServiceBaseUrl) {
-        this.userServiceClient = RestClient.create(usersServiceBaseUrl);
+    public LoadAllCustomersDelegate(
+            RestClient.Builder restClientBuilder,
+            @Value("${usersservice.base-url}") String usersServiceBaseUrl) {
+
+        this.userServiceClient = restClientBuilder
+                .baseUrl(usersServiceBaseUrl)
+                .build();
     }
 
     @Override
     public void execute(DelegateExecution execution) {
-        // Holt die Liste aller Kunden-IDs
         List<String> customerIds = userServiceClient.get()
                 .uri("/customers")
                 .retrieve()
