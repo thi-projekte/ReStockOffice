@@ -72,12 +72,29 @@
 }
 
 @media (max-width: 680px) {
-  .inner { height: auto; padding: 8px 16px 6px; }
-  .logoImg { height: 86px; width: auto; }
-  .nav { flex-direction: column; align-items: center; gap: 4px; }
-  .navActions { gap: 6px; order: -1; }
-  .navLinks { gap: 12px; order: 0; }
-  .navLink { font-size: 0.7rem; }
+  .inner {
+    height: auto;
+    padding: 10px 16px 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .logoImg { height: 72px; width: auto; }
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+  }
+  .navActions { gap: 6px; order: 0; }
+  .navLinks {
+    gap: 10px;
+    order: 1;
+    width: 100%;
+    justify-content: center;
+    padding-bottom: 4px;
+  }
+  .navLink { font-size: 0.8rem; }
   .userName { display: none; }
-  .authPlaceholder { width: 100px; height: 32px; }
+  .authPlaceholder { width: 120px; height: 36px; }
 }

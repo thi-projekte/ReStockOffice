@@ -10,6 +10,7 @@ type NavLink = {
 const NAV_LINKS: NavLink[] = [
   { href: '#features',    label: 'Vorteile' },
   { href: '#how-it-works', label: "So funktioniert's" },
+  { href: 'https://app.restockoffice.de', label: 'Produkte' },
 ]
 
 export default function Header() {

@@ -14,7 +14,6 @@ const features: Feature[] = [
     points: [
       'Artikel einmalig auswählen und Intervall festlegen',
       'Automatische Lieferung ohne manuelles Nachbestellen',
-      'Bereits abonnierte Artikel sind klar gekennzeichnet',
     ],
   },
   {

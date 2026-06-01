@@ -1,6 +1,6 @@
 import styles from './RestockerSection.module.css'
 
-const CONTACT_MAIL = 'mim2665@thi.de'
+const CONTACT_MAIL = 'support@restockoffice.de'
 
 const perks = [
   'Faire Vergütung: 7 € pro angefahrenem Unternehmen',
