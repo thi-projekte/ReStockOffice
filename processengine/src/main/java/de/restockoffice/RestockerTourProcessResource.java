@@ -62,8 +62,8 @@ public class RestockerTourProcessResource {
 
   @PostMapping(value = "/start", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
   public ResponseEntity<StartTourProcessResponse> startOrGetActiveTourProcessFromForm(
-      @RequestParam String restockerId,
-      @RequestParam(required = false) Integer todayDeliveryCount) {
+      @RequestParam("restockerId") String restockerId,
+      @RequestParam(value = "todayDeliveryCount", required = false) Integer todayDeliveryCount) {
     return startOrGetActiveTourProcessFromRequest(
         new StartTourProcessRequest(restockerId, todayDeliveryCount));
   }
@@ -133,8 +133,8 @@ public class RestockerTourProcessResource {
 
   @PostMapping(value = "/task/find", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
   public ResponseEntity<TaskLookupResponse> findTaskFromForm(
-      @RequestParam String processInstanceId,
-      @RequestParam String taskDefinitionKey) {
+      @RequestParam("processInstanceId") String processInstanceId,
+      @RequestParam("taskDefinitionKey") String taskDefinitionKey) {
     return findTaskFromRequest(new TaskLookupRequest(processInstanceId, taskDefinitionKey));
   }
 
@@ -168,8 +168,8 @@ public class RestockerTourProcessResource {
 
   @PostMapping(value = "/task/complete", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
   public ResponseEntity<Void> completeTaskFromForm(
-      @RequestParam String taskId,
-      @RequestParam(required = false) String variablesJson) throws JsonProcessingException {
+      @RequestParam("taskId") String taskId,
+      @RequestParam(value = "variablesJson", required = false) String variablesJson) throws JsonProcessingException {
     Map<String, ProcessVariable> variables = isBlank(variablesJson)
         ? Map.of()
         : objectMapper.readValue(
