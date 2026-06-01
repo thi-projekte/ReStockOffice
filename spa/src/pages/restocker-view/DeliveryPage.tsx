@@ -25,12 +25,14 @@ import {
 import "../../styles/restocker-deliveries.css";
 
 const EARNINGS_PER_COMPANY = 7;
-const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
+const RESTOCKER_TOUR_PROCESS_API_URL =
+  "https://pe.restockoffice.de/api/restocker-tour-process";
 const START_TOUR_TASK_DEFINITION_KEY = "Activity_06o1eiy";
 const CONFIRM_DELIVERY_TASK_DEFINITION_KEY = "Activity_1cx1i45";
 
-interface CamundaTask {
-  id: string;
+interface ProcessTaskLookupResponse {
+  id: string | null;
+  count: number;
 }
 
 function formatDate(value: string | null) {
@@ -257,11 +259,16 @@ export function DeliveryPage() {
   }
 
   async function loadUserTask(processInstanceId: string, taskDefinitionKey: string) {
-    const query = new URLSearchParams({
-      processInstanceId,
-      taskDefinitionKey,
+    const response = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/task/find`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain",
+      },
+      body: JSON.stringify({
+        processInstanceId,
+        taskDefinitionKey,
+      }),
     });
-    const response = await fetch(`${CAMUNDA_BASE_URL}/task?${query.toString()}`);
 
     if (!response.ok) {
       throw new Error(
@@ -269,21 +276,26 @@ export function DeliveryPage() {
       );
     }
 
-    const tasks = (await response.json()) as CamundaTask[];
+    const task = (await response.json()) as ProcessTaskLookupResponse;
 
-    if (tasks.length !== 1) {
+    if (task.count !== 1 || !task.id) {
       throw new Error("Die Camunda-Task wurde nicht eindeutig gefunden.");
     }
 
-    return tasks[0];
+    return { id: task.id };
   }
 
   async function loadOptionalUserTask(processInstanceId: string, taskDefinitionKey: string) {
-    const query = new URLSearchParams({
+    const response = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/task/find`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain",
+      },
+      body: JSON.stringify({
       processInstanceId,
       taskDefinitionKey,
+      }),
     });
-    const response = await fetch(`${CAMUNDA_BASE_URL}/task?${query.toString()}`);
 
     if (!response.ok) {
       throw new Error(
@@ -291,29 +303,26 @@ export function DeliveryPage() {
       );
     }
 
-    const tasks = (await response.json()) as CamundaTask[];
+    const task = (await response.json()) as ProcessTaskLookupResponse;
 
-    if (tasks.length > 1) {
+    if (task.count > 1) {
       throw new Error("Die Camunda-Task wurde nicht eindeutig gefunden.");
     }
 
-    return tasks[0] ?? null;
+    return task.id ? { id: task.id } : null;
   }
 
   async function completeUserTask(
     taskId: string,
     variables: Record<string, { value: string | number | boolean; type: string }> = {},
   ) {
-    const response = await fetch(
-      `${CAMUNDA_BASE_URL}/task/${taskId}/complete`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ variables }),
+    const response = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/task/complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain",
       },
-    );
+      body: JSON.stringify({ taskId, variables }),
+    });
 
     if (!response.ok) {
       throw new Error(
