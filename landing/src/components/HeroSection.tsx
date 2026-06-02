@@ -21,18 +21,16 @@ export default function HeroSection() {
 
       const isMobile = window.innerWidth <= 860
 
-      const keyframes = isMobile ? [
-        { transform: 'translate(0px,0px) rotate(0deg) scale(1)', easing: 'ease-in' },
-        { transform: `translate(${tx*0.1}px,${ty*0.05 - 18}px) rotate(-12deg) scale(1.04)`,
-          offset: 0.18, easing: 'ease-in-out' },
-        { transform: `translate(${tx*0.35}px,${ty*0.25}px) rotate(-6deg) scale(1.02)`,
-          offset: 0.40, easing: 'ease-in-out' },
-        { transform: `translate(${tx*0.65}px,${ty*0.60}px) rotate(2deg) scale(0.99)`,
-          offset: 0.65, easing: 'ease-in-out' },
-        { transform: `translate(${tx}px,${ty+5}px) rotate(1deg) scale(0.95)`,
-          offset: 0.85, easing: 'ease-out' },
-        { transform: `translate(${tx}px,${ty}px) rotate(0deg) scale(0.94)` },
-      ] : [
+      if (isMobile) {
+        bird.animate([
+          { transform: `translate(${tx}px, ${ty - 8}px) scale(0.94) rotate(-3deg)` },
+          { transform: `translate(${tx}px, ${ty + 4}px) scale(0.94) rotate(2deg)`  },
+          { transform: `translate(${tx}px, ${ty - 8}px) scale(0.94) rotate(-3deg)` },
+        ], { duration: 3200, iterations: Infinity, easing: 'ease-in-out' })
+        return
+      }
+
+      const keyframes = [
         { transform: 'translate(0px,0px) rotate(0deg) scale(1)', easing: 'ease-in' },
         { transform: `translate(${tx*0.12}px,${-ty*0.18}px) rotate(-11deg) scale(1.04)`,
           offset: 0.22, easing: 'ease-in-out' },
@@ -51,7 +49,7 @@ export default function HeroSection() {
         { transform: `translate(${tx}px,${ty}px) rotate(0deg) scale(0.94)` },
       ]
 
-      bird.animate(keyframes, { duration: isMobile ? 3500 : 5500, fill: 'forwards' })
+      bird.animate(keyframes, { duration: 5500, fill: 'forwards' })
     }, 150)
 
     return () => clearTimeout(id)
