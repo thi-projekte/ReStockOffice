@@ -1,3 +1,10 @@
+// Restocker-Startseite: 
+// - Starten der heutigen Tour (Prozessstart im Hintergrund und Weiterleitung zu DeliveryPage)
+// - Anzeige der Kennzahlen für heutige Lieferungen (Anzahl, Verdienst)
+// - Anzeige offene Lieferungen
+// - Anzeige Restocker zugeordnete Lieferungen
+// - Anzeige der monatlichen Kennzahlen des Restockers (geplant / erledigte Lieferungen, Verdienst, Artikel etc.)
+
 import "../../styles/restocker-home.css";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
@@ -22,7 +29,7 @@ interface RestockerTourProcessResponse {
     started: boolean;
 }
 
-// Speichern der Prozess-ID als Storage Key, um mehrfaches starten zu verhindern
+// Erzeugen einer Restocker Tour Prozess Id
 function currentTourProcessStorageKey(restockerId: string) {
     const date = new Date();
     const today = [
@@ -34,6 +41,7 @@ function currentTourProcessStorageKey(restockerId: string) {
     return `restocker-tour-process:${restockerId}:${today}`;
 }
 
+//Auslesen der Stored Tour Prozess Id
 function loadStoredTourProcessId(restockerId?: string) {
     if (!restockerId) {
         return null;
@@ -42,6 +50,7 @@ function loadStoredTourProcessId(restockerId?: string) {
     return sessionStorage.getItem(currentTourProcessStorageKey(restockerId));
 }
 
+// Abspeichern der Tour Prozess ID
 function storeTourProcessId(restockerId: string, processInstanceId: string) {
     sessionStorage.setItem(
         currentTourProcessStorageKey(restockerId),
@@ -131,11 +140,13 @@ export function RestockerPage() {
         load();
     }, [auth.token, auth.user?.id, auth.user?.username]);
 
+    //Filterung der Aufträge des Restockers nach heutigen Lieferungen
     const assignedToday = assignedOrdersResult.orders.filter(
         (order) => getDaysUntilDelivery(order.deliveryDate) === 0
     );
     const totalToday = assignedToday.length;
 
+    //Anzahl der heutigen Lieferungen des Restockers, welche bereits completed sind
     const completedToday = assignedToday.filter(
         (order) => order.assignment?.status === "completed"
     ).length;
@@ -150,7 +161,7 @@ export function RestockerPage() {
     const earningsPerDelivery = 7;
     const earningsToday = totalToday * earningsPerDelivery;
 
-    // Startet den BPMN-Tourprozess über die Process-Engine-API-Wrapper
+    // Startet den BPMN-Tourprozess über die Process-Engine-API-Wrapper -> siehe Button Tour starten
     async function startTourProcess(
         restockerId: string,
         todayDeliveryCount: number,
@@ -183,11 +194,12 @@ export function RestockerPage() {
         loadStoredTourProcessId(auth.user?.id),
     );
 
-    // Holen der gespeicherte Prozess-ID für den eingeloggten Restocker 
+    // Setzen der gespeicherte Prozess-ID für den eingeloggten Restocker 
     useEffect(() => {
         setTourProcessId(loadStoredTourProcessId(auth.user?.id));
     }, [auth.user?.id]);
 
+    //Anzeigen für den Button Tour starten -> Ändert sie je nach dem, ob der Prozess bereits gestartet wurde
     const startTourButtonLabel = startingTour
         ? "Tour startet..."
         : assignedLoading
@@ -309,6 +321,7 @@ export function RestockerPage() {
             <div className="restocker-page">
                 <div className="restocker-inner">
 
+                    {/*Tour starten Button*/}
                     <button
                         className="tour-btn"
                         disabled={startingTour || assignedLoading || !hasOpenAssignedToday}
@@ -317,7 +330,7 @@ export function RestockerPage() {
                         {startTourButtonLabel}
                     </button>
 
-                    {/* Heutige Lieferungen */}
+                    {/* Anzeige Kennzahlen für heutigen Lieferungen */}
                     <div className="card">
                         <div className="card-header">
                             <div>
@@ -351,7 +364,7 @@ export function RestockerPage() {
                         </button>
                     </div>
 
-                    {/* Offene Aufträge */}
+                    {/* Anzeige offene Aufträge */}
                     <div className="card">
                         <div className="card-header">
                             <div>
@@ -368,6 +381,7 @@ export function RestockerPage() {
                             <>
                                 <p>Es gibt weitere Lieferungen in deiner Nähe. </p>
                                 <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+                                {/*Karusell mit RestockOrderCard (sind in Components definiert)*/}
                                 <div className="open-orders-carousel">
                                     {openOrders.slice(0, 6).map((order) => (
                                         <RestockerOrderCard
@@ -391,7 +405,7 @@ export function RestockerPage() {
                         </button>
                     </div>
 
-                    {/* Meine Aufträge */}
+                    {/*Anzeige aller Aufträge, welcher dem Restocker zugeordnet sind */}
                     <div className="card">
                         <div className="card-header">
                             <div>
@@ -430,12 +444,14 @@ export function RestockerPage() {
                         </button>
                     </div>
 
+                    {/*RestockStatisticsCard (sind in Components definiert, um es wieder verwenden zu können)*/}
                     <RestockerStatisticsCard
                         assignedLoading={assignedLoading}
                         assignedError={assignedError}
                         assignedOrdersResult={assignedOrdersResult}
                     />
 
+                    {/*RestockerOrderDetailDialog (sind in Components definiert)*/}
                     {selectedOrder && !isConfirmDialogOpen ? (
                         <RestockerOrderDetailDialog
                             order={selectedOrder}
