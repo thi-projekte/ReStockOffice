@@ -15,9 +15,6 @@
   <bpmn:process id="Process_delivery" name="Auslieferungs- und überwachungsprozess" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:dataStoreReference id="DataStoreReference_1ltnadl" name="Abonnierte Artikel" />
     <bpmn:sendTask id="Task_FourteenDaysSendAnnouncement" name="Lieferankündigung versenden" camunda:delegateExpression="${sendDeliveryAnnouncementDelegate}">
-      <bpmn:extensionElements>
-        <camunda:executionListener event="start" delegateExpression="${prepareDeliveryMonitoringContextDelegate}" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_0jbud7k</bpmn:incoming>
       <bpmn:outgoing>Flow_198461e</bpmn:outgoing>
       <bpmn:property id="Property_163bdf5" name="__targetRef_placeholder" />
@@ -25,7 +22,7 @@
         <bpmn:sourceRef>DataObjectReference_0i9dae9</bpmn:sourceRef>
         <bpmn:targetRef>Property_163bdf5</bpmn:targetRef>
       </bpmn:dataInputAssociation>
-      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${deliveries}" camunda:elementVariable="delivery" />
+      <bpmn:multiInstanceLoopCharacteristics />
     </bpmn:sendTask>
     <bpmn:startEvent id="Start_FourteenDaysDeliveryPublished" name="Täglich 6 Uhr">
       <bpmn:outgoing>Flow_0utjut3</bpmn:outgoing>
@@ -58,11 +55,8 @@
         <bpmn:sourceRef>DataObjectReference_0i9dae9</bpmn:sourceRef>
         <bpmn:targetRef>Property_10okcpi</bpmn:targetRef>
       </bpmn:dataInputAssociation>
-      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${deliveries}" camunda:elementVariable="delivery" />
+      <bpmn:multiInstanceLoopCharacteristics />
       <bpmn:startEvent id="Event_1yw2nk2">
-        <bpmn:extensionElements>
-          <camunda:executionListener event="start" delegateExpression="${prepareDeliveryMonitoringContextDelegate}" />
-        </bpmn:extensionElements>
         <bpmn:outgoing>Flow_1ssdjng</bpmn:outgoing>
       </bpmn:startEvent>
       <bpmn:intermediateCatchEvent id="Catch_FourteenDaysDeliveryConfirmed" name="Auslieferung bestätigt">
