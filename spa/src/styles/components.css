@@ -1886,6 +1886,7 @@
   left: 50%;
   z-index: 40;
   width: min(100% - 2rem, 520px);
+  margin: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 1.25rem;
