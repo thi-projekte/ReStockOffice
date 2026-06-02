@@ -1,5 +1,5 @@
 camunda.bpm:
-  history-level: audit
+  history-level: full
   authorization:
     enabled: false
   filter:

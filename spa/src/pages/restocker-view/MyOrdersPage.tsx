@@ -118,6 +118,7 @@ export function MyOrdersPage() {
           token: auth.token,
           restockerId: auth.user.id,
           restockerName,
+          includeCompletedDeliveries: false,
         });
 
         if (!ignoreResult) {
