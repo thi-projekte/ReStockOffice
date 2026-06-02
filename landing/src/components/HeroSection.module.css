@@ -91,6 +91,16 @@
   letter-spacing: 0.01em;
 }
 
+@keyframes birdFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  40%       { transform: translateY(-10px) rotate(-4deg); }
+  70%       { transform: translateY(-6px) rotate(2deg); }
+}
+
+.birdFloat {
+  animation: birdFloat 3.2s ease-in-out infinite;
+}
+
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .hero { padding: 32px 20px 48px; }

@@ -21,43 +21,37 @@ export default function HeroSection() {
 
       const isMobile = window.innerWidth <= 860
 
-      const keyframes = isMobile
-        ? [
-            { transform: 'translate(0px,0px) rotate(0deg) scale(1)', easing: 'ease-in-out' },
-            { transform: `translate(-80px,-12px) rotate(-20deg) scale(1.03)`,
-              offset: 0.14, easing: 'ease-in-out' },
-            { transform: `translate(-155px,-5px) rotate(-14deg) scale(1.02)`,
-              offset: 0.28, easing: 'ease-in-out' },
-            { transform: `translate(-165px,${ty*0.14}px) rotate(-6deg) scale(1.01)`,
-              offset: 0.42, easing: 'ease-in-out' },
-            { transform: `translate(-160px,${ty*0.36}px) rotate(-2deg) scale(0.99)`,
-              offset: 0.57, easing: 'ease-in-out' },
-            { transform: `translate(-120px,${ty*0.58}px) rotate(1deg) scale(0.97)`,
-              offset: 0.70, easing: 'ease-in-out' },
-            { transform: `translate(${tx-15}px,${ty*0.80}px) rotate(2deg) scale(0.95)`,
-              offset: 0.84, easing: 'ease-in-out' },
-            { transform: `translate(${tx}px,${ty}px) rotate(0deg) scale(0.94)` },
-          ]
-        : [
-            { transform: 'translate(0px,0px) rotate(0deg) scale(1)', easing: 'ease-in' },
-            { transform: `translate(${tx*0.12}px,${-ty*0.18}px) rotate(-11deg) scale(1.04)`,
-              offset: 0.22, easing: 'ease-in-out' },
-            { transform: `translate(${tx*0.35}px,${-ty*0.20}px) rotate(-6deg) scale(1.03)`,
-              offset: 0.38, easing: 'ease-in-out' },
-            { transform: `translate(${tx*0.50}px,${-ty*0.10}px) rotate(-1deg) scale(1.01)`,
-              offset: 0.50, easing: 'ease-in-out' },
-            { transform: `translate(${tx*0.64}px,${ty*0.28}px) rotate(3deg) scale(0.99)`,
-              offset: 0.62, easing: 'ease-in-out' },
-            { transform: `translate(${tx*0.83}px,${ty*0.80}px) rotate(3deg) scale(0.96)`,
-              offset: 0.76, easing: 'ease-out' },
-            { transform: `translate(${tx}px,${ty+4}px) rotate(1deg) scale(0.94)`,
-              offset: 0.84, easing: 'ease-out' },
-            { transform: `translate(${tx}px,${ty-1}px) rotate(0deg) scale(0.94)`,
-              offset: 0.90, easing: 'ease-in-out' },
-            { transform: `translate(${tx}px,${ty}px) rotate(0deg) scale(0.94)` },
-          ]
+      const keyframes = isMobile ? [
+        { transform: 'translate(0px,0px) rotate(0deg) scale(1)', easing: 'ease-in' },
+        { transform: `translate(${tx*0.1}px,${ty*0.05 - 18}px) rotate(-12deg) scale(1.04)`,
+          offset: 0.18, easing: 'ease-in-out' },
+        { transform: `translate(${tx*0.35}px,${ty*0.25}px) rotate(-6deg) scale(1.02)`,
+          offset: 0.40, easing: 'ease-in-out' },
+        { transform: `translate(${tx*0.65}px,${ty*0.60}px) rotate(2deg) scale(0.99)`,
+          offset: 0.65, easing: 'ease-in-out' },
+        { transform: `translate(${tx}px,${ty+5}px) rotate(1deg) scale(0.95)`,
+          offset: 0.85, easing: 'ease-out' },
+        { transform: `translate(${tx}px,${ty}px) rotate(0deg) scale(0.94)` },
+      ] : [
+        { transform: 'translate(0px,0px) rotate(0deg) scale(1)', easing: 'ease-in' },
+        { transform: `translate(${tx*0.12}px,${-ty*0.18}px) rotate(-11deg) scale(1.04)`,
+          offset: 0.22, easing: 'ease-in-out' },
+        { transform: `translate(${tx*0.35}px,${-ty*0.20}px) rotate(-6deg) scale(1.03)`,
+          offset: 0.38, easing: 'ease-in-out' },
+        { transform: `translate(${tx*0.50}px,${-ty*0.10}px) rotate(-1deg) scale(1.01)`,
+          offset: 0.50, easing: 'ease-in-out' },
+        { transform: `translate(${tx*0.64}px,${ty*0.28}px) rotate(3deg) scale(0.99)`,
+          offset: 0.62, easing: 'ease-in-out' },
+        { transform: `translate(${tx*0.83}px,${ty*0.80}px) rotate(3deg) scale(0.96)`,
+          offset: 0.76, easing: 'ease-out' },
+        { transform: `translate(${tx}px,${ty+4}px) rotate(1deg) scale(0.94)`,
+          offset: 0.84, easing: 'ease-out' },
+        { transform: `translate(${tx}px,${ty-1}px) rotate(0deg) scale(0.94)`,
+          offset: 0.90, easing: 'ease-in-out' },
+        { transform: `translate(${tx}px,${ty}px) rotate(0deg) scale(0.94)` },
+      ]
 
-      bird.animate(keyframes, { duration: isMobile ? 4500 : 5500, fill: 'forwards' })
+      bird.animate(keyframes, { duration: isMobile ? 3500 : 5500, fill: 'forwards' })
     }, 150)
 
     return () => clearTimeout(id)
