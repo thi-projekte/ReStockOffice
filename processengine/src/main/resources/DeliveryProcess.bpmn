@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1lhxb24" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.45.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+  <bpmn:collaboration id="Process_delivery">
+    <bpmn:participant id="Participant_02ir530" name="Auslieferungsprozess" processRef="Process_Auslieferung" />
+    <bpmn:participant id="Participant_Restocker" name="Restocker" />
+    <bpmn:participant id="Participant_Ueberwachungsprozess" name="Auslieferungsankündigungs- und überwachungsprozess" />
+    <bpmn:messageFlow id="Flow_1w3bsbs" sourceRef="Participant_Restocker" targetRef="StartEvent_AuslieferungStarten" />
+    <bpmn:messageFlow id="Flow_0qiix0b" sourceRef="Activity_Auslieferungsbestaetigung_versenden" targetRef="Participant_Ueberwachungsprozess" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Auslieferung" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:laneSet id="LaneSet_04dzkd6">
+      <bpmn:lane id="Lane_Restocker" name="Restocker">
+        <bpmn:flowNodeRef>StartEvent_AuslieferungStarten</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_Lager_anfahren</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_Lieferungen_verladen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_Ware_eingeladen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_Auslieferung_beendet</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Subprocess_Einzelauslieferung</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:dataObjectReference id="DataObjectReference_Lieferungen" name="Lieferungen" dataObjectRef="DataObject_1ntptpp" />
+    <bpmn:dataObject id="DataObject_1ntptpp" />
+    <bpmn:manualTask id="Activity_Lager_anfahren" name="Lager anfahren">
+      <bpmn:incoming>Flow_1278y66</bpmn:incoming>
+      <bpmn:outgoing>Flow_10k14az</bpmn:outgoing>
+    </bpmn:manualTask>
+    <bpmn:manualTask id="Activity_Lieferungen_verladen" name="Lieferungen verladen">
+      <bpmn:incoming>Flow_10k14az</bpmn:incoming>
+      <bpmn:outgoing>Flow_0gtek7y</bpmn:outgoing>
+    </bpmn:manualTask>
+    <bpmn:userTask id="Activity_Ware_eingeladen" name="Ware eingeladen">
+      <bpmn:incoming>Flow_0gtek7y</bpmn:incoming>
+      <bpmn:outgoing>Flow_0pagl86</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:dataObjectReference id="DataObjectReference_Kunden" name="Kunden" dataObjectRef="DataObject_15gxbeo" />
+    <bpmn:dataObject id="DataObject_15gxbeo" isCollection="true" />
+    <bpmn:subProcess id="Subprocess_Einzelauslieferung">
+      <bpmn:incoming>Flow_0pagl86</bpmn:incoming>
+      <bpmn:outgoing>Flow_0e46pvm</bpmn:outgoing>
+      <bpmn:property id="Property_13qf7wv" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_0f4mrac">
+        <bpmn:sourceRef>DataObjectReference_Kunden</bpmn:sourceRef>
+        <bpmn:targetRef>Property_13qf7wv</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="true" />
+      <bpmn:startEvent id="Event_05672e0">
+        <bpmn:outgoing>Flow_00g2kav</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="Activity_Auslieferung_bestaetigen" name="Auslieferung bestätigen">
+        <bpmn:incoming>Flow_0olirm0</bpmn:incoming>
+        <bpmn:outgoing>Flow_0fg8myo</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:manualTask id="Activity_Ware_ausliefern" name="Ware ausliefern">
+        <bpmn:incoming>Flow_00g2kav</bpmn:incoming>
+        <bpmn:outgoing>Flow_0olirm0</bpmn:outgoing>
+      </bpmn:manualTask>
+      <bpmn:sequenceFlow id="Flow_0olirm0" sourceRef="Activity_Ware_ausliefern" targetRef="Activity_Auslieferung_bestaetigen" />
+      <bpmn:sequenceFlow id="Flow_0fg8myo" sourceRef="Activity_Auslieferung_bestaetigen" targetRef="Activity_Auslieferungsbestaetigung_versenden" />
+      <bpmn:sequenceFlow id="Flow_00g2kav" sourceRef="Event_05672e0" targetRef="Activity_Ware_ausliefern" />
+      <bpmn:endEvent id="Event_Einzelauslieferung_beendet" name="Einzelaus-lieferung beendet">
+        <bpmn:incoming>Flow_0hz93bn</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_0hz93bn" sourceRef="Activity_Auslieferungsbestaetigung_versenden" targetRef="Event_Einzelauslieferung_beendet" />
+      <bpmn:sendTask id="Activity_Auslieferungsbestaetigung_versenden" name="Auslieferungs-bestätigung versenden" camunda:delegateExpression="${correlateDeliveryConfirmedDelegate}">
+        <bpmn:incoming>Flow_0fg8myo</bpmn:incoming>
+        <bpmn:outgoing>Flow_0hz93bn</bpmn:outgoing>
+      </bpmn:sendTask>
+    </bpmn:subProcess>
+    <bpmn:sequenceFlow id="Flow_1278y66" sourceRef="StartEvent_AuslieferungStarten" targetRef="Activity_Lager_anfahren" />
+    <bpmn:sequenceFlow id="Flow_10k14az" sourceRef="Activity_Lager_anfahren" targetRef="Activity_Lieferungen_verladen" />
+    <bpmn:sequenceFlow id="Flow_0gtek7y" sourceRef="Activity_Lieferungen_verladen" targetRef="Activity_Ware_eingeladen" />
+    <bpmn:sequenceFlow id="Flow_0pagl86" sourceRef="Activity_Ware_eingeladen" targetRef="Subprocess_Einzelauslieferung" />
+    <bpmn:sequenceFlow id="Flow_0e46pvm" sourceRef="Subprocess_Einzelauslieferung" targetRef="Event_Auslieferung_beendet" />
+    <bpmn:endEvent id="Event_Auslieferung_beendet" name="Auslieferung beendet">
+      <bpmn:incoming>Flow_0e46pvm</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:startEvent id="StartEvent_AuslieferungStarten" name="Auslieferung starten">
+      <bpmn:outgoing>Flow_1278y66</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1u92nba">
+        <bpmn:targetRef>DataObjectReference_Lieferungen</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1dzja92">
+        <bpmn:targetRef>DataObjectReference_Kunden</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0ckse4q" />
+    </bpmn:startEvent>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_delivery">
+      <bpmndi:BPMNShape id="Participant_02ir530_di" bpmnElement="Participant_02ir530" isHorizontal="true">
+        <dc:Bounds x="132" y="200" width="1638" height="270" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_0qwd0pi_di" bpmnElement="Lane_Restocker" isHorizontal="true">
+        <dc:Bounds x="162" y="200" width="1608" height="270" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_0xx46n0_di" bpmnElement="DataObjectReference_Lieferungen">
+        <dc:Bounds x="262" y="225" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="251" y="282" width="59" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0brgui1_di" bpmnElement="Activity_Lager_anfahren">
+        <dc:Bounds x="390" y="290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0wuaqn4_di" bpmnElement="Activity_Lieferungen_verladen">
+        <dc:Bounds x="550" y="290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0l8iktu_di" bpmnElement="Activity_Ware_eingeladen">
+        <dc:Bounds x="720" y="290" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_0hzg0fe_di" bpmnElement="DataObjectReference_Kunden">
+        <dc:Bounds x="502" y="225" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="501" y="282" width="38" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0fzd8ii_di" bpmnElement="Subprocess_Einzelauslieferung" isExpanded="true">
+        <dc:Bounds x="900" y="230" width="680" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_05672e0_di" bpmnElement="Event_05672e0">
+        <dc:Bounds x="940.3333333333334" y="312" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_19g7qkf_di" bpmnElement="Activity_Auslieferung_bestaetigen">
+        <dc:Bounds x="1170" y="290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0sn2rl9_di" bpmnElement="Activity_Ware_ausliefern">
+        <dc:Bounds x="1020" y="290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0wk5xma_di" bpmnElement="Event_Einzelauslieferung_beendet">
+        <dc:Bounds x="1472" y="312" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1447" y="355" width="86" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1n3hudl_di" bpmnElement="Activity_Auslieferungsbestaetigung_versenden">
+        <dc:Bounds x="1320" y="290" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0olirm0_di" bpmnElement="Flow_0olirm0">
+        <di:waypoint x="1120" y="330" />
+        <di:waypoint x="1170" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0fg8myo_di" bpmnElement="Flow_0fg8myo">
+        <di:waypoint x="1270" y="330" />
+        <di:waypoint x="1320" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_00g2kav_di" bpmnElement="Flow_00g2kav">
+        <di:waypoint x="976" y="330" />
+        <di:waypoint x="1020" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0hz93bn_di" bpmnElement="Flow_0hz93bn">
+        <di:waypoint x="1420" y="330" />
+        <di:waypoint x="1472" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_1lrjz2b_di" bpmnElement="Event_Auslieferung_beendet">
+        <dc:Bounds x="1642" y="312" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1630" y="355" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0qk9mmy_di" bpmnElement="StartEvent_AuslieferungStarten">
+        <dc:Bounds x="212" y="312" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="201" y="355" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1278y66_di" bpmnElement="Flow_1278y66">
+        <di:waypoint x="248" y="330" />
+        <di:waypoint x="390" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10k14az_di" bpmnElement="Flow_10k14az">
+        <di:waypoint x="490" y="330" />
+        <di:waypoint x="550" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0gtek7y_di" bpmnElement="Flow_0gtek7y">
+        <di:waypoint x="650" y="330" />
+        <di:waypoint x="720" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0pagl86_di" bpmnElement="Flow_0pagl86">
+        <di:waypoint x="820" y="330" />
+        <di:waypoint x="900" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0e46pvm_di" bpmnElement="Flow_0e46pvm">
+        <di:waypoint x="1580" y="330" />
+        <di:waypoint x="1642" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_12515jj_di" bpmnElement="Participant_Restocker" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="300" height="60" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_0iz7nma_di" bpmnElement="Participant_Ueberwachungsprozess" isHorizontal="true">
+        <dc:Bounds x="1170" y="550" width="600" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DataInputAssociation_0f4mrac_di" bpmnElement="DataInputAssociation_0f4mrac">
+        <di:waypoint x="538" y="250" />
+        <di:waypoint x="900" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1u92nba_di" bpmnElement="DataOutputAssociation_1u92nba">
+        <di:waypoint x="240" y="315" />
+        <di:waypoint x="265" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1dzja92_di" bpmnElement="DataOutputAssociation_1dzja92">
+        <di:waypoint x="247" y="326" />
+        <di:waypoint x="502" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1w3bsbs_di" bpmnElement="Flow_1w3bsbs">
+        <di:waypoint x="230" y="140" />
+        <di:waypoint x="230" y="312" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="199" y="173" width="61" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0qiix0b_di" bpmnElement="Flow_0qiix0b">
+        <di:waypoint x="1370" y="370" />
+        <di:waypoint x="1370" y="550" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
