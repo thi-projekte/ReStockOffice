@@ -1,182 +1,197 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1bnm3cz" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Collaboration_021nnii">
-    <bpmn:participant id="Participant_0a0ayn7" name="Rechnungspozess" processRef="Process_invoice_old" />
-    <bpmn:participant id="Participant_19d2kll" name="Kunde" />
-    <bpmn:messageFlow id="Flow_0ng3c89" sourceRef="Activity_0hwt1d3" targetRef="Participant_19d2kll" />
+    <bpmn:participant id="Participant_InvoiceProcess" name="Rechnungspozess" processRef="Process_invoice" />
+    <bpmn:participant id="Participant_Customer" name="Kunde">
+      <bpmn:participantMultiplicity />
+    </bpmn:participant>
+    <bpmn:messageFlow id="MessageFlow_SendInvoiceMailToCustomer" sourceRef="Task_SendInvoiceMail" targetRef="Participant_Customer" />
   </bpmn:collaboration>
-  <bpmn:process id="Process_invoice_old" name="Rechnungsprozess_alt" isExecutable="false" camunda:historyTimeToLive="180">
-    <bpmn:sequenceFlow id="Flow_0eho9xw" sourceRef="Event_03zh8qr" targetRef="Activity_0gobvgs" />
-    <bpmn:sequenceFlow id="Flow_08k3m79" sourceRef="Activity_1fbfcfa" targetRef="Event_00tbsd8" />
-    <bpmn:serviceTask id="Activity_0gobvgs" name="Kundendaten laden" camunda:delegateExpression="${loadAllCustomersDelegate}">
-      <bpmn:incoming>Flow_0eho9xw</bpmn:incoming>
-      <bpmn:outgoing>Flow_0ftwu6v</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:startEvent id="Event_03zh8qr" name="Monatsende">
-      <bpmn:outgoing>Flow_0eho9xw</bpmn:outgoing>
-      <bpmn:timerEventDefinition id="TimerEventDefinition_18slh4e">
-        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 0 8 1W * ?</bpmn:timeCycle>
-      </bpmn:timerEventDefinition>
-    </bpmn:startEvent>
-    <bpmn:sequenceFlow id="Flow_0ftwu6v" sourceRef="Activity_0gobvgs" targetRef="Activity_1fbfcfa" />
-    <bpmn:dataObjectReference id="DataObjectReference_1a6o99m" name="Rechnung" dataObjectRef="DataObject_1ng4ve6" />
-    <bpmn:dataObject id="DataObject_1ng4ve6" />
-    <bpmn:endEvent id="Event_00tbsd8" name="Rechnungen versendet">
-      <bpmn:incoming>Flow_08k3m79</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:subProcess id="Activity_1fbfcfa" name="Iteriere über Kunden">
-      <bpmn:incoming>Flow_0ftwu6v</bpmn:incoming>
-      <bpmn:outgoing>Flow_08k3m79</bpmn:outgoing>
+  <bpmn:process id="Process_invoice" name="Rechnungsprozess" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:sequenceFlow id="Flow_TimerToLoadCustomerIDs" sourceRef="StartEvent_MonthlyInvoiceTimer" targetRef="Task_LoadCustomersWithDelivery" />
+    <bpmn:sequenceFlow id="Flow_MailDeliveryToProcessEnd" sourceRef="SubProcess_InvoiceMailDelivery" targetRef="EndEvent_InvoiceMailsFinished" />
+    <bpmn:sequenceFlow id="Flow_LoadCustomerToMailDelivery" sourceRef="Task_LoadCustomersWithDelivery" targetRef="SubProcess_InvoiceMailDelivery" />
+    <bpmn:dataStoreReference id="DataStoreReference_CustomerData" name="Kundendaten" />
+    <bpmn:subProcess id="SubProcess_InvoiceMailDelivery" name="Rechnungsversand">
+      <bpmn:incoming>Flow_LoadCustomerToMailDelivery</bpmn:incoming>
+      <bpmn:outgoing>Flow_MailDeliveryToProcessEnd</bpmn:outgoing>
+      <bpmn:property id="Property_0xwhigb" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInput_CustomerIdToMailDelivery">
+        <bpmn:sourceRef>DataObjectReference_CustomerIdList</bpmn:sourceRef>
+        <bpmn:targetRef>Property_0xwhigb</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+      <bpmn:dataInputAssociation id="DataInput">
+        <bpmn:sourceRef>DataObjectReference_CustomerIdList</bpmn:sourceRef>
+        <bpmn:targetRef>Property_0xwhigb</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
       <bpmn:multiInstanceLoopCharacteristics camunda:collection="customerIdList" camunda:elementVariable="customerId" />
-      <bpmn:startEvent id="Event_1azxsvl">
-        <bpmn:outgoing>Flow_16nl4y4</bpmn:outgoing>
+      <bpmn:startEvent id="Flow_BeginInvoiceMailDelivery">
+        <bpmn:outgoing>Flow_BeginMailDeliveryToGenerateInvoice</bpmn:outgoing>
       </bpmn:startEvent>
-      <bpmn:serviceTask id="Activity_1g5qyyq" name="Rechnung generieren" camunda:delegateExpression="${createInvoiceDelegate}">
+      <bpmn:serviceTask id="Task_GenerateInvoice" name="Rechnung generieren" camunda:delegateExpression="${createInvoiceDelegate}">
         <bpmn:extensionElements>
           <camunda:inputOutput>
             <camunda:inputParameter name="Input_188r9mg" />
           </camunda:inputOutput>
         </bpmn:extensionElements>
-        <bpmn:incoming>Flow_16nl4y4</bpmn:incoming>
-        <bpmn:outgoing>Flow_18cei88</bpmn:outgoing>
+        <bpmn:incoming>Flow_BeginMailDeliveryToGenerateInvoice</bpmn:incoming>
+        <bpmn:outgoing>Flow_GenerateInvoiceToSendInvoice</bpmn:outgoing>
+        <bpmn:dataOutputAssociation id="DataOutput_Invoice">
+          <bpmn:targetRef>DataObjectReference_Invoice</bpmn:targetRef>
+        </bpmn:dataOutputAssociation>
       </bpmn:serviceTask>
-      <bpmn:serviceTask id="Activity_0hwt1d3" name="Rechnung versenden" camunda:delegateExpression="${sendInvoiceMailDelegate}">
-        <bpmn:incoming>Flow_14s9xfw</bpmn:incoming>
-        <bpmn:outgoing>Flow_05ola40</bpmn:outgoing>
-      </bpmn:serviceTask>
-      <bpmn:endEvent id="Event_0yj36ac">
-        <bpmn:incoming>Flow_1vrxbvm</bpmn:incoming>
+      <bpmn:endEvent id="Event_InvoiceMailDeliveryCompleted">
+        <bpmn:incoming>Flow_SendInvoiceToMailDeliveryEnd</bpmn:incoming>
       </bpmn:endEvent>
-      <bpmn:sequenceFlow id="Flow_16nl4y4" sourceRef="Event_1azxsvl" targetRef="Activity_1g5qyyq" />
-      <bpmn:exclusiveGateway id="Gateway_0p7siaw" name="Rechnungen vorhanden ?">
-        <bpmn:extensionElements />
-        <bpmn:incoming>Flow_18cei88</bpmn:incoming>
-        <bpmn:outgoing>Flow_14s9xfw</bpmn:outgoing>
-        <bpmn:outgoing>Flow_0g3nhp3</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
-      <bpmn:sequenceFlow id="Flow_18cei88" sourceRef="Activity_1g5qyyq" targetRef="Gateway_0p7siaw" />
-      <bpmn:sequenceFlow id="Flow_14s9xfw" name="Ja" sourceRef="Gateway_0p7siaw" targetRef="Activity_0hwt1d3">
-        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${hasDeliveries == true}</bpmn:conditionExpression>
-      </bpmn:sequenceFlow>
-      <bpmn:exclusiveGateway id="Gateway_1d9cb15">
-        <bpmn:incoming>Flow_05ola40</bpmn:incoming>
-        <bpmn:incoming>Flow_0g3nhp3</bpmn:incoming>
-        <bpmn:outgoing>Flow_1vrxbvm</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
-      <bpmn:sequenceFlow id="Flow_05ola40" sourceRef="Activity_0hwt1d3" targetRef="Gateway_1d9cb15" />
-      <bpmn:sequenceFlow id="Flow_1vrxbvm" sourceRef="Gateway_1d9cb15" targetRef="Event_0yj36ac" />
-      <bpmn:sequenceFlow id="Flow_0g3nhp3" name="Nein" sourceRef="Gateway_0p7siaw" targetRef="Gateway_1d9cb15">
-        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${hasDeliveries == false}</bpmn:conditionExpression>
-      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_BeginMailDeliveryToGenerateInvoice" sourceRef="Flow_BeginInvoiceMailDelivery" targetRef="Task_GenerateInvoice" />
+      <bpmn:sequenceFlow id="Flow_SendInvoiceToMailDeliveryEnd" sourceRef="Task_SendInvoiceMail" targetRef="Event_InvoiceMailDeliveryCompleted" />
+      <bpmn:dataObjectReference id="DataObjectReference_Invoice" name="Rechnung" dataObjectRef="DataObject_1u36aiy" />
+      <bpmn:dataObject id="DataObject_1u36aiy" />
+      <bpmn:sendTask id="Task_SendInvoiceMail" name="Rechnung versenden" camunda:delegateExpression="${sendInvoiceMailDelegate}">
+        <bpmn:incoming>Flow_GenerateInvoiceToSendInvoice</bpmn:incoming>
+        <bpmn:outgoing>Flow_SendInvoiceToMailDeliveryEnd</bpmn:outgoing>
+        <bpmn:property id="Property_1kdbsxf" name="__targetRef_placeholder" />
+        <bpmn:dataInputAssociation id="DataInput_Invoice">
+          <bpmn:sourceRef>DataObjectReference_Invoice</bpmn:sourceRef>
+          <bpmn:targetRef>Property_1kdbsxf</bpmn:targetRef>
+        </bpmn:dataInputAssociation>
+      </bpmn:sendTask>
+      <bpmn:sequenceFlow id="Flow_GenerateInvoiceToSendInvoice" sourceRef="Task_GenerateInvoice" targetRef="Task_SendInvoiceMail" />
     </bpmn:subProcess>
+    <bpmn:serviceTask id="Task_LoadCustomersWithDelivery" name="Kundendaten laden" camunda:delegateExpression="${loadAllCustomersDelegate}">
+      <bpmn:incoming>Flow_TimerToLoadCustomerIDs</bpmn:incoming>
+      <bpmn:outgoing>Flow_LoadCustomerToMailDelivery</bpmn:outgoing>
+      <bpmn:property id="Property_01bqspt" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInput_CustomerData">
+        <bpmn:sourceRef>DataStoreReference_CustomerData</bpmn:sourceRef>
+        <bpmn:targetRef>Property_01bqspt</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+      <bpmn:dataOutputAssociation id="DataOutput_CustomerIDListWithDeliveries">
+        <bpmn:targetRef>DataObjectReference_CustomerIdList</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:startEvent id="StartEvent_MonthlyInvoiceTimer" name="Monatsanfang">
+      <bpmn:outgoing>Flow_TimerToLoadCustomerIDs</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_0z2hmml">
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 0 8 1 * ?</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
+    </bpmn:startEvent>
+    <bpmn:endEvent id="EndEvent_InvoiceMailsFinished" name="Rechnungen versendet">
+      <bpmn:incoming>Flow_MailDeliveryToProcessEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:dataObjectReference id="DataObjectReference_CustomerIdList" name="Kundeliste mit Rechnungsdaten" dataObjectRef="DataObject_00gb25r" />
+    <bpmn:dataObject id="DataObject_00gb25r" isCollection="true" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_021nnii">
-      <bpmndi:BPMNShape id="Participant_0a0ayn7_di" bpmnElement="Participant_0a0ayn7" isHorizontal="true">
-        <dc:Bounds x="190" y="190" width="1138" height="470" />
+      <bpmndi:BPMNShape id="Participant_0a0ayn7_di" bpmnElement="Participant_InvoiceProcess" isHorizontal="true">
+        <dc:Bounds x="190" y="190" width="1158" height="470" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0aqz7ty_di" bpmnElement="Activity_0gobvgs">
-        <dc:Bounds x="330" y="340" width="100" height="80" />
+      <bpmndi:BPMNShape id="Activity_1fbfcfa_di" bpmnElement="SubProcess_InvoiceMailDelivery" isExpanded="true">
+        <dc:Bounds x="500" y="240" width="680" height="360" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_03zh8qr_di" bpmnElement="Event_03zh8qr">
-        <dc:Bounds x="250" y="362" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="238" y="405" width="61" height="14" />
-        </bpmndi:BPMNLabel>
+      <bpmndi:BPMNShape id="Event_1azxsvl_di" bpmnElement="Flow_BeginInvoiceMailDelivery">
+        <dc:Bounds x="522" y="402" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="DataObjectReference_1a6o99m_di" bpmnElement="DataObjectReference_1a6o99m">
-        <dc:Bounds x="912" y="195" width="36" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="905" y="252" width="51" height="14" />
-        </bpmndi:BPMNLabel>
+      <bpmndi:BPMNShape id="Activity_1qxweld_di" bpmnElement="Task_GenerateInvoice">
+        <dc:Bounds x="620" y="380" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_00tbsd8_di" bpmnElement="Event_00tbsd8">
-        <dc:Bounds x="1232" y="372" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1219" y="415" width="63" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1fbfcfa_di" bpmnElement="Activity_1fbfcfa" isExpanded="true">
-        <dc:Bounds x="500" y="280" width="662" height="280" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_1azxsvl_di" bpmnElement="Event_1azxsvl">
-        <dc:Bounds x="522" y="362" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1qxweld_di" bpmnElement="Activity_1g5qyyq">
-        <dc:Bounds x="600" y="340" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1kxrg94_di" bpmnElement="Activity_0hwt1d3">
-        <dc:Bounds x="850" y="340" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0yj36ac_di" bpmnElement="Event_0yj36ac">
-        <dc:Bounds x="1072" y="362" width="36" height="36" />
+      <bpmndi:BPMNShape id="Event_0yj36ac_di" bpmnElement="Event_InvoiceMailDeliveryCompleted">
+        <dc:Bounds x="1102" y="402" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="915" y="415" width="51" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_0p7siaw_di" bpmnElement="Gateway_0p7siaw" isMarkerVisible="true">
-        <dc:Bounds x="745" y="355" width="50" height="50" />
+      <bpmndi:BPMNShape id="Activity_16lo6oq_di" bpmnElement="Task_SendInvoiceMail">
+        <dc:Bounds x="880" y="380" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_0kt9316_di" bpmnElement="DataObjectReference_Invoice">
+        <dc:Bounds x="782" y="335" width="36" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="739" y="325" width="63" height="27" />
+          <dc:Bounds x="774" y="311" width="51" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_1d9cb15_di" bpmnElement="Gateway_1d9cb15" isMarkerVisible="true">
-        <dc:Bounds x="995" y="355" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_16nl4y4_di" bpmnElement="Flow_16nl4y4">
-        <di:waypoint x="558" y="380" />
-        <di:waypoint x="600" y="380" />
+      <bpmndi:BPMNEdge id="Flow_16nl4y4_di" bpmnElement="Flow_BeginMailDeliveryToGenerateInvoice">
+        <di:waypoint x="558" y="420" />
+        <di:waypoint x="620" y="420" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_18cei88_di" bpmnElement="Flow_18cei88">
-        <di:waypoint x="700" y="380" />
-        <di:waypoint x="745" y="380" />
+      <bpmndi:BPMNEdge id="Flow_05ola40_di" bpmnElement="Flow_SendInvoiceToMailDeliveryEnd">
+        <di:waypoint x="980" y="420" />
+        <di:waypoint x="1102" y="420" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_14s9xfw_di" bpmnElement="Flow_14s9xfw">
-        <di:waypoint x="795" y="380" />
-        <di:waypoint x="850" y="380" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="817" y="362" width="12" height="14" />
-        </bpmndi:BPMNLabel>
+      <bpmndi:BPMNEdge id="Flow_040ypt7_di" bpmnElement="Flow_GenerateInvoiceToSendInvoice">
+        <di:waypoint x="720" y="420" />
+        <di:waypoint x="880" y="420" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_05ola40_di" bpmnElement="Flow_05ola40">
-        <di:waypoint x="950" y="380" />
-        <di:waypoint x="995" y="380" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1vrxbvm_di" bpmnElement="Flow_1vrxbvm">
-        <di:waypoint x="1045" y="380" />
-        <di:waypoint x="1072" y="380" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0g3nhp3_di" bpmnElement="Flow_0g3nhp3">
-        <di:waypoint x="770" y="405" />
-        <di:waypoint x="770" y="450" />
-        <di:waypoint x="1020" y="450" />
-        <di:waypoint x="1020" y="405" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="884" y="463" width="23" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0eho9xw_di" bpmnElement="Flow_0eho9xw">
-        <di:waypoint x="286" y="380" />
-        <di:waypoint x="330" y="380" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_08k3m79_di" bpmnElement="Flow_08k3m79">
-        <di:waypoint x="1162" y="390" />
-        <di:waypoint x="1232" y="390" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0ftwu6v_di" bpmnElement="Flow_0ftwu6v">
-        <di:waypoint x="430" y="380" />
-        <di:waypoint x="500" y="380" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="Participant_19d2kll_di" bpmnElement="Participant_19d2kll" isHorizontal="true">
-        <dc:Bounds x="190" y="80" width="1130" height="60" />
+      <bpmndi:BPMNShape id="Activity_0aqz7ty_di" bpmnElement="Task_LoadCustomersWithDelivery">
+        <dc:Bounds x="330" y="380" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_0ng3c89_di" bpmnElement="Flow_0ng3c89">
-        <di:waypoint x="900" y="340" />
-        <di:waypoint x="900" y="140" />
+      <bpmndi:BPMNShape id="Event_0q3sq4a_di" bpmnElement="StartEvent_MonthlyInvoiceTimer">
+        <dc:Bounds x="250" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="234" y="445" width="70" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_00tbsd8_di" bpmnElement="EndEvent_InvoiceMailsFinished">
+        <dc:Bounds x="1242" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1229" y="445" width="63" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_01ubnwn_di" bpmnElement="DataObjectReference_CustomerIdList">
+        <dc:Bounds x="362" y="275" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="338" y="238" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0eho9xw_di" bpmnElement="Flow_TimerToLoadCustomerIDs">
+        <di:waypoint x="286" y="420" />
+        <di:waypoint x="330" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_08k3m79_di" bpmnElement="Flow_MailDeliveryToProcessEnd">
+        <di:waypoint x="1180" y="420" />
+        <di:waypoint x="1242" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ftwu6v_di" bpmnElement="Flow_LoadCustomerToMailDelivery">
+        <di:waypoint x="430" y="420" />
+        <di:waypoint x="500" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="DataStoreReference_10qm7bw_di" bpmnElement="DataStoreReference_CustomerData">
+        <dc:Bounds x="355" y="695" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="347" y="752" width="66" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_19d2kll_di" bpmnElement="Participant_Customer" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="1158" height="60" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_04magsl_di" bpmnElement="DataOutput_Invoice">
+        <di:waypoint x="720" y="399" />
+        <di:waypoint x="782" y="369" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_0len68a_di" bpmnElement="DataInput_Invoice">
+        <di:waypoint x="818" y="369" />
+        <di:waypoint x="880" y="397" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_09gjve9_di" bpmnElement="DataInput_CustomerData">
+        <di:waypoint x="380" y="695" />
+        <di:waypoint x="380" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0396b3o_di" bpmnElement="DataOutput_CustomerIDListWithDeliveries">
+        <di:waypoint x="380" y="380" />
+        <di:waypoint x="381" y="325" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ng3c89_di" bpmnElement="MessageFlow_SendInvoiceMailToCustomer">
+        <di:waypoint x="930" y="380" />
+        <di:waypoint x="930" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_12e8mym_di" bpmnElement="DataInput">
+        <di:waypoint x="398" y="315" />
+        <di:waypoint x="500" y="403" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
