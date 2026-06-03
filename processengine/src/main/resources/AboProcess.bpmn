@@ -25,7 +25,7 @@
         <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT10M</bpmn:timeDuration>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
-    <bpmn:endEvent id="Event_0qmqdkl">
+    <bpmn:endEvent id="Event_0qmqdkl" name="Abobestätigung verschickt">
       <bpmn:incoming>Flow_1ej7ziu</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:startEvent id="StartEvent_1" name="Aboveränderung eingegangen">
@@ -35,11 +35,11 @@
       </bpmn:dataOutputAssociation>
       <bpmn:messageEventDefinition id="MessageEventDefinition_1n38y5f" />
     </bpmn:startEvent>
-    <bpmn:dataObjectReference id="DataObjectReference_0dcce1y" name="Abonnierter Artikel" dataObjectRef="DataObject_1bmg1d8" />
+    <bpmn:dataObjectReference id="DataObjectReference_0dcce1y" name="Kunden Information" dataObjectRef="DataObject_1bmg1d8" />
     <bpmn:dataObject id="DataObject_1bmg1d8" />
     <bpmn:dataObjectReference id="DataObjectReference_1l7i5cs" name="Abobestätigung" dataObjectRef="DataObject_06c9rx0" />
     <bpmn:dataObject id="DataObject_06c9rx0" />
-    <bpmn:sendTask id="Activity_098v8bj" name="Abo-Bestätigung versenden" camunda:delegateExpression="${sendAboConfirmationDelegate}">
+    <bpmn:sendTask id="Activity_098v8bj" name="Gesammelte Abobestätigung verschicken" camunda:delegateExpression="${sendAboConfirmationDelegate}">
       <bpmn:incoming>Flow_1466l9b</bpmn:incoming>
       <bpmn:outgoing>Flow_1ej7ziu</bpmn:outgoing>
       <bpmn:property id="Property_0hemljg" name="__targetRef_placeholder" />
@@ -67,7 +67,7 @@
       <bpmndi:BPMNShape id="BPMNShape_06kvo6v" bpmnElement="Event_0qmqdkl">
         <dc:Bounds x="702" y="300" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1011" y="343" width="80" height="14" />
+          <dc:Bounds x="682" y="343" width="76" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1c9rm31_di" bpmnElement="StartEvent_1">
@@ -79,7 +79,7 @@
       <bpmndi:BPMNShape id="BPMNShape_1cd9yad" bpmnElement="DataObjectReference_0dcce1y">
         <dc:Bounds x="332" y="185" width="36" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="306" y="242" width="90" height="14" />
+          <dc:Bounds x="324" y="242" width="56" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_15h1bih" bpmnElement="DataObjectReference_1l7i5cs">
@@ -90,6 +90,7 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1c4l37l_di" bpmnElement="Activity_098v8bj">
         <dc:Bounds x="540" y="278" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_1ej7ziu_di" bpmnElement="Flow_1ej7ziu">
         <di:waypoint x="640" y="318" />
@@ -107,14 +108,6 @@
         <dc:Bounds x="130" y="78" width="680" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="BPMNEdge_1cox1o3" bpmnElement="Flow_0r2zu57">
-        <di:waypoint x="590" y="278" />
-        <di:waypoint x="590" y="138" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="BPMNEdge_12duf8k" bpmnElement="Flow_1qd1ori">
-        <di:waypoint x="290" y="138" />
-        <di:waypoint x="290" y="300" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataOutputAssociation_0mh2ruu_di" bpmnElement="DataOutputAssociation_0mh2ruu">
         <di:waypoint x="299" y="302" />
         <di:waypoint x="337" y="235" />
@@ -122,6 +115,14 @@
       <bpmndi:BPMNEdge id="DataInputAssociation_1ctfstj_di" bpmnElement="DataInputAssociation_1ctfstj">
         <di:waypoint x="629" y="225" />
         <di:waypoint x="607" y="278" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_1cox1o3" bpmnElement="Flow_0r2zu57">
+        <di:waypoint x="590" y="278" />
+        <di:waypoint x="590" y="138" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_12duf8k" bpmnElement="Flow_1qd1ori">
+        <di:waypoint x="290" y="138" />
+        <di:waypoint x="290" y="300" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
