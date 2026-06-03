@@ -63,6 +63,12 @@ public class DeliveryResource {
     }
 
     @GET
+    @Path("/customers")
+    public MonthlyDeliveryCustomersDto getCustomersWithDeliveriesInMonth(@QueryParam("month") String month) {
+        return deliveryService.getCustomersWithDeliveriesInMonth(month);
+    }
+
+    @GET
     @Path("/assigned")
     public List<DeliveryDetailDto> getAssignedDeliveries(@QueryParam("restocker") String restockerName) {
         return deliveryService.getAssignedDeliveries(restockerName, authorizationHeader());

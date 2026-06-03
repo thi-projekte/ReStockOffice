@@ -13,6 +13,11 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -33,6 +38,9 @@ public class DeliveryService {
     private static final String DEFAULT_TEST_CUSTOMER_ONE = "3e6572a7-3852-42e3-81eb-17e7f9622kk8";
     private static final String DEFAULT_TEST_CUSTOMER_TWO = "c831fce5-56a3-443e-a27f-cc769a1ed0d7";
     private static final String DEFAULT_UNIT = "Stück";
+    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter
+            .ofPattern("MM.uuuu")
+            .withResolverStyle(ResolverStyle.STRICT);
 
     @Inject
     @RestClient
@@ -172,6 +180,17 @@ public class DeliveryService {
 
         List<Delivery> deliveries = Delivery.findByCustomer(customerId.trim());
         return toCustomerDeliveryOverview(deliveries, LocalDate.now());
+    }
+
+    @Transactional
+    public MonthlyDeliveryCustomersDto getCustomersWithDeliveriesInMonth(String monthValue) {
+        String normalizedMonth = normalizeDeliveryMonth(monthValue);
+        YearMonth month = parseDeliveryMonth(normalizedMonth);
+        LocalDateTime monthStart = month.atDay(1).atStartOfDay();
+        LocalDateTime nextMonthStart = month.plusMonths(1).atDay(1).atStartOfDay();
+
+        List<String> customerIds = findCustomerIdsDeliveredBetween(monthStart, nextMonthStart);
+        return new MonthlyDeliveryCustomersDto(normalizedMonth, customerIds);
     }
 
     @Transactional
@@ -618,6 +637,25 @@ public class DeliveryService {
         );
     }
 
+    List<String> customerIdsWithDeliveredAtInPeriod(
+            List<Delivery> deliveries,
+            LocalDateTime periodStart,
+            LocalDateTime periodEndExclusive
+    ) {
+        if (deliveries == null || deliveries.isEmpty()) {
+            return List.of();
+        }
+
+        return deliveries.stream()
+                .filter(Objects::nonNull)
+                .filter(delivery -> !isBlank(delivery.userId))
+                .filter(delivery -> isDeliveredAtInPeriod(delivery, periodStart, periodEndExclusive))
+                .map(delivery -> delivery.userId)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
     private DeliverySummaryDto toDeliverySummary(Delivery delivery) {
         if (delivery == null) {
             return null;
@@ -639,6 +677,31 @@ public class DeliveryService {
         return deliveryDate != null
                 && !deliveryDate.isBefore(periodStart)
                 && !deliveryDate.isAfter(periodEnd);
+    }
+
+    private boolean isDeliveredAtInPeriod(
+            Delivery delivery,
+            LocalDateTime periodStart,
+            LocalDateTime periodEndExclusive
+    ) {
+        LocalDateTime deliveredAt = delivery.deliveredAt;
+        return deliveredAt != null
+                && !deliveredAt.isBefore(periodStart)
+                && deliveredAt.isBefore(periodEndExclusive);
+    }
+
+    private List<String> findCustomerIdsDeliveredBetween(LocalDateTime periodStart, LocalDateTime periodEndExclusive) {
+        return entityManager
+                .createQuery(
+                        "select distinct d.userId from Delivery d " +
+                                "where d.userId is not null and d.userId <> '' " +
+                                "and d.deliveredAt >= :periodStart and d.deliveredAt < :periodEnd " +
+                                "order by d.userId asc",
+                        String.class
+                )
+                .setParameter("periodStart", periodStart)
+                .setParameter("periodEnd", periodEndExclusive)
+                .getResultList();
     }
 
     private List<DeliveryDetailDto> toDetailDtos(List<Delivery> deliveries, String authorizationHeader) {
@@ -1005,6 +1068,22 @@ public class DeliveryService {
         } catch (RuntimeException exception) {
             throw new BadRequestException("deliveryDate muss im Format YYYY-MM-DD angegeben werden.");
         }
+    }
+
+    YearMonth parseDeliveryMonth(String monthValue) {
+        try {
+            return YearMonth.parse(monthValue, MONTH_FORMATTER);
+        } catch (DateTimeParseException exception) {
+            throw new BadRequestException("month muss im Format MM.YYYY angegeben werden, z. B. 06.2026.");
+        }
+    }
+
+    private String normalizeDeliveryMonth(String monthValue) {
+        if (isBlank(monthValue)) {
+            throw new BadRequestException("month muss angegeben werden.");
+        }
+
+        return monthValue.trim();
     }
 
     private String normalizeOptionalCustomerId(String customerId, String fallbackCustomerId) {

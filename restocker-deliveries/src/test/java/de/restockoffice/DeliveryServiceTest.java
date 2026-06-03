@@ -2,8 +2,10 @@ package de.restockoffice;
 
 import org.junit.jupiter.api.Test;
 
+import jakarta.ws.rs.BadRequestException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,12 +13,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DeliveryServiceTest {
 
     private static final String CUSTOMER_ID = "customer-1";
     private static final String DELIVERY_DAY_TUESDAY = "Dienstag";
     private static final String DELIVERY_DAY_THURSDAY = "Donnerstag";
+    private static final String MONTHLY_DELIVERED_CUSTOMER_ID = "customer-b";
     private static final String ARTICLE_NUMBER_10001 = "10001";
     private static final String ARTICLE_NUMBER_10002 = "10002";
     private static final String ARTICLE_NUMBER_10007 = "10007";
@@ -251,6 +255,50 @@ class DeliveryServiceTest {
         assertNull(overview.getNextDelivery());
     }
 
+    @Test
+    void parsesDeliveryMonthInExpectedFormat() {
+        assertEquals(YearMonth.of(2026, 6), service.parseDeliveryMonth("06.2026"));
+    }
+
+    @Test
+    void rejectsDeliveryMonthInUnexpectedFormat() {
+        assertThrows(BadRequestException.class, () -> service.parseDeliveryMonth("6.2026"));
+        assertThrows(BadRequestException.class, () -> service.parseDeliveryMonth("13.2026"));
+        assertThrows(BadRequestException.class, () -> service.parseDeliveryMonth("2026-06"));
+    }
+
+    @Test
+    void returnsUniqueCustomerIdsForDeliveriesDeliveredInsideMonth() {
+        Delivery firstJuneDelivery = deliveryWithDeliveredAt(
+                MONTHLY_DELIVERED_CUSTOMER_ID,
+                LocalDateTime.of(2026, 6, 1, 0, 0)
+        );
+        Delivery duplicateCustomerDelivery = deliveryWithDeliveredAt(
+                MONTHLY_DELIVERED_CUSTOMER_ID,
+                LocalDateTime.of(2026, 6, 30, 23, 59)
+        );
+        Delivery secondJuneDelivery = deliveryWithDeliveredAt("customer-a", LocalDateTime.of(2026, 6, 15, 12, 0));
+        Delivery plannedInJuneButDeliveredInMay = deliveryWithDeliveredAt("customer-c", LocalDateTime.of(2026, 5, 31, 23, 59));
+        plannedInJuneButDeliveredInMay.deliveryDate = LocalDate.of(2026, 6, 1);
+        Delivery deliveredAtNextMonthStart = deliveryWithDeliveredAt("customer-d", LocalDateTime.of(2026, 7, 1, 0, 0));
+        Delivery notDelivered = openDelivery("customer-e", LocalDate.of(2026, 6, 15), item(ARTICLE_NUMBER_10088, 1));
+
+        List<String> customerIds = service.customerIdsWithDeliveredAtInPeriod(
+                List.of(
+                        firstJuneDelivery,
+                        duplicateCustomerDelivery,
+                        secondJuneDelivery,
+                        plannedInJuneButDeliveredInMay,
+                        deliveredAtNextMonthStart,
+                        notDelivered
+                ),
+                LocalDateTime.of(2026, 6, 1, 0, 0),
+                LocalDateTime.of(2026, 7, 1, 0, 0)
+        );
+
+        assertIterableEquals(List.of("customer-a", MONTHLY_DELIVERED_CUSTOMER_ID), customerIds);
+    }
+
     private OrderDto order(
             Long id,
             String customerId,
@@ -309,6 +357,15 @@ class DeliveryServiceTest {
         delivery.deliveryDate = deliveryDate;
         for (DeliveryItem item : items) {
             delivery.addItem(item);
+        }
+        return delivery;
+    }
+
+    private Delivery deliveryWithDeliveredAt(String customerId, LocalDateTime deliveredAt) {
+        Delivery delivery = openDelivery(customerId, deliveredAt.toLocalDate(), item(ARTICLE_NUMBER_10001, 1));
+        delivery.deliveredAt = deliveredAt;
+        for (DeliveryItem item : delivery.items) {
+            item.delivered = true;
         }
         return delivery;
     }
