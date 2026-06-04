@@ -15,6 +15,19 @@ public class NotificationMailService {
     private static final String DELIVERY_TEMPLATE = "templates/delivery-announcement.html";
     private static final String DELIVERY_CONFIRMATION_TEMPLATE = "templates/delivery-confirmation.html";
     private static final String SUBSCRIPTION_URL = "https://app.restockoffice.de/subscription";
+    private static final String INLINE_LOGO_URL = "cid:restockoffice-logo";
+    private static final String LOGO_URL_KEY = "logoUrl";
+    private static final String CUSTOMER_NAME_KEY = "customerName";
+    private static final String ORDER_NUMBER_KEY = "orderNumber";
+    private static final String DELIVERY_WINDOW_KEY = "deliveryWindow";
+    private static final String DELIVERY_LOCATION_KEY = "deliveryLocation";
+    private static final String SUPPORT_EMAIL_KEY = "supportEmail";
+    private static final String DELIVERY_DATE_KEY = "deliveryDate";
+    private static final String SUPPLIER_NAME_KEY = "supplierName";
+    private static final String ITEM_BORDER_STYLE = "border-bottom:1px solid #e3ebe5;";
+    private static final String DIV_CLOSE = "</div>";
+    private static final String REQUEST_REQUIRED_MESSAGE = "request must not be null";
+    private static final String RECIPIENT_EMAIL_FIELD = "recipientEmail";
 
     @Inject
     TemplateService templateService;
@@ -27,16 +40,21 @@ public class NotificationMailService {
 
     public RenderedMail renderAboConfirmation(AboConfirmationRequest request) {
         validateAboConfirmation(request);
+        return renderAboConfirmation(request, defaultIfBlank(request.logoUrl(), mailSettings.logoUrl()));
+    }
+
+    private RenderedMail renderAboConfirmation(AboConfirmationRequest request, String logoUrl) {
+        validateAboConfirmation(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
-        values.put("customerName", escapeHtml(request.customerName()));
-        values.put("orderNumber", escapeHtml(request.orderNumber()));
+        values.put(LOGO_URL_KEY, escapeHtml(logoUrl));
+        values.put(CUSTOMER_NAME_KEY, escapeHtml(request.customerName()));
+        values.put(ORDER_NUMBER_KEY, escapeHtml(request.orderNumber()));
         values.put("orderDate", escapeHtml(request.orderDate()));
-        values.put("deliveryWindow", escapeHtml(request.deliveryWindow()));
-        values.put("deliveryLocation", escapeHtml(request.deliveryLocation()));
+        values.put(DELIVERY_WINDOW_KEY, escapeHtml(request.deliveryWindow()));
+        values.put(DELIVERY_LOCATION_KEY, escapeHtml(request.deliveryLocation()));
         values.put("changeDeadline", escapeHtml(request.changeDeadline()));
-        values.put("supportEmail", escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
+        values.put(SUPPORT_EMAIL_KEY, escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
         values.put("manageSubscriptionUrl", SUBSCRIPTION_URL);
         values.put("orderItemsHtml", buildOrderItemsHtml(request.orderItems()));
 
@@ -46,19 +64,24 @@ public class NotificationMailService {
 
     public RenderedMail renderDeliveryAnnouncement(DeliveryAnnouncementRequest request) {
         validateDeliveryAnnouncement(request);
+        return renderDeliveryAnnouncement(request, defaultIfBlank(request.logoUrl(), mailSettings.logoUrl()));
+    }
+
+    private RenderedMail renderDeliveryAnnouncement(DeliveryAnnouncementRequest request, String logoUrl) {
+        validateDeliveryAnnouncement(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
-        values.put("customerName", escapeHtml(request.customerName()));
+        values.put(LOGO_URL_KEY, escapeHtml(logoUrl));
+        values.put(CUSTOMER_NAME_KEY, escapeHtml(request.customerName()));
         values.put("daysUntilDelivery", escapeHtml(request.daysUntilDelivery()));
         values.put("deliveryDay", escapeHtml(request.deliveryDay()));
-        values.put("deliveryDate", escapeHtml(request.deliveryDate()));
-        values.put("deliveryWindow", escapeHtml(request.deliveryWindow()));
-        values.put("orderNumber", escapeHtml(request.orderNumber()));
-        values.put("supplierName", escapeHtml(request.supplierName()));
-        values.put("deliveryLocation", escapeHtml(request.deliveryLocation()));
+        values.put(DELIVERY_DATE_KEY, escapeHtml(request.deliveryDate()));
+        values.put(DELIVERY_WINDOW_KEY, escapeHtml(request.deliveryWindow()));
+        values.put(ORDER_NUMBER_KEY, escapeHtml(request.orderNumber()));
+        values.put(SUPPLIER_NAME_KEY, escapeHtml(request.supplierName()));
+        values.put(DELIVERY_LOCATION_KEY, escapeHtml(request.deliveryLocation()));
         values.put("deliveryInstructions", escapeHtml(request.deliveryInstructions()));
-        values.put("supportEmail", escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
+        values.put(SUPPORT_EMAIL_KEY, escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
         values.put("deliveryDetailsUrl", escapeHtml(defaultIfBlank(request.deliveryDetailsUrl(), "#")));
         values.put("deliveryItemsHtml", buildDeliveryItemsHtml(request.deliveryItems()));
 
@@ -68,15 +91,20 @@ public class NotificationMailService {
 
     public RenderedMail renderDeliveryConfirmation(DeliveryConfirmationRequest request) {
         validateDeliveryConfirmation(request);
+        return renderDeliveryConfirmation(request, defaultIfBlank(request.logoUrl(), mailSettings.logoUrl()));
+    }
+
+    private RenderedMail renderDeliveryConfirmation(DeliveryConfirmationRequest request, String logoUrl) {
+        validateDeliveryConfirmation(request);
 
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("logoUrl", escapeHtml(defaultIfBlank(request.logoUrl(), mailSettings.logoUrl())));
-        values.put("customerName", escapeHtml(request.customerName()));
-        values.put("deliveryDate", escapeHtml(request.deliveryDate()));
-        values.put("deliveryWindow", escapeHtml(request.deliveryWindow()));
-        values.put("orderNumber", escapeHtml(request.orderNumber()));
-        values.put("supplierName", escapeHtml(request.supplierName()));
-        values.put("supportEmail", escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
+        values.put(LOGO_URL_KEY, escapeHtml(logoUrl));
+        values.put(CUSTOMER_NAME_KEY, escapeHtml(request.customerName()));
+        values.put(DELIVERY_DATE_KEY, escapeHtml(request.deliveryDate()));
+        values.put(DELIVERY_WINDOW_KEY, escapeHtml(request.deliveryWindow()));
+        values.put(ORDER_NUMBER_KEY, escapeHtml(request.orderNumber()));
+        values.put(SUPPLIER_NAME_KEY, escapeHtml(request.supplierName()));
+        values.put(SUPPORT_EMAIL_KEY, escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
         values.put("deliveryDetailsUrl", escapeHtml(defaultIfBlank(request.deliveryDetailsUrl(), "#")));
         values.put("deliveryItemsHtml", buildDeliveryItemsHtml(request.deliveryItems()));
 
@@ -85,17 +113,17 @@ public class NotificationMailService {
     }
 
     public String sendAboConfirmation(AboConfirmationRequest request) {
-        RenderedMail renderedMail = renderAboConfirmation(request);
+        RenderedMail renderedMail = renderAboConfirmation(request, INLINE_LOGO_URL);
         return resendMailClient.send(request.recipientEmail(), renderedMail.subject(), renderedMail.html());
     }
 
     public String sendDeliveryAnnouncement(DeliveryAnnouncementRequest request) {
-        RenderedMail renderedMail = renderDeliveryAnnouncement(request);
+        RenderedMail renderedMail = renderDeliveryAnnouncement(request, INLINE_LOGO_URL);
         return resendMailClient.send(request.recipientEmail(), renderedMail.subject(), renderedMail.html());
     }
 
     public String sendDeliveryConfirmation(DeliveryConfirmationRequest request) {
-        RenderedMail renderedMail = renderDeliveryConfirmation(request);
+        RenderedMail renderedMail = renderDeliveryConfirmation(request, INLINE_LOGO_URL);
         return resendMailClient.send(request.recipientEmail(), renderedMail.subject(), renderedMail.html());
     }
 
@@ -109,21 +137,21 @@ public class NotificationMailService {
             boolean isLast = index == items.size() - 1;
             html.append("<tr class=\"item-row\"><td class=\"item-main\" style=\"padding:14px 0;vertical-align:top;");
             if (!isLast) {
-                html.append("border-bottom:1px solid #e3ebe5;");
+                html.append(ITEM_BORDER_STYLE);
             }
             html.append("\">")
-                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">").append(escapeHtml(item.name())).append("</div>")
+                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">").append(escapeHtml(item.name())).append(DIV_CLOSE)
                     .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Artikel-Nr. ")
                     .append(escapeHtml(item.articleNumber()))
-                    .append("</div>")
+                    .append(DIV_CLOSE)
                     .append("<div style=\"font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Intervall: ")
                     .append(escapeHtml(item.intervalDescription()))
-                    .append("</div>")
+                    .append(DIV_CLOSE)
                     .append("<div style=\"font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Nächste Lieferung: ")
                     .append(escapeHtml(item.nextDeliveryDate()))
                     .append("</div></td><td align=\"right\" class=\"qty-cell\" style=\"width:98px;padding:14px 0 14px 16px;vertical-align:top;text-align:right;");
             if (!isLast) {
-                html.append("border-bottom:1px solid #e3ebe5;");
+                html.append(ITEM_BORDER_STYLE);
             }
             html.append("\"><span class=\"qty-text\" style=\"display:inline-block;color:#264037;font-weight:700;font-size:18px;line-height:1.3;white-space:nowrap;\">")
                     .append(escapeHtml(item.quantity()))
@@ -142,15 +170,15 @@ public class NotificationMailService {
             boolean isLast = index == items.size() - 1;
             html.append("<tr class=\"item-row\"><td class=\"item-main\" style=\"padding:14px 0;vertical-align:top;");
             if (!isLast) {
-                html.append("border-bottom:1px solid #e3ebe5;");
+                html.append(ITEM_BORDER_STYLE);
             }
             html.append("\">")
-                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">").append(escapeHtml(item.name())).append("</div>")
+                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">").append(escapeHtml(item.name())).append(DIV_CLOSE)
                     .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Artikel-Nr. ")
                     .append(escapeHtml(item.articleNumber()))
                     .append("</div></td><td align=\"right\" class=\"qty-cell\" style=\"width:98px;padding:14px 0 14px 16px;vertical-align:top;text-align:right;");
             if (!isLast) {
-                html.append("border-bottom:1px solid #e3ebe5;");
+                html.append(ITEM_BORDER_STYLE);
             }
             html.append("\"><span class=\"qty-text\" style=\"display:inline-block;color:#264037;font-weight:700;font-size:18px;line-height:1.3;white-space:nowrap;\">")
                     .append(escapeHtml(item.quantity()))
@@ -160,38 +188,38 @@ public class NotificationMailService {
     }
 
     private void validateAboConfirmation(AboConfirmationRequest request) {
-        require(request != null, "request must not be null");
-        requireNotBlank(request.recipientEmail(), "recipientEmail");
-        requireNotBlank(request.customerName(), "customerName");
-        requireNotBlank(request.orderNumber(), "orderNumber");
+        require(request != null, REQUEST_REQUIRED_MESSAGE);
+        requireNotBlank(request.recipientEmail(), RECIPIENT_EMAIL_FIELD);
+        requireNotBlank(request.customerName(), CUSTOMER_NAME_KEY);
+        requireNotBlank(request.orderNumber(), ORDER_NUMBER_KEY);
         requireNotBlank(request.orderDate(), "orderDate");
-        requireNotBlank(request.deliveryWindow(), "deliveryWindow");
-        requireNotBlank(request.deliveryLocation(), "deliveryLocation");
+        requireNotBlank(request.deliveryWindow(), DELIVERY_WINDOW_KEY);
+        requireNotBlank(request.deliveryLocation(), DELIVERY_LOCATION_KEY);
         requireNotBlank(request.changeDeadline(), "changeDeadline");
     }
 
     private void validateDeliveryAnnouncement(DeliveryAnnouncementRequest request) {
-        require(request != null, "request must not be null");
-        requireNotBlank(request.recipientEmail(), "recipientEmail");
-        requireNotBlank(request.customerName(), "customerName");
+        require(request != null, REQUEST_REQUIRED_MESSAGE);
+        requireNotBlank(request.recipientEmail(), RECIPIENT_EMAIL_FIELD);
+        requireNotBlank(request.customerName(), CUSTOMER_NAME_KEY);
         requireNotBlank(request.daysUntilDelivery(), "daysUntilDelivery");
         requireNotBlank(request.deliveryDay(), "deliveryDay");
-        requireNotBlank(request.deliveryDate(), "deliveryDate");
-        requireNotBlank(request.deliveryWindow(), "deliveryWindow");
-        requireNotBlank(request.orderNumber(), "orderNumber");
-        requireNotBlank(request.supplierName(), "supplierName");
-        requireNotBlank(request.deliveryLocation(), "deliveryLocation");
+        requireNotBlank(request.deliveryDate(), DELIVERY_DATE_KEY);
+        requireNotBlank(request.deliveryWindow(), DELIVERY_WINDOW_KEY);
+        requireNotBlank(request.orderNumber(), ORDER_NUMBER_KEY);
+        requireNotBlank(request.supplierName(), SUPPLIER_NAME_KEY);
+        requireNotBlank(request.deliveryLocation(), DELIVERY_LOCATION_KEY);
         requireNotBlank(request.deliveryInstructions(), "deliveryInstructions");
     }
 
     private void validateDeliveryConfirmation(DeliveryConfirmationRequest request) {
-        require(request != null, "request must not be null");
-        requireNotBlank(request.recipientEmail(), "recipientEmail");
-        requireNotBlank(request.customerName(), "customerName");
-        requireNotBlank(request.deliveryDate(), "deliveryDate");
-        requireNotBlank(request.deliveryWindow(), "deliveryWindow");
-        requireNotBlank(request.orderNumber(), "orderNumber");
-        requireNotBlank(request.supplierName(), "supplierName");
+        require(request != null, REQUEST_REQUIRED_MESSAGE);
+        requireNotBlank(request.recipientEmail(), RECIPIENT_EMAIL_FIELD);
+        requireNotBlank(request.customerName(), CUSTOMER_NAME_KEY);
+        requireNotBlank(request.deliveryDate(), DELIVERY_DATE_KEY);
+        requireNotBlank(request.deliveryWindow(), DELIVERY_WINDOW_KEY);
+        requireNotBlank(request.orderNumber(), ORDER_NUMBER_KEY);
+        requireNotBlank(request.supplierName(), SUPPLIER_NAME_KEY);
     }
 
     private void require(boolean expression, String message) {

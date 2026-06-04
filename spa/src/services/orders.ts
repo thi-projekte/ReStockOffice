@@ -1,3 +1,7 @@
+import mockRestockOrderTemplates from "../mocks/restockOrders.json";
+import { getProducts, useAPIs } from "./products";
+import keycloak from "../auth/keycloak";
+
 import { createDemoRestockOrders, getRestockerCustomerProfile } from "../mocks/restockerMarketplace";
 import type {
   Product,
@@ -11,6 +15,7 @@ import type {
 } from "../types/shop";
 import {
   acceptDelivery,
+  loadAllDeliveries,
   loadAssignedDeliveries,
   loadOpenDeliveries,
   loadTodayTours,
@@ -18,9 +23,8 @@ import {
   syncTodayOrders,
   type DeliveryDetail,
 } from "./deliveries";
-import { getProducts } from "./products";
 import { loadCustomerProfile } from "./users";
-import type { UserProfile } from "../types/user";
+import type { CustomerUser } from "./users";
 
 const ORDERS_API_URL =
   import.meta.env.VITE_ORDERS_API_URL ?? "https://orders.restockoffice.de/orders";
@@ -40,6 +44,11 @@ interface RestockerOrdersRequestContext {
   restockerName?: string;
 }
 
+interface AssignedRestockerOrdersRequestContext extends RestockerOrdersRequestContext {
+  restockerId: string;
+  includeCompletedDeliveries?: boolean;
+}
+
 interface RestockerOrderAssignment {
   orderKey: string;
   restockerId: string;
@@ -52,6 +61,10 @@ interface UpsertOrderPayload extends OrdersRequestContext {
   quantity: number;
   intervalCount: number;
   existingItem?: Pick<RestockOrder, "createdAt" | "status">;
+}
+
+interface DeleteOrderPayload extends OrdersRequestContext {
+  productId: string;
 }
 
 interface MarketplaceCustomerData {
@@ -70,16 +83,51 @@ function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert") {
-  return `Die Orders-API konnte nicht erreicht werden. Bitte pruefe Netzwerk, CORS oder Proxy-Konfiguration, falls Orders nicht ${action} werden konnten.`;
+function formatLocalIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
-function resolveToken(token?: string) {
-  if (!token) {
-    throw new Error("Kein Keycloak-Token fuer Orders-Requests verfuegbar.");
+function isDeliveryDateInPast(dateValue?: string | null, referenceDate = new Date()) {
+  if (!dateValue) {
+    return false;
   }
 
-  return token;
+  const normalizedDate = dateValue.trim().slice(0, 10);
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalizedDate) &&
+    normalizedDate < formatLocalIsoDate(referenceDate);
+}
+
+function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert") {
+  return `Die Orders-API konnte nicht erreicht werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration, falls Orders nicht ${action} werden konnten.`;
+}
+
+async function resolveToken(token?: string) {
+
+  if (token) {
+    return token;
+  }
+
+  // Fallback: direkt aus Keycloak holen + refreshen
+  if (!keycloak.authenticated) {
+    throw new Error("Kein Keycloak-Token für Orders-Requests verfügbar.");
+  }
+
+  try {
+    await keycloak.updateToken(30);
+  } catch {
+    throw new Error("Das Keycloak-Token konnte nicht aktualisiert werden.");
+  }
+
+  if (!keycloak.token) {
+    throw new Error("Kein Keycloak-Token verfügbar.");
+  }
+
+  return keycloak.token;
 }
 
 function createHeaders(token: string) {
@@ -146,7 +194,7 @@ function getNextDeliveryDate(order: RestockOrder, today: Date) {
 function buildOrderNumber(customerId: string, deliveryDateKey: string) {
   const hashValue = `${customerId}-${deliveryDateKey}`
     .split("")
-    .reduce((sum, character) => sum + character.charCodeAt(0), 0);
+    .reduce((sum, character) => sum + (character.codePointAt(0) ?? 0), 0);
 
   return String(1000 + (hashValue % 9000));
 }
@@ -166,8 +214,7 @@ function buildQuantityLabel(product: Product | undefined, quantity: number) {
 }
 
 function normalizeMarketplaceText(value: string | null | undefined) {
-  const normalizedValue = value?.trim();
-  return normalizedValue ? normalizedValue : MISSING_MARKETPLACE_VALUE;
+  return value?.trim() || MISSING_MARKETPLACE_VALUE;
 }
 
 function buildStreetLine(detail?: DeliveryDetail) {
@@ -334,9 +381,7 @@ function resolveMarketplaceCustomerData({
 
     return {
       ...customerData,
-      isPlaceholder: Object.values(customerData).some(
-        (value) => value === MISSING_MARKETPLACE_VALUE,
-      ),
+      isPlaceholder: Object.values(customerData).includes(MISSING_MARKETPLACE_VALUE),
     };
   }
 
@@ -374,11 +419,11 @@ function hasMissingCustomerData(order: RestockMarketplaceOrder) {
       order.city,
       order.deliveryTime,
       order.deliveryNotes,
-    ].some((value) => value === MISSING_MARKETPLACE_VALUE)
+    ].includes(MISSING_MARKETPLACE_VALUE)
   );
 }
 
-function buildStreetLineFromProfile(profile: UserProfile) {
+function buildStreetLineFromProfile(profile: CustomerUser) {
   return [profile.street, profile.houseNumber]
     .map((part) => part?.trim())
     .filter(Boolean)
@@ -387,14 +432,14 @@ function buildStreetLineFromProfile(profile: UserProfile) {
 
 function profileValueOrCurrent(value: string | null | undefined, currentValue: string) {
   const normalizedValue = normalizeMarketplaceText(value);
-  return normalizedValue !== MISSING_MARKETPLACE_VALUE
-    ? normalizedValue
-    : currentValue;
+  return normalizedValue === MISSING_MARKETPLACE_VALUE
+    ? currentValue
+    : normalizedValue;
 }
 
 function applyCustomerProfile(
   order: RestockMarketplaceOrder,
-  profile?: UserProfile,
+  profile?: CustomerUser,
 ): RestockMarketplaceOrder {
   if (!profile) {
     return order;
@@ -413,9 +458,9 @@ function applyCustomerProfile(
     postalCode: profileValueOrCurrent(profile.postalCode, order.postalCode),
     city: profileValueOrCurrent(profile.city, order.city),
     deliveryTime:
-      profileDeliveryTime !== MISSING_MARKETPLACE_VALUE
-        ? profileDeliveryTime
-        : order.deliveryTime,
+      profileDeliveryTime === MISSING_MARKETPLACE_VALUE
+        ? order.deliveryTime
+        : profileDeliveryTime,
     deliveryNotes: profileValueOrCurrent(
       profile.deliveryHint,
       order.deliveryNotes,
@@ -445,7 +490,7 @@ async function enrichMarketplaceOrdersWithCustomerProfiles(
     return orders;
   }
 
-  const profilesByCustomerId = new Map<string, UserProfile>();
+  const profilesByCustomerId = new Map<string, CustomerUser>();
   await Promise.all(
     missingCustomerIds.map(async (customerId) => {
       try {
@@ -465,47 +510,129 @@ async function enrichMarketplaceOrdersWithCustomerProfiles(
 function deriveMarketplaceOrdersFromDeliveryDetails(
   deliveryDetails: DeliveryDetail[],
 ): RestockMarketplaceOrder[] {
-  return deliveryDetails.map((detail) => {
-    const deliveryTime = formatMarketplaceDeliveryTime(detail.deliveryTime);
-    const deliveryNotes = normalizeMarketplaceText(detail.deliveryHint);
-    const assignment = detail.acceptedAt || detail.restockerName
-      ? {
-        restockerId: detail.restockerName ?? "",
-        acceptedAt: detail.acceptedAt ?? "",
-        status: detail.deliveredAt ? "completed" : "accepted",
-      } satisfies RestockMarketplaceAssignment
-      : undefined;
-    const items = detail.items.map((item, index) => ({
-      position: index + 1,
-      articleNumber: item.articleNumber,
-      productId: item.articleNumber,
-      name: normalizeMarketplaceText(item.name),
-      quantity: item.quantity,
-      quantityLabel: `${item.quantity} ${normalizeMarketplaceText(item.unit)}`,
-      interval: 1,
-    }));
+  return deliveryDetails
+    .filter((detail) => !isDeliveryDateInPast(detail.deliveryDate))
+    .map((detail) => {
+      const deliveryTime = formatMarketplaceDeliveryTime(detail.deliveryTime);
+      const deliveryNotes = normalizeMarketplaceText(detail.deliveryHint);
+      const assignment = detail.acceptedAt || detail.restockerName
+        ? {
+          restockerId: detail.restockerName ?? "",
+          acceptedAt: detail.acceptedAt ?? "",
+          status: detail.deliveredAt ? "completed" : "accepted",
+        } satisfies RestockMarketplaceAssignment
+        : undefined;
+      const items = detail.items.map((item, index) => ({
+        position: index + 1,
+        articleNumber: item.articleNumber,
+        productId: item.articleNumber,
+        name: normalizeMarketplaceText(item.name),
+        quantity: item.quantity,
+        quantityLabel: `${item.quantity} ${normalizeMarketplaceText(item.unit)}`,
+        interval: 1,
+      }));
 
-    return {
-      orderId: buildDeliveryDisplayId(detail.id),
-      orderKey: `delivery__${detail.id}`,
-      customerId: detail.userId,
-      companyName: normalizeMarketplaceText(detail.companyName),
-      addressLine1: buildStreetLine(detail),
-      postalCode: normalizeMarketplaceText(detail.postalCode),
-      city: normalizeMarketplaceText(detail.city),
-      deliveryDate: formatIsoDateForDisplay(detail.deliveryDate),
-      deliveryTime,
-      deliveryNotes,
-      articleCount: detail.items.length,
-      items,
-      isPlaceholderCustomerData:
-        deliveryTime === MISSING_MARKETPLACE_VALUE ||
-        [detail.companyName, detail.street, detail.postalCode, detail.city].some(
-          (value) => !value?.trim(),
-        ),
-      assignment,
-    };
-  });
+      return {
+        orderId: buildDeliveryDisplayId(detail.id),
+        orderKey: `delivery__${detail.id}`,
+        customerId: detail.userId,
+        companyName: normalizeMarketplaceText(detail.companyName),
+        addressLine1: buildStreetLine(detail),
+        postalCode: normalizeMarketplaceText(detail.postalCode),
+        city: normalizeMarketplaceText(detail.city),
+        deliveryDate: formatIsoDateForDisplay(detail.deliveryDate),
+        deliveryTime,
+        deliveryNotes,
+        articleCount: detail.items.length,
+        items,
+        isPlaceholderCustomerData:
+          deliveryTime === MISSING_MARKETPLACE_VALUE ||
+          [detail.companyName, detail.street, detail.postalCode, detail.city].some(
+            (value) => !value?.trim(),
+          ),
+        assignment,
+      };
+    });
+}
+
+function normalizeRestockerIdentifier(value?: string | null) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function readTokenClaim(claimName: string) {
+  const tokenParsed = keycloak.tokenParsed as Record<string, unknown> | undefined;
+  const claimValue = tokenParsed?.[claimName];
+
+  return typeof claimValue === "string" ? claimValue.trim() : "";
+}
+
+function getRestockerIdentifierCandidates(restockerId: string, restockerName?: string) {
+  const givenName = readTokenClaim("given_name");
+  const familyName = readTokenClaim("family_name");
+
+  return new Set(
+    [
+      restockerId,
+      restockerName,
+      readTokenClaim("preferred_username"),
+      readTokenClaim("sub"),
+      readTokenClaim("name"),
+      [givenName, familyName].filter(Boolean).join(" "),
+    ]
+      .map(normalizeRestockerIdentifier)
+      .filter(Boolean),
+  );
+}
+
+function isCompletedDeliveryForRestocker(
+  detail: DeliveryDetail,
+  restockerIdentifiers: Set<string>,
+) {
+  const assignedRestocker = normalizeRestockerIdentifier(detail.restockerName);
+  const isCompleted =
+    Boolean(detail.deliveredAt) || detail.status.toUpperCase() === "DELIVERED";
+
+  return isCompleted && restockerIdentifiers.has(assignedRestocker);
+}
+
+function isCompletedMarketplaceOrder(order: RestockMarketplaceOrder) {
+  return order.assignment?.status === "completed";
+}
+
+function filterCompletedMarketplaceOrders(
+  orders: RestockMarketplaceOrder[],
+  includeCompletedDeliveries: boolean,
+) {
+  return includeCompletedDeliveries
+    ? orders
+    : orders.filter((order) => !isCompletedMarketplaceOrder(order));
+}
+
+function mergeDeliveryDetailsById(deliveryDetails: DeliveryDetail[]) {
+  return Array.from(
+    deliveryDetails.reduce((lookup, detail) => {
+      lookup.set(detail.id, detail);
+      return lookup;
+    }, new Map<string, DeliveryDetail>()).values(),
+  );
+}
+
+const mockRestockOrders: RestockOrder[] = [];
+
+function getMockOrdersForCustomer(customerId: string) {
+  const customerOrders = mockRestockOrders.filter((order) => order.customerId === customerId);
+
+  if (customerOrders.length > 0) {
+    return mockRestockOrders;
+  }
+
+  const seededOrders = mockRestockOrderTemplates.map((order) => ({
+    ...order,
+    customerId,
+  }));
+
+  mockRestockOrders.push(...seededOrders);
+  return mockRestockOrders;
 }
 
 function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
@@ -551,11 +678,11 @@ function createSubscriptionFromOrders(
 }
 
 function readRestockerAssignments(): RestockerOrderAssignment[] {
-  if (typeof window === "undefined") {
+  if (globalThis.window === undefined) {
     return [];
   }
 
-  const storedAssignments = window.localStorage.getItem(
+  const storedAssignments = globalThis.window.localStorage.getItem(
     RESTOCKER_ASSIGNMENTS_STORAGE_KEY,
   );
 
@@ -597,11 +724,11 @@ function readRestockerAssignments(): RestockerOrderAssignment[] {
 }
 
 function writeRestockerAssignments(assignments: RestockerOrderAssignment[]) {
-  if (typeof window === "undefined") {
+  if (globalThis.window === undefined) {
     return;
   }
 
-  window.localStorage.setItem(
+  globalThis.window.localStorage.setItem(
     RESTOCKER_ASSIGNMENTS_STORAGE_KEY,
     JSON.stringify(assignments),
   );
@@ -697,7 +824,7 @@ async function fetchAllOrders(token: string) {
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      throw new Error("Die Orders-API hat den Request abgelehnt. Bitte pruefe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.");
+      throw new Error("Die Orders-API hat den Request abgelehnt. Bitte prüfe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.");
     }
 
     throw new Error(`RestockOrders konnten nicht geladen werden (HTTP ${response.status}).`);
@@ -816,24 +943,86 @@ export function createSubscription(customerId = ""): Subscription {
 }
 
 export async function loadSubscription({
-  customerId,
-  token,
-}: OrdersRequestContext): Promise<Subscription> {
-  const resolvedToken = resolveToken(token);
-  const resolvedCustomerId = resolveCustomerId(customerId);
-  const normalizedOrders = await fetchAllOrders(resolvedToken);
+       customerId,
+       token,
+   }: OrdersRequestContext): Promise<Subscription> {
+    if (!customerId) {
+        return createSubscription();
+    }
 
-  return createSubscriptionFromOrders(normalizedOrders, resolvedCustomerId);
+    if (!useAPIs) {
+        return createSubscriptionFromOrders(getMockOrdersForCustomer(customerId), customerId);
+    }
+
+    const resolvedToken = await resolveToken(token);
+
+    let response: Response;
+
+    try {
+        response = await fetch(ORDERS_API_URL, {
+            method: "GET",
+            headers: createHeaders(resolvedToken),
+        });
+    } catch {
+        throw new Error(buildOrdersNetworkErrorMessage("geladen"));
+    }
+
+    if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+            throw new Error("Orders-API hat den Request abgelehnt.");
+        }
+
+        throw new Error(`RestockOrders konnten nicht geladen werden (HTTP ${response.status}).`);
+    }
+
+    const payload = (await response.json()) as unknown;
+
+    if (!Array.isArray(payload)) {
+        throw new Error("Die Orders-API hat ein unerwartetes Antwortformat geliefert.");
+    }
+
+    const normalizedOrders = payload.map(normalizeRestockOrder);
+
+    return createSubscriptionFromOrders(normalizedOrders, customerId);
 }
 
 export async function upsertSubscriptionOrder({
+  customerId,
   token,
   productId,
   quantity,
   intervalCount,
   existingItem,
 }: UpsertOrderPayload): Promise<{ productId: string; status: string; quantity: number; interval: number }> {
-  const resolvedToken = resolveToken(token);
+  if (!useAPIs) {
+    if (!customerId) {
+      throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
+    }
+
+    const existingMockOrder = mockRestockOrders.find(
+      (order) => order.customerId === customerId && order.productId === productId,
+    );
+    const updatedAt = formatDate(new Date());
+    const mockOrder: RestockOrder = {
+      customerId,
+      productId,
+      status: existingItem?.status ?? existingMockOrder?.status ?? "ACTIVE",
+      quantity,
+      interval: intervalCount,
+      createdAt: existingItem?.createdAt ?? existingMockOrder?.createdAt ?? updatedAt,
+      updatedAt,
+    };
+
+    if (existingMockOrder) {
+      Object.assign(existingMockOrder, mockOrder);
+    } else {
+      mockRestockOrders.push(mockOrder);
+    }
+
+    return mockOrder;
+  }
+
+  const resolvedToken = await resolveToken(token);
 
   const orderPayload = {
     productId,
@@ -871,11 +1060,60 @@ export async function upsertSubscriptionOrder({
   return normalizeRestockOrder(responseBody);
 }
 
+export async function deleteSubscriptionOrder({
+  customerId,
+  token,
+  productId,
+}: DeleteOrderPayload): Promise<void> {
+  if (!useAPIs) {
+    if (!customerId) {
+      throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
+    }
+
+    const existingMockOrderIndex = mockRestockOrders.findIndex(
+      (order) => order.customerId === customerId && order.productId === productId,
+    );
+
+    if (existingMockOrderIndex >= 0) {
+      mockRestockOrders.splice(existingMockOrderIndex, 1);
+    }
+
+    return;
+  }
+
+  const resolvedToken = await resolveToken(token);
+
+  let response: Response;
+
+  try {
+    response = await fetch(ORDERS_API_URL, {
+      method: "POST",
+      headers: createHeaders(resolvedToken),
+      body: JSON.stringify({
+        productId,
+        status: "CANCELLED",
+        quantity: 0,
+        interval: 1,
+      }),
+    });
+  } catch {
+    throw new Error(buildOrdersNetworkErrorMessage("gespeichert"));
+  }
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Die Orders-API hat das Speichern abgelehnt. Bitte pruefe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.");
+    }
+
+    throw new Error(`RestockOrder konnte nicht gespeichert werden (HTTP ${response.status}).`);
+  }
+}
+
 export async function loadOpenRestockOrders({
   token,
   restockerName,
 }: RestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
-  const resolvedToken = resolveToken(token);
+  const resolvedToken = await resolveToken(token);
   const assignments = readRestockerAssignments();
   const products = await getProducts().catch(() => []);
   const productsById = createProductLookup(products);
@@ -966,8 +1204,9 @@ export async function loadAssignedRestockOrders({
   token,
   restockerId,
   restockerName,
-}: RestockerOrdersRequestContext & { restockerId: string }): Promise<RestockMarketplaceLoadResult> {
-  const resolvedToken = resolveToken(token);
+  includeCompletedDeliveries = true,
+}: AssignedRestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
+  const resolvedToken = await resolveToken(token);
   const assignments = mergeAssignments(
     readRestockerAssignments().filter(
       (assignment) => assignment.restockerId === restockerId,
@@ -986,6 +1225,10 @@ export async function loadAssignedRestockOrders({
   );
   const products = await getProducts().catch(() => []);
   const productsById = createProductLookup(products);
+  const restockerIdentifierCandidates = getRestockerIdentifierCandidates(
+    restockerId,
+    restockerName,
+  );
 
   await syncStoredDeliveryAssignments({
     assignments,
@@ -994,14 +1237,32 @@ export async function loadAssignedRestockOrders({
   });
 
   try {
-    const marketplaceOrders = await enrichMarketplaceOrdersWithCustomerProfiles(
-      deriveMarketplaceOrdersFromDeliveryDetails(
-        await loadAssignedDeliveries({
-          token: resolvedToken,
-          restockerName: restockerName?.trim() || restockerId,
-        }),
-      ),
+    const assignedDeliveryDetails = await loadAssignedDeliveries({
+      token: resolvedToken,
+      restockerName: restockerName?.trim() || restockerId,
+    });
+    const todayTourDeliveryDetails = await loadDeliveryDetailsForRestocker(
       resolvedToken,
+      restockerName?.trim() || restockerId,
+    );
+    const completedDeliveryDetails = includeCompletedDeliveries
+      ? (await loadAllDeliveries({
+        token: resolvedToken,
+      }).catch(() => [])).filter((detail) =>
+        isCompletedDeliveryForRestocker(detail, restockerIdentifierCandidates),
+      )
+      : [];
+    const deliveryDetails = mergeDeliveryDetailsById([
+      ...assignedDeliveryDetails,
+      ...todayTourDeliveryDetails,
+      ...completedDeliveryDetails,
+    ]);
+    const marketplaceOrders = filterCompletedMarketplaceOrders(
+      await enrichMarketplaceOrdersWithCustomerProfiles(
+        deriveMarketplaceOrdersFromDeliveryDetails(deliveryDetails),
+        resolvedToken,
+      ),
+      includeCompletedDeliveries,
     );
 
     return {
@@ -1021,13 +1282,16 @@ export async function loadAssignedRestockOrders({
       restockerName,
     );
     const orders = await fetchAllOrders(resolvedToken);
-    const marketplaceOrders = deriveMarketplaceOrders(
-      orders,
-      productsById,
-      deliveryDetailsByCustomerId,
-      false,
-      assignmentsByOrderKey,
-    ).filter((order) => assignmentsByOrderKey.has(order.orderKey));
+    const marketplaceOrders = filterCompletedMarketplaceOrders(
+      deriveMarketplaceOrders(
+        orders,
+        productsById,
+        deliveryDetailsByCustomerId,
+        false,
+        assignmentsByOrderKey,
+      ).filter((order) => assignmentsByOrderKey.has(order.orderKey)),
+      includeCompletedDeliveries,
+    );
 
     return {
       orders: marketplaceOrders,
@@ -1037,8 +1301,11 @@ export async function loadAssignedRestockOrders({
       ),
     };
   } catch {
-    const deliveryBackedOrders = deriveMarketplaceOrdersFromDeliveryDetails(
-      await loadDeliveryDetailsForRestocker(resolvedToken, restockerName),
+    const deliveryBackedOrders = filterCompletedMarketplaceOrders(
+      deriveMarketplaceOrdersFromDeliveryDetails(
+        await loadDeliveryDetailsForRestocker(resolvedToken, restockerName),
+      ),
+      includeCompletedDeliveries,
     );
 
     if (deliveryBackedOrders.length > 0) {
@@ -1049,13 +1316,16 @@ export async function loadAssignedRestockOrders({
       };
     }
 
-    const demoOrders = deriveMarketplaceOrders(
-      createDemoRestockOrders(),
-      productsById,
-      undefined,
-      true,
-      assignmentsByOrderKey,
-    ).filter((order) => assignmentsByOrderKey.has(order.orderKey));
+    const demoOrders = filterCompletedMarketplaceOrders(
+      deriveMarketplaceOrders(
+        createDemoRestockOrders(),
+        productsById,
+        undefined,
+        true,
+        assignmentsByOrderKey,
+      ).filter((order) => assignmentsByOrderKey.has(order.orderKey)),
+      includeCompletedDeliveries,
+    );
 
     return {
       orders: demoOrders,

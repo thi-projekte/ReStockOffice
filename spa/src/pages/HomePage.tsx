@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { type MouseEvent, useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { getCategorySlug, getProducts } from "../services/products";
 import type { Product } from "../types/shop";
 import {ProductCarousel} from "../components/ProductCarousel";
@@ -30,6 +30,7 @@ function createCategoryTiles(products: Product[]): CategoryTile[] {
 export function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     async function loadProducts() {
@@ -40,6 +41,30 @@ export function HomePage() {
 
     void loadProducts();
   }, []);
+
+  useEffect(() => {
+    if (!location.hash) {
+      return;
+    }
+
+    const sectionId = location.hash.slice(1);
+    const scrollToSection = () => {
+      const section = document.getElementById(sectionId);
+
+      if (!section) {
+        return;
+      }
+
+      const headerOffset = 96;
+      const top = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+      window.scrollTo({
+        top,
+        behavior: "smooth",
+      });
+    };
+
+    window.requestAnimationFrame(scrollToSection);
+  }, [location.hash, products.length]);
 
   const topCategories = createCategoryTiles(products);
   const firstName = keycloak.tokenParsed?.given_name ?? keycloak.tokenParsed?.preferred_username;
@@ -52,6 +77,24 @@ export function HomePage() {
   const saleProducts = getRandomProducts(products, 12);
   const reorderProducts = getRandomProducts(products, 12);
   const officeProducts = getRandomProducts(products, 12);
+
+  function handleSectionJump(event: MouseEvent<HTMLAnchorElement>, sectionId: string) {
+    event.preventDefault();
+    window.history.replaceState(null, "", `#${sectionId}`);
+
+    const section = document.getElementById(sectionId);
+
+    if (!section) {
+      return;
+    }
+
+    const headerOffset = 96;
+    const top = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({
+      top,
+      behavior: "smooth",
+    });
+  }
 
 
   return (
@@ -68,19 +111,31 @@ export function HomePage() {
           </p>
 
           <div className="hero-highlights" aria-label="Schnelle Übersicht">
-            <a className="highlight-tile highlight-tile--link" href="#sale">
+            <a
+              className="highlight-tile highlight-tile--link"
+              href="#sale"
+              onClick={(event) => handleSectionJump(event, "sale")}
+            >
               <strong>Angebote</strong>
               <span>Aktuelle Angebote und reduzierte Produkte entdecken</span>
               <small>Jetzt shoppen</small>
             </a>
 
-            <a className="highlight-tile highlight-tile--link" href="#office">
+            <a
+              className="highlight-tile highlight-tile--link"
+              href="#office"
+              onClick={(event) => handleSectionJump(event, "office")}
+            >
               <strong>Empfehlungen</strong>
               <span>Persönlich zusammengestellte Empfehlungen für dich</span>
               <small>Jetzt shoppen</small>
             </a>
 
-            <a className="highlight-tile highlight-tile--link" href="#categories">
+            <a
+              className="highlight-tile highlight-tile--link"
+              href="#categories"
+              onClick={(event) => handleSectionJump(event, "categories")}
+            >
               <strong>Kategorien</strong>
               <span>Strukturierte Übersicht aller verfügbaren Produkte</span>
               <small>Jetzt shoppen</small>

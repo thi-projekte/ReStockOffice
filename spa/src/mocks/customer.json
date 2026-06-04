@@ -1,0 +1,18 @@
+{
+  "postalCode": "50667",
+  "city": "Ingolstadt",
+  "street": "Bürostrasse",
+  "houseNumber": "12",
+  "country": "Deutschland",
+  "companyName": "ReStockOffice Demo GmbH",
+  "phoneNumber": "+49 221 123456",
+  "roleInCompany": "Office Manager",
+  "birthDate": "1995-05-19",
+  "deliveryHint": "Bitte am Empfang abgeben.",
+  "deliveryDay": "Mittwoch",
+  "deliveryTime": 10,
+  "iban": "DE02120300000000202051",
+  "profilePictureUrl": "../assets/sample_userpic.png",
+  "createdAt": "2026-05-19T08:00:00",
+  "updatedAt": "2026-05-19T08:00:00"
+}

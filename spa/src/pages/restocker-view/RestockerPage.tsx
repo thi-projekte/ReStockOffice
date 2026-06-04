@@ -1,3 +1,10 @@
+// Restocker-Startseite: 
+// - Starten der heutigen Tour (Prozessstart im Hintergrund und Weiterleitung zu DeliveryPage)
+// - Anzeige der Kennzahlen für heutige Lieferungen (Anzahl, Verdienst)
+// - Anzeige offene Lieferungen
+// - Anzeige Restocker zugeordnete Lieferungen
+// - Anzeige der monatlichen Kennzahlen des Restockers (geplant / erledigte Lieferungen, Verdienst, Artikel etc.)
+
 import "../../styles/restocker-home.css";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
@@ -13,13 +20,16 @@ import { RestockerStatisticsCard } from "../../components/restocker/RestockerSta
 import { RestockerOrderDetailDialog } from "../../components/restocker/RestockerOrderDetailDialog";
 import { formatDeliveryWindow } from "./restockerOrderUi";
 
-const CAMUNDA_BASE_URL = "https://pe.restockoffice.de/engine-rest";
-const RESTOCKER_TOUR_PROCESS_DEFINITION_KEY = "Process_0h5mosh";
+const RESTOCKER_TOUR_PROCESS_API_URL =
+    "https://pe.restockoffice.de/api/restocker-tour-process";
 
-interface CamundaProcessInstance {
+// Interface, um zu prüfen, ob bereits ein Prozess läuft
+interface RestockerTourProcessResponse {
     id: string;
+    started: boolean;
 }
 
+// Erzeugen einer Restocker Tour Prozess Id
 function currentTourProcessStorageKey(restockerId: string) {
     const date = new Date();
     const today = [
@@ -31,6 +41,7 @@ function currentTourProcessStorageKey(restockerId: string) {
     return `restocker-tour-process:${restockerId}:${today}`;
 }
 
+//Auslesen der Stored Tour Prozess Id
 function loadStoredTourProcessId(restockerId?: string) {
     if (!restockerId) {
         return null;
@@ -39,6 +50,7 @@ function loadStoredTourProcessId(restockerId?: string) {
     return sessionStorage.getItem(currentTourProcessStorageKey(restockerId));
 }
 
+// Abspeichern der Tour Prozess ID
 function storeTourProcessId(restockerId: string, processInstanceId: string) {
     sessionStorage.setItem(
         currentTourProcessStorageKey(restockerId),
@@ -69,7 +81,7 @@ export function RestockerPage() {
 
 
 
-    /*Daten laden */
+    // Lädt verfügbare Marktplatz-Aufträge, die der Restocker noch annehmen kann
     useEffect(() => {
         async function load() {
             if (!auth.token) return;
@@ -97,6 +109,7 @@ export function RestockerPage() {
         load();
     }, [auth.token]);
 
+    // Lädt Aufträge, die diesem Restocker bereits zugeordnet sind
     useEffect(() => {
         async function load() {
             if (!auth.token || !auth.user?.id) return;
@@ -127,11 +140,13 @@ export function RestockerPage() {
         load();
     }, [auth.token, auth.user?.id, auth.user?.username]);
 
+    //Filterung der Aufträge des Restockers nach heutigen Lieferungen
     const assignedToday = assignedOrdersResult.orders.filter(
         (order) => getDaysUntilDelivery(order.deliveryDate) === 0
     );
     const totalToday = assignedToday.length;
 
+    //Anzahl der heutigen Lieferungen des Restockers, welche bereits completed sind
     const completedToday = assignedToday.filter(
         (order) => order.assignment?.status === "completed"
     ).length;
@@ -146,108 +161,31 @@ export function RestockerPage() {
     const earningsPerDelivery = 7;
     const earningsToday = totalToday * earningsPerDelivery;
 
-    async function loadActiveTourProcess(restockerId: string) {
-        const query = new URLSearchParams({
-            processDefinitionKey: RESTOCKER_TOUR_PROCESS_DEFINITION_KEY,
-            businessKey: restockerId,
-            active: "true",
-        });
-        const res = await fetch(`${CAMUNDA_BASE_URL}/process-instance?${query.toString()}`);
-
-        if (!res.ok) {
-            throw new Error(`Aktiver Tour-Prozess konnte nicht geladen werden: ${res.status}`);
-        }
-
-        const processInstances = (await res.json()) as CamundaProcessInstance[];
-        return processInstances[0]?.id ?? null;
-    }
-
-    async function startTourProcessThroughEngineRest(
+    // Startet den BPMN-Tourprozess über die Process-Engine-API-Wrapper -> siehe Button Tour starten
+    async function startTourProcess(
         restockerId: string,
         todayDeliveryCount: number,
     ) {
-        const activeProcessId = await loadActiveTourProcess(restockerId);
-
-        if (activeProcessId) {
-            await updateTourProcessVariables(activeProcessId, todayDeliveryCount);
-
-            return activeProcessId;
-        }
-
-        const res = await fetch(
-            `${CAMUNDA_BASE_URL}/process-definition/key/${RESTOCKER_TOUR_PROCESS_DEFINITION_KEY}/start`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    businessKey: restockerId,
-                    variables: {
-                        restockerId: {
-                            value: restockerId,
-                            type: "String",
-                        },
-                        todayDeliveryCount: {
-                            value: todayDeliveryCount,
-                            type: "Integer",
-                        },
-                    },
-                }),
-            },
-        );
+        const res = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/start`, {
+            method: "POST",
+            body: new URLSearchParams({
+                restockerId,
+                todayDeliveryCount: String(todayDeliveryCount),
+            }),
+        });
 
         if (!res.ok) {
             const text = await res.text();
             throw new Error(text || `Tour-Prozess konnte nicht gestartet werden: ${res.status}`);
         }
 
-        const processInstance = (await res.json()) as CamundaProcessInstance;
+        const processInstance = (await res.json()) as RestockerTourProcessResponse;
 
         if (!processInstance.id) {
-            throw new Error("Camunda hat keine Prozessinstanz-ID geliefert.");
+            throw new Error("Die Process-Engine hat keine Prozessinstanz-ID geliefert.");
         }
 
         return processInstance.id;
-    }
-
-    async function updateTourProcessVariables(
-        processInstanceId: string,
-        todayDeliveryCount: number,
-    ) {
-        const res = await fetch(
-            `${CAMUNDA_BASE_URL}/process-instance/${processInstanceId}/variables`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    modifications: {
-                        todayDeliveryCount: {
-                            value: todayDeliveryCount,
-                            type: "Integer",
-                        },
-                    },
-                    deletions: [],
-                }),
-            },
-        );
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text || `Tour-Prozessvariablen konnten nicht aktualisiert werden: ${res.status}`);
-        }
-    }
-
-    async function startTourProcess(
-        restockerId: string,
-        todayDeliveryCount: number,
-    ) {
-        return startTourProcessThroughEngineRest(
-            restockerId,
-            todayDeliveryCount,
-        );
     }
 
     const startTourRequestInFlight = useRef(false);
@@ -256,10 +194,12 @@ export function RestockerPage() {
         loadStoredTourProcessId(auth.user?.id),
     );
 
+    // Setzen der gespeicherte Prozess-ID für den eingeloggten Restocker 
     useEffect(() => {
         setTourProcessId(loadStoredTourProcessId(auth.user?.id));
     }, [auth.user?.id]);
 
+    //Anzeigen für den Button Tour starten -> Ändert sie je nach dem, ob der Prozess bereits gestartet wurde
     const startTourButtonLabel = startingTour
         ? "Tour startet..."
         : assignedLoading
@@ -271,10 +211,12 @@ export function RestockerPage() {
                     : "Tour von heute beginnen";
 
     async function handleStartTourProcess() {
+        // Verhindert, dass ein Doppelklick zwei Prozess-Start-Requests sendet.
         if (startTourRequestInFlight.current) {
             return;
         }
 
+        // Eine Tour ergibt nur Sinn, wenn es heute noch offene zugeordnete Lieferungen gibt.
         if (!hasOpenAssignedToday) {
             return;
         }
@@ -292,11 +234,15 @@ export function RestockerPage() {
                 openAssignedTodayCount,
             );
 
+            // Speichert die ID lokal, damit das Dashboard in dieser Browser-Sitzung
+            // wieder zur laufenden Tour wechseln kann.
             if (tourProcessId !== processInstanceId) {
                 storeTourProcessId(auth.user.id, processInstanceId);
                 setTourProcessId(processInstanceId);
             }
 
+            // Die DeliveryPage nutzt die processInstanceId, um BPMN-User-Tasks
+            // abzuschließen. Die eigentlichen Lieferdaten kommen weiter vom Delivery-Service.
             const query = new URLSearchParams({ processInstanceId });
             navigate(`/restocker-deliveries?${query.toString()}`);
         } catch (err) {
@@ -321,6 +267,8 @@ export function RestockerPage() {
                 token: auth.token,
             });
 
+            // Verschiebt den angenommenen Auftrag direkt aus der Marktplatzliste
+            // in die zugeordneten Aufträge, damit die UI sofort den neuen Zustand zeigt.
             setOpenOrders((currentOrders) =>
                 currentOrders.filter((order) => order.orderKey !== orderToAccept.orderKey),
             );
@@ -373,6 +321,7 @@ export function RestockerPage() {
             <div className="restocker-page">
                 <div className="restocker-inner">
 
+                    {/*Tour starten Button*/}
                     <button
                         className="tour-btn"
                         disabled={startingTour || assignedLoading || !hasOpenAssignedToday}
@@ -381,7 +330,7 @@ export function RestockerPage() {
                         {startTourButtonLabel}
                     </button>
 
-                    {/* Heutige Lieferungen */}
+                    {/* Anzeige Kennzahlen für heutigen Lieferungen */}
                     <div className="card">
                         <div className="card-header">
                             <div>
@@ -400,7 +349,7 @@ export function RestockerPage() {
                             </div>
 
                             <div className="metric-tile">
-                                <div className="metric-label">Heutiger Verdienst</div>
+                                <div className="metric-label">Geplanter Verdienst</div>
                                 <div className="metric-value">{earningsToday} €</div>
                                 <div className="metric-sub">7€ pro Lieferung</div>
                             </div>
@@ -415,7 +364,7 @@ export function RestockerPage() {
                         </button>
                     </div>
 
-                    {/* Offene Aufträge */}
+                    {/* Anzeige offene Aufträge */}
                     <div className="card">
                         <div className="card-header">
                             <div>
@@ -432,6 +381,7 @@ export function RestockerPage() {
                             <>
                                 <p>Es gibt weitere Lieferungen in deiner Nähe. </p>
                                 <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+                                {/*Karusell mit RestockOrderCard (sind in Components definiert)*/}
                                 <div className="open-orders-carousel">
                                     {openOrders.slice(0, 6).map((order) => (
                                         <RestockerOrderCard
@@ -455,7 +405,7 @@ export function RestockerPage() {
                         </button>
                     </div>
 
-                    {/* Meine Aufträge */}
+                    {/*Anzeige aller Aufträge, welcher dem Restocker zugeordnet sind */}
                     <div className="card">
                         <div className="card-header">
                             <div>
@@ -486,7 +436,6 @@ export function RestockerPage() {
                                 </div>
                             </>
                         )}
-
                         <button
                             className="tour-btn"
                             onClick={() => navigate("/restocker-my-orders")}
@@ -495,12 +444,14 @@ export function RestockerPage() {
                         </button>
                     </div>
 
+                    {/*RestockStatisticsCard (sind in Components definiert, um es wieder verwenden zu können)*/}
                     <RestockerStatisticsCard
                         assignedLoading={assignedLoading}
                         assignedError={assignedError}
                         assignedOrdersResult={assignedOrdersResult}
                     />
 
+                    {/*RestockerOrderDetailDialog (sind in Components definiert)*/}
                     {selectedOrder && !isConfirmDialogOpen ? (
                         <RestockerOrderDetailDialog
                             order={selectedOrder}

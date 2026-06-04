@@ -17,6 +17,10 @@ import java.util.List;
 public class MailResource {
 
     private static final String PREVIEW_LOGO_URL = "http://localhost:8080/assets/logo_colored.png";
+    private static final String MAIL_STATUS_QUEUED = "queued";
+    private static final String PREVIEW_RECIPIENT_EMAIL = "max.mustermann@example.com";
+    private static final String PREVIEW_CUSTOMER_NAME = "Max Mustermann";
+    private static final String PREVIEW_NEXT_DELIVERY_DATE = "11.05.2026";
     private static final Logger log = LoggerFactory.getLogger(MailResource.class);
 
     @Inject
@@ -34,7 +38,7 @@ public class MailResource {
         log.info("Abo confirmation sent successfully - messageId={}, recipient={}",
                 messageId, request.recipientEmail());
 
-        return new SendMailResponse("abo-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, "queued");
+        return new SendMailResponse("abo-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, MAIL_STATUS_QUEUED);
     }
 
     @POST
@@ -63,7 +67,7 @@ public class MailResource {
         log.info("Delivery announcement sent successfully - messageId={}, recipient={}",
                 messageId, request.recipientEmail());
 
-        return new SendMailResponse("delivery-announcement", request.recipientEmail(), renderedMail.subject(), messageId, "queued");
+        return new SendMailResponse("delivery-announcement", request.recipientEmail(), renderedMail.subject(), messageId, MAIL_STATUS_QUEUED);
     }
 
     @POST
@@ -92,7 +96,7 @@ public class MailResource {
         log.info("Delivery confirmation sent successfully - messageId={}, recipient={}",
                 messageId, request.recipientEmail());
 
-        return new SendMailResponse("delivery-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, "queued");
+        return new SendMailResponse("delivery-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, MAIL_STATUS_QUEUED);
     }
 
     @POST
@@ -111,8 +115,8 @@ public class MailResource {
 
     private AboConfirmationRequest exampleAboConfirmationRequest() {
         return new AboConfirmationRequest(
-                "max.mustermann@example.com",
-                "Max Mustermann",
+                PREVIEW_RECIPIENT_EMAIL,
+                PREVIEW_CUSTOMER_NAME,
                 "RSO-2026-0042",
                 "04.05.2026",
                 "Montag, 11.05.2026 zwischen 08:00 und 12:00 Uhr",
@@ -123,17 +127,17 @@ public class MailResource {
                 PREVIEW_LOGO_URL,
                 null,
                 List.of(
-                        new OrderItem("Haferdrink Barista", "HD-2048", "12", "Alle 2 Wochen", "11.05.2026"),
-                        new OrderItem("Kaffeebohnen House Blend", "KB-1102", "6", "Monatlich", "11.05.2026"),
-                        new OrderItem("Bio Tee Mix", "TM-7781", "8", "Alle 4 Wochen", "11.05.2026")
+                        new OrderItem("Haferdrink Barista", "HD-2048", "12", "Alle 2 Wochen", PREVIEW_NEXT_DELIVERY_DATE),
+                        new OrderItem("Kaffeebohnen House Blend", "KB-1102", "6", "Monatlich", PREVIEW_NEXT_DELIVERY_DATE),
+                        new OrderItem("Bio Tee Mix", "TM-7781", "8", "Alle 4 Wochen", PREVIEW_NEXT_DELIVERY_DATE)
                 )
         );
     }
 
     private DeliveryAnnouncementRequest exampleDeliveryAnnouncementRequest() {
         return new DeliveryAnnouncementRequest(
-                "max.mustermann@example.com",
-                "Max Mustermann",
+                PREVIEW_RECIPIENT_EMAIL,
+                PREVIEW_CUSTOMER_NAME,
                 "2",
                 "Mittwoch",
                 "06.05.2026",
@@ -156,8 +160,8 @@ public class MailResource {
     
     private DeliveryConfirmationRequest exampleDeliveryConfirmationRequest() {
         return new DeliveryConfirmationRequest(
-                "max.mustermann@example.com",
-                "Max Mustermann",
+                PREVIEW_RECIPIENT_EMAIL,
+                PREVIEW_CUSTOMER_NAME,
                 "Freitag, 15.05.2026",
                 "um 15:30 Uhr",
                 "RSO-2026-004281",

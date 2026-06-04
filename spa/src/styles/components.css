@@ -251,6 +251,7 @@
 
 .account-page {
   gap: 1.25rem;
+  min-width: 0;
 }
 
 .account-hero {
@@ -309,6 +310,7 @@
 .account-settings-shell {
   display: grid;
   gap: 1.1rem;
+  min-width: 0;
   padding: 1.15rem;
   border: 1px solid rgba(38, 64, 55, 0.12);
   border-radius: 1rem;
@@ -350,8 +352,9 @@
 
 .account-panel,
 .account-setting-card {
-  display: grid;
+  display: inline;
   gap: 1rem;
+  min-width: 0;
   padding: 1.15rem;
   border: 1px solid rgba(38, 64, 55, 0.12);
   border-radius: 1rem;
@@ -381,11 +384,13 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
+  min-width: 0;
 }
 
 .account-field {
   display: grid;
   gap: 0.45rem;
+  min-width: 0;
 }
 
 .account-field--full {
@@ -595,6 +600,71 @@
   color: var(--color-grey-300);
 }
 
+.account-invoice-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.account-invoice-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(38, 64, 55, 0.1);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.56);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.account-invoice-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 107, 97, 0.24);
+  box-shadow:
+    0 8px 18px rgba(38, 64, 55, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.account-invoice-item__copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.account-invoice-item__copy span {
+  color: var(--color-grey-300);
+  font-size: 0.84rem;
+}
+
+.account-invoice-item__copy strong {
+  color: var(--color-secondary);
+}
+
+.account-invoice-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(38, 64, 55, 0.1);
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--color-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.account-invoice-more {
+  width: fit-content;
+}
+
 .account-action-row {
   display: flex;
   flex-wrap: wrap;
@@ -688,9 +758,6 @@
 }
 
 .small-link-text:hover {
-  border-color: rgba(59, 107, 97, 0.22);
-  box-shadow: var(--shadow-soft);
-  background: rgba(244, 247, 242, 0.98);
   text-decoration: underline;
 }
 
@@ -1306,6 +1373,26 @@
   margin-top: auto;
 }
 
+.product-detail__subscription-action {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.product-detail__subscription-button {
+  width: 100%;
+  min-height: 2.85rem;
+  white-space: normal;
+}
+
+.product-detail__subscription-action .small-link-text,
+.product-detail__subscription-lock .small-link-text {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
 .product-specs__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1482,7 +1569,8 @@
 :root[data-theme="dark"] .account-settings-shell,
 :root[data-theme="dark"] .account-setting-card,
 :root[data-theme="dark"] .account-info-list div,
-:root[data-theme="dark"] .account-theme-option {
+:root[data-theme="dark"] .account-theme-option,
+:root[data-theme="dark"] .account-invoice-item {
   border-color: rgba(153, 153, 153, 0.16);
   background: rgba(31, 42, 46, 0.88);
 }
@@ -1537,6 +1625,16 @@
   background: rgba(102, 189, 164, 0.10);
   color: var(--color-text);
   border: 1px solid rgba(153, 153, 153, 0.18);
+}
+
+:root[data-theme="dark"] .account-invoice-item__copy strong,
+:root[data-theme="dark"] .account-invoice-pill {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .account-invoice-pill {
+  background: rgba(102, 189, 164, 0.10);
+  border-color: rgba(153, 153, 153, 0.18);
 }
 
 :root[data-theme="dark"] .account-toggle-button.active .account-toggle-pill {
@@ -1775,6 +1873,11 @@
   border: 0;
   background: rgba(31, 42, 46, 0.45);
   z-index: 39;
+  transition: opacity 0.34s ease;
+}
+
+.subscription-modal__overlay--closing {
+  opacity: 0;
 }
 
 .subscription-modal {
@@ -1783,6 +1886,7 @@
   left: 50%;
   z-index: 40;
   width: min(100% - 2rem, 520px);
+  margin: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 1.25rem;
@@ -1793,6 +1897,22 @@
   background: var(--color-surface);
   box-shadow: 0 24px 64px rgba(31, 42, 46, 0.24);
   transform: translate(-50%, -50%);
+  transition:
+    top 0.48s cubic-bezier(0.2, 0.82, 0.22, 1),
+    left 0.48s cubic-bezier(0.2, 0.82, 0.22, 1),
+    width 0.48s cubic-bezier(0.2, 0.82, 0.22, 1),
+    height 0.48s cubic-bezier(0.2, 0.82, 0.22, 1),
+    max-height 0.48s cubic-bezier(0.2, 0.82, 0.22, 1),
+    opacity 0.38s ease,
+    transform 0.48s cubic-bezier(0.22, 1.12, 0.24, 1),
+    border-radius 0.48s cubic-bezier(0.2, 0.82, 0.22, 1),
+    box-shadow 0.48s ease;
+}
+
+.subscription-modal--closing {
+  overflow: hidden;
+  border-radius: 999px;
+  box-shadow: 0 18px 42px rgba(31, 42, 46, 0.18);
 }
 
 .subscription-modal__header,
@@ -1831,6 +1951,12 @@
   border-radius: 0.9rem;
   background: rgba(59, 107, 97, 0.08);
   line-height: 1.5;
+}
+
+.subscription-modal__warning--locked {
+  border: 1px solid rgba(211, 47, 47, 0.16);
+  background: rgba(211, 47, 47, 0.08);
+  color: #8f231c;
 }
 
 .subscription-modal__section {
@@ -1905,9 +2031,76 @@
   gap: 0.75rem;
 }
 
+.subscription-profile-progress {
+  display: grid;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(211, 47, 47, 0.18);
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(circle at top right, rgba(211, 47, 47, 0.08), transparent 34%),
+    rgba(255, 247, 245, 0.94);
+}
+
+.subscription-profile-progress__copy {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.subscription-profile-progress__copy strong {
+  color: #8f231c;
+  font-size: 0.95rem;
+}
+
+.subscription-profile-progress__copy p {
+  margin-top: 0.15rem;
+  color: rgba(96, 37, 31, 0.88);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.subscription-profile-progress__percent {
+  color: #8f231c;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.subscription-profile-progress__bar {
+  overflow: hidden;
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(211, 47, 47, 0.12);
+}
+
+.subscription-profile-progress__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d4554d, #f08a4d);
+  transition: width 0.28s ease;
+}
+
+.subscription-profile-progress__missing {
+  margin: 0;
+  color: rgba(96, 37, 31, 0.82);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.profile-progress-banner:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 107, 97, 0.22);
+  box-shadow: var(--shadow-soft);
+  background: rgba(244, 247, 242, 0.98);
+}
+
 .subscription-overview-item,
 .subscription-account-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 0.5fr 10rem auto;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
@@ -1923,6 +2116,28 @@
     transform 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+.subscription-account-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.subscription-account-item__actions .button {
+  padding: 0.6rem 0.85rem;
+}
+
+.subscription-account-item__delete {
+  border: 1px solid rgba(211, 47, 47, 0.16);
+  background: rgba(211, 47, 47, 0.08);
+  color: #8f231c;
+}
+
+.subscription-account-item__delete:hover {
+  background: rgba(211, 47, 47, 0.14);
+  color: #7a1d18;
 }
 
 .subscription-overview-item:hover,
@@ -1945,8 +2160,21 @@
   box-shadow: none;
 }
 
+.product-detail__subscription-lock {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  width: 100%;
+}
+
 .subscription-overview-list--compact .subscription-overview-item {
   padding: 0.85rem 1rem;
+}
+
+
+.input--invalid {
+  border-color: var(--color-danger, #e53e3e) !important;
+  outline-color: var(--color-danger, #e53e3e);
 }
 
 :root[data-theme="dark"] .subscription-modal {
@@ -1986,6 +2214,43 @@
   color: var(--color-text);
 }
 
+:root[data-theme="dark"] .subscription-account-item__delete {
+  border-color: rgba(211, 47, 47, 0.28);
+  background: rgba(211, 47, 47, 0.16);
+  color: #ffb4aa;
+}
+
+:root[data-theme="dark"] .subscription-account-item__delete:hover {
+  background: rgba(211, 47, 47, 0.24);
+}
+
+:root[data-theme="dark"] .subscription-profile-progress {
+  border-color: rgba(211, 47, 47, 0.28);
+  background:
+    radial-gradient(circle at top right, rgba(211, 47, 47, 0.12), transparent 34%),
+    rgba(61, 30, 30, 0.94);
+}
+
+:root[data-theme="dark"] .subscription-profile-progress__copy strong,
+:root[data-theme="dark"] .subscription-profile-progress__percent {
+  color: #ffb4aa;
+}
+
+:root[data-theme="dark"] .subscription-profile-progress__copy p,
+:root[data-theme="dark"] .subscription-profile-progress__missing {
+  color: rgba(255, 224, 220, 0.84);
+}
+
+:root[data-theme="dark"] .subscription-profile-progress__bar {
+  background: rgba(212, 85, 77, 0.18);
+}
+
+:root[data-theme="dark"] .subscription-modal__warning--locked {
+  border-color: rgba(211, 47, 47, 0.28);
+  background: rgba(211, 47, 47, 0.16);
+  color: #ffb4aa;
+}
+
 :root[data-theme="dark"] .subscription-account-item--disabled:hover {
   border-color: rgba(153, 153, 153, 0.16);
 }
@@ -1995,10 +2260,38 @@
 }
 
 @media (max-width: 720px) {
+  .account-page {
+    width: 100%;
+  }
+
+  .account-page > .page-card {
+    width: 100%;
+    margin-inline: auto;
+    padding: 1.15rem;
+  }
+
+  .account-hero__copy,
+  .account-hero__summary,
+  .account-profile-grid,
+  .account-settings-shell,
+  .account-action-row,
+  .account-danger-zone,
+  .account-danger-zone__actions {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
   .hero-card,
   .section-head {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .account-section-head,
+  .account-settings-section__head {
+    align-items: flex-start;
+    justify-content: flex-start;
   }
 
   .carousel-shell {
@@ -2077,6 +2370,12 @@
     display: none;
   }
 
+  .button.nav-btn.header-profile-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .quantity-button {
     width: 2.75rem;
     height: 2.75rem;
@@ -2104,7 +2403,6 @@
 
   .subscription-modal__section-head,
   .subscription-overview-item,
-  .subscription-account-item,
   .account-danger-zone {
     align-items: flex-start;
     flex-direction: column;
@@ -2112,6 +2410,25 @@
 
   .subscription-modal__actions .button {
     width: 100%;
+  }
+
+  .subscription-account-item {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+  }
+
+  .subscription-account-item > span {
+    /* Wochenangabe unter den Produktnamen */
+    grid-column: 1;
+    grid-row: 2;
+    color: var(--color-grey-100);
+    font-size: 0.875rem;
+  }
+
+  .subscription-account-item__actions {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
   }
 
   .account-hero,
@@ -2129,13 +2446,53 @@
     flex-direction: column;
   }
 
+  .account-action-row .button,
   .account-action-button {
     width: 100%;
+    min-width: 0;
   }
 
   .account-theme-option,
   .account-toggle-button {
     grid-template-columns: 1fr;
+  }
+
+  .account-panel,
+  .account-settings-shell,
+  .account-danger-zone {
+    padding: 1rem;
+  }
+
+  .account-toggle-button,
+  .account-theme-option,
+  .account-info-list div {
+    align-items: flex-start;
+  }
+
+  .account-invoice-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .account-settings-section__head,
+  .account-danger-zone {
+    grid-template-columns: 1fr;
+  }
+
+  .account-settings-section__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-danger-zone,
+  .account-danger-zone__actions {
+    width: 100%;
+  }
+
+  .account-invoice-pill,
+  .account-invoice-more {
+    width: 100%;
+    justify-content: center;
   }
 
   .account-toggle-pill {

@@ -48,9 +48,27 @@ public class DeliveryResource {
     }
 
     @GET
-    @Path("/publication-candidates")
-    public List<DeliveryPublicationDto> getPublicationCandidates(@QueryParam("days") Integer days) {
-        return deliveryService.getPublicationCandidates(days != null ? days : 14, authorizationHeader());
+    @Path("/admin/all-deliveries")
+    public List<DeliveryDetailDto> getAllDeliveries() {
+        return deliveryService.getAllDeliveries(authorizationHeader());
+    }
+
+    @GET
+    @Path("/customers/{customerId}/previous-month-items")
+    public List<DeliveredArticleSummaryDto> getPreviousMonthItems(@PathParam("customerId") String customerId) {
+        return deliveryService.getDeliveredArticleSummaryForPreviousMonth(customerId);
+    }
+
+    @GET
+    @Path("/customers/{customerId}/delivery-overview")
+    public CustomerDeliveryOverviewDto getCustomerDeliveryOverview(@PathParam("customerId") String customerId) {
+        return deliveryService.getCustomerDeliveryOverview(customerId);
+    }
+
+    @GET
+    @Path("/customers")
+    public MonthlyDeliveryCustomersDto getCustomersWithDeliveriesInMonth(@QueryParam("month") String month) {
+        return deliveryService.getCustomersWithDeliveriesInMonth(month);
     }
 
     @GET
@@ -117,7 +135,7 @@ public class DeliveryResource {
     @POST
     @Path("/tours/{tourId}/end")
     public Response endTour(@PathParam("tourId") UUID tourId, EndTourRequest request) {
-        Tour tour = deliveryService.endTour(tourId, request.earnings);
+        Tour tour = deliveryService.endTour(tourId, request.getEarnings());
         return Response.ok(tour).build();
     }
 
@@ -158,14 +176,16 @@ public class DeliveryResource {
         return Response.ok(deliveryStatusResponse(delivery)).build();
     }
 
-    @POST
-    @Path("/{deliveryId}/published")
-    public DeliveryPublicationDto markPublished(@PathParam("deliveryId") UUID deliveryId) {
-        return deliveryService.markPublished(deliveryId);
-    }
-
     public static class EndTourRequest {
-        public BigDecimal earnings;
+        private BigDecimal earnings;
+
+        public BigDecimal getEarnings() {
+            return earnings;
+        }
+
+        public void setEarnings(BigDecimal earnings) {
+            this.earnings = earnings;
+        }
     }
 
     private String authorizationHeader() {

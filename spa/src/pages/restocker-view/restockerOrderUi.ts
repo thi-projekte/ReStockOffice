@@ -1,7 +1,7 @@
 import type { RestockMarketplaceOrder } from "../../types/shop";
 
 export type SortOption = "delivery-desc" | "delivery-asc" | "company-asc";
-export type DeliveryWindowOption = "week-1" | "week-2" | "week-3" | "week-4";
+export type DeliveryWindowOption = "week-1" | "week-2";
 export type RelativeDayOption = "today" | "tomorrow";
 
 export function parseDisplayDate(dateValue: string) {
@@ -101,7 +101,7 @@ export function formatRelativeDayOption(option: RelativeDayOption) {
 export function getDeliveryWindowKey(dateValue: string): DeliveryWindowOption | null {
   const daysUntilDelivery = getDaysUntilDelivery(dateValue);
 
-  if (daysUntilDelivery < 0 || daysUntilDelivery > 28) {
+  if (daysUntilDelivery < 0 || daysUntilDelivery > 14) {
     return null;
   }
 
@@ -113,23 +113,15 @@ export function getDeliveryWindowKey(dateValue: string): DeliveryWindowOption | 
     return "week-2";
   }
 
-  if (daysUntilDelivery <= 21) {
-    return "week-3";
-  }
-
-  return "week-4";
+  return "week-2";
 }
 
 export function formatDeliveryWindowOption(option: DeliveryWindowOption) {
   switch (option) {
     case "week-1":
-      return "In 1 Woche";
+      return "Diese Woche";
     case "week-2":
-      return "In 2 Wochen";
-    case "week-3":
-      return "In 3 Wochen";
-    case "week-4":
-      return "In 4 Wochen";
+      return "Nächste Woche";
   }
 }
 

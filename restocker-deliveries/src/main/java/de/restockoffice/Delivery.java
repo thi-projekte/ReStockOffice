@@ -63,12 +63,6 @@ public class Delivery extends PanacheEntityBase {
     @Column(name = "delivered_at")
     public LocalDateTime deliveredAt;
 
-    @Column(name = "published", nullable = false)
-    public boolean published = false;
-
-    @Column(name = "published_at")
-    public LocalDateTime publishedAt;
-
     @OneToMany(mappedBy = "delivery", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<DeliveryItem> items = new ArrayList<>();
 
@@ -84,11 +78,6 @@ public class Delivery extends PanacheEntityBase {
 
     public void markDelivered() {
         this.deliveredAt = LocalDateTime.now();
-    }
-
-    public void markPublished() {
-        this.published = true;
-        this.publishedAt = LocalDateTime.now();
     }
 
     public boolean isDelivered() {
@@ -109,17 +98,30 @@ public class Delivery extends PanacheEntityBase {
     }
 
     public static Delivery findByCustomerAndDate(String customerId, LocalDate deliveryDate) {
-        Delivery delivery = find("userId = ?1 and deliveryDate = ?2", customerId, deliveryDate)
+        return find("userId = ?1 and deliveryDate = ?2", customerId, deliveryDate)
                 .firstResult();
-        if (delivery != null) {
-            return delivery;
-        }
+    }
 
-        return find(
-                "userId = ?1 and deliveryDate is null and tour is not null and tour.tourDate = ?2",
+    public static List<Delivery> findByCustomer(String customerId) {
+        return list(
+                "userId = ?1 order by deliveryDate asc",
+                customerId
+        );
+    }
+
+    public static List<Delivery> findDeliveredByCustomerBetween(
+            String customerId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        return list(
+                "userId = ?1 and deliveredAt is not null " +
+                        "and deliveryDate >= ?2 and deliveryDate <= ?3 " +
+                        "order by deliveryDate asc",
                 customerId,
-                deliveryDate
-        ).firstResult();
+                startDate,
+                endDate
+        );
     }
 
     public static List<Delivery> findOpenBetween(LocalDate startDate, LocalDate endDate) {
@@ -131,19 +133,11 @@ public class Delivery extends PanacheEntityBase {
         );
     }
 
-    public static List<Delivery> findUnpublishedBetween(LocalDate startDate, LocalDate endDate) {
+    public static List<Delivery> findAssignedToRestockerFrom(String restockerName, LocalDate startDate) {
         return list(
-                "published = false and deliveredAt is null and deliveryDate >= ?1 and deliveryDate <= ?2 " +
-                        "order by deliveryDate asc, userId asc",
-                startDate,
-                endDate
-        );
-    }
-
-    public static List<Delivery> findAssignedToRestocker(String restockerName) {
-        return list(
-                "tour.restockerName = ?1 and deliveredAt is null order by deliveryDate asc, stopOrder asc",
-                restockerName
+                "tour.restockerName = ?1 and deliveryDate >= ?2 order by deliveryDate asc, stopOrder asc",
+                restockerName,
+                startDate
         );
     }
 }

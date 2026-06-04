@@ -15,6 +15,7 @@ export interface DeliveryDetail {
   id: string;
   orderId: string;
   userId: string;
+  status: string;
   stopOrder: number;
   collected: boolean;
   collectedAt: string | null;
@@ -50,6 +51,42 @@ export interface Tour {
     deliveredAt: string | null;
     stopOrder: number;
   }>;
+}
+
+function stringifyPrimitive(value: unknown) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value.toString();
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "true" : "false";
+  }
+
+  return "";
+}
+
+function readStringValue(value: unknown) {
+  return stringifyPrimitive(value).trim();
+}
+
+function readBooleanValue(value: unknown) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return value === 1;
+  }
+
+  if (typeof value === "string") {
+    return value.trim().toLowerCase() === "true";
+  }
+
+  return false;
 }
 
 function readString(
@@ -103,15 +140,15 @@ function normalizeDeliveryItem(rawItem: unknown): DeliveryItemDetail {
   const item = rawItem as Record<string, unknown>;
 
   return {
-    id: String(item.id ?? ""),
-    articleNumber: String(item.articleNumber ?? item.productId ?? ""),
-    name: String(item.name ?? ""),
+    id: readStringValue(item.id),
+    articleNumber: readStringValue(item.articleNumber) || readStringValue(item.productId),
+    name: readStringValue(item.name),
     quantity:
       typeof item.quantity === "number" && Number.isFinite(item.quantity)
         ? item.quantity
         : Number(item.quantity ?? 0),
-    unit: String(item.unit ?? ""),
-    delivered: Boolean(item.delivered),
+    unit: readStringValue(item.unit),
+    delivered: readBooleanValue(item.delivered),
   };
 }
 
@@ -125,14 +162,15 @@ function normalizeDeliveryDetail(rawDetail: unknown): DeliveryDetail {
   ) as Record<string, unknown> | undefined;
 
   return {
-    id: String(detail.id ?? ""),
-    orderId: String(detail.orderId ?? ""),
-    userId: String(detail.userId ?? detail.customerId ?? ""),
+    id: readStringValue(detail.id),
+    orderId: readStringValue(detail.orderId),
+    userId: readStringValue(detail.userId) || readStringValue(detail.customerId),
+    status: readStringValue(detail.status) || deriveDeliveryStatus(detail),
     stopOrder:
       typeof detail.stopOrder === "number" && Number.isFinite(detail.stopOrder)
         ? detail.stopOrder
         : Number(detail.stopOrder ?? 0),
-    collected: Boolean(detail.collected),
+    collected: readBooleanValue(detail.collected),
     collectedAt:
       typeof detail.collectedAt === "string" ? detail.collectedAt : null,
     acceptedAt:
@@ -169,6 +207,25 @@ function normalizeDeliveryDetail(rawDetail: unknown): DeliveryDetail {
     deliveryDate: typeof detail.deliveryDate === "string" ? detail.deliveryDate : null,
     items: Array.isArray(detail.items) ? detail.items.map(normalizeDeliveryItem) : [],
   };
+}
+
+function deriveDeliveryStatus(detail: Record<string, unknown>) {
+  if (typeof detail.deliveredAt === "string" && detail.deliveredAt) {
+    return "DELIVERED";
+  }
+
+  if (readBooleanValue(detail.collected)) {
+    return "COLLECTED";
+  }
+
+  if (
+    (typeof detail.acceptedAt === "string" && detail.acceptedAt) ||
+    (typeof detail.restockerName === "string" && detail.restockerName)
+  ) {
+    return "ACCEPTED";
+  }
+
+  return "OPEN";
 }
 
 function resolveToken(token?: string) {
@@ -299,6 +356,25 @@ export async function loadOpenDeliveries({
       headers: createHeaders(resolvedToken),
     },
     "Offene Lieferungen konnten nicht geladen werden",
+  );
+
+  return Array.isArray(rawDetails) ? rawDetails.map(normalizeDeliveryDetail) : [];
+}
+
+export async function loadAllDeliveries({
+  token,
+}: {
+  token?: string;
+}) {
+  const resolvedToken = resolveToken(token);
+
+  const rawDetails = await requestJson<unknown[]>(
+    `${DELIVERIES_API_URL}/admin/all-deliveries`,
+    {
+      method: "GET",
+      headers: createHeaders(resolvedToken),
+    },
+    "Alle Lieferungen konnten nicht geladen werden",
   );
 
   return Array.isArray(rawDetails) ? rawDetails.map(normalizeDeliveryDetail) : [];

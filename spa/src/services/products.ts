@@ -2,7 +2,7 @@ import products from "../mocks/products.json";
 import logoColored from "../assets/logos/logo_colored.png";
 import type { Product } from "../types/shop";
 
-const useAPI = import.meta.env.VITE_PRODUCTS_USE_API !== "false";
+export const useAPIs = true;
 
 const PRODUCTS_API_URL =
   import.meta.env.VITE_PRODUCTS_API_URL ?? "https://articles.restockoffice.de/articles";
@@ -156,7 +156,7 @@ export async function getProducts(): Promise<Product[]> {
     return allProductsCache;
   }
 
-  if (useAPI) {
+  if (useAPIs) {
     try {
       return await loadProductsFromApi();
     } catch {
@@ -178,7 +178,7 @@ export async function getProductById(productId: number): Promise<Product | undef
     return allProductsCache.find((product) => product.productId === productId);
   }
 
-  if (useAPI) {
+  if (useAPIs) {
     try {
       return await loadProductByIdFromApi(productId);
     } catch {
@@ -202,7 +202,7 @@ export async function getProductsByCategorySlug(categorySlug: string): Promise<P
     );
   }
 
-  if (useAPI) {
+  if (useAPIs) {
     const resolvedCategoryName = await getCategoryNameBySlug(categorySlug);
 
     if (!resolvedCategoryName) {

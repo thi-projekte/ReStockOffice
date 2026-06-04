@@ -1,11 +1,16 @@
+// Dashboard-Auftragskarte für Restocker.
+// Zeigt kompakte Lieferinformationen zu einem Auftrag und bietet optional
+// Aktionen wie Detailansicht oder Fahrt annehmen.
+// Fast identisch zu RestockerOrderCard wird aber im Dashboard genutzt
+
 import type { RestockMarketplaceOrder } from "../../types/shop";
 import { formatDeliveryWindow } from "../../pages/restocker-view/restockerOrderUi";
-import type { UserProfile } from "../../types/user";
+import type { CustomerUser } from "../../services/users";
 
 interface RestockerOrderCardProps {
   order: RestockMarketplaceOrder;
   statusLabel?: string;
-  customer?: UserProfile;
+  customer?: CustomerUser;
   detailLabel?: string;
   onClick?: () => void;
   secondaryActionLabel?: string;
@@ -96,9 +101,8 @@ export function RestockerOrderCard({
 
         {(detailLabel && onClick) || (secondaryActionLabel && onSecondaryAction) ? (
           <div
-            className={`restocker-order-card__actions ${
-              statusLabel ? "restocker-order-card__actions--with-status" : ""
-            }`.trim()}
+            className={`restocker-order-card__actions ${statusLabel ? "restocker-order-card__actions--with-status" : ""
+              }`.trim()}
           >
             {detailLabel && onClick ? (
               <button

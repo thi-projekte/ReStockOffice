@@ -1,3 +1,8 @@
+// Tour-Karte fuer Restocker.
+// Fasst mehrere Lieferungen eines Tourtags zusammen und zeigt Datum,
+// Verdienst, Anzahl der Stops, Artikelmenge und optional den Status an.
+// Verwendung in RestockerStatisticsCard.tsx
+
 import type { RestockMarketplaceOrder } from "../../types/shop";
 import { parseDisplayDate } from "../../pages/restocker-view/restockerOrderUi";
 

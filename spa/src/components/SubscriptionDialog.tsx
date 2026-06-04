@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Product, RestockOrderWithProduct } from "../types/shop";
 
 interface SubscriptionDialogProps {
@@ -6,8 +6,9 @@ interface SubscriptionDialogProps {
   product: Product | null;
   selectedItem?: RestockOrderWithProduct;
   open: boolean;
+  isProfileComplete: boolean;
   onClose: () => void;
-  onConfirm: (configuration: { quantity: number; intervalCount: number }) => void;
+  onConfirm: (configuration: { quantity: number; intervalCount: number }) => Promise<void> | void;
   onSelectItem: (item: RestockOrderWithProduct) => void;
   onOpenOverview: () => void;
 }
@@ -20,11 +21,15 @@ export function SubscriptionDialog({
   product,
   selectedItem,
   open,
+  isProfileComplete,
   onClose,
   onConfirm,
 }: SubscriptionDialogProps) {
   const [quantity, setQuantity] = useState(1);
   const [intervalCount, setIntervalCount] = useState(1);
+  const [isClosingToHeader, setIsClosingToHeader] = useState(false);
+  const overlayRef = useRef<HTMLButtonElement | null>(null);
+  const modalRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open || !product) {
@@ -33,6 +38,7 @@ export function SubscriptionDialog({
 
     setQuantity(selectedItem?.quantity ?? 1);
     setIntervalCount(selectedItem?.interval ?? 1);
+    setIsClosingToHeader(false);
   }, [open, product, selectedItem]);
 
   if (!open || !product) {
@@ -40,17 +46,87 @@ export function SubscriptionDialog({
   }
 
   const hasInvalidQuantity = quantity < 1 || Number.isNaN(quantity);
+  const canConfirmChanges = isProfileComplete && !hasInvalidQuantity;
+
+  function getSubscriptionTargetElement() {
+    const isMobile = window.matchMedia("(max-width: 720px)").matches;
+
+    if (isMobile) {
+      return document.querySelector(".hamburger-btn") as HTMLElement | null;
+    }
+
+    return document.querySelector('a[href="/subscription"]') as HTMLElement | null;
+  }
+
+  async function animateDialogIntoHeader() {
+    const modalElement = modalRef.current;
+    const overlayElement = overlayRef.current;
+    const targetElement = getSubscriptionTargetElement();
+
+    if (!modalElement || !overlayElement || !targetElement) {
+      onClose();
+      return;
+    }
+
+    const modalRect = modalElement.getBoundingClientRect();
+    const targetRect = targetElement.getBoundingClientRect();
+    const targetSize = Math.max(Math.min(targetRect.width, targetRect.height), 44);
+    const targetTop = targetRect.top + (targetRect.height - targetSize) / 2;
+    const targetLeft = targetRect.left + (targetRect.width - targetSize) / 2;
+
+    modalElement.style.top = `${modalRect.top}px`;
+    modalElement.style.left = `${modalRect.left}px`;
+    modalElement.style.width = `${modalRect.width}px`;
+    modalElement.style.height = `${modalRect.height}px`;
+    modalElement.style.maxHeight = `${modalRect.height}px`;
+    modalElement.style.transform = "translate(0, 0) scale(1)";
+    modalElement.style.transformOrigin = "center center";
+
+    window.requestAnimationFrame(() => {
+      overlayElement.classList.add("subscription-modal__overlay--closing");
+      modalElement.classList.add("subscription-modal--closing");
+      modalElement.style.top = `${targetTop}px`;
+      modalElement.style.left = `${targetLeft}px`;
+      modalElement.style.width = `${targetSize}px`;
+      modalElement.style.height = `${targetSize}px`;
+      modalElement.style.maxHeight = `${targetSize}px`;
+      modalElement.style.opacity = "0.98";
+      modalElement.style.transform = "translate(0, 0) scale(0.18)";
+    });
+
+    await new Promise((resolve) => window.setTimeout(resolve, 480));
+    onClose();
+  }
+
+  async function handleConfirm() {
+    if (isClosingToHeader || !canConfirmChanges) {
+      return;
+    }
+
+    setIsClosingToHeader(true);
+
+    try {
+      await onConfirm({ quantity, intervalCount });
+      await animateDialogIntoHeader();
+    } catch (error) {
+      setIsClosingToHeader(false);
+      console.error(error);
+    }
+  }
 
   return (
     <>
       <button
+        ref={overlayRef}
         className="subscription-modal__overlay"
         type="button"
         aria-label="Dialog schließen"
-        onClick={onClose}
+        onClick={isClosingToHeader ? undefined : onClose}
+        disabled={isClosingToHeader}
       />
 
       <section
+        ref={modalRef}
         className="subscription-modal"
         role="dialog"
         aria-modal="true"
@@ -61,7 +137,12 @@ export function SubscriptionDialog({
             <span className="eyebrow">Abo</span>
             <h2 id="subscription-dialog-title">Produkt zum Abo hinzufügen</h2>
           </div>
-          <button className="button button--ghost" type="button" onClick={onClose}>
+          <button
+            className="button button--ghost"
+            type="button"
+            onClick={onClose}
+            disabled={isClosingToHeader}
+          >
             X
           </button>
         </div>
@@ -76,6 +157,13 @@ export function SubscriptionDialog({
             <div className="subscription-modal__warning">
               Dieses Produkt ist bereits Teil deines Abos. Deine Änderungen werden auf das
               laufende Abo angewendet.
+            </div>
+          ) : null}
+
+          {!isProfileComplete ? (
+            <div className="subscription-modal__warning subscription-modal__warning--locked">
+              Dein Profil ist noch nicht vollständig. Solange Pflichtfelder fehlen, kannst du
+              dein Abo nicht ändern.
             </div>
           ) : null}
 
@@ -117,14 +205,21 @@ export function SubscriptionDialog({
         </div>
 
         <div className="subscription-modal__actions">
-          <button className="button button--ghost" type="button" onClick={onClose}>
+          <button
+            className="button button--ghost"
+            type="button"
+            onClick={onClose}
+            disabled={isClosingToHeader}
+          >
             Änderungen verwerfen
           </button>
           <button
             className="button"
             type="button"
-            disabled={hasInvalidQuantity}
-            onClick={() => onConfirm({ quantity, intervalCount })}
+            disabled={!canConfirmChanges || isClosingToHeader}
+            onClick={() => {
+              void handleConfirm();
+            }}
           >
             Änderungen übernehmen
           </button>

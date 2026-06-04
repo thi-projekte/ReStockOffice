@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { FaCheck, FaChevronDown, FaFilter, FaSearch, FaTruck } from "react-icons/fa";
+import { FaChevronDown, FaFilter, FaSearch, FaTruck } from "react-icons/fa";
 import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCard";
 import { RestockerOrderDetailDialog } from "../../components/restocker/RestockerOrderDetailDialog";
 import { useAuth } from "../../auth/AuthProvider";
@@ -30,6 +30,28 @@ function getGreetingName(user: ReturnType<typeof useAuth>["user"]) {
   return preferredName?.trim() || "Restocker";
 }
 
+function matchesSearchFilter(order: RestockMarketplaceOrder, normalizedQuery: string) {
+  return (
+    normalizedQuery.length === 0 ||
+    [order.companyName, order.city, order.addressLine1, order.orderId]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedQuery)
+  );
+}
+
+function matchesDeliveryWindowFilter(
+  deliveryDate: string,
+  selectedDeliveryWindows: DeliveryWindowOption[],
+) {
+  const deliveryWindowKey = getDeliveryWindowKey(deliveryDate);
+
+  return (
+    selectedDeliveryWindows.length === 0 ||
+    (deliveryWindowKey !== null && selectedDeliveryWindows.includes(deliveryWindowKey))
+  );
+}
+
 export function MyOrdersPage() {
   const auth = useAuth();
   const restockerName = auth.user?.username ?? auth.user?.id ?? "";
@@ -55,11 +77,10 @@ export function MyOrdersPage() {
   const [draftSelectedRelativeDay, setDraftSelectedRelativeDay] =
     useState<"" | RelativeDayOption>("");
   const [draftSortOption, setDraftSortOption] = useState<SortOption>("delivery-asc");
-  const [isCityMenuOpen, setIsCityMenuOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<RestockMarketplaceOrder | null>(null);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 720px)");
+    const mediaQuery = globalThis.matchMedia("(max-width: 720px)");
 
     const updateViewportMatch = () => {
       setIsMobileViewport(mediaQuery.matches);
@@ -97,6 +118,7 @@ export function MyOrdersPage() {
           token: auth.token,
           restockerId: auth.user.id,
           restockerName,
+          includeCompletedDeliveries: false,
         });
 
         if (!ignoreResult) {
@@ -125,16 +147,14 @@ export function MyOrdersPage() {
   }, [auth.token, auth.user?.id, restockerName]);
 
   useEffect(() => {
-    if (!isMobileViewport || !isFilterOpen) {
-      return;
+    if (isMobileViewport && isFilterOpen) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+
+      return () => {
+        document.body.style.overflow = previousOverflow;
+      };
     }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
   }, [isFilterOpen, isMobileViewport]);
 
   const availableCities = useMemo(
@@ -145,27 +165,21 @@ export function MyOrdersPage() {
     [assignedOrdersResult.orders],
   );
 
-  const deliveryWindowOptions = useMemo(
+  const deliveryWindowOptions = useMemo<Array<{
+    value: DeliveryWindowOption;
+    labelTop: string;
+    labelBottom: string;
+  }>>(
     () => [
       {
-        value: "week-1" as DeliveryWindowOption,
+        value: "week-1",
         labelTop: "Diese",
         labelBottom: "Woche",
       },
       {
-        value: "week-2" as DeliveryWindowOption,
+        value: "week-2",
         labelTop: "Nächste",
         labelBottom: "Woche",
-      },
-      {
-        value: "week-3" as DeliveryWindowOption,
-        labelTop: "Woche",
-        labelBottom: "3",
-      },
-      {
-        value: "week-4" as DeliveryWindowOption,
-        labelTop: "Woche",
-        labelBottom: "4",
       },
     ],
     [],
@@ -198,18 +212,12 @@ export function MyOrdersPage() {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
     const visibleOrders = assignedOrdersResult.orders.filter((order) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        [order.companyName, order.city, order.addressLine1, order.orderId]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedQuery);
+      const matchesQuery = matchesSearchFilter(order, normalizedQuery);
       const matchesCity = !selectedCity || order.city === selectedCity;
-      const matchesDeliveryWindow =
-        selectedDeliveryWindows.length === 0 ||
-        selectedDeliveryWindows.includes(
-          getDeliveryWindowKey(order.deliveryDate) as DeliveryWindowOption,
-        );
+      const matchesDeliveryWindow = matchesDeliveryWindowFilter(
+        order.deliveryDate,
+        selectedDeliveryWindows,
+      );
       const matchesRelativeDay = matchesRelativeDayFilter(
         order.deliveryDate,
         selectedRelativeDay,
@@ -268,16 +276,13 @@ export function MyOrdersPage() {
     { value: "today", label: "Heute" },
     { value: "tomorrow", label: "Morgen" },
   ];
-  const selectedDraftCityLabel =
-    cityOptions.find((cityOption) => cityOption.value === draftSelectedCity)?.label ??
-    "Alle Städte";
-
   const hasActiveDesktopFilters =
     searchQuery.trim().length > 0 ||
     selectedCity !== "" ||
     selectedDeliveryWindows.length > 0 ||
     selectedRelativeDay !== "" ||
     sortOption !== "delivery-asc";
+  const isDesktopViewport = isMobileViewport === false;
 
   if (!auth.isInitializing && !auth.hasRole("Restocker")) {
     return <Navigate to="/" replace />;
@@ -293,17 +298,15 @@ export function MyOrdersPage() {
     setDraftSelectedDeliveryWindows(selectedDeliveryWindows);
     setDraftSelectedRelativeDay(selectedRelativeDay);
     setDraftSortOption(sortOption);
-    setIsCityMenuOpen(false);
     setIsFilterOpen(true);
   }
 
   function closeMobileFilter() {
-    setIsCityMenuOpen(false);
     setIsFilterOpen(false);
   }
 
   function handleFilterToggle() {
-    if (!isMobileViewport) {
+    if (isDesktopViewport) {
       setIsFilterOpen((currentState) => !currentState);
       return;
     }
@@ -331,7 +334,6 @@ export function MyOrdersPage() {
     setDraftSelectedDeliveryWindows([]);
     setDraftSelectedRelativeDay("");
     setDraftSortOption("delivery-asc");
-    setIsCityMenuOpen(false);
   }
 
   function handleResetDesktopFilters() {
@@ -412,7 +414,7 @@ export function MyOrdersPage() {
         <div className="hero-copy">
           <h1>MEINE AUFTRÄGE</h1>
           <p className="section-copy">
-            Hallo {greetingName}, hier sind deine Aufträge für die nächsten 4 Wochen.
+            Hallo {greetingName}, hier sind deine Aufträge für die nächsten zwei Wochen.
           </p>
 
           <div className="dashboard-strip" aria-label="Meine Aufträge Übersicht">
@@ -446,7 +448,7 @@ export function MyOrdersPage() {
         {error ? <div className="error-box">{error}</div> : null}
 
         <div className="restocker-marketplace-toolbar">
-          {!isMobileViewport ? (
+          {isDesktopViewport ? (
             <label className="restocker-marketplace-search" htmlFor="restocker-my-orders-search">
               <FaSearch aria-hidden="true" />
               <input
@@ -469,7 +471,7 @@ export function MyOrdersPage() {
           </button>
         </div>
 
-        {!isMobileViewport ? (
+        {isDesktopViewport ? (
           <div className="restocker-priority-filters" aria-label="Schnellfilter für Auslieferungen">
             {priorityFilterOptions.map((filterOption) => {
               const isOverviewFilterActive =
@@ -500,7 +502,7 @@ export function MyOrdersPage() {
           </div>
         ) : null}
 
-        {isFilterOpen && !isMobileViewport ? (
+        {isFilterOpen && isDesktopViewport ? (
           <div className="restocker-my-orders-desktop-filters">
             <div className="restocker-my-orders-desktop-filters__header">
               <div className="restocker-my-orders-desktop-filters__heading">
@@ -525,7 +527,7 @@ export function MyOrdersPage() {
                     Lieferzeitraum
                   </span>
 
-                  <div className="restocker-my-orders-desktop-segmented-control" role="group" aria-label="Lieferzeitraum auswählen">
+                  <fieldset className="restocker-my-orders-desktop-segmented-control" aria-label="Lieferzeitraum auswählen">
                     {desktopDeliveryWindowOptions.map((deliveryWindow) => {
                       const isActive = selectedDeliveryWindows.includes(deliveryWindow.value);
 
@@ -541,7 +543,7 @@ export function MyOrdersPage() {
                         </button>
                       );
                     })}
-                  </div>
+                  </fieldset>
                 </label>
 
                 <label className="restocker-my-orders-desktop-field restocker-my-orders-desktop-field--city">
@@ -703,9 +705,9 @@ export function MyOrdersPage() {
             onClick={closeMobileFilter}
           />
 
-          <section
+          <dialog
+            open
             className="restocker-mobile-filter-sheet"
-            role="dialog"
             aria-modal="true"
             aria-labelledby="restocker-my-orders-mobile-filter-title"
           >
@@ -767,41 +769,20 @@ export function MyOrdersPage() {
 
               <div className="restocker-mobile-filter-group">
                 <span className="restocker-mobile-filter-group__label">Stadt</span>
-                <div className="restocker-mobile-select-shell">
-                  <button
-                    className={`restocker-mobile-select-trigger ${isCityMenuOpen ? "is-open" : ""}`.trim()}
-                    type="button"
-                    onClick={() => setIsCityMenuOpen((currentState) => !currentState)}
-                    aria-expanded={isCityMenuOpen}
-                    aria-haspopup="listbox"
+                <span className="restocker-mobile-select-shell">
+                  <select
+                    className="restocker-mobile-select-trigger"
+                    value={draftSelectedCity}
+                    onChange={(event) => setDraftSelectedCity(event.target.value)}
+                    aria-label="Stadt auswählen"
                   >
-                    <span>{selectedDraftCityLabel}</span>
-                    <FaChevronDown aria-hidden="true" />
-                  </button>
-
-                  {isCityMenuOpen ? (
-                    <div
-                      className="restocker-mobile-select-menu"
-                      role="listbox"
-                      aria-label="Stadt auswählen"
-                    >
-                      {cityOptions.map((cityOption) => (
-                        <button
-                          key={cityOption.value || "all-cities"}
-                          className={`restocker-mobile-select-option ${draftSelectedCity === cityOption.value ? "is-active" : ""}`.trim()}
-                          type="button"
-                          onClick={() => {
-                            setDraftSelectedCity(cityOption.value);
-                            setIsCityMenuOpen(false);
-                          }}
-                        >
-                          <span>{cityOption.label}</span>
-                          {draftSelectedCity === cityOption.value ? <FaCheck aria-hidden="true" /> : null}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
+                    {cityOptions.map((cityOption) => (
+                      <option key={cityOption.value || "all-cities"} value={cityOption.value}>
+                        {cityOption.label}
+                      </option>
+                    ))}
+                  </select>
+                </span>
               </div>
 
               <div className="restocker-mobile-filter-group">
@@ -834,7 +815,7 @@ export function MyOrdersPage() {
                 Anwenden
               </button>
             </div>
-          </section>
+          </dialog>
         </>
       ) : null}
 
