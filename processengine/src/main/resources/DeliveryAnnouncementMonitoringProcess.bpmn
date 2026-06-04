@@ -83,7 +83,7 @@
   <bpmndi:BPMNDiagram id="BPMNDiagram_DeliveryAnnouncementMonitoring">
     <bpmndi:BPMNPlane id="BPMNPlane_DeliveryAnnouncementMonitoring" bpmnElement="Collaboration_DeliveryAnnouncementMonitoring">
       <bpmndi:BPMNShape id="Participant_DeliveryProcess_di" bpmnElement="Participant_DeliveryProcess" isHorizontal="true">
-        <dc:Bounds x="120" y="80" width="1320" height="280" />
+        <dc:Bounds x="120" y="50" width="1320" height="330" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_SendDeliveryAnnouncement_di" bpmnElement="Task_SendDeliveryAnnouncement">
@@ -108,7 +108,7 @@
       <bpmndi:BPMNShape id="EndEvent_DeliveryMonitoringFinished_di" bpmnElement="EndEvent_DeliveryMonitoringFinished">
         <dc:Bounds x="1348" y="187" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1336" y="223" width="61" height="27" />
+          <dc:Bounds x="1336" y="236" width="62" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="SubProcess_MonitorDeliveryConfirmations_di" bpmnElement="SubProcess_MonitorDeliveryConfirmations" isExpanded="true">
@@ -158,27 +158,27 @@
         <di:waypoint x="1240" y="205" />
         <di:waypoint x="1348" y="205" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="DataStore_SubscribedArticles_di" bpmnElement="DataStore_SubscribedArticles">
-        <dc:Bounds x="305" y="385" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="287" y="442" width="86" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_Customer_di" bpmnElement="Participant_Customer" isHorizontal="true">
-        <dc:Bounds x="440" y="400" width="300" height="60" />
+        <dc:Bounds x="440" y="420" width="300" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_Restocker_di" bpmnElement="Participant_Restocker" isHorizontal="true">
-        <dc:Bounds x="790" y="400" width="340" height="60" />
+        <dc:Bounds x="790" y="420" width="340" height="60" />
         <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStore_SubscribedArticles_di" bpmnElement="DataStore_SubscribedArticles">
+        <dc:Bounds x="305" y="420" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="287" y="477" width="87" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="DataInput_DeliveriesToAnnouncement_di" bpmnElement="DataInput_DeliveriesToAnnouncement">
         <di:waypoint x="501" y="129" />
         <di:waypoint x="561" y="173" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataInput_SubscribedArticlesToDeliveryLookup_di" bpmnElement="DataInput_SubscribedArticlesToDeliveryLookup">
-        <di:waypoint x="330" y="385" />
-        <di:waypoint x="350" y="245" />
+        <di:waypoint x="329" y="420" />
+        <di:waypoint x="351" y="245" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataOutput_LoadedDeliveries_di" bpmnElement="DataOutput_LoadedDeliveries">
         <di:waypoint x="420" y="169" />
@@ -190,25 +190,25 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="MessageFlow_SendDeliveryAnnouncementToCustomer_di" bpmnElement="MessageFlow_SendDeliveryAnnouncementToCustomer">
         <di:waypoint x="630" y="245" />
-        <di:waypoint x="630" y="400" />
+        <di:waypoint x="630" y="420" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="568" y="323" width="85" height="27" />
+          <dc:Bounds x="568" y="335" width="85" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="MessageFlow_SendDeliveryConfirmationToCustomer_di" bpmnElement="MessageFlow_SendDeliveryConfirmationToCustomer">
         <di:waypoint x="1060" y="245" />
         <di:waypoint x="1060" y="330" />
         <di:waypoint x="720" y="330" />
-        <di:waypoint x="720" y="400" />
+        <di:waypoint x="720" y="420" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="823" y="312" width="85" height="14" />
+          <dc:Bounds x="777" y="336" width="85" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="MessageFlow_RestockerConfirmsDelivery_di" bpmnElement="MessageFlow_RestockerConfirmsDelivery">
-        <di:waypoint x="868" y="400" />
-        <di:waypoint x="868" y="223" />
+        <di:waypoint x="903" y="420" />
+        <di:waypoint x="903" y="223" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="820" y="340" width="88" height="27" />
+          <dc:Bounds x="907" y="346" width="85" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
