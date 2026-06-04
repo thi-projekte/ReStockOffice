@@ -116,7 +116,7 @@ public class OrderResource {
         String authHeader = headers.getHeaderString("Authorization");
         Client client = ClientBuilder.newClient();
         String camundaUrl =
-                "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_abo/start";
+                "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_aboConfirmation/start";
 
         Map<String, Object> variables = processVariables(order, authHeader);
         variables.put("updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String"));
@@ -168,7 +168,7 @@ public class OrderResource {
 
         Client client = ClientBuilder.newClient();
         String camundaUrl =
-                "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_abo/start";
+                "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_aboConfirmation/start";
 
         Map<String, Object> body = Map.of(
                 "businessKey", order.id.toString(),
