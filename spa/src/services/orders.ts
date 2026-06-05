@@ -60,7 +60,7 @@ interface UpsertOrderPayload extends OrdersRequestContext {
   productId: string;
   quantity: number;
   intervalCount: number;
-  existingItem?: Pick<RestockOrder, "createdAt" | "status">;
+  existingItem?: Pick<RestockOrder, "id" | "createdAt" | "status">;
 }
 
 interface DeleteOrderPayload extends OrdersRequestContext {
@@ -637,8 +637,10 @@ function getMockOrdersForCustomer(customerId: string) {
 
 function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   const source = rawOrder as Record<string, unknown>;
+  const id = Number(source.id);
 
   return {
+    ...(Number.isFinite(id) ? { id } : {}),
     customerId: String(source.customerId ?? ""),
     productId: String(source.productId ?? ""),
     status: String(source.status ?? "ACTIVE"),
@@ -993,7 +995,7 @@ export async function upsertSubscriptionOrder({
   quantity,
   intervalCount,
   existingItem,
-}: UpsertOrderPayload): Promise<{ productId: string; status: string; quantity: number; interval: number }> {
+}: UpsertOrderPayload): Promise<Pick<RestockOrder, "id" | "productId" | "status" | "quantity" | "interval">> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
@@ -1033,9 +1035,13 @@ export async function upsertSubscriptionOrder({
 
   let response: Response;
 
+  const orderUrl = existingItem?.id
+    ? `${ORDERS_API_URL}/${existingItem.id}`
+    : ORDERS_API_URL;
+
   try {
-    response = await fetch(ORDERS_API_URL, {
-      method: "POST",
+    response = await fetch(orderUrl, {
+      method: existingItem?.id ? "PUT" : "POST",
       headers: createHeaders(resolvedToken),
       body: JSON.stringify(orderPayload),
     });

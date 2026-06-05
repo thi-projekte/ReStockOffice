@@ -11,10 +11,12 @@ import java.util.List;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 
@@ -29,6 +31,15 @@ public class OrderResource {
 
     @Inject
     JsonWebToken jwt;
+
+    @ConfigProperty(
+            name = "processengine.abo-confirmation-start-url",
+            defaultValue = "https://pe.restockoffice.de/api/abo-confirmation-process/change"
+    )
+    String aboConfirmationProcessStartUrl;
+
+    @ConfigProperty(name = "processengine.abo-confirmation-window-duration", defaultValue = "PT10M")
+    String aboConfirmationWindowDuration;
 
     @Context
     HttpHeaders headers;
@@ -139,27 +150,10 @@ public class OrderResource {
 
         // Camunda Prozess mit Token starten
         String authHeader = headers.getHeaderString("Authorization");
-        Client client = ClientBuilder.newClient();
-        String camundaUrl =
-                "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_aboConfirmation/start";
-
         Map<String, Object> variables = processVariables(order, authHeader);
         variables.put("updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String"));
 
-        Map<String, Object> body = Map.of(
-                "businessKey", order.id.toString(),
-                "variables", variables
-        );
-
-        client
-                .target(camundaUrl)
-                .request(MediaType.APPLICATION_JSON)
-                //.header("Authorization", "Bearer " + accessToken)
-                //ist optional, da service öffentlich erreichbar ist, falls Authentifizierung in Camunda aktiviert ist, wird dann benötigt
-                .header("Authorization", authHeader)
-                .post(Entity.json(body));
-
-        client.close();
+        startAboConfirmationProcess(order, authHeader, variables);
 
         return order;
     }
@@ -190,25 +184,40 @@ public class OrderResource {
 
         // Camunda Prozess mit Token starten
         String authHeader = headers.getHeaderString("Authorization");
-
-        Client client = ClientBuilder.newClient();
-        String camundaUrl =
-                "https://pe.restockoffice.de/engine-rest/process-definition/key/Process_aboConfirmation/start";
-
-        Map<String, Object> body = Map.of(
-                "businessKey", order.id.toString(),
-                "variables", processVariables(order, authHeader)
-        );
-
-        client
-                .target(camundaUrl)
-                .request(MediaType.APPLICATION_JSON)
-                .header("Authorization", authHeader)
-                .post(Entity.json(body));
-
-        client.close();
+        startAboConfirmationProcess(order, authHeader, processVariables(order, authHeader));
 
         return order;
+    }
+
+    private void startAboConfirmationProcess(
+            Order order,
+            String authHeader,
+            Map<String, Object> variables
+    ) {
+        try (Client client = ClientBuilder.newClient()) {
+            Map<String, Object> body = Map.of(
+                    "businessKey", order.customerId,
+                    "variables", variables
+            );
+
+            var request = client
+                    .target(aboConfirmationProcessStartUrl)
+                    .request(MediaType.APPLICATION_JSON);
+            if (authHeader != null && !authHeader.isBlank()) {
+                request.header("Authorization", authHeader);
+            }
+
+            try (Response response = request.post(Entity.json(body))) {
+                if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+                    throw new WebApplicationException(
+                            "AboConfirmationProcess konnte nicht gestartet werden (HTTP "
+                                    + response.getStatus()
+                                    + ").",
+                            Response.Status.BAD_GATEWAY
+                    );
+                }
+            }
+        }
     }
 
     private String normalizeRequiredCustomerId(String value, String fieldName) {
@@ -222,6 +231,8 @@ public class OrderResource {
     private Map<String, Object> processVariables(Order order, String authHeader) {
         Map<String, Object> variables = new LinkedHashMap<>();
         variables.put("orderId", Map.of("value", order.id, "type", "Long"));
+        variables.put("orderIdsCsv", Map.of("value", String.valueOf(order.id), "type", "String"));
+        variables.put("aboConfirmationWindowDuration", Map.of("value", aboConfirmationWindowDuration, "type", "String"));
         variables.put("customerId", Map.of("value", order.customerId, "type", "String"));
         variables.put("productId", Map.of("value", order.productId, "type", "String"));
         variables.put("quantity", Map.of("value", order.quantity, "type", "Integer"));
@@ -231,7 +242,45 @@ public class OrderResource {
             variables.put("authorizationHeader", Map.of("value", authHeader, "type", "String"));
         }
 
+        String recipientEmail = tokenClaim("email");
+        if (recipientEmail != null) {
+            variables.put("recipientEmail", Map.of("value", recipientEmail, "type", "String"));
+        }
+
+        String customerName = firstNonBlank(tokenClaim("name"), tokenClaim("preferred_username"), order.customerId);
+        if (customerName != null) {
+            variables.put("customerName", Map.of("value", customerName, "type", "String"));
+        }
+
         return variables;
+    }
+
+    private String tokenClaim(String claimName) {
+        if (jwt == null) {
+            return null;
+        }
+
+        Object claim = jwt.getClaim(claimName);
+        if (claim == null) {
+            return null;
+        }
+
+        String value = String.valueOf(claim).trim();
+        return value.isBlank() ? null : value;
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+
+        return null;
     }
 
     private String resolveCustomerId() {

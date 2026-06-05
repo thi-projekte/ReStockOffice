@@ -55,7 +55,8 @@ public class MailDataEnrichmentService {
     private String appBaseUrl;
 
     public void enrichAboConfirmation(DelegateExecution execution) {
-        EnrichmentContext context = loadContext(execution);
+        List<EnrichmentContext> contexts = loadAboConfirmationContexts(execution);
+        EnrichmentContext context = contexts.isEmpty() ? loadContext(execution) : contexts.get(0);
         enrichCommonVariables(execution, context);
 
         OrderDto order = context.order();
@@ -74,6 +75,7 @@ public class MailDataEnrichmentService {
         }
 
         setIfBlank(execution, "itemQuantity", formatOrderItemQuantity(resolveQuantity(execution, order), article));
+        execution.setVariable("orderItems", buildAboOrderItems(execution, contexts.isEmpty() ? List.of(context) : contexts));
     }
 
     public void enrichDeliveryAnnouncement(DelegateExecution execution) {
@@ -132,8 +134,12 @@ public class MailDataEnrichmentService {
     }
 
     private EnrichmentContext loadContext(DelegateExecution execution) {
+        return loadContext(execution, null);
+    }
+
+    private EnrichmentContext loadContext(DelegateExecution execution, String requestedOrderId) {
         String authorizationHeader = stringVariable(execution, "authorizationHeader");
-        String orderId = firstNonBlank(stringVariable(execution, "orderId"), stringVariable(execution, "deliveredOrderId"));
+        String orderId = firstNonBlank(requestedOrderId, stringVariable(execution, "orderId"), stringVariable(execution, "deliveredOrderId"));
         String customerId = stringVariable(execution, "customerId");
         String productId = stringVariable(execution, "productId");
         String deliveryId = firstNonBlank(stringVariable(execution, "deliveredDeliveryId"), stringVariable(execution, "deliveryId"));
@@ -157,6 +163,55 @@ public class MailDataEnrichmentService {
         ArticleDto article = loadArticle(productId);
 
         return new EnrichmentContext(orderId, customerId, productId, order, user, article, delivery);
+    }
+
+    private List<EnrichmentContext> loadAboConfirmationContexts(DelegateExecution execution) {
+        List<String> orderIds = parseOrderIdsCsv(firstNonBlank(
+                stringVariable(execution, "orderIdsCsv"),
+                stringVariable(execution, "orderId")
+        ));
+
+        if (orderIds.isEmpty()) {
+            return List.of();
+        }
+
+        return orderIds.stream()
+                .map(orderId -> loadContext(execution, orderId))
+                .toList();
+    }
+
+    private List<String> parseOrderIdsCsv(String orderIdsCsv) {
+        if (isBlank(orderIdsCsv)) {
+            return List.of();
+        }
+
+        List<String> orderIds = new java.util.ArrayList<>();
+        for (String value : orderIdsCsv.split(",")) {
+            String normalizedValue = value.trim();
+            if (!normalizedValue.isBlank() && !orderIds.contains(normalizedValue)) {
+                orderIds.add(normalizedValue);
+            }
+        }
+
+        return orderIds;
+    }
+
+    private List<Map<String, Object>> buildAboOrderItems(DelegateExecution execution, List<EnrichmentContext> contexts) {
+        return contexts.stream()
+                .map(context -> {
+                    OrderDto order = context.order();
+                    ArticleDto article = context.article();
+                    LocalDate deliveryDate = resolveDeliveryDate(context);
+
+                    Map<String, Object> orderItem = new HashMap<>();
+                    orderItem.put("name", firstNonBlank(article != null ? article.name : null, "Artikel " + context.productId()));
+                    orderItem.put("articleNumber", firstNonBlank(article != null ? article.productId : null, context.productId()));
+                    orderItem.put("quantity", formatOrderItemQuantity(resolveQuantityForItem(execution, order), article));
+                    orderItem.put("intervalDescription", formatInterval(resolveIntervalForItem(execution, order)));
+                    orderItem.put("nextDeliveryDate", formatDate(deliveryDate));
+                    return orderItem;
+                })
+                .toList();
     }
 
     private OrderDto loadOrder(String orderId, String authorizationHeader) {
@@ -336,6 +391,14 @@ public class MailDataEnrichmentService {
         return order != null && order.quantity != null ? order.quantity : 1;
     }
 
+    private int resolveQuantityForItem(DelegateExecution execution, OrderDto order) {
+        if (order != null && order.quantity != null) {
+            return order.quantity;
+        }
+
+        return resolveQuantity(execution, order);
+    }
+
     private int resolveInterval(DelegateExecution execution, OrderDto order) {
         Object variable = execution.getVariable("interval");
         if (variable instanceof Number number) {
@@ -349,6 +412,14 @@ public class MailDataEnrichmentService {
             }
         }
         return order != null && order.interval != null ? order.interval : 1;
+    }
+
+    private int resolveIntervalForItem(DelegateExecution execution, OrderDto order) {
+        if (order != null && order.interval != null) {
+            return order.interval;
+        }
+
+        return resolveInterval(execution, order);
     }
 
     private LocalDate parseDate(String value) {
