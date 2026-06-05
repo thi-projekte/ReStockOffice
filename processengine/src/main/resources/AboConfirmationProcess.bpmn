@@ -33,7 +33,7 @@
       <bpmn:dataOutputAssociation id="DataOutputAssociation_0mh2ruu">
         <bpmn:targetRef>DataObjectReference_OrderInformation</bpmn:targetRef>
       </bpmn:dataOutputAssociation>
-      <bpmn:messageEventDefinition id="MessageEventDefinition_1n38y5f" />
+      <bpmn:messageEventDefinition id="MessageEventDefinition_1n38y5f" messageRef="Message_3fsqjfv" />
     </bpmn:startEvent>
     <bpmn:dataObjectReference id="DataObjectReference_OrderInformation" name="Order Information" dataObjectRef="DataObject_1bmg1d8" />
     <bpmn:dataObject id="DataObject_1bmg1d8" />
@@ -49,6 +49,7 @@
       </bpmn:dataInputAssociation>
     </bpmn:sendTask>
   </bpmn:process>
+  <bpmn:message id="Message_3fsqjfv" name="Message_3fsqjfv" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_0l9t40f">
       <bpmndi:BPMNShape id="BPMNShape_0ftegob" bpmnElement="Participant_AboConfirmationProcess" isHorizontal="true">

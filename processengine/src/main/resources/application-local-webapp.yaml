@@ -26,7 +26,7 @@ spring.security:
         keycloak:
           client-id: restockoffice-backend
           client-secret: restockoffice-backend-secret
-          scope: openid,profile,email,offline_access,roles
+          scope: openid,profile,email,roles
           authorization-grant-type: authorization_code
           redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
       provider:
@@ -67,9 +67,6 @@ cibseven:
         group-name-attribute:
   webclient:
     engineRest:
-      url: http://localhost:8080
-      path: /engine-rest
-    engine-rest:
       url: http://localhost:8080
       path: /engine-rest
     authentication:

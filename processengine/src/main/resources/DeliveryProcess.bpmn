@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1lhxb24" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.45.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1lhxb24" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Process_delivery">
     <bpmn:participant id="Participant_02ir530" name="Auslieferungsprozess" processRef="Process_Auslieferung" />
     <bpmn:participant id="Participant_Restocker" name="Restocker" />
@@ -42,7 +42,6 @@
         <bpmn:sourceRef>DataObjectReference_Kunden</bpmn:sourceRef>
         <bpmn:targetRef>Property_13qf7wv</bpmn:targetRef>
       </bpmn:dataInputAssociation>
-      <bpmn:multiInstanceLoopCharacteristics isSequential="true" />
       <bpmn:startEvent id="Event_05672e0">
         <bpmn:outgoing>Flow_00g2kav</bpmn:outgoing>
       </bpmn:startEvent>
@@ -82,9 +81,10 @@
       <bpmn:dataOutputAssociation id="DataOutputAssociation_1dzja92">
         <bpmn:targetRef>DataObjectReference_Kunden</bpmn:targetRef>
       </bpmn:dataOutputAssociation>
-      <bpmn:messageEventDefinition id="MessageEventDefinition_0ckse4q" />
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0ckse4q" messageRef="Message_1c44ebl" />
     </bpmn:startEvent>
   </bpmn:process>
+  <bpmn:message id="Message_1c44ebl" name="Message_1c44ebl" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_delivery">
       <bpmndi:BPMNShape id="Participant_02ir530_di" bpmnElement="Participant_02ir530" isHorizontal="true">
