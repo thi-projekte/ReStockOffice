@@ -16,3 +16,6 @@ target/
 /spa/build/
 /spa/.env
 /spa/.env.example
+
+*.tsbuildinfo
+.github/workflows/frontend-docker.yml

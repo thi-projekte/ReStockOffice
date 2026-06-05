@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   FaBars,
   FaChevronRight,
@@ -9,20 +9,25 @@ import {
   FaTimes,
   FaUser,
   FaCalendarAlt,
-  FaArchive, FaClipboardList, FaTruck
+  FaArchive, FaClipboardList, FaTruck, FaShieldAlt, FaPaintBrush, FaSignOutAlt, FaFileInvoiceDollar
 } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
 import iconColored from "../assets/logos/icon_colored.png";
 import { useAuth } from "../auth/AuthProvider";
 import { useSubscriptionCart } from "../hooks/useSubscriptionCart";
 import { getProducts } from "../services/products";
+import { getMyUser, type UserProfile } from "../services/users";
 import type {
   Product,
   RestockOrderWithProduct,
 } from "../types/shop";
+import {
+  getSubscriptionProfileStatus,
+  type SubscriptionProfileStatus,
+} from "../utils/subscriptionProfile";
 import { ProductGrid } from "./ProductGrid";
 import { SubscriptionDialog } from "./SubscriptionDialog";
-import keycloak from "../auth/keycloak";
+import { SubscriptionProfileProgress } from "./SubscriptionProfileProgress";
 
 interface AppShellProps {
   children: (context: {
@@ -30,7 +35,11 @@ interface AppShellProps {
     onAddToSubscription: (product: Product) => void;
     onOpenSubscriptionOverview: () => void;
     onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+    onRemoveSubscriptionItem: (item: RestockOrderWithProduct) => Promise<void>;
     subscriptionItems: RestockOrderWithProduct[];
+    canModifySubscription: boolean;
+    subscriptionProfileStatus: SubscriptionProfileStatus | null;
+    onSubscriptionProfileUpdated: (user: UserProfile) => void;
     onLogout: () => void;
     theme: "light" | "dark";
     onToggleTheme: () => void;
@@ -48,7 +57,11 @@ export function AppShell({ children }: AppShellProps) {
   const [selectedArticleType, setSelectedArticleType] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
   const [isHeaderAssistOpen, setIsHeaderAssistOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>();
+  const [subscriptionProfileStatus, setSubscriptionProfileStatus] =
+    useState<SubscriptionProfileStatus | null>(null);
   const { hasRole } = useAuth();
   const [activeSubscriptionLayer, setActiveSubscriptionLayer] =
     useState<ActiveSubscriptionLayer>(null);
@@ -59,12 +72,13 @@ export function AppShell({ children }: AppShellProps) {
   const auth = useAuth();
   const isLoggedIn = auth.isAuthenticated;
   const subscriptionCart = useSubscriptionCart({
-    customerId: auth.getCustomerId(),
+    customerId: auth.user?.id,
     token: auth.token,
   });
   const location = useLocation();
   const navigate = useNavigate();
   const headerSearchRef = useRef<HTMLDivElement | null>(null);
+  const profileMenuCloseTimerRef = useRef<number | null>(null);
 
   const articleTypeOptions = Array.from(
     new Set(products.map((product) => product.category)),
@@ -124,6 +138,7 @@ export function AppShell({ children }: AppShellProps) {
   });
 
   const isRestocker = hasRole("Restocker");
+  const canModifySubscription = subscriptionProfileStatus?.isComplete !== false;
 
   function resetSubscriptionLayer() {
     setActiveSubscriptionLayer(null);
@@ -137,6 +152,13 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   function handleAddToSubscription(product: Product) {
+    if (!canModifySubscription) {
+      toast.error(
+        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
+      );
+      return;
+    }
+
     setSelectedProduct(product);
     setSelectedSubscriptionItem(undefined);
     setActiveSubscriptionLayer("dialog");
@@ -149,9 +171,41 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   function handleEditSubscriptionItem(item: RestockOrderWithProduct) {
+    if (!canModifySubscription) {
+      toast.error(
+        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
+      );
+      return;
+    }
+
     setSelectedProduct(item.product);
     setSelectedSubscriptionItem(item);
     setActiveSubscriptionLayer("dialog");
+  }
+
+  async function handleRemoveSubscriptionItem(item: RestockOrderWithProduct) {
+    if (!canModifySubscription) {
+      toast.error(
+        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
+      );
+      return;
+    }
+
+    try {
+      await subscriptionCart.removeItem(item);
+      toast.success(`${item.product.name} wurde aus dem Abo entfernt`);
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Das Produkt konnte nicht aus dem Abo entfernt werden.",
+      );
+    }
+  }
+
+  function handleSubscriptionProfileUpdated(user: UserProfile) {
+    setSubscriptionProfileStatus(getSubscriptionProfileStatus(user));
   }
 
   function handleQueryChange(value: string) {
@@ -165,6 +219,26 @@ export function AppShell({ children }: AppShellProps) {
 
   function handleBrandChange(value: string) {
     setSelectedBrand(value);
+  }
+
+  function openProfileMenu() {
+    if (profileMenuCloseTimerRef.current) {
+      window.clearTimeout(profileMenuCloseTimerRef.current);
+      profileMenuCloseTimerRef.current = null;
+    }
+
+    setIsProfileMenuOpen(true);
+  }
+
+  function closeProfileMenuWithDelay() {
+    if (profileMenuCloseTimerRef.current) {
+      window.clearTimeout(profileMenuCloseTimerRef.current);
+    }
+
+    profileMenuCloseTimerRef.current = window.setTimeout(() => {
+      setIsProfileMenuOpen(false);
+      profileMenuCloseTimerRef.current = null;
+    }, 180);
   }
 
   function handleSearchToggle() {
@@ -201,9 +275,39 @@ export function AppShell({ children }: AppShellProps) {
   }, [auth.isInitializing, isLoggedIn, location.pathname, navigate]);
 
   useEffect(() => {
+    if (!isLoggedIn) {
+      setProfilePictureUrl(undefined);
+      setSubscriptionProfileStatus(null);
+      return;
+    }
+
+    getMyUser({
+      token: auth.token,
+      kind: isRestocker ? "restocker" : "customer",
+    })
+      .then((loadedUser) => {
+        setProfilePictureUrl(loadedUser.profilePictureUrl);
+        setSubscriptionProfileStatus(getSubscriptionProfileStatus(loadedUser));
+      })
+      .catch(() => {
+        setProfilePictureUrl(undefined);
+        setSubscriptionProfileStatus(null);
+      });
+  }, [auth.token, isLoggedIn, isRestocker, location.pathname]);
+
+  useEffect(() => {
     setMenuOpen(false);
     setIsHeaderAssistOpen(false);
+    setIsProfileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (profileMenuCloseTimerRef.current) {
+        window.clearTimeout(profileMenuCloseTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -249,6 +353,29 @@ export function AppShell({ children }: AppShellProps) {
   const onSearchPage = location.pathname === "/products";
   const isDarkMode = theme === "dark";
   const isHomeActive = isRestocker ? location.pathname === "/restocker" : location.pathname === "/home";
+  const restockerMobileNavItems = [
+    {
+      to: "/restocker",
+      label: "Startseite",
+      icon: <FaHome />,
+      activePaths: ["/restocker-deliveries"],
+    },
+    {
+      to: "/restocker-orders",
+      label: "Offene Auftr\u00e4ge",
+      icon: <FaClipboardList />,
+    },
+    {
+      to: "/restocker-my-orders",
+      label: "Meine Auftr\u00e4ge",
+      icon: <FaTruck />,
+    },
+    {
+      to: "/account",
+      label: "Konto",
+      icon: <FaUser />,
+    },
+  ];
 
   function renderSearchControls(source: "header" | "page") {
     const isHeader = source === "header";
@@ -428,7 +555,7 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isLoggedIn && isRestocker ? "app-shell--restocker-nav" : ""}`.trim()}>
       <header className="site-header">
         <div className="container site-header__inner">
           <div className="brand-column">
@@ -494,43 +621,119 @@ export function AppShell({ children }: AppShellProps) {
                       <NavLink
                           className="button button--ghost nav-btn"
                           to="/restocker-orders"
-                          title="Aufträge"
+                          title="Offene Aufträge"
                       >
                         <FaClipboardList  />
                       </NavLink>
                   )}
 
-                  {/* Auslieferungen: Nur für Restocker */}
                   {isRestocker && (
                       <NavLink
                           className="button button--ghost nav-btn"
-                          to="/restocker-deliveries"
-                          title="Auslieferungen"
+                          to="/restocker-my-orders"
+                          title="Meine Aufträge"
                       >
-                        <FaTruck  />
+                        <FaCalendarAlt />
                       </NavLink>
                   )}
-
-                  {/* Account: Für beide gleich*/}
-                  <NavLink
-                      className="button button--ghost nav-btn"
-                      to="/account"
-                      title="Konto"
-                      aria-label="Konto"
-                  >
-                    <FaUser />
-                  </NavLink>
 
 
                   {/* Hamburger immer sichtbar */}
                   <button
-                      className="button button--ghost hamburger-btn"
+                      className={`button button--ghost hamburger-btn ${isRestocker ? "hamburger-btn--restocker" : ""}`.trim()}
                       type="button"
                       onClick={() => setMenuOpen((v) => !v)}
                       aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
                   >
                     {menuOpen ? <FaTimes /> : <FaBars />}
                   </button>
+
+                  {/* Account: Für beide gleich*/}
+                  <div
+                      className="header-profile-menu"
+                      onMouseEnter={openProfileMenu}
+                      onMouseLeave={closeProfileMenuWithDelay}
+                  >
+                    <NavLink
+                        className={`button button--ghost nav-btn ${profilePictureUrl ? "header-profile-button" : ""}`.trim()}
+                        to="/account"
+                        title="Konto"
+                        aria-label="Konto"
+                        onFocus={openProfileMenu}
+                    >
+                      {profilePictureUrl ? (
+                        <img
+                          className="header-profile-avatar"
+                          src={profilePictureUrl}
+                          alt="Profilbild"
+                          onError={() => setProfilePictureUrl(undefined)}
+                        />
+                      ) : (
+                        <FaUser />
+                      )}
+                    </NavLink>
+
+
+
+                    {isProfileMenuOpen ? (
+                      <div
+                        className="header-profile-popover"
+                        onMouseEnter={openProfileMenu}
+                        onMouseLeave={closeProfileMenuWithDelay}
+                        onBlur={(event) => {
+                          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                            setIsProfileMenuOpen(false);
+                          }
+                        }}
+                      >
+                        <Link
+                          className="header-profile-popover__link"
+                          to="/account#profile"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <FaUser />
+                          <span>Profil</span>
+                        </Link>
+
+                        <Link
+                          className="header-profile-popover__link"
+                          to="/account#settings"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <FaPaintBrush />
+                          <span>Darstellung</span>
+                        </Link>
+
+                        <Link
+                          className="header-profile-popover__link"
+                          to="/account#finance"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <FaFileInvoiceDollar />
+                          <span>Finanzen</span>
+                        </Link>
+
+                        <Link
+                          className="header-profile-popover__link"
+                          to="/account#security"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <FaShieldAlt />
+                          <span>Sicherheit</span>
+                        </Link>
+
+                        <button
+                          className="header-profile-popover__link header-profile-popover__link--danger"
+                          type="button"
+                          onClick={handleLogout}
+                        >
+                          <FaSignOutAlt />
+                          <span>Abmelden</span>
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+
                 </>
             ) : null}
           </div>
@@ -580,18 +783,17 @@ export function AppShell({ children }: AppShellProps) {
                         to="/restocker-orders"
                         onClick={() => setMenuOpen(false)}
                     >
-                      <FaClipboardList /> Aufträge
+                      <FaClipboardList /> Offene Aufträge
                     </NavLink>
                 )}
 
-                {/* Auslieferungen: Nur für Restocker */}
                 {isRestocker && (
                     <NavLink
                         className="mobile-nav__link"
-                        to="/restocker-deliveries"
+                        to="/restocker-my-orders"
                         onClick={() => setMenuOpen(false)}
                     >
-                      <FaTruck /> Auslieferungen
+                      <FaTruck /> Meine Aufträge
                     </NavLink>
                 )}
 
@@ -621,12 +823,23 @@ export function AppShell({ children }: AppShellProps) {
 
       <main className="site-main">
         <div className="container">
+          {isLoggedIn && onSearchPage ? (
+            <SubscriptionProfileProgress
+              status={subscriptionProfileStatus}
+              message="Solange Pflichtfelder fehlen, kannst du kein Produkt zum Abo hinzufügen."
+            />
+          ) : null}
+
            {children({
              isLoggedIn,
              onAddToSubscription: handleAddToSubscription,
              onOpenSubscriptionOverview: openSubscriptionOverview,
              onEditSubscriptionItem: handleEditSubscriptionItem,
+             onRemoveSubscriptionItem: handleRemoveSubscriptionItem,
              subscriptionItems: subscriptionCart.items,
+             canModifySubscription,
+             subscriptionProfileStatus,
+             onSubscriptionProfileUpdated: handleSubscriptionProfileUpdated,
              onLogout: handleLogout,
              theme,
              onToggleTheme: () => setTheme(isDarkMode ? "light" : "dark"),
@@ -652,6 +865,28 @@ export function AppShell({ children }: AppShellProps) {
 
       <footer className="site-footer">
         <div className="container">© 2026 ReStockOffice</div>
+
+        {isLoggedIn && isRestocker ? (
+          <nav className="restocker-mobile-tabbar" aria-label="Restocker Navigation">
+            {restockerMobileNavItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => {
+                  const isItemActive =
+                    isActive || item.activePaths?.includes(location.pathname);
+
+                  return `restocker-mobile-tabbar__item ${isItemActive ? "active" : ""}`;
+                }}
+                aria-label={item.label}
+              >
+                <span className="restocker-mobile-tabbar__icon" aria-hidden="true">
+                  {item.icon}
+                </span>
+              </NavLink>
+            ))}
+          </nav>
+        ) : null}
       </footer>
 
       {isLoggedIn ? (
@@ -663,8 +898,16 @@ export function AppShell({ children }: AppShellProps) {
           onClose={resetSubscriptionLayer}
           onSelectItem={handleEditSubscriptionItem}
           onOpenOverview={openSubscriptionOverview}
+          isProfileComplete={canModifySubscription}
           onConfirm={async ({ quantity, intervalCount }) => {
             if (!selectedProduct) {
+              return;
+            }
+
+            if (!canModifySubscription) {
+              toast.error(
+                "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
+              );
               return;
             }
 
@@ -687,7 +930,6 @@ export function AppShell({ children }: AppShellProps) {
                 : `${selectedProduct.name} wurde zum Abo hinzugefügt`,
             );
 
-            resetSubscriptionLayer();
             } catch (error) {
               console.error(error);
               toast.error(

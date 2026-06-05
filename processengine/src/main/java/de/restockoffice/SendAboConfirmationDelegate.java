@@ -12,47 +12,48 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Component("sendOrderConfirmationDelegate")
-public class SendOrderConfirmationDelegate implements JavaDelegate {
+@Component("sendAboConfirmationDelegate")
+public class SendAboConfirmationDelegate implements JavaDelegate {
 
-    private static final Logger log = LoggerFactory.getLogger(SendOrderConfirmationDelegate.class);
+    private static final Logger log = LoggerFactory.getLogger(SendAboConfirmationDelegate.class);
+
+    private final MailDataEnrichmentService mailDataEnrichmentService;
 
     @Value("${mailservice.base-url}")
     private String mailServiceBaseUrl;
 
+    public SendAboConfirmationDelegate(MailDataEnrichmentService mailDataEnrichmentService) {
+        this.mailDataEnrichmentService = mailDataEnrichmentService;
+    }
+
     @Override
     public void execute(DelegateExecution execution) {
-        log.info("Sending order confirmation for order {}", execution.getVariable("orderNumber"));
+        log.info("Sending abo confirmation for order {}", execution.getVariable("orderNumber"));
+        mailDataEnrichmentService.enrichAboConfirmation(execution);
 
         Map<String, Object> request = new HashMap<>();
         request.put("recipientEmail",        execution.getVariable("recipientEmail"));
         request.put("customerName",          execution.getVariable("customerName"));
         request.put("orderNumber",           execution.getVariable("orderNumber"));
         request.put("orderDate",             execution.getVariable("orderDate"));
-        request.put("orderedBy",             execution.getVariable("orderedBy"));
         request.put("deliveryWindow",        execution.getVariable("deliveryWindow"));
-        request.put("officeLocation",        execution.getVariable("officeLocation"));
         request.put("deliveryLocation",      execution.getVariable("deliveryLocation"));
-        request.put("deskDetails",           execution.getVariable("deskDetails"));
-        request.put("onSiteContact",         execution.getVariable("onSiteContact"));
         request.put("changeDeadline",        execution.getVariable("changeDeadline"));
         request.put("manageSubscriptionUrl", execution.getVariable("manageSubscriptionUrl"));
-        request.put("orderItems", List.of(
-                Map.of(
-                        "name",                execution.getVariable("itemName"),
-                        "articleNumber",       execution.getVariable("itemArticleNumber"),
-                        "quantity",            execution.getVariable("itemQuantity"),
-                        "intervalDescription", execution.getVariable("itemIntervalDescription"),
-                        "nextDeliveryDate",    execution.getVariable("itemNextDeliveryDate")
-                )
-        ));
+        Map<String, Object> orderItem = new HashMap<>();
+        orderItem.put("name",                execution.getVariable("itemName"));
+        orderItem.put("articleNumber",       execution.getVariable("itemArticleNumber"));
+        orderItem.put("quantity",            execution.getVariable("itemQuantity"));
+        orderItem.put("intervalDescription", execution.getVariable("itemIntervalDescription"));
+        orderItem.put("nextDeliveryDate",    execution.getVariable("itemNextDeliveryDate"));
+        request.put("orderItems", List.of(orderItem));
 
         new RestTemplate().postForEntity(
-                mailServiceBaseUrl + "/emails/order-confirmation",
+                mailServiceBaseUrl + "/emails/abo-confirmation",
                 request,
                 String.class
         );
 
-        log.info("Order confirmation sent for {}", execution.getVariable("recipientEmail"));
+        log.info("Abo confirmation sent for {}", execution.getVariable("recipientEmail"));
     }
 }

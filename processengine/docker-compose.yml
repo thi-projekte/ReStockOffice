@@ -1,15 +1,47 @@
 services:
   processengine:
-    image: ghcr.io/thi-projekte/restockoffice-processengine:1.0.0
+    image: ghcr.io/thi-projekte/restockoffice-processengine:latest
     restart: unless-stopped
     environment:
       SERVER_FORWARD_HEADERS_STRATEGY: framework
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/processengine
+      SPRING_DATASOURCE_USERNAME: processengine
+      SPRING_DATASOURCE_PASSWORD: processengine
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      CORS_ORIGINS: https://app.restockoffice.de
+      MAILSERVICE_BASE_URL: http://confirmation-mails:8081
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      USERS_SERVICE_URL: https://users.restockoffice.de
+      ORDERS_SERVICE_URL: https://orders.restockoffice.de
+      ARTICLES_SERVICE_URL: https://articles.restockoffice.de
+      DELIVERIES_SERVICE_URL: https://restocker-deliveries.restockoffice.de
     ports:
-      - "${PROCESSENGINE_HTTP_PORT:-8080}:8080"
+      - "8080:8080"
     networks:
       - default
       - nginx-proxy-manager
+      - mailer
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
+    container_name: restockoffice-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: processengine
+      POSTGRES_USER: processengine
+      POSTGRES_PASSWORD: processengine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - default
+
+volumes:
+  postgres_data:
 
 networks:
   nginx-proxy-manager:
+    external: true
+  mailer:
     external: true

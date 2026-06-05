@@ -6,6 +6,7 @@ import { router } from "./router";
 import "./styles/global.css";
 import "./styles/layout.css";
 import "./styles/components.css";
+import "./styles/restocker.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <AuthProvider>

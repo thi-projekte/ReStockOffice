@@ -1,0 +1,40 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5
+    container_name: restockoffice-dev-keycloak
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Force a single canonical front-channel URL so tokens always carry
+      # iss=http://localhost:8180/realms/restockoffice, no matter whether the
+      # request came from the host or from another container.
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '\"status\": \"UP\"'"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  postgres:
+    image: postgres:16
+    container_name: restockoffice-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: processengine
+      POSTGRES_USER: processengine
+      POSTGRES_PASSWORD: processengine
+    ports:
+      - "5432:5432"

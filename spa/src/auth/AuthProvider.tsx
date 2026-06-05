@@ -44,10 +44,13 @@ interface AuthContextValue {
   login: () => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (role: string) => boolean;
-  getCustomerId: () => string | undefined;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+function normalizeRoleName(role: string | undefined) {
+  return role?.trim().toLowerCase() ?? "";
+}
 
 function collectRoles(tokenParsed?: RestockTokenParsed) {
   const realmRoles = tokenParsed?.realm_access?.roles ?? [];
@@ -176,8 +179,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         login,
         logout,
-        hasRole: (role) => user?.roles.includes(role) ?? false,
-        getCustomerId: () => user?.customerId,
+        hasRole: (role) => {
+          const normalizedRole = normalizeRoleName(role);
+          return user?.roles.some(
+            (userRole) => normalizeRoleName(userRole) === normalizedRole,
+          ) ?? false;
+        },
       }),
       [isAuthenticated, isInitializing, error, token, user, login, logout],
   );

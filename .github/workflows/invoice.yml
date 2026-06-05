@@ -1,0 +1,81 @@
+name: Build and Push Invoice-Service Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "invoice-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and Package with Maven
+        working-directory: invoice
+        run: |
+          chmod +x mvnw
+          ./mvnw -B clean package
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: image_tags
+        run: |
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/restockoffice-invoice"
+          REF_NAME="${GITHUB_REF_NAME}"
+          SAFE_REF=$(echo "${REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9._-]#-#g')
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            {
+              echo "tags<<EOF"
+              echo "${IMAGE_NAME}:${REF_NAME}"
+              echo "${IMAGE_NAME}:latest"
+              echo "${IMAGE_NAME}:${GITHUB_SHA}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+          elif [ "${REF_NAME}" = "main" ]; then
+            {
+              echo "tags<<EOF"
+              echo "${IMAGE_NAME}:1.0.0"
+              echo "${IMAGE_NAME}:latest"
+              echo "${IMAGE_NAME}:${GITHUB_SHA}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+          else
+            {
+              echo "tags<<EOF"
+              echo "${IMAGE_NAME}:${SAFE_REF}"
+              echo "${IMAGE_NAME}:${SAFE_REF}-${GITHUB_SHA}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./invoice
+          file: ./invoice/src/main/docker/Dockerfile.jvm
+          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+          tags: ${{ steps.image_tags.outputs.tags }}

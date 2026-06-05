@@ -1,0 +1,103 @@
+{
+  "realm": "restockoffice",
+  "displayName": "ReStockOffice (Dev)",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "clients": [
+    {
+      "clientId": "restockoffice-backend",
+      "name": "ReStockOffice Process Engine",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "restockoffice-backend-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "basic"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "clientId": "restock-office-web",
+      "name": "ReStockOffice Web",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:5174/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "+"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "camunda-admin",
+      "path": "/camunda-admin"
+    }
+  ],
+  "users": [
+    {
+      "username": "demo@restockoffice.local",
+      "enabled": true,
+      "email": "demo@restockoffice.local",
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "offline_access"
+      ],
+      "groups": [
+        "/camunda-admin"
+      ]
+    },
+    {
+      "username": "service-account-restockoffice-backend",
+      "enabled": true,
+      "serviceAccountClientId": "restockoffice-backend",
+      "clientRoles": {
+        "realm-management": [
+          "view-users",
+          "query-groups",
+          "query-users",
+          "view-groups"
+        ]
+      }
+    }
+  ]
+}

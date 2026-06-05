@@ -5,15 +5,22 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 @ApplicationScoped
 public class ResendMailClient {
+
+    private static final String INLINE_LOGO_CID = "restockoffice-logo";
+    private static final String INLINE_LOGO_SRC = "cid:" + INLINE_LOGO_CID;
+    private static final String LOGO_RESOURCE = "META-INF/resources/assets/logo_colored.png";
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -30,12 +37,16 @@ public class ResendMailClient {
 
         validateInputs(recipientEmail, subject, html);
 
-        Map<String, Object> payload = Map.of(
-                "from", mailSettings.sender(),
-                "to", List.of(recipientEmail),
-                "subject", subject,
-                "html", html
-        );
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("from", mailSettings.sender());
+        payload.put("to", List.of(recipientEmail));
+        payload.put("subject", subject);
+        payload.put("html", html);
+
+        if (html.contains(INLINE_LOGO_SRC)) {
+            payload.put("attachments", List.of(buildInlineLogoAttachment()));
+        }
+
         try{
             String jsonBody = objectMapper.writeValueAsString(payload);
 
@@ -54,9 +65,30 @@ public class ResendMailClient {
 
             return objectMapper.readTree(response.body()).get("id").asText();
 
-        }catch (IOException | InterruptedException e) {
-            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new MailValidationException("Fehler beim Resend-Aufruf: " + e.getMessage());
+        } catch (IOException e) {
+            throw new MailValidationException("Fehler beim Resend-Aufruf: " + e.getMessage());
+        }
+    }
+
+    private Map<String, Object> buildInlineLogoAttachment() {
+        try (InputStream input = Thread.currentThread()
+                .getContextClassLoader()
+                .getResourceAsStream(LOGO_RESOURCE)) {
+            if (input == null) {
+                throw new MailValidationException("Inline logo resource is missing: " + LOGO_RESOURCE);
+            }
+
+            return Map.of(
+                    "content", Base64.getEncoder().encodeToString(input.readAllBytes()),
+                    "filename", "restockoffice-logo.png",
+                    "content_type", "image/png",
+                    "content_id", INLINE_LOGO_CID
+            );
+        } catch (IOException e) {
+            throw new MailValidationException("Inline logo resource could not be loaded: " + e.getMessage());
         }
     }
 
