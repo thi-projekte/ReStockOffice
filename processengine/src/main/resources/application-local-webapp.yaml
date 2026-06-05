@@ -1,27 +1,95 @@
-spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
+# Local development profile: CIB seven webapps + Keycloak SSO.
+# Start the matching Keycloak + Postgres via processengine/dev/docker-compose.yml.
+#
+# KEYCLOAK_BROWSER_URL is what the user's browser sees (redirects, JWT iss validation).
+# KEYCLOAK_SERVER_URL is what the app uses for server-to-server calls (token / jwks /
+# userinfo / admin REST). Both default to http://localhost:8180 when the app runs on
+# the host; override KEYCLOAK_SERVER_URL when the app runs inside docker-compose.
 
 camunda.bpm:
-  admin-user:
-    id: demo
-    password: demo
-    first-name: Local
-    last-name: Admin
-    email: demo@restockoffice.local
+  # The webclient's permission checks need engine authorizations (template default);
+  # the Keycloak plugin grants the camunda-admin group full admin rights at startup.
+  authorization:
+    enabled: true
   webapp:
     application-path: /webapp
     index-redirect-enabled: true
+  oauth2:
+    identity-provider:
+      # starter-security idP must be disabled; the Keycloak identity plugin is used instead
+      enabled: false
 
-cibseven.webclient:
-  engineRest:
-    url: http://localhost:8080
-    path: /engine-rest
-  engine-rest:
-    url: http://localhost:8080
-    path: /engine-rest
-  authentication:
-    jwtSecret: M7LY1Qb8pRbeI0qJsqq37fQ7CBhL+ov8GOfkEHhFyVQ3Bn3RikqntClltNBMHIjIGAavGhzRnyvCRMeosQofP8wYRm7IIH9mYkDPmpzP6EZpTQIx1DUIde2GegnlmzVVQ3wZX1uuVY5rD/+VPagLoWlvMxTlaeApubVcQvqGPOE=
+spring.security:
+  oauth2:
+    client:
+      registration:
+        keycloak:
+          client-id: restockoffice-backend
+          client-secret: restockoffice-backend-secret
+          scope: openid,profile,email,offline_access,roles
+          authorization-grant-type: authorization_code
+          redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+      provider:
+        keycloak:
+          authorization-uri: ${KEYCLOAK_BROWSER_URL:http://localhost:8180}/realms/restockoffice/protocol/openid-connect/auth
+          token-uri: ${KEYCLOAK_SERVER_URL:http://localhost:8180}/realms/restockoffice/protocol/openid-connect/token
+          user-info-uri: ${KEYCLOAK_SERVER_URL:http://localhost:8180}/realms/restockoffice/protocol/openid-connect/userinfo
+          jwk-set-uri: ${KEYCLOAK_SERVER_URL:http://localhost:8180}/realms/restockoffice/protocol/openid-connect/certs
+          user-name-attribute: preferred_username
+    resourceserver:
+      jwt:
+        principal-claim-name: preferred_username
+        # Browser-flow tokens carry iss = KEYCLOAK_BROWSER_URL; validate against that.
+        issuer-uri: ${KEYCLOAK_BROWSER_URL:http://localhost:8180}/realms/restockoffice
+        # ...but fetch JWKs server-side (skips OIDC discovery so the container does
+        # not need to reach the browser URL at startup).
+        jwk-set-uri: ${KEYCLOAK_SERVER_URL:http://localhost:8180}/realms/restockoffice/protocol/openid-connect/certs
+
+# CIB seven Keycloak Identity Provider Plugin (server-to-server)
+plugin.identity.keycloak:
+  keycloakIssuerUrl: ${KEYCLOAK_SERVER_URL:http://localhost:8180}/realms/restockoffice
+  keycloakAdminUrl: ${KEYCLOAK_SERVER_URL:http://localhost:8180}/admin/realms/restockoffice
+  clientId: restockoffice-backend
+  clientSecret: restockoffice-backend-secret
+  useEmailAsCamundaUserId: false
+  useUsernameAsCamundaUserId: true
+  useGroupPathAsCamundaGroupId: true
+  enforceSubgroupsInGroupQuery: true
+  administratorGroupName: camunda-admin
+  administratorUserId: demo@restockoffice.local
+  disableSSLCertificateValidation: true
+
+cibseven:
+  bpm:
+    oauth2:
+      identity-provider:
+        enabled: false
+        group-name-attribute:
+  webclient:
+    engineRest:
+      url: http://localhost:8080
+      path: /engine-rest
+    engine-rest:
+      url: http://localhost:8080
+      path: /engine-rest
+    authentication:
+      jwtSecret: M7LY1Qb8pRbeI0qJsqq37fQ7CBhL+ov8GOfkEHhFyVQ3Bn3RikqntClltNBMHIjIGAavGhzRnyvCRMeosQofP8wYRm7IIH9mYkDPmpzP6EZpTQIx1DUIde2GegnlmzVVQ3wZX1uuVY5rD/+VPagLoWlvMxTlaeApubVcQvqGPOE=
+      tokenValidMinutes: 30
+      tokenProlongMinutes: 10
+    sso:
+      active: true
+      endpoints:
+        authorization: ${KEYCLOAK_BROWSER_URL:http://localhost:8180}/realms/restockoffice/protocol/openid-connect/auth
+        token: ${KEYCLOAK_SERVER_URL:http://localhost:8180}/realms/restockoffice/protocol/openid-connect/token
+        jwks: ${KEYCLOAK_SERVER_URL:http://localhost:8180}/realms/restockoffice/protocol/openid-connect/certs
+        user: ${KEYCLOAK_SERVER_URL:http://localhost:8180}/realms/restockoffice/protocol/openid-connect/userinfo
+      clientId: restockoffice-backend
+      clientSecret: restockoffice-backend-secret
+      scopes: openid email profile
+      userIdProperty: preferred_username
+      userNameProperty: name
+      accessTokenToEngineRest: true
+    bpm:
+      provider: org.cibseven.webapp.providers.SevenProvider
+    user:
+      provider: org.cibseven.webapp.auth.KeycloakUserProvider
