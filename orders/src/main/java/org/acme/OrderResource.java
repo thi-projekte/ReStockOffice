@@ -11,6 +11,7 @@ import java.util.List;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -200,6 +201,7 @@ public class OrderResource {
                     "variables", variables
             );
 
+            System.out.println("Starting abo confirmation process at " + aboConfirmationProcessStartUrl);
             var request = client
                     .target(aboConfirmationProcessStartUrl)
                     .request(MediaType.APPLICATION_JSON);
@@ -209,6 +211,15 @@ public class OrderResource {
 
             try (Response response = request.post(Entity.json(body))) {
                 if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+                    String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
+                    System.out.println(
+                            "AboConfirmationProcess failed: HTTP "
+                                    + response.getStatus()
+                                    + " from "
+                                    + aboConfirmationProcessStartUrl
+                                    + " body="
+                                    + responseBody
+                    );
                     throw new WebApplicationException(
                             "AboConfirmationProcess konnte nicht gestartet werden (HTTP "
                                     + response.getStatus()
@@ -217,6 +228,18 @@ public class OrderResource {
                     );
                 }
             }
+        } catch (ProcessingException exception) {
+            System.out.println(
+                    "AboConfirmationProcess request failed at "
+                            + aboConfirmationProcessStartUrl
+                            + ": "
+                            + exception.getMessage()
+            );
+            throw new WebApplicationException(
+                    "AboConfirmationProcess konnte nicht erreicht werden.",
+                    exception,
+                    Response.Status.BAD_GATEWAY
+            );
         }
     }
 
