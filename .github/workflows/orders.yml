@@ -54,9 +54,9 @@ jobs:
           push: ${{ github.event_name == 'push' }}
           no-cache: true
           tags: |
+            ghcr.io/${{ github.repository_owner }}/restockoffice-orders:latest
             ghcr.io/${{ github.repository_owner }}/restockoffice-orders:2.0.8
             ghcr.io/${{ github.repository_owner }}/restockoffice-orders:${{ github.sha }}
-
 
       - name: Check native binary exists
         working-directory: orders
