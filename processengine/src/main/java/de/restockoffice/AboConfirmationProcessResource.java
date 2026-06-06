@@ -18,6 +18,7 @@ import java.util.Map;
 public class AboConfirmationProcessResource {
 
     private static final String PROCESS_DEFINITION_KEY = "Process_aboConfirmation";
+    private static final String ORDER_SNAPSHOTS_VARIABLE = "orderSnapshots";
 
     private final RuntimeService runtimeService;
     private final Object startLock = new Object();
@@ -36,6 +37,7 @@ public class AboConfirmationProcessResource {
 
         Map<String, Object> variables = toProcessVariables(request.variables());
         String orderId = stringValue(variables.get("orderId"));
+        Map<String, Map<String, Object>> orderSnapshots = appendOrderSnapshot(null, orderId, variables);
 
         synchronized (startLock) {
             List<ProcessInstance> activeProcesses = runtimeService
@@ -49,12 +51,19 @@ public class AboConfirmationProcessResource {
             if (activeProcess != null) {
                 String processInstanceId = activeProcess.getProcessInstanceId();
                 String currentOrderIds = stringValue(runtimeService.getVariable(processInstanceId, "orderIdsCsv"));
+                orderSnapshots = appendOrderSnapshot(
+                        runtimeService.getVariable(processInstanceId, ORDER_SNAPSHOTS_VARIABLE),
+                        orderId,
+                        variables
+                );
                 variables.put("orderIdsCsv", appendOrderId(currentOrderIds, orderId));
+                variables.put(ORDER_SNAPSHOTS_VARIABLE, orderSnapshots);
                 runtimeService.setVariables(processInstanceId, variables);
                 return ResponseEntity.ok(new AboConfirmationProcessResponse(processInstanceId, false));
             }
 
             variables.put("orderIdsCsv", appendOrderId("", orderId));
+            variables.put(ORDER_SNAPSHOTS_VARIABLE, orderSnapshots);
             ProcessInstance processInstance = runtimeService
                     .createProcessInstanceByKey(PROCESS_DEFINITION_KEY)
                     .businessKey(request.businessKey())
@@ -97,6 +106,48 @@ public class AboConfirmationProcessResource {
         }
 
         return String.join(",", orderIds);
+    }
+
+    private Map<String, Map<String, Object>> appendOrderSnapshot(
+            Object existingSnapshots,
+            String orderId,
+            Map<String, Object> variables
+    ) {
+        Map<String, Map<String, Object>> snapshots = new LinkedHashMap<>();
+
+        if (existingSnapshots instanceof Map<?, ?> existingMap) {
+            existingMap.forEach((key, value) -> {
+                if (key == null || !(value instanceof Map<?, ?> snapshotMap)) {
+                    return;
+                }
+
+                Map<String, Object> snapshot = new LinkedHashMap<>();
+                snapshotMap.forEach((snapshotKey, snapshotValue) -> {
+                    if (snapshotKey != null) {
+                        snapshot.put(String.valueOf(snapshotKey), snapshotValue);
+                    }
+                });
+                snapshots.put(String.valueOf(key), snapshot);
+            });
+        }
+
+        if (!isBlank(orderId)) {
+            Map<String, Object> snapshot = new LinkedHashMap<>();
+            putIfPresent(snapshot, "orderId", variables.get("orderId"));
+            putIfPresent(snapshot, "customerId", variables.get("customerId"));
+            putIfPresent(snapshot, "productId", variables.get("productId"));
+            putIfPresent(snapshot, "quantity", variables.get("quantity"));
+            putIfPresent(snapshot, "interval", variables.get("interval"));
+            snapshots.put(orderId, snapshot);
+        }
+
+        return snapshots;
+    }
+
+    private void putIfPresent(Map<String, Object> target, String key, Object value) {
+        if (value != null) {
+            target.put(key, value);
+        }
     }
 
     private String stringValue(Object value) {

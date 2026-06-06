@@ -140,29 +140,30 @@ public class MailDataEnrichmentService {
     private EnrichmentContext loadContext(DelegateExecution execution, String requestedOrderId) {
         String authorizationHeader = stringVariable(execution, "authorizationHeader");
         String orderId = firstNonBlank(requestedOrderId, stringVariable(execution, "orderId"), stringVariable(execution, "deliveredOrderId"));
-        String customerId = stringVariable(execution, "customerId");
-        String productId = stringVariable(execution, "productId");
+        OrderSnapshot orderSnapshot = orderSnapshot(execution, orderId);
+        String customerId = firstNonBlank(orderSnapshot.customerId(), stringVariable(execution, "customerId"));
+        String productId = firstNonBlank(orderSnapshot.productId(), stringVariable(execution, "productId"));
         String deliveryId = firstNonBlank(stringVariable(execution, "deliveredDeliveryId"), stringVariable(execution, "deliveryId"));
 
         OrderDto order = loadOrder(orderId, authorizationHeader);
         if (order != null) {
-            customerId = firstNonBlank(customerId, order.customerId);
-            productId = firstNonBlank(productId, order.productId);
+            customerId = firstNonBlank(order.customerId, customerId);
+            productId = firstNonBlank(order.productId, productId);
         }
 
         DeliveryDetailDto delivery = loadDelivery(deliveryId, authorizationHeader);
         if (delivery != null) {
-            customerId = firstNonBlank(customerId, delivery.userId);
-            orderId = firstNonBlank(orderId, delivery.orderId);
+            customerId = firstNonBlank(delivery.userId, customerId);
+            orderId = firstNonBlank(delivery.orderId, orderId);
             if (delivery.items != null && !delivery.items.isEmpty()) {
-                productId = firstNonBlank(productId, delivery.items.get(0).articleNumber);
+                productId = firstNonBlank(delivery.items.get(0).articleNumber, productId);
             }
         }
 
         UserDto user = loadUser(customerId, authorizationHeader);
         ArticleDto article = loadArticle(productId);
 
-        return new EnrichmentContext(orderId, customerId, productId, order, user, article, delivery);
+        return new EnrichmentContext(orderId, customerId, productId, orderSnapshot, order, user, article, delivery);
     }
 
     private List<EnrichmentContext> loadAboConfirmationContexts(DelegateExecution execution) {
@@ -196,6 +197,29 @@ public class MailDataEnrichmentService {
         return orderIds;
     }
 
+    private OrderSnapshot orderSnapshot(DelegateExecution execution, String orderId) {
+        if (isBlank(orderId)) {
+            return OrderSnapshot.empty();
+        }
+
+        Object snapshots = execution.getVariable("orderSnapshots");
+        if (!(snapshots instanceof Map<?, ?> snapshotsMap)) {
+            return OrderSnapshot.empty();
+        }
+
+        Object snapshot = snapshotsMap.get(orderId);
+        if (!(snapshot instanceof Map<?, ?> snapshotMap)) {
+            return OrderSnapshot.empty();
+        }
+
+        return new OrderSnapshot(
+                stringValue(snapshotMap.get("customerId")),
+                stringValue(snapshotMap.get("productId")),
+                integerValue(snapshotMap.get("quantity")),
+                integerValue(snapshotMap.get("interval"))
+        );
+    }
+
     private List<Map<String, Object>> buildAboOrderItems(DelegateExecution execution, List<EnrichmentContext> contexts) {
         return contexts.stream()
                 .map(context -> {
@@ -206,8 +230,8 @@ public class MailDataEnrichmentService {
                     Map<String, Object> orderItem = new HashMap<>();
                     orderItem.put("name", firstNonBlank(article != null ? article.name : null, "Artikel " + context.productId()));
                     orderItem.put("articleNumber", firstNonBlank(article != null ? article.productId : null, context.productId()));
-                    orderItem.put("quantity", formatOrderItemQuantity(resolveQuantityForItem(execution, order), article));
-                    orderItem.put("intervalDescription", formatInterval(resolveIntervalForItem(execution, order)));
+                    orderItem.put("quantity", formatOrderItemQuantity(resolveQuantityForItem(context), article));
+                    orderItem.put("intervalDescription", formatInterval(resolveIntervalForItem(context)));
                     orderItem.put("nextDeliveryDate", formatDate(deliveryDate));
                     return orderItem;
                 })
@@ -391,12 +415,14 @@ public class MailDataEnrichmentService {
         return order != null && order.quantity != null ? order.quantity : 1;
     }
 
-    private int resolveQuantityForItem(DelegateExecution execution, OrderDto order) {
+    private int resolveQuantityForItem(EnrichmentContext context) {
+        OrderDto order = context.order();
         if (order != null && order.quantity != null) {
             return order.quantity;
         }
 
-        return resolveQuantity(execution, order);
+        Integer snapshotQuantity = context.orderSnapshot().quantity();
+        return snapshotQuantity != null ? snapshotQuantity : 1;
     }
 
     private int resolveInterval(DelegateExecution execution, OrderDto order) {
@@ -414,12 +440,14 @@ public class MailDataEnrichmentService {
         return order != null && order.interval != null ? order.interval : 1;
     }
 
-    private int resolveIntervalForItem(DelegateExecution execution, OrderDto order) {
+    private int resolveIntervalForItem(EnrichmentContext context) {
+        OrderDto order = context.order();
         if (order != null && order.interval != null) {
             return order.interval;
         }
 
-        return resolveInterval(execution, order);
+        Integer snapshotInterval = context.orderSnapshot().interval();
+        return snapshotInterval != null ? snapshotInterval : 1;
     }
 
     private LocalDate parseDate(String value) {
@@ -540,6 +568,26 @@ public class MailDataEnrichmentService {
     private String stringVariable(DelegateExecution execution, String variableName) {
         Object value = execution.getVariable(variableName);
         return value != null ? String.valueOf(value) : null;
+    }
+
+    private String stringValue(Object value) {
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private Integer integerValue(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+
+        if (value instanceof String stringValue && !stringValue.isBlank()) {
+            try {
+                return Integer.parseInt(stringValue.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private void setIfBlank(DelegateExecution execution, String variableName, String value) {
@@ -678,11 +726,23 @@ public class MailDataEnrichmentService {
             String orderId,
             String customerId,
             String productId,
+            OrderSnapshot orderSnapshot,
             OrderDto order,
             UserDto user,
             ArticleDto article,
             DeliveryDetailDto delivery
     ) {
+    }
+
+    private record OrderSnapshot(
+            String customerId,
+            String productId,
+            Integer quantity,
+            Integer interval
+    ) {
+        static OrderSnapshot empty() {
+            return new OrderSnapshot(null, null, null, null);
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
