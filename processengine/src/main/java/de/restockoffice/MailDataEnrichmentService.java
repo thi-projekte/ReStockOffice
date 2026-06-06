@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -34,6 +35,8 @@ public class MailDataEnrichmentService {
 
     private static final Logger log = LoggerFactory.getLogger(MailDataEnrichmentService.class);
     private static final Locale GERMAN = Locale.GERMANY;
+    private static final ZoneId UTC = ZoneId.of("UTC");
+    private static final ZoneId BERLIN = ZoneId.of("Europe/Berlin");
     private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy", GERMAN);
     private static final DateTimeFormatter DISPLAY_DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm 'Uhr'", GERMAN);
 
@@ -224,18 +227,36 @@ public class MailDataEnrichmentService {
         return contexts.stream()
                 .map(context -> {
                     OrderDto order = context.order();
-                    ArticleDto article = context.article();
+                    String productId = resolveProductIdForItem(context);
+                    ArticleDto article = articleForProductId(context.article(), productId);
                     LocalDate deliveryDate = resolveDeliveryDate(context);
 
                     Map<String, Object> orderItem = new HashMap<>();
-                    orderItem.put("name", firstNonBlank(article != null ? article.name : null, "Artikel " + context.productId()));
-                    orderItem.put("articleNumber", firstNonBlank(article != null ? article.productId : null, context.productId()));
+                    orderItem.put("name", firstNonBlank(article != null ? article.name : null, "Artikel " + productId));
+                    orderItem.put("articleNumber", firstNonBlank(article != null ? article.productId : null, productId));
                     orderItem.put("quantity", formatOrderItemQuantity(resolveQuantityForItem(context), article));
                     orderItem.put("intervalDescription", formatInterval(resolveIntervalForItem(context)));
                     orderItem.put("nextDeliveryDate", formatDate(deliveryDate));
                     return orderItem;
                 })
                 .toList();
+    }
+
+    private String resolveProductIdForItem(EnrichmentContext context) {
+        OrderDto order = context.order();
+        return firstNonBlank(
+                order != null ? order.productId : null,
+                context.orderSnapshot().productId(),
+                context.productId()
+        );
+    }
+
+    private ArticleDto articleForProductId(ArticleDto article, String productId) {
+        if (article != null && !isBlank(article.productId) && article.productId.equals(productId)) {
+            return article;
+        }
+
+        return loadArticle(productId);
     }
 
     private OrderDto loadOrder(String orderId, String authorizationHeader) {
@@ -263,8 +284,17 @@ public class MailDataEnrichmentService {
             return null;
         }
 
+        UserDto customer = loadUserFromPath("customer", customerId, authorizationHeader);
+        if (customer != null) {
+            return customer;
+        }
+
+        return loadUserFromPath("customerForRestocker", customerId, authorizationHeader);
+    }
+
+    private UserDto loadUserFromPath(String path, String customerId, String authorizationHeader) {
         try {
-            String url = trimTrailingSlash(usersServiceBaseUrl) + "/customerForRestocker?userId=" + encode(customerId);
+            String url = trimTrailingSlash(usersServiceBaseUrl) + "/" + path + "?userId=" + encode(customerId);
             ResponseEntity<UserDto> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
@@ -273,7 +303,7 @@ public class MailDataEnrichmentService {
             );
             return response.getBody();
         } catch (RestClientException exception) {
-            log.warn("Could not enrich mail data with customer {}", customerId, exception);
+            log.warn("Could not enrich mail data with customer {} via {}", customerId, path, exception);
             return null;
         }
     }
@@ -480,7 +510,10 @@ public class MailDataEnrichmentService {
     }
 
     private String formatDateTime(LocalDateTime dateTime) {
-        return dateTime.format(DISPLAY_DATE_TIME);
+        return dateTime
+                .atZone(UTC)
+                .withZoneSameInstant(BERLIN)
+                .format(DISPLAY_DATE_TIME);
     }
 
     private String formatDayName(LocalDate date) {
