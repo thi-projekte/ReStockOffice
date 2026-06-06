@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -41,6 +42,9 @@ public class OrderResource {
 
     @ConfigProperty(name = "processengine.abo-confirmation-window-duration", defaultValue = "PT10M")
     String aboConfirmationWindowDuration;
+
+    @ConfigProperty(name = "usersservice.base-url", defaultValue = "https://users.restockoffice.de")
+    String usersServiceBaseUrl;
 
     @Context
     HttpHeaders headers;
@@ -278,6 +282,18 @@ public class OrderResource {
             variables.put("authorizationHeader", Map.of("value", authHeader, "type", "String"));
         }
 
+        CustomerMailProfile customer = loadCustomerProfile(customerId, authHeader);
+        if (customer != null) {
+            String deliveryWindow = formatDeliveryWindow(customer.deliveryTime);
+            String deliveryLocation = formatDeliveryLocation(customer);
+            if (deliveryWindow != null) {
+                variables.put("deliveryWindow", Map.of("value", deliveryWindow, "type", "String"));
+            }
+            if (deliveryLocation != null) {
+                variables.put("deliveryLocation", Map.of("value", deliveryLocation, "type", "String"));
+            }
+        }
+
         String recipientEmail = tokenClaim("email");
         if (recipientEmail != null) {
             variables.put("recipientEmail", Map.of("value", recipientEmail, "type", "String"));
@@ -289,6 +305,105 @@ public class OrderResource {
         }
 
         return variables;
+    }
+
+    private CustomerMailProfile loadCustomerProfile(String customerId, String authHeader) {
+        if (customerId == null || customerId.isBlank() || authHeader == null || authHeader.isBlank()) {
+            return null;
+        }
+
+        try (Client client = ClientBuilder.newClient()) {
+            try (Response response = client
+                    .target(trimTrailingSlash(usersServiceBaseUrl))
+                    .path("customer")
+                    .queryParam("userId", customerId)
+                    .request(MediaType.APPLICATION_JSON)
+                    .header("Authorization", authHeader)
+                    .get()) {
+                if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+                    String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
+                    System.out.println(
+                            "Customer profile enrichment failed: HTTP "
+                                    + response.getStatus()
+                                    + " body="
+                                    + responseBody
+                    );
+                    return null;
+                }
+
+                return response.readEntity(CustomerMailProfile.class);
+            }
+        } catch (ProcessingException exception) {
+            System.out.println("Customer profile enrichment request failed: " + exception.getMessage());
+            return null;
+        }
+    }
+
+    private String formatDeliveryWindow(Object deliveryTime) {
+        if (deliveryTime == null || String.valueOf(deliveryTime).isBlank()) {
+            return null;
+        }
+
+        String normalized = String.valueOf(deliveryTime).trim();
+        if (normalized.toLowerCase().contains("uhr") || normalized.contains("-") || normalized.toLowerCase().contains("bis")) {
+            return normalized;
+        }
+
+        if (normalized.matches("\\d{1,2}")) {
+            return String.format("%02d:00 Uhr", Integer.parseInt(normalized));
+        }
+
+        if (normalized.matches("\\d{1,2}:\\d{2}")) {
+            return normalized + " Uhr";
+        }
+
+        return normalized;
+    }
+
+    private String formatDeliveryLocation(CustomerMailProfile customer) {
+        if (customer == null) {
+            return null;
+        }
+
+        String streetLine = joinWithSpace(customer.street, customer.houseNumber);
+        String cityLine = joinWithSpace(customer.postalCode, customer.city);
+        return firstNonBlank(joinWithComma(streetLine, cityLine), customer.companyName);
+    }
+
+    private String joinWithSpace(String... values) {
+        StringBuilder builder = new StringBuilder();
+        for (String value : values) {
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            if (!builder.isEmpty()) {
+                builder.append(' ');
+            }
+            builder.append(value.trim());
+        }
+        return builder.toString();
+    }
+
+    private String joinWithComma(String... values) {
+        StringBuilder builder = new StringBuilder();
+        for (String value : values) {
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            if (!builder.isEmpty()) {
+                builder.append(", ");
+            }
+            builder.append(value.trim());
+        }
+        return builder.toString();
+    }
+
+    private String trimTrailingSlash(String value) {
+        if (value == null || !value.endsWith("/")) {
+            return value;
+        }
+
+        return value.substring(0, value.length() - 1);
     }
 
     private String processVariableString(Map<String, Object> variables, String variableName, String fallback) {
@@ -342,5 +457,15 @@ public class OrderResource {
         }
 
         return "anonymous";
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class CustomerMailProfile {
+        public String postalCode;
+        public String city;
+        public String street;
+        public String houseNumber;
+        public String companyName;
+        public Object deliveryTime;
     }
 }
