@@ -53,6 +53,17 @@ export interface Tour {
   }>;
 }
 
+export interface DeliveryOverviewEntry {
+  id: string;
+  deliveryDate: string;
+  status: string;
+}
+
+export interface CustomerDeliveryOverview {
+  lastDelivery: DeliveryOverviewEntry | null;
+  nextDelivery: DeliveryOverviewEntry | null;
+}
+
 function stringifyPrimitive(value: unknown) {
   if (typeof value === "string") {
     return value;
@@ -230,7 +241,7 @@ function deriveDeliveryStatus(detail: Record<string, unknown>) {
 
 function resolveToken(token?: string) {
   if (!token) {
-    throw new Error("Kein Keycloak-Token fuer Lieferungen verfuegbar.");
+    throw new Error("Kein Keycloak-Token für Lieferungen verfügbar.");
   }
 
   return token;
@@ -282,7 +293,7 @@ async function requestJson<T>(
     response = await fetch(url, options);
   } catch {
     throw new Error(
-      `Die Delivery-API konnte nicht erreicht werden: ${url}. Bitte pruefe, ob der Deliveries-Service laeuft und ob CORS/HTTPS fuer die SPA-Origin erlaubt ist.`,
+      `Die Delivery-API konnte nicht erreicht werden: ${url}. Bitte prüfe, ob der Deliveries-Service läuft und ob CORS/HTTPS für die SPA-Origin erlaubt ist.`,
     );
   }
 
@@ -331,7 +342,7 @@ export async function syncTodayOrders({
     });
   } catch {
     throw new Error(
-      `Die Delivery-API konnte nicht erreicht werden: ${url}. Bitte pruefe, ob der Deliveries-Service laeuft und ob CORS/HTTPS fuer die SPA-Origin erlaubt ist.`,
+      `Die Delivery-API konnte nicht erreicht werden: ${url}. Bitte prüfe, ob der Deliveries-Service läuft und ob CORS/HTTPS für die SPA-Origin erlaubt ist.`,
     );
   }
 
@@ -502,7 +513,7 @@ export async function confirmDelivery({
       method: "POST",
       headers: createHeaders(resolvedToken),
     },
-    "Zustellung konnte nicht bestaetigt werden",
+    "Zustellung konnte nicht bestätigt werden",
   );
 }
 
@@ -545,4 +556,33 @@ export async function endTour({
     },
     "Tour konnte nicht beendet werden",
   );
+}
+
+export async function loadCustomerDeliveryOverview({
+   customerId,
+   token,
+ }: {
+  customerId: string;
+  token?: string;
+}) {
+  const resolvedToken = resolveToken(token);
+
+  const url = `${DELIVERIES_API_URL}/customers/${customerId}/delivery-overview`;
+
+  return await requestJson<CustomerDeliveryOverview>(
+      url,
+      {
+        method: "GET",
+        headers: createHeaders(resolvedToken),
+      },
+      "Lieferübersicht konnte nicht geladen werden",
+  );
+}
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("de-DE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(date));
 }
