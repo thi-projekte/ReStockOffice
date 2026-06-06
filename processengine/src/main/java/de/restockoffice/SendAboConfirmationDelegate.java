@@ -42,7 +42,15 @@ public class SendAboConfirmationDelegate implements JavaDelegate {
         request.put("manageSubscriptionUrl", execution.getVariable("manageSubscriptionUrl"));
 
         Object orderItems = execution.getVariable("orderItems");
-        if (orderItems instanceof List<?> list && !list.isEmpty()) {
+        if (orderItems instanceof List<?> list) {
+            if (list.isEmpty()) {
+                log.info(
+                        "Skipping abo confirmation for {} because all changes were cancelled within the confirmation window",
+                        execution.getVariable("recipientEmail")
+                );
+                return;
+            }
+
             request.put("orderItems", list);
         } else {
             Map<String, Object> orderItem = new HashMap<>();

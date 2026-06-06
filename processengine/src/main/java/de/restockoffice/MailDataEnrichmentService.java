@@ -218,6 +218,9 @@ public class MailDataEnrichmentService {
         return new OrderSnapshot(
                 stringValue(snapshotMap.get("customerId")),
                 stringValue(snapshotMap.get("productId")),
+                stringValue(snapshotMap.get("firstChangeType")),
+                stringValue(snapshotMap.get("changeType")),
+                stringValue(snapshotMap.get("status")),
                 integerValue(snapshotMap.get("quantity")),
                 integerValue(snapshotMap.get("interval"))
         );
@@ -225,6 +228,7 @@ public class MailDataEnrichmentService {
 
     private List<Map<String, Object>> buildAboOrderItems(DelegateExecution execution, List<EnrichmentContext> contexts) {
         return contexts.stream()
+                .filter(context -> !isTransientCreatedThenCancelled(context))
                 .map(context -> {
                     OrderDto order = context.order();
                     String productId = resolveProductIdForItem(context);
@@ -234,12 +238,29 @@ public class MailDataEnrichmentService {
                     Map<String, Object> orderItem = new HashMap<>();
                     orderItem.put("name", firstNonBlank(article != null ? article.name : null, "Artikel " + productId));
                     orderItem.put("articleNumber", firstNonBlank(article != null ? article.productId : null, productId));
-                    orderItem.put("quantity", formatOrderItemQuantity(resolveQuantityForItem(context), article));
-                    orderItem.put("intervalDescription", formatInterval(resolveIntervalForItem(context)));
-                    orderItem.put("nextDeliveryDate", formatDate(deliveryDate));
+                    if (isCancelled(context)) {
+                        orderItem.put("quantity", "Deabonniert");
+                        orderItem.put("statusLabel", "Deabonniert");
+                    } else {
+                        orderItem.put("quantity", formatOrderItemQuantity(resolveQuantityForItem(context), article));
+                        orderItem.put("intervalDescription", formatInterval(resolveIntervalForItem(context)));
+                        orderItem.put("nextDeliveryDate", formatDate(deliveryDate));
+                    }
                     return orderItem;
                 })
                 .toList();
+    }
+
+    private boolean isTransientCreatedThenCancelled(EnrichmentContext context) {
+        return isCancelled(context) && "CREATED".equalsIgnoreCase(context.orderSnapshot().firstChangeType());
+    }
+
+    private boolean isCancelled(EnrichmentContext context) {
+        OrderDto order = context.order();
+        return "CANCELLED".equalsIgnoreCase(firstNonBlank(
+                order != null ? order.status : null,
+                context.orderSnapshot().status()
+        ));
     }
 
     private String resolveProductIdForItem(EnrichmentContext context) {
@@ -289,12 +310,20 @@ public class MailDataEnrichmentService {
             return customer;
         }
 
+        customer = loadUserFromPath("customer/me", null, authorizationHeader);
+        if (customer != null) {
+            return customer;
+        }
+
         return loadUserFromPath("customerForRestocker", customerId, authorizationHeader);
     }
 
     private UserDto loadUserFromPath(String path, String customerId, String authorizationHeader) {
         try {
-            String url = trimTrailingSlash(usersServiceBaseUrl) + "/" + path + "?userId=" + encode(customerId);
+            String url = trimTrailingSlash(usersServiceBaseUrl) + "/" + path;
+            if (!isBlank(customerId)) {
+                url += "?userId=" + encode(customerId);
+            }
             ResponseEntity<UserDto> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
@@ -699,7 +728,7 @@ public class MailDataEnrichmentService {
     }
 
     private String userDeliveryTime(UserDto user) {
-        return user != null ? user.deliveryTime : null;
+        return user != null ? stringValue(user.deliveryTime) : null;
     }
 
     private String userDeliveryHint(UserDto user) {
@@ -770,11 +799,14 @@ public class MailDataEnrichmentService {
     private record OrderSnapshot(
             String customerId,
             String productId,
+            String firstChangeType,
+            String changeType,
+            String status,
             Integer quantity,
             Integer interval
     ) {
         static OrderSnapshot empty() {
-            return new OrderSnapshot(null, null, null, null);
+            return new OrderSnapshot(null, null, null, null, null, null, null);
         }
     }
 
@@ -807,7 +839,7 @@ public class MailDataEnrichmentService {
         public String roleInCompany;
         public String deliveryHint;
         public String deliveryDay;
-        public String deliveryTime;
+        public Object deliveryTime;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

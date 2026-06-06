@@ -145,6 +145,7 @@ public class OrderResource {
         if (order == null) {
             throw new NotFoundException("Order nicht gefunden: " + id);
         }
+        order.status = input.status != null && !input.status.isBlank() ? input.status : order.status;
         order.quantity = input.quantity;
         order.interval = input.interval;
         order.updatedAt = LocalDateTime.now();
@@ -153,6 +154,12 @@ public class OrderResource {
         String authHeader = headers.getHeaderString("Authorization");
         Map<String, Object> variables = processVariables(order, authHeader);
         variables.put("updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String"));
+        variables.put("changeType", Map.of(
+                "value",
+                "CANCELLED".equalsIgnoreCase(order.status) ? "CANCELLED" : "UPDATED",
+                "type",
+                "String"
+        ));
 
         startAboConfirmationProcess(order, authHeader, variables);
 
@@ -185,7 +192,9 @@ public class OrderResource {
 
         // Camunda Prozess mit Token starten
         String authHeader = headers.getHeaderString("Authorization");
-        startAboConfirmationProcess(order, authHeader, processVariables(order, authHeader));
+        Map<String, Object> variables = processVariables(order, authHeader);
+        variables.put("changeType", Map.of("value", "CREATED", "type", "String"));
+        startAboConfirmationProcess(order, authHeader, variables);
 
         return order;
     }
@@ -258,6 +267,7 @@ public class OrderResource {
         variables.put("aboConfirmationWindowDuration", Map.of("value", aboConfirmationWindowDuration, "type", "String"));
         variables.put("customerId", Map.of("value", order.customerId, "type", "String"));
         variables.put("productId", Map.of("value", order.productId, "type", "String"));
+        variables.put("status", Map.of("value", order.status, "type", "String"));
         variables.put("quantity", Map.of("value", order.quantity, "type", "Integer"));
         variables.put("interval", Map.of("value", order.interval, "type", "Integer"));
 

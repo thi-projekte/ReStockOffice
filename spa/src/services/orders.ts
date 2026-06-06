@@ -65,6 +65,7 @@ interface UpsertOrderPayload extends OrdersRequestContext {
 
 interface DeleteOrderPayload extends OrdersRequestContext {
   productId: string;
+  existingItem?: Pick<RestockOrder, "id" | "quantity" | "interval">;
 }
 
 interface MarketplaceCustomerData {
@@ -663,7 +664,9 @@ function createSubscriptionFromOrders(
   orders: RestockOrder[],
   customerId: string,
 ): Subscription {
-  const customerOrders = orders.filter((order) => order.customerId === customerId);
+  const customerOrders = orders.filter(
+    (order) => order.customerId === customerId && order.status.toUpperCase() === "ACTIVE",
+  );
   const firstOrder = customerOrders[0];
   const today = formatDate(new Date());
 
@@ -1070,6 +1073,7 @@ export async function deleteSubscriptionOrder({
   customerId,
   token,
   productId,
+  existingItem,
 }: DeleteOrderPayload): Promise<void> {
   if (!useAPIs) {
     if (!customerId) {
@@ -1091,15 +1095,19 @@ export async function deleteSubscriptionOrder({
 
   let response: Response;
 
+  const orderUrl = existingItem?.id
+    ? `${ORDERS_API_URL}/${existingItem.id}`
+    : ORDERS_API_URL;
+
   try {
-    response = await fetch(ORDERS_API_URL, {
-      method: "POST",
+    response = await fetch(orderUrl, {
+      method: existingItem?.id ? "PUT" : "POST",
       headers: createHeaders(resolvedToken),
       body: JSON.stringify({
         productId,
         status: "CANCELLED",
-        quantity: 0,
-        interval: 1,
+        quantity: existingItem?.quantity ?? 1,
+        interval: existingItem?.interval ?? 1,
       }),
     });
   } catch {

@@ -132,10 +132,17 @@ public class AboConfirmationProcessResource {
         }
 
         if (!isBlank(orderId)) {
+            Map<String, Object> existingSnapshot = snapshots.get(orderId);
             Map<String, Object> snapshot = new LinkedHashMap<>();
             putIfPresent(snapshot, "orderId", variables.get("orderId"));
             putIfPresent(snapshot, "customerId", variables.get("customerId"));
             putIfPresent(snapshot, "productId", variables.get("productId"));
+            putIfPresent(snapshot, "firstChangeType", firstNonBlank(
+                    stringValue(existingSnapshot != null ? existingSnapshot.get("firstChangeType") : null),
+                    stringValue(variables.get("changeType"))
+            ));
+            putIfPresent(snapshot, "changeType", variables.get("changeType"));
+            putIfPresent(snapshot, "status", variables.get("status"));
             putIfPresent(snapshot, "quantity", variables.get("quantity"));
             putIfPresent(snapshot, "interval", variables.get("interval"));
             snapshots.put(orderId, snapshot);
@@ -152,6 +159,20 @@ public class AboConfirmationProcessResource {
 
     private String stringValue(Object value) {
         return value != null ? String.valueOf(value) : null;
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+
+        for (String value : values) {
+            if (!isBlank(value)) {
+                return value.trim();
+            }
+        }
+
+        return null;
     }
 
     private boolean isBlank(String value) {

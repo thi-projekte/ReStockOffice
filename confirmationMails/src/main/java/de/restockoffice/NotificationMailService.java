@@ -140,16 +140,21 @@ public class NotificationMailService {
                 html.append(ITEM_BORDER_STYLE);
             }
             html.append("\">")
-                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">").append(escapeHtml(item.name())).append(DIV_CLOSE)
+                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">")
+                    .append(escapeHtml(item.name()))
+                    .append(DIV_CLOSE)
                     .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Artikel-Nr. ")
                     .append(escapeHtml(item.articleNumber()))
-                    .append(DIV_CLOSE)
-                    .append("<div style=\"font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Intervall: ")
-                    .append(escapeHtml(item.intervalDescription()))
-                    .append(DIV_CLOSE)
-                    .append("<div style=\"font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Nächste Lieferung: ")
-                    .append(escapeHtml(item.nextDeliveryDate()))
-                    .append("</div></td><td align=\"right\" class=\"qty-cell\" style=\"width:98px;padding:14px 0 14px 16px;vertical-align:top;text-align:right;");
+                    .append(DIV_CLOSE);
+            if (!isBlank(item.statusLabel())) {
+                html.append("<div style=\"font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">Status: ")
+                        .append(escapeHtml(item.statusLabel()))
+                        .append(DIV_CLOSE);
+            } else {
+                appendOptionalOrderItemLine(html, "Intervall", item.intervalDescription());
+                appendOptionalOrderItemLine(html, "Nächste Lieferung", item.nextDeliveryDate());
+            }
+            html.append("</td><td align=\"right\" class=\"qty-cell\" style=\"width:98px;padding:14px 0 14px 16px;vertical-align:top;text-align:right;");
             if (!isLast) {
                 html.append(ITEM_BORDER_STYLE);
             }
@@ -158,6 +163,18 @@ public class NotificationMailService {
                     .append("</span></td></tr>");
         }
         return html.toString();
+    }
+
+    private void appendOptionalOrderItemLine(StringBuilder html, String label, String value) {
+        if (isBlank(value)) {
+            return;
+        }
+
+        html.append("<div style=\"font-size:14px;line-height:1.55;color:#5f726b;word-break:break-word;\">")
+                .append(escapeHtml(label))
+                .append(": ")
+                .append(escapeHtml(value))
+                .append(DIV_CLOSE);
     }
 
     private String buildDeliveryItemsHtml(List<DeliveryItem> items) {
@@ -235,7 +252,11 @@ public class NotificationMailService {
     }
 
     private String defaultIfBlank(String value, String fallback) {
-        return value == null || value.isBlank() ? fallback : value;
+        return isBlank(value) ? fallback : value;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private String escapeHtml(String value) {
