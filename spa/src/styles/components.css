@@ -828,7 +828,8 @@
   max-width: 100%;
   min-width: 0;
   overflow-x: auto;
-  padding-bottom: 0.35rem;
+  padding-top: 2px;
+  padding-bottom: calc(0.35rem + 4px);
   scroll-snap-type: x mandatory;
   scroll-padding-inline: 0;
   scrollbar-width: thin;
@@ -854,7 +855,26 @@
   flex: 0 0 calc((100% - (var(--carousel-columns) - 1) * 1rem) / var(--carousel-columns));
   scroll-snap-align: start;
   display: flex;
+  flex-direction: column;
 }
+
+.carousel-card .product-card {
+  margin: 0;
+  height: auto;
+}
+
+.carousel-card .product-card__content {
+  flex: 1;
+}
+
+.carousel-row > .carousel-card {
+  height: auto;
+  margin-top: 0;
+  margin-bottom: 0;
+  align-self: stretch;
+}
+
+
 
 .carousel-card__media {
   position: relative;
