@@ -176,6 +176,7 @@ public class OrderResource {
             System.out.println("❌ NO SECURITY IDENTITY (token issue?)");
         }
         String customerId = resolveCustomerId();
+        System.out.println("resolved customerId: " + customerId);
 
         //System.out.println(jwt.getName());
 
@@ -205,8 +206,9 @@ public class OrderResource {
             Map<String, Object> variables
     ) {
         try (Client client = ClientBuilder.newClient()) {
+            String businessKey = processVariableString(variables, "customerId", order.customerId);
             Map<String, Object> body = Map.of(
-                    "businessKey", order.customerId,
+                    "businessKey", businessKey,
                     "variables", variables
             );
 
@@ -262,10 +264,11 @@ public class OrderResource {
 
     private Map<String, Object> processVariables(Order order, String authHeader) {
         Map<String, Object> variables = new LinkedHashMap<>();
+        String customerId = firstNonBlank(tokenClaim("sub"), order.customerId);
         variables.put("orderId", Map.of("value", order.id, "type", "Long"));
         variables.put("orderIdsCsv", Map.of("value", String.valueOf(order.id), "type", "String"));
         variables.put("aboConfirmationWindowDuration", Map.of("value", aboConfirmationWindowDuration, "type", "String"));
-        variables.put("customerId", Map.of("value", order.customerId, "type", "String"));
+        variables.put("customerId", Map.of("value", customerId, "type", "String"));
         variables.put("productId", Map.of("value", order.productId, "type", "String"));
         variables.put("status", Map.of("value", order.status, "type", "String"));
         variables.put("quantity", Map.of("value", order.quantity, "type", "Integer"));
@@ -286,6 +289,18 @@ public class OrderResource {
         }
 
         return variables;
+    }
+
+    private String processVariableString(Map<String, Object> variables, String variableName, String fallback) {
+        Object variable = variables.get(variableName);
+        if (variable instanceof Map<?, ?> typedVariable) {
+            Object value = typedVariable.get("value");
+            if (value != null && !String.valueOf(value).isBlank()) {
+                return String.valueOf(value).trim();
+            }
+        }
+
+        return fallback;
     }
 
     private String tokenClaim(String claimName) {
@@ -317,8 +332,9 @@ public class OrderResource {
     }
 
     private String resolveCustomerId() {
-        if (jwt != null && jwt.getSubject() != null && !jwt.getSubject().isBlank()) {
-            return jwt.getSubject();
+        String subjectClaim = tokenClaim("sub");
+        if (subjectClaim != null) {
+            return subjectClaim;
         }
 
         if (securityIdentity != null && securityIdentity.getPrincipal() != null) {
