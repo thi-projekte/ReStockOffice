@@ -111,6 +111,16 @@ export function HomePage() {
     }).then(setOverview);
   }, [customerId, token]);
 
+  function formatDate(date?: string | null) {
+    if (!date) return "—";
+
+    return new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(date));
+  }
+
   return (
     <div className="home-showcase">
       <section className="hero-card home-hero">
@@ -159,7 +169,9 @@ export function HomePage() {
               <span className="dashboard-stat__label">Letzte Lieferung</span>
 
               <strong>
-                {overview?.lastDelivery?.deliveryDate ?? "—"}
+                {overview?.lastDelivery?.deliveryDate
+                    ? formatDate(overview.lastDelivery.deliveryDate)
+                    : "—"}
               </strong>
 
               <small>
@@ -181,7 +193,11 @@ export function HomePage() {
               <span className="dashboard-stat__label">Nächste Lieferung</span>
 
               <strong>
-                {overview?.nextDelivery?.deliveryDate ?? "—"}
+                <strong>
+                  {overview?.nextDelivery?.deliveryDate
+                      ? formatDate(overview.nextDelivery.deliveryDate)
+                      : "—"}
+                </strong>
               </strong>
 
               <small>
