@@ -9,6 +9,17 @@ import { useAuth } from "../auth/AuthProvider";
 import { getInvoices, requestInvoicePdf, type InvoiceSummary } from "../services/invoices";
 import { getMyUser, saveMyUser, type UserProfile } from "../services/users";
 import type { SubscriptionProfileStatus } from "../utils/subscriptionProfile";
+import { useAddressAutocomplete } from "../utils/useAddressAutocomplete";
+import {
+  computeErrors,
+  formatBIC,
+  formatIBAN,
+  formatPhone,
+  type FormErrors,
+  type ProfileFormState,
+} from "../utils/profileValidation";
+
+// ─── Typen ───────────────────────────────────────────────────────────────────
 
 interface OutletContext {
   isLoggedIn: boolean;
@@ -24,82 +35,41 @@ interface OutletContext {
   onSetTheme: (theme: "light" | "dark") => void;
 }
 
-interface ProfileFormState {
-  phone: string;
-  birthDate: string;
-  role: string;
-  company: string;
-  street: string;
-  houseNumber: string;
-  postalCode: string;
-  city: string;
-  country: string;
-  note: string;
-  deliveryDay: string;
-  deliveryTime: string;
-  iban: string;
-  bic: string;
-  accountHolder: string;
-}
-
 interface NotificationState {
   email: boolean;
   confirmations: boolean;
   reminders: boolean;
 }
 
-// Pflichtfelder
-const REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
-  "phone",
-  "country",
-  "street",
-  "houseNumber",
-  "postalCode",
-  "city",
-];
+// ─── Konstanten ──────────────────────────────────────────────────────────────
+
+const ALLOWED_COUNTRIES = ["Deutschland", "Österreich", "Schweiz"] as const;
+const DELIVERY_DAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"] as const;
 
 const RESTOCKER_REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
-  "phone",
-  "iban",
-  "bic",
-  "accountHolder",
+  "phone", "iban", "bic", "accountHolder",
 ];
 
 const CUSTOMER_REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
-  ...REQUIRED_FIELDS,
-  "company",
+  "phone", "country", "street", "houseNumber", "postalCode", "city", "company",
 ];
 
 const INVOICE_PAGE_SIZE = 3;
 const UNSAVED_PROFILE_CHANGES_MESSAGE =
-  "Du hast ungespeicherte Änderungen. Wenn du die Seite verlässt, gehen sie verloren.";
+    "Du hast ungespeicherte Änderungen. Wenn du die Seite verlässt, gehen sie verloren.";
 
 const EMPTY_FORM: ProfileFormState = {
-  phone: "",
-  birthDate: "",
-  role: "",
-  company: "",
-  street: "",
-  houseNumber: "",
-  postalCode: "",
-  city: "",
-  country: "",
-  note: "",
-  deliveryDay: "",
-  deliveryTime: "",
-  iban: "",
-  bic: "",
-  accountHolder: "",
+  phone: "", birthDate: "", role: "", company: "", street: "",
+  houseNumber: "", postalCode: "", city: "", country: "",
+  note: "", deliveryDay: "", deliveryTime: "", iban: "", bic: "", accountHolder: "",
 };
+
+// ─── Komponente ──────────────────────────────────────────────────────────────
 
 export function AccountPage() {
   const {
-    isLoggedIn,
-    onLogout,
-    onSetTheme,
-    theme,
-    subscriptionProfileStatus,
-    onSubscriptionProfileUpdated,
+    isLoggedIn, onLogout, onSetTheme, theme,
+    subscriptionProfileStatus, onSubscriptionProfileUpdated,
   } = useOutletContext<OutletContext>();
   const { hasRole, token, user } = useAuth();
   const isRestocker = hasRole("Restocker");
@@ -113,96 +83,85 @@ export function AccountPage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [loadedUser, setLoadedUser] = useState<UserProfile | null>(null);
-
   const [profileForm, setProfileForm] = useState<ProfileFormState>(EMPTY_FORM);
-
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [touchedFields, setTouchedFields] = useState<Set<keyof ProfileFormState>>(new Set());
   const lastSavedForm = useRef<ProfileFormState>(EMPTY_FORM);
 
   const [notifications, setNotifications] = useState<NotificationState>({
-    email: true,
-    confirmations: true,
-    reminders: true,
+    email: true, confirmations: true, reminders: true,
   });
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
   const [visibleInvoiceCount, setVisibleInvoiceCount] = useState(INVOICE_PAGE_SIZE);
   const [loadingInvoiceId, setLoadingInvoiceId] = useState<string | null>(null);
 
+  // Adress-Autocomplete
+  const addressAC = useAddressAutocomplete();
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const addressContainerRef = useRef<HTMLDivElement>(null);
+
+  // ── Daten laden ────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    if (!isLoggedIn || !user) {
-      return;
-    }
-
+    if (!isLoggedIn || !user) return;
     getMyUser({ token, kind: isRestocker ? "restocker" : "customer" })
-        .then((user) => {
-          setLoadedUser(user);
-
+        .then((u) => {
+          setLoadedUser(u);
           const form: ProfileFormState = {
-            phone: user.phoneNumber ?? "",
-            birthDate: user.birthDate ?? "",
-            street: user.street ?? "",
-            houseNumber: user.houseNumber ?? "",
-            postalCode: user.postalCode ?? "",
-            city: user.city ?? "",
-            country: user.country ?? "",
-            iban: user.iban ?? "",
-            // customer-only
-            company: !isRestocker && user.kind === "customer" ? (user.companyName ?? "") : "",
-            role: !isRestocker && user.kind === "customer" ? (user.roleInCompany ?? "") : "",
-            note: !isRestocker && user.kind === "customer" ? (user.deliveryHint ?? "") : "",
-            deliveryDay: !isRestocker && user.kind === "customer" ? (user.deliveryDay ?? "") : "",
-            deliveryTime: !isRestocker && user.kind === "customer" ? String(user.deliveryTime || "") : "",
-            // restocker-only
-            bic: isRestocker && user.kind === "restocker" ? (user.bic ?? "") : "",
-            accountHolder: isRestocker && user.kind === "restocker" ? (user.accountHolder ?? "") : "",
+            phone: u.phoneNumber ?? "",
+            birthDate: u.birthDate ?? "",
+            street: u.street ?? "",
+            houseNumber: u.houseNumber ?? "",
+            postalCode: u.postalCode ?? "",
+            city: u.city ?? "",
+            country: u.country ?? "",
+            iban: u.iban ?? "",
+            company: !isRestocker && u.kind === "customer" ? (u.companyName ?? "") : "",
+            role: !isRestocker && u.kind === "customer" ? (u.roleInCompany ?? "") : "",
+            note: !isRestocker && u.kind === "customer" ? (u.deliveryHint ?? "") : "",
+            deliveryDay: !isRestocker && u.kind === "customer" ? (u.deliveryDay ?? "") : "",
+            deliveryTime: !isRestocker && u.kind === "customer" ? String(u.deliveryTime || "") : "",
+            bic: isRestocker && u.kind === "restocker" ? (u.bic ?? "") : "",
+            accountHolder: isRestocker && u.kind === "restocker" ? (u.accountHolder ?? "") : "",
           };
-
           setProfileForm(form);
           lastSavedForm.current = form;
         })
-        .catch((error) => {
-          console.error("Benutzerdaten konnten nicht geladen werden.", error);
-        });
+        .catch((e) => console.error("Benutzerdaten konnten nicht geladen werden.", e));
   }, [isLoggedIn, isRestocker, token, user]);
 
   useEffect(() => {
-    if (!isLoggedIn || !user) {
-      return;
-    }
-
+    if (!isLoggedIn || !user) return;
     getInvoices({ token, kind: isRestocker ? "restocker" : "customer" })
-        .then((loadedInvoices) => {
-          setInvoices(loadedInvoices);
-          setVisibleInvoiceCount(INVOICE_PAGE_SIZE);
-        })
-        .catch((error) => {
-          console.error("Rechnungen konnten nicht geladen werden.", error);
-        });
+        .then((loaded) => { setInvoices(loaded); setVisibleInvoiceCount(INVOICE_PAGE_SIZE); })
+        .catch((e) => console.error("Rechnungen konnten nicht geladen werden.", e));
   }, [isLoggedIn, isRestocker, token, user]);
 
   useEffect(() => {
-    if (!location.hash) {
-      return;
-    }
-
+    if (!location.hash) return;
     const sectionId = location.hash.slice(1);
-    const scrollToSection = () => {
+    window.requestAnimationFrame(() => {
       const section = document.getElementById(sectionId);
-
-      if (!section) {
-        return;
-      }
-
-      const headerOffset = 96;
-      const top = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+      if (!section) return;
+      const top = section.getBoundingClientRect().top + window.scrollY - 96;
       window.scrollTo({ top, behavior: "smooth" });
-    };
-
-    window.requestAnimationFrame(scrollToSection);
+    });
   }, [location.hash, invoices.length]);
 
-  if (!isLoggedIn) {
-    return <Navigate to="/login" replace />;
-  }
+  // Suggestionen schließen bei Klick außerhalb
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (addressContainerRef.current && !addressContainerRef.current.contains(e.target as Node)) {
+        setShowAddressSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
+
+  // ── Hilfsfunktionen ────────────────────────────────────────────────────────
 
   function getRequiredFields(): (keyof ProfileFormState)[] {
     return isRestocker ? RESTOCKER_REQUIRED_FIELDS : CUSTOMER_REQUIRED_FIELDS;
@@ -213,45 +172,17 @@ export function AccountPage() {
   }
 
   function isFieldInvalid(field: keyof ProfileFormState): boolean {
-    return  getRequiredFields().includes(field) && isFieldEmpty(field);
+    const required = getRequiredFields().includes(field) && isFieldEmpty(field);
+    const hasError = touchedFields.has(field) && !!formErrors[field];
+    return required || hasError;
   }
 
   function getFieldLabel(field: keyof ProfileFormState, label: string) {
     return getRequiredFields().includes(field) ? `${label} *` : label;
   }
 
-  function sanitizeFieldValue(field: keyof ProfileFormState, value: string) {
-    switch (field) {
-      case "phone":
-        return value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "").slice(0, 20);
-      case "houseNumber":
-        return value.replace(/\D/g, "").slice(0, 6);
-      case "postalCode":
-        return value.replace(/\D/g, "").slice(0, 5);
-      case "deliveryTime": {
-        const numericValue = value.replace(/\D/g, "").slice(0, 2);
-        return numericValue === "" ? "" : String(Math.min(Number(numericValue), 24));
-      }
-      case "iban":
-        return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 34);
-      case "bic":
-        return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11);
-      case "country":
-      case "city":
-        return value.replace(/[^A-Za-zÄÖÜäöüß\s-]/g, "").slice(0, 80);
-      case "street":
-        return value.replace(/[^A-Za-zÄÖÜäöüß\s.'-]/g, "").slice(0, 120);
-      case "accountHolder":
-      case "role":
-      case "deliveryDay":
-        return value.replace(/[^A-Za-zÄÖÜäöüß\s.'\/-]/g, "").slice(0, 80);
-      case "company":
-        return value.replace(/[^A-Za-z0-9ÄÖÜäöüß\s&.,'()+\/-]/g, "").slice(0, 120);
-      case "note":
-        return value.slice(0, 500);
-      default:
-        return value;
-    }
+  function getFieldError(field: keyof ProfileFormState): string | undefined {
+    return touchedFields.has(field) ? formErrors[field] : undefined;
   }
 
   function hasUnsavedChanges(): boolean {
@@ -260,59 +191,116 @@ export function AccountPage() {
     );
   }
 
-  async function persistUser(form: ProfileFormState) {
+  // ── Feldaktualisierung ─────────────────────────────────────────────────────
+
+  function updateField<K extends keyof ProfileFormState>(field: K, value: string) {
+    let sanitized = value;
+
+    switch (field) {
+      case "phone":    sanitized = formatPhone(value); break;
+      case "iban":     sanitized = formatIBAN(value); break;
+      case "bic":      sanitized = formatBIC(value); break;
+      case "houseNumber": sanitized = value.replace(/\D/g, "").slice(0, 6); break;
+      case "postalCode":  sanitized = value.replace(/\D/g, "").slice(0, 5); break;
+      case "note":        sanitized = value.slice(0, 300); break;
+    }
+
+    const updated = { ...profileForm, [field]: sanitized };
+    setProfileForm(updated);
+    setFormErrors(computeErrors(updated));
+  }
+
+  function touchField(field: keyof ProfileFormState) {
+    setTouchedFields((prev) => new Set([...prev, field]));
+  }
+
+  // ── Adress-Autocomplete ────────────────────────────────────────────────────
+
+  function handleAddressSearchChange(value: string) {
+    addressAC.setQuery(value);
+    setShowAddressSuggestions(true);
+    // Straße direkt in das Feld schreiben während der User tippt
+    updateField("street", value);
+  }
+
+  function handleAddressSelect(suggestion: typeof addressAC.suggestions[0]) {
+    const updated: ProfileFormState = {
+      ...profileForm,
+      street: suggestion.street,
+      houseNumber: suggestion.houseNumber,
+      postalCode: suggestion.postalCode,
+      city: suggestion.city,
+      country: suggestion.country,
+    };
+    setProfileForm(updated);
+    setFormErrors(computeErrors(updated));
+    addressAC.setQuery(suggestion.street);
+    addressAC.setSuggestions([]);
+    setShowAddressSuggestions(false);
+    // Alle Adressfelder als berührt markieren
+    setTouchedFields((prev) => new Set([...prev, "street", "city", "postalCode", "country"]));
+  }
+
+  // ── Persistierung ──────────────────────────────────────────────────────────
+
+  async function persistUser(form: ProfileFormState): Promise<boolean> {
     if (!loadedUser) return false;
 
-    if (loadedUser.existsInUserService === false && getRequiredFields().some(isFieldEmpty)) {
+    // Alle Felder als berührt markieren → Fehler sichtbar machen
+    setTouchedFields(new Set(Object.keys(form) as (keyof ProfileFormState)[]));
+    const errors = computeErrors(form);
+    const hasValidationErrors = Object.keys(errors).length > 0;
+    const hasMissingRequired = getRequiredFields().some((f) => form[f].trim() === "");
+
+    if (hasValidationErrors || hasMissingRequired) {
+      toast.error("Bitte korrigiere die markierten Felder.");
       return false;
     }
 
     setIsSavingProfile(true);
-
     try {
-      const savedUser =
-          isRestocker
-              ? await saveMyUser(
-                  {
-                    kind: "restocker",
-                    userId: loadedUser.userId,
-                    phoneNumber: form.phone,
-                    birthDate: form.birthDate || undefined,
-                    street: form.street,
-                    houseNumber: form.houseNumber,
-                    postalCode: form.postalCode,
-                    city: form.city,
-                    country: form.country,
-                    profilePictureUrl: loadedUser.profilePictureUrl,
-                    iban: form.iban,
-                    bic: form.bic,
-                    accountHolder: form.accountHolder,
-                    existsInUserService: loadedUser.existsInUserService,
-                  },
-                  { token, kind: "restocker" },
-              )
-              : await saveMyUser(
-                  {
-                    kind: "customer",
-                    userId: loadedUser.userId,
-                    phoneNumber: form.phone,
-                    birthDate: form.birthDate || undefined,
-                    street: form.street,
-                    houseNumber: form.houseNumber,
-                    postalCode: form.postalCode,
-                    city: form.city,
-                    country: form.country,
-                    profilePictureUrl: loadedUser.profilePictureUrl,
-                    companyName: form.company,
-                    roleInCompany: form.role || undefined,
-                    deliveryHint: form.note || undefined,
-                    deliveryDay: form.deliveryDay || undefined,
-                    deliveryTime: Number(form.deliveryTime || 0),
-                    iban: form.iban || undefined,
-                    existsInUserService: loadedUser.existsInUserService,
-                  },
-                  { token, kind: "customer" },
-              );
+      const savedUser = isRestocker
+          ? await saveMyUser(
+              {
+                kind: "restocker",
+                userId: loadedUser.userId,
+                phoneNumber: form.phone,
+                birthDate: form.birthDate || undefined,
+                street: form.street,
+                houseNumber: form.houseNumber,
+                postalCode: form.postalCode,
+                city: form.city,
+                country: form.country,
+                profilePictureUrl: loadedUser.profilePictureUrl,
+                iban: form.iban,
+                bic: form.bic,
+                accountHolder: form.accountHolder,
+                existsInUserService: loadedUser.existsInUserService,
+              },
+              { token, kind: "restocker" },
+          )
+          : await saveMyUser(
+              {
+                kind: "customer",
+                userId: loadedUser.userId,
+                phoneNumber: form.phone,
+                birthDate: form.birthDate || undefined,
+                street: form.street,
+                houseNumber: form.houseNumber,
+                postalCode: form.postalCode,
+                city: form.city,
+                country: form.country,
+                profilePictureUrl: loadedUser.profilePictureUrl,
+                companyName: form.company,
+                roleInCompany: form.role || undefined,
+                deliveryHint: form.note || undefined,
+                deliveryDay: form.deliveryDay || undefined,
+                deliveryTime: Number(form.deliveryTime?.split(":")[0] || 0),
+                iban: form.iban || undefined,
+                existsInUserService: loadedUser.existsInUserService,
+              },
+              { token, kind: "customer" },
+          );
 
       setLoadedUser(savedUser);
       onSubscriptionProfileUpdated(savedUser);
@@ -327,21 +315,21 @@ export function AccountPage() {
     }
   }
 
-  function updateField<Key extends keyof ProfileFormState>(
-      field: Key,
-      value: ProfileFormState[Key],
-  ) {
-    setProfileForm((current) => ({
-      ...current,
-      [field]: sanitizeFieldValue(field, value),
-    }));
+  async function handleProfileAction() {
+    if (!isEditingProfile) {
+      setIsEditingProfile(true);
+      return;
+    }
+    if (hasUnsavedChanges()) {
+      const wasSaved = await persistUser(profileForm);
+      if (!wasSaved) return;
+      toast.success("Deine Änderungen wurden gespeichert.");
+    }
+    setIsEditingProfile(false);
   }
 
   function toggleNotification(field: keyof NotificationState) {
-    setNotifications((current) => ({
-      ...current,
-      [field]: !current[field],
-    }));
+    setNotifications((c) => ({ ...c, [field]: !c[field] }));
   }
 
   function formatInvoiceAmount(invoice: InvoiceSummary) {
@@ -355,84 +343,60 @@ export function AccountPage() {
     setLoadingInvoiceId(invoice.invoiceId);
     try {
       await requestInvoicePdf(invoice.invoiceId, {
-        token,
-        kind: isRestocker ? "restocker" : "customer",
+        token, kind: isRestocker ? "restocker" : "customer",
       });
-    } catch (error) {
-      console.error("Die Rechnung konnte nicht geladen werden.", error);
+    } catch (e) {
+      console.error("Die Rechnung konnte nicht geladen werden.", e);
     } finally {
       setLoadingInvoiceId(null);
     }
-  }
-
-  function handleLoadMoreInvoices() {
-    setVisibleInvoiceCount((current) => current + INVOICE_PAGE_SIZE);
-  }
-
-  async function handleProfileAction() {
-    if (!isEditingProfile) {
-      setIsEditingProfile(true);
-      return;
-    }
-
-    // Nur speichern, wenn Änderungen vorliegen
-    if (hasUnsavedChanges()) {
-      const wasSaved = await persistUser(profileForm);
-
-      if (!wasSaved) {
-        return;
-      }
-
-      toast.success("Deine Änderungen wurden gespeichert.");
-    }
-
-    setIsEditingProfile(false);
   }
 
   const visibleInvoices = invoices.slice(0, visibleInvoiceCount);
   const hasMoreInvoices = visibleInvoiceCount < invoices.length;
   const showProfileProgress = subscriptionProfileStatus?.isComplete === false;
 
+  // ─── Render ───────────────────────────────────────────────────────────────
+
   return (
       <div className="home-showcase account-page">
-        {showProfileProgress ? (
-          <section className="page-card subscription-profile-progress">
-            <div className="subscription-profile-progress__copy">
-              <div>
-                <strong>Profil noch nicht vollständig</strong>
-                <p>
-                  {isRestocker
-                      ? "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, kannst du keine RestockOrders ausliefern."
-                      : "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, sind Änderungen am Abo gesperrt."}
-                </p>
+        {showProfileProgress && (
+            <section className="page-card subscription-profile-progress">
+              <div className="subscription-profile-progress__copy">
+                <div>
+                  <strong>Profil noch nicht vollständig</strong>
+                  <p>
+                    {isRestocker
+                        ? "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, kannst du keine RestockOrders ausliefern."
+                        : "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, sind Änderungen am Abo gesperrt."}
+                  </p>
+                </div>
+                <span className="subscription-profile-progress__percent">
+              {subscriptionProfileStatus?.completionPercentage ?? 0}%
+            </span>
               </div>
-              <span className="subscription-profile-progress__percent">
-                {subscriptionProfileStatus?.completionPercentage ?? 0}%
-              </span>
-            </div>
-
-            <div
-              className="subscription-profile-progress__bar"
-              role="progressbar"
-              aria-label="Profilfortschritt"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={subscriptionProfileStatus?.completionPercentage ?? 0}
-            >
               <div
-                className="subscription-profile-progress__fill"
-                style={{ width: `${subscriptionProfileStatus?.completionPercentage ?? 0}%` }}
-              />
-            </div>
+                  className="subscription-profile-progress__bar"
+                  role="progressbar"
+                  aria-label="Profilfortschritt"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={subscriptionProfileStatus?.completionPercentage ?? 0}
+              >
+                <div
+                    className="subscription-profile-progress__fill"
+                    style={{ width: `${subscriptionProfileStatus?.completionPercentage ?? 0}%` }}
+                />
+              </div>
+              {subscriptionProfileStatus?.missingFields.length ? (
+                  <p className="subscription-profile-progress__missing">
+                    Fehlt noch: {subscriptionProfileStatus.missingFields.join(", ")}.
+                  </p>
+              ) : null}
+            </section>
+        )}
 
-            {subscriptionProfileStatus?.missingFields.length ? (
-              <p className="subscription-profile-progress__missing">
-                Fehlt noch: {subscriptionProfileStatus.missingFields.join(", ")}.
-              </p>
-            ) : null}
-          </section>
-        ) : null}
-
+        {/* ── Hero ── */}
         <section className="page-card section-space account-hero">
           <div className="account-hero__copy">
             <span className="eyebrow">Kontoübersicht</span>
@@ -442,82 +406,59 @@ export function AccountPage() {
               sicherheitsrelevanten Funktionen zentral an einem Ort.
             </p>
           </div>
-
           <div className="account-hero__summary">
-            <div className="account-badge">
-              <span>Benutzerkonto</span>
-              <strong>{username}</strong>
-            </div>
-            <div className="account-badge">
-              <span>Status</span>
-              <strong>Aktiv</strong>
-            </div>
-            <div className="account-badge">
-              <span>Rolle</span>
-              <strong>{isRestocker ? "Restocker" : "Customer"}</strong>
-            </div>
+            <div className="account-badge"><span>Benutzerkonto</span><strong>{username}</strong></div>
+            <div className="account-badge"><span>Status</span><strong>Aktiv</strong></div>
+            <div className="account-badge"><span>Rolle</span><strong>{isRestocker ? "Restocker" : "Customer"}</strong></div>
           </div>
         </section>
 
+        {/* ── Profil ── */}
         <section id="profile" className="page-card section-space">
           <div className="section-head account-section-head">
             <div>
               <span className="eyebrow">Benutzerdaten</span>
               <h2>Profilinformationen</h2>
               <p className="section-copy">
-                Deine Kontaktdaten und Organisationsinformationen für Kommunikation
-                und Auftragsabwicklung.
+                Deine Kontaktdaten und Organisationsinformationen für Kommunikation und Auftragsabwicklung.
               </p>
             </div>
-
             <button
                 className={`button ${isEditingProfile ? "" : "button--ghost"}`.trim()}
                 type="button"
-                title={isEditingProfile ? "Änderungen speichern" : "Profil bearbeiten"}
                 disabled={isSavingProfile}
-                onClick={() => {
-                  void handleProfileAction();
-                }}
+                onClick={() => { void handleProfileAction(); }}
             >
               {isEditingProfile ? <MdSave /> : <MdEdit />}
-              {isSavingProfile
-                  ? "Wird gespeichert"
-                  : isEditingProfile
-                      ? "Änderungen speichern"
-                      : "Profil bearbeiten"}
+              {isSavingProfile ? "Wird gespeichert" : isEditingProfile ? "Änderungen speichern" : "Profil bearbeiten"}
             </button>
           </div>
 
           <div className="account-profile-grid">
-            {/* Persönliche Daten */}
+            {/* ── Persönliche Daten ── */}
             <div className="account-panel">
               <div className="account-panel__head">
                 <h3 style={{ paddingBottom: "1rem" }}>Persönliche Daten</h3>
               </div>
-
               <div className="account-form-grid">
-                {/* Keycloak-Felder – immer disabled, keine Validierung */}
                 <label className="account-field">
                   <span>Benutzername</span>
                   <input value={username} disabled />
                 </label>
-
                 <label className="account-field">
                   <span>E-Mail</span>
                   <input value={email} disabled />
                 </label>
-
                 <label className="account-field">
                   <span>Vorname</span>
                   <input value={firstName} disabled />
                 </label>
-
                 <label className="account-field">
                   <span>Nachname</span>
                   <input value={lastName} disabled />
                 </label>
 
-                {/* Editierbare Felder */}
+                {/* Geburtsdatum */}
                 <label className="account-field">
                   <span>Geburtsdatum</span>
                   <input
@@ -528,49 +469,50 @@ export function AccountPage() {
                   />
                 </label>
 
+                {/* Telefon */}
                 <label className="account-field">
                   <span>{getFieldLabel("phone", "Telefon")}</span>
                   <input
                       value={profileForm.phone}
                       disabled={!isEditingProfile}
                       inputMode="tel"
-                      pattern="\+?[0-9]*"
-                      maxLength={20}
+                      placeholder="+49 151 12345678"
                       className={isFieldInvalid("phone") ? "input--invalid" : ""}
                       onChange={(e) => updateField("phone", e.target.value)}
+                      onBlur={() => touchField("phone")}
                   />
+                  {getFieldError("phone") && (
+                      <span className="account-field__error">{getFieldError("phone")}</span>
+                  )}
                 </label>
 
+                {/* Kontoinhaber / Position */}
                 <label className="account-field account-field--full">
-                  <span>
-                    {isRestocker
-                        ? getFieldLabel("accountHolder", "Kontoinhaber")
-                        : getFieldLabel("role", "Position")}
-                  </span>
+                <span>
+                  {isRestocker
+                      ? getFieldLabel("accountHolder", "Kontoinhaber")
+                      : getFieldLabel("role", "Position")}
+                </span>
                   <input
                       value={isRestocker ? profileForm.accountHolder : profileForm.role}
                       disabled={!isEditingProfile}
                       maxLength={80}
-                      className={
-                        isRestocker && isFieldInvalid("accountHolder") ? "input--invalid" : ""
-                      }
-                      onChange={(e) =>
-                          updateField(isRestocker ? "accountHolder" : "role", e.target.value)
-                      }
+                      className={isRestocker && isFieldInvalid("accountHolder") ? "input--invalid" : ""}
+                      onChange={(e) => updateField(isRestocker ? "accountHolder" : "role", e.target.value)}
                   />
                 </label>
               </div>
             </div>
 
-            {/* Adress- und Abrechnungsdaten */}
+            {/* ── Adresse / Abrechnung ── */}
             <div className="account-panel account-panel--accent">
               <div className="account-panel__head">
                 <h3 style={{ paddingBottom: "1rem" }}>
                   {isRestocker ? "Abrechnungs- und Adressdaten" : "Lieferadresse"}
                 </h3>
               </div>
-
               <div className="account-form-grid">
+                {/* Unternehmen (nur Customer) */}
                 {!isRestocker && (
                     <label className="account-field">
                       <span>{getFieldLabel("company", "Unternehmen")}</span>
@@ -584,54 +526,87 @@ export function AccountPage() {
                     </label>
                 )}
 
+                {/* Land – Dropdown */}
                 <label className="account-field">
-                <span>{getFieldLabel("country", "Land")}</span>
-                <input
-                    value={profileForm.country}
-                    disabled={!isEditingProfile}
-                    maxLength={80}
-                    className={isFieldInvalid("country") ? "input--invalid" : ""}
-                    onChange={(e) => updateField("country", e.target.value)}
-                />
-              </label>
-
-                <label className="account-field">
-                  <span>{getFieldLabel("street", "Straße")}</span>
-                  <input
-                      value={profileForm.street}
+                  <span>{getFieldLabel("country", "Land")}</span>
+                  <select
+                      value={profileForm.country}
                       disabled={!isEditingProfile}
-                      maxLength={120}
-                      className={isFieldInvalid("street") ? "input--invalid" : ""}
-                      onChange={(e) => updateField("street", e.target.value)}
-                  />
+                      className={`account-field__select${isFieldInvalid("country") ? " input--invalid" : ""}`}
+                      onChange={(e) => updateField("country", e.target.value)}
+                  >
+                    <option value="">Bitte wählen</option>
+                    {ALLOWED_COUNTRIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </label>
 
+                {/* Straße mit Autocomplete */}
+                <div className="account-field account-field--full" ref={addressContainerRef} style={{ position: "relative" }}>
+                  <span>{getFieldLabel("street", "Straße")}</span>
+                  <input
+                      value={isEditingProfile ? addressAC.query || profileForm.street : profileForm.street}
+                      disabled={!isEditingProfile}
+                      placeholder="Straße eingeben und aus Vorschlägen wählen…"
+                      autoComplete="off"
+                      className={isFieldInvalid("street") ? "input--invalid" : ""}
+                      onChange={(e) => handleAddressSearchChange(e.target.value)}
+                      onFocus={() => setShowAddressSuggestions(true)}
+                      onBlur={() => touchField("street")}
+                  />
+                  {showAddressSuggestions && addressAC.suggestions.length > 0 && isEditingProfile && (
+                      <ul className="account-address-suggestions">
+                        {addressAC.suggestions.map((s, i) => (
+                            <li key={i}>
+                              <button
+                                  type="button"
+                                  className="account-address-suggestion-item"
+                                  onMouseDown={(e) => { e.preventDefault(); handleAddressSelect(s); }}
+                              >
+                                <strong>{s.street} {s.houseNumber}</strong>
+                                <span>{s.postalCode} {s.city}, {s.country}</span>
+                              </button>
+                            </li>
+                        ))}
+                      </ul>
+                  )}
+                  {addressAC.isLoading && isEditingProfile && (
+                      <span className="account-field__hint">Suche Adressen…</span>
+                  )}
+                </div>
+
+                {/* Hausnummer */}
                 <label className="account-field">
                   <span>{getFieldLabel("houseNumber", "Hausnummer")}</span>
                   <input
                       value={profileForm.houseNumber}
                       disabled={!isEditingProfile}
                       inputMode="numeric"
-                      pattern="[0-9]*"
                       maxLength={6}
                       className={isFieldInvalid("houseNumber") ? "input--invalid" : ""}
                       onChange={(e) => updateField("houseNumber", e.target.value)}
                   />
                 </label>
 
+                {/* PLZ */}
                 <label className="account-field">
                   <span>{getFieldLabel("postalCode", "PLZ")}</span>
                   <input
                       value={profileForm.postalCode}
                       disabled={!isEditingProfile}
                       inputMode="numeric"
-                      pattern="[0-9]*"
                       maxLength={5}
                       className={isFieldInvalid("postalCode") ? "input--invalid" : ""}
                       onChange={(e) => updateField("postalCode", e.target.value)}
+                      onBlur={() => touchField("postalCode")}
                   />
+                  {getFieldError("postalCode") && (
+                      <span className="account-field__error">{getFieldError("postalCode")}</span>
+                  )}
                 </label>
 
+                {/* Ort */}
                 <label className="account-field">
                   <span>{getFieldLabel("city", "Ort")}</span>
                   <input
@@ -643,47 +618,63 @@ export function AccountPage() {
                   />
                 </label>
 
-
+                {/* Liefertag – Dropdown (nur Customer) */}
                 {!isRestocker && (
                     <label className="account-field">
                       <span>Bevorzugter Liefertag</span>
-                      <input
+                      <select
                           value={profileForm.deliveryDay}
                           disabled={!isEditingProfile}
-                          maxLength={80}
+                          className="account-field__select"
                           onChange={(e) => updateField("deliveryDay", e.target.value)}
-                      />
+                      >
+                        <option value="">Kein Vorzugstag</option>
+                        {DELIVERY_DAYS.map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
                     </label>
                 )}
 
+                {/* Lieferzeit – Timepicker (nur Customer) */}
                 {!isRestocker && (
                     <label className="account-field">
                       <span>Bevorzugte Uhrzeit</span>
                       <input
-                          type="number"
-                          min={0}
-                          max={24}
-                          inputMode="numeric"
-                          pattern="[0-9]*"
+                          type="time"
                           value={profileForm.deliveryTime}
                           disabled={!isEditingProfile}
+                          min="07:00"
+                          max="18:00"
+                          className={isFieldInvalid("deliveryTime") ? "input--invalid" : ""}
                           onChange={(e) => updateField("deliveryTime", e.target.value)}
+                          onBlur={() => touchField("deliveryTime")}
                       />
+                      {getFieldError("deliveryTime") && (
+                          <span className="account-field__error">{getFieldError("deliveryTime")}</span>
+                      )}
                     </label>
                 )}
 
+                {/* IBAN */}
                 <label className="account-field">
                   <span>{getFieldLabel("iban", "IBAN")}</span>
                   <input
                       value={profileForm.iban}
                       disabled={!isEditingProfile}
                       autoCapitalize="characters"
+                      placeholder="DE89 3704 0044 0532 0130 00"
                       maxLength={34}
                       className={isFieldInvalid("iban") ? "input--invalid" : ""}
                       onChange={(e) => updateField("iban", e.target.value)}
+                      onBlur={() => touchField("iban")}
                   />
+                  {getFieldError("iban") && (
+                      <span className="account-field__error">{getFieldError("iban")}</span>
+                  )}
                 </label>
 
+                {/* BIC (nur Restocker) */}
                 {isRestocker && (
                     <label className="account-field">
                       <span>{getFieldLabel("bic", "BIC")}</span>
@@ -691,30 +682,43 @@ export function AccountPage() {
                           value={profileForm.bic}
                           disabled={!isEditingProfile}
                           autoCapitalize="characters"
+                          placeholder="COBADEFFXXX"
                           maxLength={11}
                           className={isFieldInvalid("bic") ? "input--invalid" : ""}
                           onChange={(e) => updateField("bic", e.target.value)}
+                          onBlur={() => touchField("bic")}
                       />
+                      {getFieldError("bic") && (
+                          <span className="account-field__error">{getFieldError("bic")}</span>
+                      )}
                     </label>
                 )}
 
+                {/* Lieferhinweis mit Zeichenzähler (nur Customer) */}
                 {!isRestocker && (
-                    <label className="account-field account-field--full">
-                      <span>Lieferhinweis</span>
+                    <div className="account-field account-field--full">
+                      <div className="account-field__head-row">
+                        <span>Lieferhinweis</span>
+                        <span className="account-field__counter">
+                      {profileForm.note.length}/300
+                    </span>
+                      </div>
                       <textarea
                           rows={4}
                           value={profileForm.note}
                           disabled={!isEditingProfile}
-                          maxLength={500}
+                          maxLength={300}
+                          className={profileForm.note.length >= 300 ? "input--invalid" : ""}
                           onChange={(e) => updateField("note", e.target.value)}
                       />
-                    </label>
+                    </div>
                 )}
               </div>
             </div>
           </div>
         </section>
 
+        {/* ── Darstellung & Benachrichtigungen ── */}
         <section id="appearence" className="page-card section-space">
           <div className="section-head account-section-head">
             <div>
@@ -725,7 +729,6 @@ export function AccountPage() {
               </p>
             </div>
           </div>
-
           <div className="account-settings-shell">
             <div className="account-settings-section">
               <div className="account-settings-section__head">
@@ -734,7 +737,6 @@ export function AccountPage() {
                   <span>Aktuelles Schema: {theme === "dark" ? "Dark Mode" : "Light Mode"}</span>
                 </div>
               </div>
-
               <div className="account-theme-grid">
                 <button
                     className={`account-theme-option ${theme === "light" ? "active" : ""}`.trim()}
@@ -745,7 +747,6 @@ export function AccountPage() {
                   <strong>Light Mode</strong>
                   <FaSun />
                 </button>
-
                 <button
                     className={`account-theme-option ${theme === "dark" ? "active" : ""}`.trim()}
                     type="button"
@@ -767,57 +768,34 @@ export function AccountPage() {
                   <span>Steuere System- und Prozessmeldungen.</span>
                 </div>
               </div>
-
               <div className="account-toggle-list">
-                <button
-                    className={`account-toggle-button ${notifications.email ? "active" : ""}`.trim()}
-                    type="button"
-                    onClick={() => toggleNotification("email")}
-                >
-                  <div>
-                    <strong>E-Mail-Systemmeldungen</strong>
-                    <span>Kontostatus und allgemeine Systemupdates</span>
-                  </div>
-                  <span className="account-toggle-pill">
-                  <FaBell />
-                    {notifications.email ? " Aktiv" : " Inaktiv"}
-                </span>
-                </button>
-
-                <button
-                    className={`account-toggle-button ${notifications.confirmations ? "active" : ""}`.trim()}
-                    type="button"
-                    onClick={() => toggleNotification("confirmations")}
-                >
-                  <div>
-                    <strong>Auftragsbestätigungen</strong>
-                    <span>Benachrichtigung nach jeder Bestellung</span>
-                  </div>
-                  <span className="account-toggle-pill">
-                  <FaBell />
-                    {notifications.confirmations ? " Aktiv" : " Inaktiv"}
-                </span>
-                </button>
-
-                <button
-                    className={`account-toggle-button ${notifications.reminders ? "active" : ""}`.trim()}
-                    type="button"
-                    onClick={() => toggleNotification("reminders")}
-                >
-                  <div>
-                    <strong>Abo-Erinnerungen</strong>
-                    <span>Hinweise vor automatischen Lieferungen</span>
-                  </div>
-                  <span className="account-toggle-pill">
-                  <FaBell />
-                    {notifications.reminders ? " Aktiv" : " Inaktiv"}
-                </span>
-                </button>
+                {(["email", "confirmations", "reminders"] as const).map((key) => (
+                    <button
+                        key={key}
+                        className={`account-toggle-button ${notifications[key] ? "active" : ""}`.trim()}
+                        type="button"
+                        onClick={() => toggleNotification(key)}
+                    >
+                      <div>
+                        <strong>
+                          {key === "email" ? "E-Mail-Systemmeldungen" : key === "confirmations" ? "Auftragsbestätigungen" : "Abo-Erinnerungen"}
+                        </strong>
+                        <span>
+                      {key === "email" ? "Kontostatus und allgemeine Systemupdates" : key === "confirmations" ? "Benachrichtigung nach jeder Bestellung" : "Hinweise vor automatischen Lieferungen"}
+                    </span>
+                      </div>
+                      <span className="account-toggle-pill">
+                    <FaBell />
+                        {notifications[key] ? " Aktiv" : " Inaktiv"}
+                  </span>
+                    </button>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
+        {/* ── Finanzen ── */}
         <section id="finance" className="page-card section-space">
           <div className="section-head account-section-head">
             <div>
@@ -830,7 +808,6 @@ export function AccountPage() {
               </p>
             </div>
           </div>
-
           {visibleInvoices.length > 0 && (
               <div className="account-settings-shell">
                 <div className="account-settings-section">
@@ -840,9 +817,7 @@ export function AccountPage() {
                             key={invoice.invoiceId}
                             className="account-invoice-item"
                             type="button"
-                            onClick={() => {
-                              void handleInvoiceOpen(invoice);
-                            }}
+                            onClick={() => { void handleInvoiceOpen(invoice); }}
                             disabled={loadingInvoiceId === invoice.invoiceId}
                         >
                           <div className="account-invoice-item__copy">
@@ -850,43 +825,37 @@ export function AccountPage() {
                             <strong>{invoice.title}</strong>
                           </div>
                           <span className="account-invoice-pill">
-                <MdReceiptLong />
+                      <MdReceiptLong />
                             {formatInvoiceAmount(invoice)}
-              </span>
+                    </span>
                         </button>
                     ))}
                   </div>
-
-                  {hasMoreInvoices ? (
+                  {hasMoreInvoices && (
                       <button
                           className="button button--ghost account-invoice-more"
                           type="button"
-                          onClick={handleLoadMoreInvoices}
+                          onClick={() => setVisibleInvoiceCount((c) => c + INVOICE_PAGE_SIZE)}
                       >
                         Mehr anzeigen
                       </button>
-                  ) : null}
+                  )}
                 </div>
               </div>
           )}
         </section>
 
+        {/* ── Sicherheit ── */}
         <section id="security" className="page-card section-space">
           <div className="section-head account-section-head">
             <div>
               <span className="eyebrow">Sicherheit</span>
               <h2>Zugriff und Kontoverwaltung</h2>
-              <p className="section-copy">
-                Sicherheits- und Zugriffsfunktionen für dein Benutzerkonto.
-              </p>
+              <p className="section-copy">Sicherheits- und Zugriffsfunktionen für dein Benutzerkonto.</p>
             </div>
           </div>
-
           <div className="account-action-row">
-            <button className="button button--ghost" type="button">
-              Passwort zurücksetzen
-            </button>
-
+            <button className="button button--ghost" type="button">Passwort zurücksetzen</button>
             <button
                 className="button account-action-button account-action-button--logout"
                 type="button"
@@ -896,24 +865,14 @@ export function AccountPage() {
               Abmelden
             </button>
           </div>
-
           <div className="account-danger-zone">
             <div className="account-danger-zone__copy">
-              <h3>
-                <MdOutlineWarningAmber />
-                Kritische Aktionen
-              </h3>
+              <h3><MdOutlineWarningAmber />Kritische Aktionen</h3>
               <p>Diese Aktionen beeinflussen dein Konto und laufende Prozesse dauerhaft.</p>
             </div>
-
             <div className="account-danger-zone__actions">
-              <button className="button account-danger-button" type="button">
-                Abonnement beenden
-              </button>
-              <button
-                  className="button account-danger-button account-danger-button--secondary"
-                  type="button"
-              >
+              <button className="button account-danger-button" type="button">Abonnement beenden</button>
+              <button className="button account-danger-button account-danger-button--secondary" type="button">
                 Konto löschen
               </button>
             </div>

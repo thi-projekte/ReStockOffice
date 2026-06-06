@@ -385,12 +385,14 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
   min-width: 0;
+  row-gap: 2.2rem;
 }
 
 .account-field {
   display: grid;
   gap: 0.45rem;
   min-width: 0;
+  position: relative;
 }
 
 .account-field--full {
@@ -434,6 +436,114 @@
 .account-field textarea:disabled {
   background: rgba(244, 247, 242, 0.8);
   color: rgba(31, 42, 46, 0.78);
+}
+
+
+.account-field__error {
+  color: var(--color-danger);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.account-field__hint {
+  color: var(--color-grey-300);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.account-field__error,
+.account-field__hint {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  padding-top: 0.2rem;
+  line-height: 1.3;
+}
+
+.account-field__head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.account-field__counter {
+  color: var(--color-grey-300);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Select styling passend zu deinen inputs */
+.account-field__select {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(38, 64, 55, 0.16);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-field__select:focus {
+  outline: none;
+  border-color: rgba(59, 107, 97, 0.4);
+  box-shadow: 0 0 0 4px rgba(102, 189, 164, 0.14);
+}
+
+.account-field__select:disabled {
+  background: rgba(244, 247, 242, 0.8);
+  color: rgba(31, 42, 46, 0.78);
+  cursor: default;
+}
+
+/* Adress-Autocomplete Dropdown */
+.account-address-suggestions {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0;
+  border: 1px solid rgba(38, 64, 55, 0.16);
+  border-radius: 0.9rem;
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgba(31, 42, 46, 0.16);
+  overflow: hidden;
+}
+
+.account-address-suggestion-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.account-address-suggestion-item strong {
+  color: var(--color-secondary);
+  font-size: 0.9rem;
+}
+
+.account-address-suggestion-item span {
+  color: var(--color-grey-300);
+  font-size: 0.8rem;
+}
+
+.account-address-suggestion-item:hover {
+  background: rgba(59, 107, 97, 0.08);
 }
 
 .account-theme-switch {
@@ -1696,6 +1806,31 @@
 
 :root[data-theme="dark"] .account-danger-zone__copy p {
   color: rgba(255, 224, 220, 0.82);
+}
+
+:root[data-theme="dark"] .account-field__select {
+  border-color: rgba(153, 153, 153, 0.26);
+  background: rgba(38, 64, 55, 0.7);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .account-field__select:disabled {
+  background: rgba(38, 64, 55, 0.48);
+  color: #e6e6e6;
+}
+
+:root[data-theme="dark"] .account-address-suggestions {
+  border-color: rgba(153, 153, 153, 0.2);
+  background: #1f2a2e;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="dark"] .account-address-suggestion-item:hover {
+  background: rgba(102, 189, 164, 0.12);
+}
+
+:root[data-theme="dark"] .account-address-suggestion-item strong {
+  color: var(--color-text);
 }
 
 :root[data-theme="dark"] .header-actions .active {
