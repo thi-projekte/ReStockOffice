@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
@@ -459,6 +460,7 @@ public class OrderResource {
         return "anonymous";
     }
 
+    @RegisterForReflection
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class CustomerMailProfile {
         public String postalCode;
