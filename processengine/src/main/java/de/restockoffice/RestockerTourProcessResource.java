@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RestockerTourProcessResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(RestockerTourProcessResource.class);
-  private static final String PROCESS_DEFINITION_KEY = "Process_0h5mosh";
+  private static final String PROCESS_DEFINITION_KEY = "Process_Auslieferung";
 
   private final RuntimeService runtimeService;
   private final TaskService taskService;
@@ -62,7 +62,7 @@ public class RestockerTourProcessResource {
 
     try {
       synchronized (startLock) {
-        // Pro Restocker soll nur ein aktiver Tourprozess existieren. Der Business Key
+        // Pro Restocker soll nur ein aktiver Auslieferungsprozess existieren. Der Business Key
         // ist deshalb die Keycloak-ID des Restockers.
         List<ProcessInstance> activeProcesses = runtimeService
             .createProcessInstanceQuery()
@@ -93,7 +93,7 @@ public class RestockerTourProcessResource {
       }
     } catch (ProcessEngineException exception) {
       LOG.error(
-          "Could not start restocker tour process for restockerId={} with todayDeliveryCount={}",
+          "Could not start delivery process for restockerId={} with todayDeliveryCount={}",
           restockerId,
           todayDeliveryCount,
           exception);

@@ -21,6 +21,7 @@ import { RestockerOrderDetailDialog } from "../../components/restocker/Restocker
 import { formatDeliveryWindow } from "./restockerOrderUi";
 
 const RESTOCKER_TOUR_PROCESS_API_URL =
+    import.meta.env.VITE_RESTOCKER_TOUR_PROCESS_API_URL ??
     "https://pe.restockoffice.de/api/restocker-tour-process";
 
 // Interface, um zu prüfen, ob bereits ein Prozess läuft

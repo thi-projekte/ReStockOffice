@@ -142,11 +142,25 @@ public class MailDataEnrichmentService {
 
     private EnrichmentContext loadContext(DelegateExecution execution, String requestedOrderId) {
         String authorizationHeader = stringVariable(execution, "authorizationHeader");
-        String orderId = firstNonBlank(requestedOrderId, stringVariable(execution, "orderId"), stringVariable(execution, "deliveredOrderId"));
+        DeliveryMonitoringItem monitoringDelivery = monitoringDelivery(execution);
+        String orderId = firstNonBlank(
+                requestedOrderId,
+                stringVariable(execution, "orderId"),
+                stringVariable(execution, "deliveredOrderId"),
+                monitoringDelivery != null ? monitoringDelivery.orderId() : null
+        );
         OrderSnapshot orderSnapshot = orderSnapshot(execution, orderId);
-        String customerId = firstNonBlank(orderSnapshot.customerId(), stringVariable(execution, "customerId"));
+        String customerId = firstNonBlank(
+                orderSnapshot.customerId(),
+                stringVariable(execution, "customerId"),
+                monitoringDelivery != null ? monitoringDelivery.customerId() : null
+        );
         String productId = firstNonBlank(orderSnapshot.productId(), stringVariable(execution, "productId"));
-        String deliveryId = firstNonBlank(stringVariable(execution, "deliveredDeliveryId"), stringVariable(execution, "deliveryId"));
+        String deliveryId = firstNonBlank(
+                stringVariable(execution, "deliveredDeliveryId"),
+                stringVariable(execution, "deliveryId"),
+                monitoringDelivery != null ? monitoringDelivery.deliveryId() : null
+        );
 
         OrderDto order = loadOrder(orderId, authorizationHeader);
         if (order != null) {
@@ -167,6 +181,11 @@ public class MailDataEnrichmentService {
         ArticleDto article = loadArticle(productId);
 
         return new EnrichmentContext(orderId, customerId, productId, orderSnapshot, order, user, article, delivery);
+    }
+
+    private DeliveryMonitoringItem monitoringDelivery(DelegateExecution execution) {
+        Object delivery = execution.getVariable("delivery");
+        return delivery instanceof DeliveryMonitoringItem monitoringDelivery ? monitoringDelivery : null;
     }
 
     private List<EnrichmentContext> loadAboConfirmationContexts(DelegateExecution execution) {

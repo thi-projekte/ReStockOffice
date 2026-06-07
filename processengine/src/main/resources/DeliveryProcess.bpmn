@@ -42,6 +42,9 @@
         <bpmn:sourceRef>DataObjectReference_Kunden</bpmn:sourceRef>
         <bpmn:targetRef>Property_13qf7wv</bpmn:targetRef>
       </bpmn:dataInputAssociation>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="true">
+        <bpmn:loopCardinality xsi:type="bpmn:tFormalExpression">${todayDeliveryCount}</bpmn:loopCardinality>
+      </bpmn:multiInstanceLoopCharacteristics>
       <bpmn:startEvent id="Event_05672e0">
         <bpmn:outgoing>Flow_00g2kav</bpmn:outgoing>
       </bpmn:startEvent>
