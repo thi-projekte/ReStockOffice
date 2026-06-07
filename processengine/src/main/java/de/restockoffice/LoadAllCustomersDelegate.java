@@ -37,6 +37,8 @@ public class LoadAllCustomersDelegate implements JavaDelegate {
                 .retrieve()
                 .body(DeliveryServiceResponse.class);
 
+        execution.setVariable("InvoiceForMonth", formattedMonth);
+
         if (response != null && response.customerIds() != null) {
             execution.setVariable("customerIdList", response.customerIds());
         } else {

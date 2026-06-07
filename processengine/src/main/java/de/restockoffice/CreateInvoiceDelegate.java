@@ -2,6 +2,7 @@ package de.restockoffice;
 
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.cibseven.bpm.engine.delegate.JavaDelegate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -15,10 +16,22 @@ import java.util.Map;
 @Component("createInvoiceDelegate")
 public class CreateInvoiceDelegate implements JavaDelegate {
 
-    private final RestClient deliveryClient = RestClient.create("https://restocker-deliveries.restockoffice.de");
-    private final RestClient articleClient = RestClient.create("https://articles.restockoffice.de");
-    private final RestClient userClient = RestClient.create("https://users.restockoffice.de");
-    private final RestClient invoiceClient = RestClient.create("https://invoice.restockoffice.de");
+    private final RestClient deliveryClient;
+    private final RestClient articleClient;
+    private final RestClient userClient;
+    private final RestClient invoiceClient;
+
+    public CreateInvoiceDelegate(
+            @Value("${deliveriesservice.base-url}") String deliveryUrl,
+            @Value("${articlesservice.base-url}") String articleUrl,
+            @Value("${usersservice.base-url}") String userUrl,
+            @Value("${invoiceservice.base-url}") String invoiceUrl) {
+
+        this.deliveryClient = RestClient.create(deliveryUrl);
+        this.articleClient = RestClient.create(articleUrl);
+        this.userClient = RestClient.create(userUrl);
+        this.invoiceClient = RestClient.create(invoiceUrl);
+    }
 
     @Override
     public void execute(DelegateExecution execution) throws Exception {

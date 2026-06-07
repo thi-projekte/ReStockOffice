@@ -2,6 +2,7 @@ package de.restockoffice;
 
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.cibseven.bpm.engine.delegate.JavaDelegate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import java.util.Map;
@@ -9,7 +10,12 @@ import java.util.Map;
 @Component("sendInvoiceMailDelegate")
 public class SendInvoiceMailDelegate implements JavaDelegate {
 
-    private final RestClient invoiceClient = RestClient.create("https://invoice.restockoffice.de");
+    private final RestClient invoiceClient;
+
+    public SendInvoiceMailDelegate(
+            @Value("${invoiceservice.base-url}") String invoiceUrl) {
+        this.invoiceClient = RestClient.create(invoiceUrl);
+    }
 
     @Override
     public void execute(DelegateExecution execution) throws Exception {
