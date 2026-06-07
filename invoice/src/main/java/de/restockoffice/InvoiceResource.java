@@ -30,7 +30,7 @@ public class InvoiceResource {
     @POST
     @Path("invoices/create")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("process-engine")
+    @Authenticated
     public Response createInvoice(InvoiceRequest request)throws IOException {
         log.info("Process Engine triggers: Creating invoice {} for user {}", request.invoiceNumber(), request.recipientEmail());
         String generatedNumber = invoiceService.createAndPersistInvoice(request);
@@ -43,7 +43,7 @@ public class InvoiceResource {
     @Path("invoices/send-mail")
     @Produces(MediaType.APPLICATION_JSON)
     @jakarta.transaction.Transactional
-    @RolesAllowed("process-engine")
+    @Authenticated
     public Response sendInvoiceMail(InvoiceRequest request) throws IOException{
         invoiceService.sendInvoiceViaEmail(request);
 
