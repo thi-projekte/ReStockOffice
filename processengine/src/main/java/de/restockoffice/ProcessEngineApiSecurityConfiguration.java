@@ -12,9 +12,11 @@ public class ProcessEngineApiSecurityConfiguration {
 
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
-  public SecurityFilterChain aboConfirmationApiSecurityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain processEngineApiSecurityFilterChain(HttpSecurity http) throws Exception {
     http
-        .securityMatcher("/api/abo-confirmation-process/**")
+        .securityMatcher(
+            "/api/abo-confirmation-process/**",
+            "/api/restocker-tour-process/**")
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
 

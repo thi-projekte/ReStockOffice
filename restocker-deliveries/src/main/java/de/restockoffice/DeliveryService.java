@@ -81,6 +81,7 @@ public class DeliveryService {
             String deliveryDateValue,
             String firstCustomerId,
             String secondCustomerId,
+            String recipientEmail,
             String authorizationHeader
     ) {
         LocalDate deliveryDate = parseTestDeliveryDate(deliveryDateValue);
@@ -97,6 +98,7 @@ public class DeliveryService {
         Delivery firstDelivery = createOpenTestDelivery(
                 TEST_ORDER_PREFIX + "one",
                 normalizeOptionalCustomerId(firstCustomerId, DEFAULT_TEST_CUSTOMER_ONE),
+                normalizeOptionalRecipientEmail(recipientEmail),
                 deliveryDate,
                 List.of(
                         createTestDeliveryItem("10086", "Kassenbuch A4", 1, DEFAULT_UNIT),
@@ -106,6 +108,7 @@ public class DeliveryService {
         Delivery secondDelivery = createOpenTestDelivery(
                 TEST_ORDER_PREFIX + "two",
                 normalizeOptionalCustomerId(secondCustomerId, DEFAULT_TEST_CUSTOMER_TWO),
+                normalizeOptionalRecipientEmail(recipientEmail),
                 deliveryDate,
                 List.of(
                         createTestDeliveryItem("10088", "Gummizugmappe A3", 1, DEFAULT_UNIT),
@@ -741,7 +744,7 @@ public class DeliveryService {
         dto.setRestockerName(restockerDisplayName(delivery, authenticatedRestocker));
         dto.setStatus(deliveryStatus(delivery));
 
-        dto.setRecipientEmail(valueOrEmpty(user != null ? user.getEmail() : null));
+        dto.setRecipientEmail(valueOrEmpty(valueOrFallback(delivery.recipientEmail, user != null ? user.getEmail() : null)));
         dto.setCompanyName(valueOrEmpty(user != null ? user.getCompanyName() : null));
         dto.setStreet(valueOrEmpty(user != null ? user.getStreet() : null));
         dto.setHouseNumber(valueOrEmpty(user != null ? user.getHouseNumber() : null));
@@ -1022,12 +1025,14 @@ public class DeliveryService {
     private Delivery createOpenTestDelivery(
             String orderId,
             String customerId,
+            String recipientEmail,
             LocalDate deliveryDate,
             List<DeliveryItem> items
     ) {
         Delivery delivery = new Delivery();
         delivery.orderId = orderId;
         delivery.userId = customerId;
+        delivery.recipientEmail = recipientEmail;
         delivery.deliveryDate = deliveryDate;
         delivery.stopOrder = 0;
         delivery.collected = false;
@@ -1042,6 +1047,10 @@ public class DeliveryService {
         }
 
         return delivery;
+    }
+
+    private String normalizeOptionalRecipientEmail(String recipientEmail) {
+        return recipientEmail != null && !recipientEmail.isBlank() ? recipientEmail.trim() : null;
     }
 
     private DeliveryItem createTestDeliveryItem(

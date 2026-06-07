@@ -40,6 +40,9 @@ public class Delivery extends PanacheEntityBase {
     @Column(name = "user_id", nullable = false)
     public String userId;
 
+    @Column(name = "recipient_email")
+    public String recipientEmail;
+
     @Column(name = "delivery_date")
     public LocalDate deliveryDate;
 

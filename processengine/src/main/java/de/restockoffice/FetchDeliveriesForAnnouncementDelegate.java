@@ -16,21 +16,23 @@ import java.util.List;
 public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
 
     private static final Logger log = LoggerFactory.getLogger(FetchDeliveriesForAnnouncementDelegate.class);
-    private static final int ANNOUNCEMENT_LEAD_DAYS = 2;
-
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${deliveriesservice.base-url:https://restocker-deliveries.restockoffice.de}")
     private String deliveriesServiceBaseUrl;
 
+    @Value("${delivery-announcement.lead-days:0}")
+    private int announcementLeadDays;
+
     @Override
     public void execute(DelegateExecution execution) {
-        LocalDate announcementTargetDate = LocalDate.now().plusDays(ANNOUNCEMENT_LEAD_DAYS);
-        String url = trimTrailingSlash(deliveriesServiceBaseUrl) + "/api/deliveries/open";
+        LocalDate announcementTargetDate = LocalDate.now().plusDays(announcementLeadDays);
+        String url = trimTrailingSlash(deliveriesServiceBaseUrl) + "/api/deliveries/admin/all-deliveries";
 
         DeliveryDetailResponse[] response = restTemplate.getForObject(url, DeliveryDetailResponse[].class);
         List<DeliveryMonitoringItem> deliveries = Arrays.stream(response != null ? response : new DeliveryDetailResponse[0])
                 .filter(delivery -> announcementTargetDate.equals(parseDate(delivery.deliveryDate())))
+                .filter(this::isOpenDelivery)
                 .map(this::toMonitoringItem)
                 .toList();
 
@@ -52,6 +54,10 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         return value != null && !value.isBlank() ? LocalDate.parse(value) : null;
     }
 
+    private boolean isOpenDelivery(DeliveryDetailResponse delivery) {
+        return delivery.status() == null || delivery.status().isBlank() || "OPEN".equalsIgnoreCase(delivery.status());
+    }
+
     private String trimTrailingSlash(String value) {
         if (value == null || value.isBlank()) {
             return "";
@@ -63,7 +69,8 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
             String id,
             String orderId,
             String userId,
-            String deliveryDate
+            String deliveryDate,
+            String status
     ) {
     }
 }
