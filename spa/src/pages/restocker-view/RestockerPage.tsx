@@ -155,6 +155,10 @@ export function RestockerPage() {
         (order) =>
             Boolean(order.assignment && order.assignment.status !== "completed")
     );
+    const openAssignedOrders = assignedOrdersResult.orders.filter(
+        (order) =>
+            Boolean(order.assignment && order.assignment.status !== "completed")
+    );
     const openAssignedTodayCount = openAssignedToday.length;
     const hasOpenAssignedToday = openAssignedTodayCount > 0;
 
@@ -419,14 +423,14 @@ export function RestockerPage() {
                             <p>Lade deine Aufträge...</p>
                         ) : assignedError ? (
                             <p style={{ color: "red" }}>{assignedError}</p>
-                        ) : assignedOrdersResult.orders.length === 0 ? (
-                            <p>Du hast aktuell keine zugeordneten Aufträge.</p>
+                        ) : openAssignedOrders.length === 0 ? (
+                            <p>Du hast aktuell keine offenen zugeordneten Aufträge.</p>
                         ) : (
                             <>
-                                <p>Du hast aktuell {assignedOrdersResult.orders.length} zugeordnete Aufträge.</p>
+                                <p>Du hast aktuell {openAssignedOrders.length} offene zugeordnete Aufträge.</p>
                                 <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
                                 <div className="open-orders-carousel">
-                                    {assignedOrdersResult.orders.slice(0, 6).map((order) => (
+                                    {openAssignedOrders.slice(0, 6).map((order) => (
                                         <RestockerOrderCard
                                             key={order.orderKey}
                                             order={order}
