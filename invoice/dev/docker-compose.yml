@@ -20,12 +20,21 @@ services:
 
       # Keycloak / OIDC (Lokal)
       QUARKUS_OIDC_ENABLED: "true"
+      QUARKUS_OIDC_PRINCIPAL_CLAIM: client_id
+      QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH: groups
       QUARKUS_OIDC_AUTH_SERVER_URL: http://host.docker.internal:8180/realms/restockoffice
       QUARKUS_OIDC_CLIENT_ID: restockoffice-spa
-      QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8180/realms/restockoffice
+      QUARKUS_OIDC_TOKEN_ISSUER: any
+
+      # Damit sehen wir, warum das Token vom Camunda-Request vielleicht nicht passt
+      QUARKUS_LOG_CATEGORY__IO_QUARKUS_OIDC__LEVEL: DEBUG
+      # Damit sehen wir, ob die Validierung (JSON) scheitert
+      QUARKUS_LOG_CATEGORY__ORG_HIBERNATE__LEVEL: DEBUG
+      QUARKUS_LOG_CATEGORY__IO_QUARKUS_REST__LEVEL: DEBUG
 
       # Profil
       QUARKUS_PROFILE: dev
+
 
     depends_on:
       invoice-db-dev:
