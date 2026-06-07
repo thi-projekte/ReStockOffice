@@ -75,4 +75,7 @@ articlesservice:
 deliveriesservice:
   base-url: ${DELIVERIES_SERVICE_URL:https://restocker-deliveries.restockoffice.de}
 
+invoiceservice:
+  base-url: ${INVOICE_SERVICE_URL:https://invoice.restockoffice.de}
+
 

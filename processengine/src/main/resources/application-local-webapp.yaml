@@ -90,3 +90,18 @@ cibseven:
       provider: org.cibseven.webapp.providers.SevenProvider
     user:
       provider: org.cibseven.webapp.auth.KeycloakUserProvider
+
+deliveriesservice:
+  base-url: http://localhost:8082
+
+ordersservice:
+  base-url: http://localhost:8081
+
+usersservice:
+  base-url: http://localhost:8084
+
+articlesservice:
+  base-url: http://localhost:8083
+
+invoiceservice:
+  base-url: http://localhost:8085
