@@ -691,16 +691,18 @@ public class DeliveryService {
     }
 
     private List<String> findCustomerIdsDeliveredBetween(LocalDateTime periodStart, LocalDateTime periodEndExclusive) {
+        LocalDate startDate = periodStart.toLocalDate();
+        LocalDate endDate = periodEndExclusive.toLocalDate();
         return entityManager
                 .createQuery(
                         "select distinct d.userId from Delivery d " +
                                 "where d.userId is not null and d.userId <> '' " +
-                                "and d.deliveredAt >= :periodStart and d.deliveredAt < :periodEnd " +
+                                "and d.deliveredAt >= :startDate and d.deliveredAt < :endDate " +
                                 "order by d.userId asc",
                         String.class
                 )
-                .setParameter("periodStart", periodStart)
-                .setParameter("periodEnd", periodEndExclusive)
+                .setParameter("startDate", startDate)
+                .setParameter("endDate", endDate)
                 .getResultList();
     }
 
