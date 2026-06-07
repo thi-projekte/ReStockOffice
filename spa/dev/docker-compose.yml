@@ -1,0 +1,9 @@
+services:
+  spa:
+    image: ghcr.io/thi-projekte/restockoffice-spa:latest
+    container_name: restockoffice-spa
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
