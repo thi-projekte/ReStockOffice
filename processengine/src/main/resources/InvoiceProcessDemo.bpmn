@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1bnm3cz" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.47.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Collaboration_021nnii">
-    <bpmn:participant id="Participant_InvoiceProcessDemo" name="Rechnungspozess Demo" processRef="Process_invoice" />
+    <bpmn:participant id="Participant_InvoiceProcessDemo" name="Rechnungspozess Demo" processRef="Process_invoice_demo" />
     <bpmn:participant id="Participant_Customer" name="Kunde">
       <bpmn:participantMultiplicity />
     </bpmn:participant>
@@ -77,18 +77,15 @@
     <bpmn:dataObject id="DataObject_00gb25r" isCollection="true" />
     <bpmn:startEvent id="StartEvent_MonthlyInvoiceTimer" name="Monatsanfang">
       <bpmn:outgoing>Flow_TimerToLoadCustomerIDs</bpmn:outgoing>
-      <bpmn:timerEventDefinition id="TimerEventDefinition_1ap7cdx">
-        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 0 8 1W * ?</bpmn:timeCycle>
-      </bpmn:timerEventDefinition>
     </bpmn:startEvent>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_021nnii">
-      <bpmndi:BPMNShape id="Participant_0a0ayn7_di" bpmnElement="Participant_InvoiceProcess" isHorizontal="true">
+      <bpmndi:BPMNShape id="Participant_0a0ayn7_di" bpmnElement="Participant_InvoiceProcessDemo" isHorizontal="true">
         <dc:Bounds x="190" y="190" width="1158" height="470" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_029ni79_di" bpmnElement="StartEvent_MonthlyInvoiceTimer">
+      <bpmndi:BPMNShape id="Event_1u0w8jl_di" bpmnElement="StartEvent_MonthlyInvoiceTimer">
         <dc:Bounds x="250" y="402" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="234" y="445" width="70" height="14" />
