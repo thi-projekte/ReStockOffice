@@ -65,7 +65,7 @@ interface UpsertOrderPayload extends OrdersRequestContext {
 
 interface DeleteOrderPayload extends OrdersRequestContext {
   productId: string;
-  orderId: number;
+  orderId?: number;
 }
 
 interface MarketplaceCustomerData {
@@ -1085,6 +1085,10 @@ export async function deleteSubscriptionOrder({
   }
 
   const resolvedToken = await resolveToken(token);
+
+  if (!orderId) {
+    throw new Error(`Order für Produkt ${productId} kann nicht gelöscht werden: Keine ID vorhanden.`);
+  }
 
   let response: Response;
 
