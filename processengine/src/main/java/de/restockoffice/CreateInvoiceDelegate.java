@@ -86,15 +86,11 @@ public class CreateInvoiceDelegate implements JavaDelegate {
 
                 if (articleNumber == null || quantity == null) continue;
 
-                System.out.println("!!! ICH BIN HIER IM CODE AN ZEILE 89 !!!");
-
                 // Artikel-Details live aus dem Article-Service laden
                 Map<String, Object> article = articleClient.get()
                         .uri("/article?productId={Id}", articleNumber)
                         .retrieve()
                         .body(new ParameterizedTypeReference<Map<String, Object>>() {});
-
-                System.out.println("!!! ICH BIN HIER IM CODE AN ZEILE 97 !!!");
 
                 if (article != null) {
                     Double rawPrice = (Double) article.get("price");
@@ -135,9 +131,6 @@ public class CreateInvoiceDelegate implements JavaDelegate {
             invoiceRequest.put("dueDate", LocalDate.now().plusDays(14).toString());
             invoiceRequest.put("netAmount", totalNet);
             invoiceRequest.put("orderItems", orderItemsJson);
-
-            System.out.println("DEBUG: Sende Request an: " + invoiceClient + "/invoices/create --- Invoice Request:");
-            System.out.println(invoiceRequest);
 
             // HTTP POST an InvoiceResource senden
             Map<String, String> response = invoiceClient.post()
