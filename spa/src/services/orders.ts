@@ -102,7 +102,7 @@ function isDeliveryDateInPast(dateValue?: string | null, referenceDate = new Dat
     normalizedDate < formatLocalIsoDate(referenceDate);
 }
 
-function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert") {
+function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert" | "gelöscht") {
   return `Die Orders-API konnte nicht erreicht werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration, falls Orders nicht ${action} werden konnten.`;
 }
 
@@ -1061,17 +1061,17 @@ export async function upsertSubscriptionOrder({
 }
 
 export async function deleteSubscriptionOrder({
-  customerId,
-  token,
-  productId,
-}: DeleteOrderPayload): Promise<void> {
+                                                customerId,
+                                                token,
+                                                productId,
+                                              }: DeleteOrderPayload): Promise<void> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
     }
 
     const existingMockOrderIndex = mockRestockOrders.findIndex(
-      (order) => order.customerId === customerId && order.productId === productId,
+        (order) => order.customerId === customerId && order.productId === productId,
     );
 
     if (existingMockOrderIndex >= 0) {
@@ -1086,26 +1086,26 @@ export async function deleteSubscriptionOrder({
   let response: Response;
 
   try {
-    response = await fetch(ORDERS_API_URL, {
-      method: "POST",
+    response = await fetch(`${ORDERS_API_URL}/${productId}`, {
+      method: "DELETE",
       headers: createHeaders(resolvedToken),
-      body: JSON.stringify({
-        productId,
-        status: "CANCELLED",
-        quantity: 0,
-        interval: 1,
-      }),
     });
   } catch {
-    throw new Error(buildOrdersNetworkErrorMessage("gespeichert"));
+    throw new Error(buildOrdersNetworkErrorMessage("gelöscht"));
   }
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      throw new Error("Die Orders-API hat das Speichern abgelehnt. Bitte pruefe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.");
+      throw new Error(
+          "Die Orders-API hat das Löschen abgelehnt. Bitte prüfe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.",
+      );
     }
 
-    throw new Error(`RestockOrder konnte nicht gespeichert werden (HTTP ${response.status}).`);
+    if (response.status === 404) {
+      throw new Error(`Order für Produkt ${productId} wurde nicht gefunden.`);
+    }
+
+    throw new Error(`RestockOrder konnte nicht gelöscht werden (HTTP ${response.status}).`);
   }
 }
 
