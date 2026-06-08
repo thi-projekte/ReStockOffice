@@ -45,12 +45,8 @@ public class CreateInvoiceDelegate implements JavaDelegate {
                     request.getHeaders().add("Authorization", "Bearer " + token);
                     System.out.println("DEBUG: Token erfolgreich generiert: " + token.substring(0, 10) + "...");
                     request.getHeaders().setBearerAuth(token);
-                }else{
-
-                    System.err.println("DEBUG: ERROR - authorizedClient ist NULL oder Token fehlt!");
                 }
             }catch(Exception e){
-                System.err.println("DEBUG: Exception während Token-Abruf: " + e.getMessage());
                 e.printStackTrace();
             }
 
@@ -90,11 +86,15 @@ public class CreateInvoiceDelegate implements JavaDelegate {
 
                 if (articleNumber == null || quantity == null) continue;
 
+                System.out.println("!!! ICH BIN HIER IM CODE AN ZEILE 89 !!!");
+
                 // Artikel-Details live aus dem Article-Service laden
                 Map<String, Object> article = articleClient.get()
                         .uri("/article?productId={Id}", articleNumber)
                         .retrieve()
                         .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+
+                System.out.println("!!! ICH BIN HIER IM CODE AN ZEILE 97 !!!");
 
                 if (article != null) {
                     Double rawPrice = (Double) article.get("price");
@@ -128,7 +128,7 @@ public class CreateInvoiceDelegate implements JavaDelegate {
             invoiceRequest.put("recipientEmail", user.get("email"));
             invoiceRequest.put("recipientName", user.get("companyName"));
             invoiceRequest.put("recipientStreet", user.get("street"));
-            invoiceRequest.put("recipientZip", user.get("zipCode"));
+            invoiceRequest.put("recipientZip", user.get("postalCode"));
             invoiceRequest.put("recipientCity", user.get("city"));
             invoiceRequest.put("invoiceNumber", ""); // von Quarkus überschrieben
             invoiceRequest.put("issueDate", LocalDate.now().toString());
@@ -136,7 +136,8 @@ public class CreateInvoiceDelegate implements JavaDelegate {
             invoiceRequest.put("netAmount", totalNet);
             invoiceRequest.put("orderItems", orderItemsJson);
 
-            System.out.println("DEBUG: Sende Request an: " + invoiceClient + "/invoices/create");
+            System.out.println("DEBUG: Sende Request an: " + invoiceClient + "/invoices/create --- Invoice Request:");
+            System.out.println(invoiceRequest);
 
             // HTTP POST an InvoiceResource senden
             Map<String, String> response = invoiceClient.post()
@@ -144,10 +145,12 @@ public class CreateInvoiceDelegate implements JavaDelegate {
                     .body(invoiceRequest)
                     .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                     .retrieve()
+
                     .body(new ParameterizedTypeReference<Map<String, String>>() {});
 
             // Von Quarkus generierte Rechnungsnummer für den nächsten Schritt merken
             String generatedNumber = response != null ? response.get("invoiceNumber") : null;
+
             execution.setVariable("generatedInvoiceNumber", generatedNumber);
 
             // Den Payload temporär merken
