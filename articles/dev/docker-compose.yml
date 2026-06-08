@@ -3,6 +3,8 @@ services:
   articles:
     image: ghcr.io/thi-projekte/restockoffice-articles:latest
     container_name: articles-service-dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8083:8080" # Erreichbar unter localhost:8083
     environment:
@@ -11,7 +13,7 @@ services:
       QUARKUS_DATASOURCE_USERNAME: reStockOffice
       QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
       # Keycloak (angepasst auf deinen Port)
-      QUARKUS_OIDC_AUTH_SERVER_URL: http://host.docker.internal:8180/realms/quarkus
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://host.docker.internal:8180/realms/restockoffice
     depends_on:
       - db-container
 
