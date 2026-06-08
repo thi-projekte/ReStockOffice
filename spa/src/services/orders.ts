@@ -65,6 +65,7 @@ interface UpsertOrderPayload extends OrdersRequestContext {
 
 interface DeleteOrderPayload extends OrdersRequestContext {
   productId: string;
+  orderId: number;
 }
 
 interface MarketplaceCustomerData {
@@ -639,6 +640,7 @@ function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   const source = rawOrder as Record<string, unknown>;
 
   return {
+    id: source.id != null ? Number(source.id) : undefined,
     customerId: String(source.customerId ?? ""),
     productId: String(source.productId ?? ""),
     status: String(source.status ?? "ACTIVE"),
@@ -1061,10 +1063,11 @@ export async function upsertSubscriptionOrder({
 }
 
 export async function deleteSubscriptionOrder({
-                                                customerId,
-                                                token,
-                                                productId,
-                                              }: DeleteOrderPayload): Promise<void> {
+    customerId,
+    token,
+    productId,
+    orderId,
+  }: DeleteOrderPayload): Promise<void> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
@@ -1086,7 +1089,7 @@ export async function deleteSubscriptionOrder({
   let response: Response;
 
   try {
-    response = await fetch(`${ORDERS_API_URL}/${productId}`, {
+    response = await fetch(`${ORDERS_API_URL}/${orderId}`, {
       method: "DELETE",
       headers: createHeaders(resolvedToken),
     });
