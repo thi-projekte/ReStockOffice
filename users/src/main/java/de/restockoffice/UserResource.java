@@ -61,7 +61,7 @@ public class UserResource {
     public Customer getCustomerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
 
-        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin")) {
+        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin") && !securityIdentity.hasRole("process-engine")) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
         }
         return findCustomerOrThrow(userId);
