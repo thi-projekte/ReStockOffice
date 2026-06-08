@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1bnm3cz" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.47.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:collaboration id="Collaboration_021nnii">
-    <bpmn:participant id="Participant_InvoiceProcess" name="Rechnungspozess" processRef="Process_invoice" />
+    <bpmn:participant id="Participant_InvoiceProcessDemo" name="Rechnungspozess Demo" processRef="Process_invoice" />
     <bpmn:participant id="Participant_Customer" name="Kunde">
       <bpmn:participantMultiplicity />
     </bpmn:participant>
     <bpmn:messageFlow id="MessageFlow_SendInvoiceMailToCustomer" sourceRef="Task_SendInvoiceMail" targetRef="Participant_Customer" />
   </bpmn:collaboration>
-  <bpmn:process id="Process_invoice" name="Rechnungsprozess" isExecutable="true" camunda:historyTimeToLive="180">
+  <bpmn:process id="Process_invoice_demo" name="Rechnungsprozess Demo" isExecutable="true" camunda:historyTimeToLive="180">
     <bpmn:sequenceFlow id="Flow_TimerToLoadCustomerIDs" sourceRef="StartEvent_MonthlyInvoiceTimer" targetRef="Task_LoadCustomersWithDelivery" />
     <bpmn:sequenceFlow id="Flow_MailDeliveryToProcessEnd" sourceRef="SubProcess_InvoiceMailDelivery" targetRef="EndEvent_InvoiceMailsFinished" />
     <bpmn:sequenceFlow id="Flow_LoadCustomerToMailDelivery" sourceRef="Task_LoadCustomersWithDelivery" targetRef="SubProcess_InvoiceMailDelivery" />
