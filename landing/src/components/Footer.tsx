@@ -7,7 +7,7 @@ export default function Footer() {
         <a className={styles.link} href="/kontakt">Kontakt</a>
         <a className={styles.link} href="/impressum">Impressum</a>
         <a className={styles.link} href="/agb-datenschutz">AGB & Datenschutz</a>
-        <p className={styles.copy}>ReStockOffice ©2026</p>
+        <p className={styles.copy}>ReStockOffice {'\u00A9'}2026</p>
       </div>
     </footer>
   )

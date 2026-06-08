@@ -247,9 +247,11 @@
   align-items: center;
 }
 
-.site-footer__inner a {
+.site-footer__inner a,
+.site-footer__inner span {
   color: inherit;
-  font-weight: 600;
+  font-size: inherit;
+  font-weight: inherit;
   transition: color 0.15s ease;
 }
 

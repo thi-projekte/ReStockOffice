@@ -865,10 +865,10 @@ export function AppShell({ children }: AppShellProps) {
 
       <footer className="site-footer">
         <div className="container site-footer__inner">
-          <Link to="/kontakt">Kontakt</Link>
-          <Link to="/impressum">Impressum</Link>
-          <Link to="/agb-datenschutz">AGB & Datenschutz</Link>
-          <span>ReStockOffice ©2026</span>
+          <a href="https://restockoffice.de/kontakt">Kontakt</a>
+          <a href="https://restockoffice.de/impressum">Impressum</a>
+          <a href="https://restockoffice.de/agb-datenschutz">AGB & Datenschutz</a>
+          <span>ReStockOffice {'\u00A9'}2026</span>
         </div>
 
         {isLoggedIn && isRestocker ? (

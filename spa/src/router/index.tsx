@@ -13,7 +13,6 @@ import { OrderPage} from "../pages/restocker-view/OrderPage";
 import { MyOrdersPage } from "../pages/restocker-view/MyOrdersPage";
 import { DeliveryPage } from "../pages/restocker-view/DeliveryPage";
 import {IndexPage} from "./IndexPage";
-import { LegalPage } from "../pages/LegalPage";
 
 
 export const router = createBrowserRouter([
@@ -35,19 +34,6 @@ export const router = createBrowserRouter([
         path: "login",
         element: <LoginPage />,
       },
-      {
-        path: "kontakt",
-        element: <LegalPage title="Kontakt" />,
-      },
-      {
-        path: "impressum",
-        element: <LegalPage title="Impressum" />,
-      },
-      {
-        path: "agb-datenschutz",
-        element: <LegalPage title="AGB & Datenschutz" />,
-      },
-
       {
         path: "account",
         element: (

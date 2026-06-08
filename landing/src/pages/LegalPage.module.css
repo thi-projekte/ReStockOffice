@@ -35,9 +35,29 @@
 }
 
 .body {
+  display: grid;
+  gap: 32px;
   min-height: 320px;
   margin-top: 40px;
+  padding-top: 32px;
   border-top: 1px solid var(--color-border);
+}
+
+.section {
+  display: grid;
+  gap: 12px;
+}
+
+.section h2 {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 1.35rem;
+}
+
+.section p {
+  margin: 0;
+  color: var(--color-text);
+  line-height: 1.7;
 }
 
 @media (max-width: 680px) {
