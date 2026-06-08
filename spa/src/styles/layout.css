@@ -240,6 +240,27 @@
   text-align: center;
 }
 
+.site-footer__inner {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: center;
+}
+
+.site-footer__inner a {
+  color: inherit;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.site-footer__inner a:hover {
+  color: var(--color-primary);
+}
+
+.site-footer__inner span {
+  margin: 0;
+}
+
 
 
 .section-space {
@@ -559,6 +580,11 @@
 
   .header-actions {
     gap: 0.4rem;
+  }
+
+  .site-footer__inner {
+    grid-template-columns: 1fr;
+    justify-items: center;
   }
 
   .header-profile-button {

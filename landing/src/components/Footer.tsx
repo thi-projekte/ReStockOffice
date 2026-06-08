@@ -1,11 +1,13 @@
 import styles from './Footer.module.css'
 
 export default function Footer() {
-  const year = new Date().getFullYear()
   return (
     <footer className={styles.footer}>
       <div className={`container ${styles.inner}`}>
-        <p className={styles.copy}>© {year} ReStockOffice</p>
+        <a className={styles.link} href="/kontakt">Kontakt</a>
+        <a className={styles.link} href="/impressum">Impressum</a>
+        <a className={styles.link} href="/agb-datenschutz">AGB & Datenschutz</a>
+        <p className={styles.copy}>ReStockOffice ©2026</p>
       </div>
     </footer>
   )

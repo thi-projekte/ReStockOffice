@@ -35,6 +35,22 @@
   line-height: 1.6;
 }
 
+.legal-page {
+  min-height: 420px;
+}
+
+.legal-page h1 {
+  color: var(--color-secondary);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.05;
+}
+
+.legal-page__body {
+  min-height: 280px;
+  margin-top: 1.5rem;
+  border-top: 1px solid rgba(38, 64, 55, 0.12);
+}
+
 .hero-card {
   display: grid;
   gap: 1.5rem;
