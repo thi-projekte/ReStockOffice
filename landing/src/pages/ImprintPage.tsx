@@ -1,26 +1,50 @@
-import LegalPage from './LegalPage'
+import styles from "./LegalPage.module.css";
+import Header from "../components/Header.tsx";
+import Footer from "../components/Footer.tsx";
 
 export default function ImprintPage() {
 
-  const imprint = `
-    Verantwortlich im Sinne des § 5 TMG ist:
-    
-    [Unternehmensname / Betreiber]
-    [Rechtsform]
-    [Name des Vertretungsberechtigten]
-    [Adresse (Straße, Hausnummer)]
-    [PLZ, Ort, Land]
-    
-    E-Mail: [E-Mail-Adresse]
-    Telefon: [Telefonnummer]
-    
-    USt-IdNr.: [falls vorhanden]
-    Registergericht: [falls eingetragen]
-    Registernummer: [falls vorhanden]
-    
-    Inhaltlich verantwortlich gemäß § 18 Abs. 2 MStV:
-    [Name, Adresse wie oben]
-  `;
+  return (
+          <div className={styles.page}>
+            <Header />
+            <main className={styles.main}>
+              <div className={styles.content}>
+                <h1 className={styles.title}>Impressum</h1>
 
-  return <LegalPage title="Impressum" body={imprint}/>
+                <p><strong>Angaben gemäß § 5 TMG</strong></p>
+
+                <p>
+                  Max Mustermann<br/>
+                  Studentisches Projekt der Technischen Hochschule Ingolstadt<br/>
+                  Musterstraße 1<br/>
+                  12345 Musterstadt<br/>
+                  Deutschland
+                </p>
+
+                <p>
+                  E-Mail: restockoffice@info.de
+                </p>
+
+                <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+
+                <p>
+                  Max Mustermann<br/>
+                  Musterstraße 1<br/>
+                  12345 Musterstadt
+                </p>
+
+                <h2>Hinweis</h2>
+
+                <p>
+                  Diese Website ist ein studentisches Projekt im Rahmen einer Lehrveranstaltung an der
+                  Technischen Hochschule Ingolstadt. Es handelt sich nicht um einen kommerziellen Online-Shop.
+                  Es werden keine rechtsverbindlichen Kaufverträge abgeschlossen.
+                </p>
+
+              </div>
+            </main>
+            <Footer/>
+          </div>
+  )
+
 }

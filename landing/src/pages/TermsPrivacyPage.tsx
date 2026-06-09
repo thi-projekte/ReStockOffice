@@ -1,30 +1,72 @@
-import LegalPage from './LegalPage'
+import styles from "./LegalPage.module.css";
+import Header from "../components/Header.tsx";
+import Footer from "../components/Footer.tsx";
 
 export default function TermsPrivacyPage() {
 
-  const termsPrivacy = `
-    Diese Allgemeinen Geschäftsbedingungen gelten für alle Verträge, die über den Online-Shop ReStockOffice zwischen dem Betreiber und den Kunden geschlossen werden.
-    
-    (1) Vertragsgegenstand ist der Verkauf von Waren über den Online-Shop.
-    (2) Die Darstellung der Produkte stellt kein rechtlich bindendes Angebot dar, sondern eine Aufforderung zur Abgabe eines Angebots.
-    (3) Der Vertrag kommt durch Annahme der Bestellung durch den Betreiber zustande.
-    (4) Preise verstehen sich in Euro und enthalten die gesetzliche Mehrwertsteuer, sofern nicht anders angegeben.
-    (5) Versand- und Lieferbedingungen ergeben sich aus den Angaben im Bestellprozess.
-    (6) Es gilt das gesetzliche Mängelhaftungsrecht.
-    (7) Der Kunde hat ein gesetzliches Widerrufsrecht nach den gesetzlichen Bestimmungen.
-    (8) Änderungen dieser AGB bleiben vorbehalten, soweit sie für den Kunden zumutbar sind.
-    
-    
-    Nachfolgend informieren wir Sie über die Erhebung, Verarbeitung und Nutzung personenbezogener Daten im Rahmen der Nutzung unserer Website restockoffice.de.
+  return (
+      <div className={styles.page}>
+        <Header />
+        <main className={styles.main}>
+          <div className={styles.content}>
+            <h1 className={styles.title}>AGBs & Datenschutz</h1>
 
-    (1) Verantwortlicher im Sinne der Datenschutzgesetze ist der im Impressum genannte Betreiber.
-    (2) Personenbezogene Daten werden nur erhoben, soweit dies für die Bereitstellung einer funktionsfähigen Website sowie zur Vertragsabwicklung erforderlich ist.
-    (3) Die Verarbeitung erfolgt auf Grundlage der DSGVO, insbesondere Art. 6 Abs. 1 lit. b (Vertragserfüllung) und lit. f (berechtigtes Interesse).
-    (4) Eine Weitergabe an Dritte erfolgt nur, soweit dies zur Vertragsabwicklung notwendig ist (z. B. Versanddienstleister, Zahlungsanbieter).
-    (5) Betroffene haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung sowie Datenübertragbarkeit gemäß Art. 15–20 DSGVO.
-    (6) Es besteht ein Beschwerderecht bei der zuständigen Datenschutzaufsichtsbehörde.
-    (7) Daten werden nur so lange gespeichert, wie dies für die genannten Zwecke erforderlich ist oder gesetzliche Aufbewahrungspflichten bestehen.
-  `;
+            <h2>Nutzungsbedingungen</h2>
 
-  return <LegalPage title="AGB & Datenschutz" body={termsPrivacy}/>
+            <p><strong>Hinweis:</strong> Diese Website ist ein studentisches Demonstrationsprojekt.</p>
+
+            <ul>
+              <li>Alle dargestellten Produkte dienen ausschließlich Demonstrationszwecken.</li>
+              <li>Es findet kein echter Verkauf statt.</li>
+              <li>Bestellungen oder Warenkörbe haben keinen rechtlichen Charakter.</li>
+              <li>Es werden keine Kaufverträge geschlossen.</li>
+              <li>Keine Gewähr für Vollständigkeit oder Richtigkeit der Inhalte.</li>
+            </ul>
+
+            <p>
+              Mit der Nutzung der Website wird dieser Hinweis zur Kenntnis genommen.
+            </p>
+
+            <h2>Datenschutzerklärung</h2>
+
+            <h3>Allgemeine Hinweise</h3>
+            <p>
+              Diese Website dient ausschließlich Demonstrations- und Lehrzwecken im Rahmen eines studentischen Projekts.
+              Der Schutz Ihrer persönlichen Daten ist uns wichtig.
+            </p>
+
+            <h3>Datenerfassung beim Besuch der Website</h3>
+            <p>Beim Aufruf der Website werden automatisch folgende Daten erfasst:</p>
+            <ul>
+              <li>IP-Adresse</li>
+              <li>Datum und Uhrzeit des Zugriffs</li>
+              <li>Browsertyp und Version</li>
+              <li>Betriebssystem</li>
+            </ul>
+
+            <p>
+              Diese Daten dienen ausschließlich der technischen Bereitstellung und Sicherheit der Website.
+            </p>
+
+            <h2>Kontaktaufnahme</h2>
+            <p>
+              Bei Kontakt per E-Mail werden die angegebenen Daten nur zur Bearbeitung der Anfrage verwendet.
+            </p>
+
+            <h2>Speicherdauer</h2>
+            <p>
+              Personenbezogene Daten werden nur so lange gespeichert, wie es für den jeweiligen Zweck erforderlich ist.
+            </p>
+
+            <h2>Ihre Rechte</h2>
+            <p>
+              Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer Daten
+              im Rahmen der geltenden Datenschutzgesetze.
+            </p>
+
+            </div>
+        </main>
+        <Footer/>
+      </div>
+  )
 }
