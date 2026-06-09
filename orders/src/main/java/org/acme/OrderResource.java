@@ -1,26 +1,35 @@
 package org.acme;
 
 import io.quarkus.security.Authenticated;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+
 import java.time.LocalDateTime;
 import java.util.List;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import jakarta.inject.Inject;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.jboss.logging.Logger;
 
 
 @Path("/orders")
@@ -29,16 +38,27 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 //@RolesAllowed("camunda-admin") admin || user
 @Authenticated
 public class OrderResource {
+    private static final Logger LOG = Logger.getLogger(OrderResource.class);
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String CUSTOMER_ID = "customerId";
+    private static final String OLD_CUSTOMER_ID = "oldCustomerId";
+    private static final String NEW_CUSTOMER_ID = "newCustomerId";
+    private static final String PROCESS_VARIABLE_VALUE = "value";
+    private static final String PROCESS_VARIABLE_TYPE = "type";
+    private static final String PROCESS_VARIABLE_STRING = "String";
+    private static final String PROCESS_VARIABLE_LONG = "Long";
+    private static final String PROCESS_VARIABLE_INTEGER = "Integer";
+
     @Inject
     SecurityIdentity securityIdentity;
 
     @Inject
     JsonWebToken jwt;
 
-    @ConfigProperty(
-            name = "processengine.abo-confirmation-start-url",
-            defaultValue = "https://pe.restockoffice.de/api/abo-confirmation-process/change"
-    )
+    @Inject
+    EntityManager entityManager;
+
+    @ConfigProperty(name = "processengine.abo-confirmation-start-url", defaultValue = "https://pe.restockoffice.de/api/abo-confirmation-process/change")
     String aboConfirmationProcessStartUrl;
 
     @ConfigProperty(name = "processengine.abo-confirmation-window-duration", defaultValue = "PT10M")
@@ -55,7 +75,7 @@ public class OrderResource {
         if (securityIdentity == null || securityIdentity.isAnonymous()) {
             throw new NotAuthorizedException("Nicht autorisiert");
         }else{
-            System.out.println("👤 GET /orders REQUESTED BY: " + securityIdentity.getPrincipal().getName());
+            LOG.infof("GET /orders requested by: %s", securityIdentity.getPrincipal().getName());
             return Order.listAll();
         }
     }
@@ -83,61 +103,59 @@ public class OrderResource {
     public Order getById(@PathParam("id") Long id) {
         if (securityIdentity == null || securityIdentity.isAnonymous()) {
             throw new NotAuthorizedException("Nicht autorisiert");
-        }else{
+        } else {
             return Order.findById(id);
         }
     }
+
     //==== Get all orders from certain customer ==== //
     @GET
     @Path("/my")
     @Authenticated
     public List<Order> getMyOrders() {
-        return Order.list("customerId", resolveCustomerId());
+        return Order.list(CUSTOMER_ID, resolveCustomerId());
     }
 
     @DELETE
     @Path("/{id}")
     @Transactional
     public Map<String, Object> deleteOrder(@PathParam("id") Long id) {
-        boolean deleted = Order.deleteById(id);
-        if (!deleted) {
+        Order order = entityManager.find(Order.class, id);
+        if (order == null) {
             throw new NotFoundException("Order nicht gefunden: " + id);
         }
 
-        return Map.of(
-                "id", id,
-                "deleted", true
-        );
+        entityManager.remove(order);
+
+        return Map.of("id", id, "deleted", true);
     }
 
     @DELETE
     @Transactional
     public Map<String, Object> deleteAllOrders() {
-        long deleted = Order.deleteAll();
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaDelete<Order> delete = builder.createCriteriaDelete(Order.class);
+        delete.from(Order.class);
+        long deleted = entityManager.createQuery(delete).executeUpdate();
 
-        return Map.of(
-                "deleted", deleted
-        );
+        return Map.of("deleted", deleted);
     }
 
     @PUT
     @Path("/admin/customer-id")
     @Transactional
     public Map<String, Object> replaceCustomerId(Map<String, String> request) {
-        String oldCustomerId = normalizeRequiredCustomerId(request.get("oldCustomerId"), "oldCustomerId");
-        String newCustomerId = normalizeRequiredCustomerId(request.get("newCustomerId"), "newCustomerId");
+        String oldCustomerId = normalizeRequiredCustomerId(request.get(OLD_CUSTOMER_ID), OLD_CUSTOMER_ID);
+        String newCustomerId = normalizeRequiredCustomerId(request.get(NEW_CUSTOMER_ID), NEW_CUSTOMER_ID);
 
-        long updated = Order.update(
-                "customerId = ?1 where customerId = ?2",
-                newCustomerId,
-                oldCustomerId
-        );
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<Order> update = builder.createCriteriaUpdate(Order.class);
+        var root = update.from(Order.class);
+        update.set(CUSTOMER_ID, newCustomerId);
+        update.where(builder.equal(root.get(CUSTOMER_ID), oldCustomerId));
+        long updated = entityManager.createQuery(update).executeUpdate();
 
-        return Map.of(
-                "oldCustomerId", oldCustomerId,
-                "newCustomerId", newCustomerId,
-                "updated", updated
-        );
+        return Map.of(OLD_CUSTOMER_ID, oldCustomerId, NEW_CUSTOMER_ID, newCustomerId, "updated", updated);
     }
 
 
@@ -156,15 +174,10 @@ public class OrderResource {
         order.updatedAt = LocalDateTime.now();
 
         // Camunda Prozess mit Token starten
-        String authHeader = headers.getHeaderString("Authorization");
+        String authHeader = headers.getHeaderString(AUTHORIZATION_HEADER);
         Map<String, Object> variables = processVariables(order, authHeader);
-        variables.put("updatedAt", Map.of("value", order.updatedAt.toString(), "type", "String"));
-        variables.put("changeType", Map.of(
-                "value",
-                "CANCELLED".equalsIgnoreCase(order.status) ? "CANCELLED" : "UPDATED",
-                "type",
-                "String"
-        ));
+        variables.put("updatedAt", stringProcessVariable(order.updatedAt.toString()));
+        variables.put("changeType", stringProcessVariable("CANCELLED".equalsIgnoreCase(order.status) ? "CANCELLED" : "UPDATED"));
 
         startAboConfirmationProcess(order, authHeader, variables);
 
@@ -174,16 +187,14 @@ public class OrderResource {
     @POST
     @Transactional
     public Order order(Order input) {
-        System.out.println("🚪 POST /orders ENTERED RESOURCE");
+        LOG.info("POST /orders entered resource");
         try {
-            System.out.println("👤 customerId: " + securityIdentity.getPrincipal().getName());
+            LOG.infof("customerId: %s", securityIdentity.getPrincipal().getName());
         } catch (Exception e) {
-            System.out.println("❌ NO SECURITY IDENTITY (token issue?)");
+            LOG.warn("No security identity available while creating order", e);
         }
         String customerId = resolveCustomerId();
-        System.out.println("resolved customerId: " + customerId);
-
-        //System.out.println(jwt.getName());
+        LOG.debugf("Resolved customerId: %s", customerId);
 
         Order order = Order.order(
                 customerId,
@@ -192,70 +203,40 @@ public class OrderResource {
                 input.quantity,
                 input.interval
         );
-        System.out.println("⚙️ ORDER CREATED IN RESOURCE");
+        LOG.debug("Order created in resource");
         order.persist();
-        System.out.println("💾 ORDER PERSISTED: ID = " + order.id);
+        LOG.infof("Order persisted: id=%s", order.id);
 
         // Camunda Prozess mit Token starten
-        String authHeader = headers.getHeaderString("Authorization");
+        String authHeader = headers.getHeaderString(AUTHORIZATION_HEADER);
         Map<String, Object> variables = processVariables(order, authHeader);
-        variables.put("changeType", Map.of("value", "CREATED", "type", "String"));
+        variables.put("changeType", stringProcessVariable("CREATED"));
         startAboConfirmationProcess(order, authHeader, variables);
 
         return order;
     }
 
-    private void startAboConfirmationProcess(
-            Order order,
-            String authHeader,
-            Map<String, Object> variables
-    ) {
+    private void startAboConfirmationProcess(Order order, String authHeader, Map<String, Object> variables) {
         try (Client client = ClientBuilder.newClient()) {
-            String businessKey = processVariableString(variables, "customerId", order.customerId);
-            Map<String, Object> body = Map.of(
-                    "businessKey", businessKey,
-                    "variables", variables
-            );
+            String businessKey = processVariableString(variables, CUSTOMER_ID, order.customerId);
+            Map<String, Object> body = Map.of("businessKey", businessKey, "variables", variables);
 
-            System.out.println("Starting abo confirmation process at " + aboConfirmationProcessStartUrl);
-            var request = client
-                    .target(aboConfirmationProcessStartUrl)
-                    .request(MediaType.APPLICATION_JSON);
+            LOG.infof("Starting abo confirmation process at %s", aboConfirmationProcessStartUrl);
+            var request = client.target(aboConfirmationProcessStartUrl).request(MediaType.APPLICATION_JSON);
             if (authHeader != null && !authHeader.isBlank()) {
-                request.header("Authorization", authHeader);
+                request.header(AUTHORIZATION_HEADER, authHeader);
             }
 
             try (Response response = request.post(Entity.json(body))) {
                 if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
                     String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
-                    System.out.println(
-                            "AboConfirmationProcess failed: HTTP "
-                                    + response.getStatus()
-                                    + " from "
-                                    + aboConfirmationProcessStartUrl
-                                    + " body="
-                                    + responseBody
-                    );
-                    throw new WebApplicationException(
-                            "AboConfirmationProcess konnte nicht gestartet werden (HTTP "
-                                    + response.getStatus()
-                                    + ").",
-                            Response.Status.BAD_GATEWAY
-                    );
+                    LOG.warnf("AboConfirmationProcess failed: HTTP %s from %s body=%s", response.getStatus(), aboConfirmationProcessStartUrl, responseBody);
+                    throw new WebApplicationException("AboConfirmationProcess konnte nicht gestartet werden (HTTP " + response.getStatus() + ").", Response.Status.BAD_GATEWAY);
                 }
             }
         } catch (ProcessingException exception) {
-            System.out.println(
-                    "AboConfirmationProcess request failed at "
-                            + aboConfirmationProcessStartUrl
-                            + ": "
-                            + exception.getMessage()
-            );
-            throw new WebApplicationException(
-                    "AboConfirmationProcess konnte nicht erreicht werden.",
-                    exception,
-                    Response.Status.BAD_GATEWAY
-            );
+            LOG.warnf(exception, "AboConfirmationProcess request failed at %s", aboConfirmationProcessStartUrl);
+            throw new WebApplicationException("AboConfirmationProcess konnte nicht erreicht werden.", exception, Response.Status.BAD_GATEWAY);
         }
     }
 
@@ -270,42 +251,50 @@ public class OrderResource {
     private Map<String, Object> processVariables(Order order, String authHeader) {
         Map<String, Object> variables = new LinkedHashMap<>();
         String customerId = firstNonBlank(tokenClaim("sub"), order.customerId);
-        variables.put("orderId", Map.of("value", order.id, "type", "Long"));
-        variables.put("orderIdsCsv", Map.of("value", String.valueOf(order.id), "type", "String"));
-        variables.put("aboConfirmationWindowDuration", Map.of("value", aboConfirmationWindowDuration, "type", "String"));
-        variables.put("customerId", Map.of("value", customerId, "type", "String"));
-        variables.put("productId", Map.of("value", order.productId, "type", "String"));
-        variables.put("status", Map.of("value", order.status, "type", "String"));
-        variables.put("quantity", Map.of("value", order.quantity, "type", "Integer"));
-        variables.put("interval", Map.of("value", order.interval, "type", "Integer"));
+        variables.put("orderId", processVariable(order.id, PROCESS_VARIABLE_LONG));
+        variables.put("orderIdsCsv", stringProcessVariable(String.valueOf(order.id)));
+        variables.put("aboConfirmationWindowDuration", stringProcessVariable(aboConfirmationWindowDuration));
+        variables.put(CUSTOMER_ID, stringProcessVariable(customerId));
+        variables.put("productId", stringProcessVariable(order.productId));
+        variables.put("status", stringProcessVariable(order.status));
+        variables.put("quantity", processVariable(order.quantity, PROCESS_VARIABLE_INTEGER));
+        variables.put("interval", processVariable(order.interval, PROCESS_VARIABLE_INTEGER));
 
         if (authHeader != null && !authHeader.isBlank()) {
-            variables.put("authorizationHeader", Map.of("value", authHeader, "type", "String"));
+            variables.put("authorizationHeader", stringProcessVariable(authHeader));
         }
 
         CustomerMailProfile customer = loadCustomerProfile(customerId, authHeader);
         if (customer != null) {
-            String deliveryWindow = formatDeliveryWindow(customer.deliveryTime);
+            String deliveryWindow = formatDeliveryWindow(customer.getDeliveryTime());
             String deliveryLocation = formatDeliveryLocation(customer);
             if (deliveryWindow != null) {
-                variables.put("deliveryWindow", Map.of("value", deliveryWindow, "type", "String"));
+                variables.put("deliveryWindow", stringProcessVariable(deliveryWindow));
             }
             if (deliveryLocation != null) {
-                variables.put("deliveryLocation", Map.of("value", deliveryLocation, "type", "String"));
+                variables.put("deliveryLocation", stringProcessVariable(deliveryLocation));
             }
         }
 
         String recipientEmail = tokenClaim("email");
         if (recipientEmail != null) {
-            variables.put("recipientEmail", Map.of("value", recipientEmail, "type", "String"));
+            variables.put("recipientEmail", stringProcessVariable(recipientEmail));
         }
 
         String customerName = firstNonBlank(tokenClaim("name"), tokenClaim("preferred_username"), order.customerId);
         if (customerName != null) {
-            variables.put("customerName", Map.of("value", customerName, "type", "String"));
+            variables.put("customerName", stringProcessVariable(customerName));
         }
 
         return variables;
+    }
+
+    private Map<String, Object> stringProcessVariable(Object value) {
+        return processVariable(value, PROCESS_VARIABLE_STRING);
+    }
+
+    private Map<String, Object> processVariable(Object value, String type) {
+        return Map.of(PROCESS_VARIABLE_VALUE, value, PROCESS_VARIABLE_TYPE, type);
     }
 
     private CustomerMailProfile loadCustomerProfile(String customerId, String authHeader) {
@@ -314,28 +303,17 @@ public class OrderResource {
         }
 
         try (Client client = ClientBuilder.newClient()) {
-            try (Response response = client
-                    .target(trimTrailingSlash(usersServiceBaseUrl))
-                    .path("customer")
-                    .queryParam("userId", customerId)
-                    .request(MediaType.APPLICATION_JSON)
-                    .header("Authorization", authHeader)
-                    .get()) {
+            try (Response response = client.target(trimTrailingSlash(usersServiceBaseUrl)).path("customer").queryParam("userId", customerId).request(MediaType.APPLICATION_JSON).header(AUTHORIZATION_HEADER, authHeader).get()) {
                 if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
                     String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
-                    System.out.println(
-                            "Customer profile enrichment failed: HTTP "
-                                    + response.getStatus()
-                                    + " body="
-                                    + responseBody
-                    );
+                    LOG.warnf("Customer profile enrichment failed: HTTP %s body=%s", response.getStatus(), responseBody);
                     return null;
                 }
 
                 return response.readEntity(CustomerMailProfile.class);
             }
         } catch (ProcessingException exception) {
-            System.out.println("Customer profile enrichment request failed: " + exception.getMessage());
+            LOG.warn("Customer profile enrichment request failed", exception);
             return null;
         }
     }
@@ -366,9 +344,9 @@ public class OrderResource {
             return null;
         }
 
-        String streetLine = joinWithSpace(customer.street, customer.houseNumber);
-        String cityLine = joinWithSpace(customer.postalCode, customer.city);
-        return firstNonBlank(joinWithComma(streetLine, cityLine), customer.companyName);
+        String streetLine = joinWithSpace(customer.getStreet(), customer.getHouseNumber());
+        String cityLine = joinWithSpace(customer.getPostalCode(), customer.getCity());
+        return firstNonBlank(joinWithComma(streetLine, cityLine), customer.getCompanyName());
     }
 
     private String joinWithSpace(String... values) {
@@ -410,7 +388,7 @@ public class OrderResource {
     private String processVariableString(Map<String, Object> variables, String variableName, String fallback) {
         Object variable = variables.get(variableName);
         if (variable instanceof Map<?, ?> typedVariable) {
-            Object value = typedVariable.get("value");
+            Object value = typedVariable.get(PROCESS_VARIABLE_VALUE);
             if (value != null && !String.valueOf(value).isBlank()) {
                 return String.valueOf(value).trim();
             }
@@ -463,11 +441,59 @@ public class OrderResource {
     @RegisterForReflection
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class CustomerMailProfile {
-        public String postalCode;
-        public String city;
-        public String street;
-        public String houseNumber;
-        public String companyName;
-        public Object deliveryTime;
+        private String postalCode;
+        private String city;
+        private String street;
+        private String houseNumber;
+        private String companyName;
+        private Object deliveryTime;
+
+        public String getPostalCode() {
+            return postalCode;
+        }
+
+        public void setPostalCode(String postalCode) {
+            this.postalCode = postalCode;
+        }
+
+        public String getCity() {
+            return city;
+        }
+
+        public void setCity(String city) {
+            this.city = city;
+        }
+
+        public String getStreet() {
+            return street;
+        }
+
+        public void setStreet(String street) {
+            this.street = street;
+        }
+
+        public String getHouseNumber() {
+            return houseNumber;
+        }
+
+        public void setHouseNumber(String houseNumber) {
+            this.houseNumber = houseNumber;
+        }
+
+        public String getCompanyName() {
+            return companyName;
+        }
+
+        public void setCompanyName(String companyName) {
+            this.companyName = companyName;
+        }
+
+        public Object getDeliveryTime() {
+            return deliveryTime;
+        }
+
+        public void setDeliveryTime(Object deliveryTime) {
+            this.deliveryTime = deliveryTime;
+        }
     }
 }
