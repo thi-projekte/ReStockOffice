@@ -1,6 +1,7 @@
-package de.restockoffice;
+package de.restockoffice.mails;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.restockoffice.validation.MailValidationException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
@@ -50,6 +51,7 @@ public class ResendMailClient {
         payload.put("to", List.of(recipientEmail));
         payload.put("subject", subject);
         payload.put("html", html);
+        payload.put("reply_to", mailSettings.replyTo());
 
         if (html.contains(INLINE_LOGO_SRC)) {
             payload.put("attachments", List.of(buildInlineLogoAttachment()));
@@ -102,6 +104,7 @@ public class ResendMailClient {
 
     private void validateInputs(String email, String sub, String body) {
         if (mailSettings.sender().isBlank()) throw new MailValidationException("RESTOCK_MAIL_SENDER missing");
+        if (mailSettings.replyTo().isBlank()) throw new MailValidationException("RESTOCK_MAIL_REPLY_TO missing");
         if(mailSettings.resendBaseUrl().isBlank()) throw new MailValidationException("RESTOCK_MAIL_RESEND_BASE_URL missing");
         if (email == null || email.isBlank()) throw new MailValidationException("recipientEmail missing");
         if (sub == null || sub.isBlank()) throw new MailValidationException("subject missing");

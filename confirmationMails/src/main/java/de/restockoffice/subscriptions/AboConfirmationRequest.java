@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.subscriptions;
 
 import java.util.List;
 

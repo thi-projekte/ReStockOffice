@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.mails;
 
 import jakarta.inject.Inject;
 import io.quarkus.test.junit.QuarkusTest;

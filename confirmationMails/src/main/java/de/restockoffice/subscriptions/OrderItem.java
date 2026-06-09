@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.subscriptions;
 
 public record OrderItem(
         String name,

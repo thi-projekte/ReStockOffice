@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.mails;
 
 import io.smallrye.config.ConfigMapping;
 

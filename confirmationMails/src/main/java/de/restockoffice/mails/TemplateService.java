@@ -1,5 +1,6 @@
-package de.restockoffice;
+package de.restockoffice.mails;
 
+import de.restockoffice.validation.MailValidationException;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.io.IOException;

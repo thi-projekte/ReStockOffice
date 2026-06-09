@@ -1,11 +1,12 @@
-package de.restockoffice;
+package de.restockoffice.mails;
 
+import de.restockoffice.deliveries.DeliveryAnnouncementRequest;
+import de.restockoffice.deliveries.DeliveryConfirmationRequest;
+import de.restockoffice.deliveries.DeliveryItem;
+import de.restockoffice.subscriptions.AboConfirmationRequest;
+import de.restockoffice.subscriptions.OrderItem;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,12 @@ public class MailResource {
         log.info("Abo confirmation sent successfully - messageId={}, recipient={}",
                 messageId, request.recipientEmail());
 
-        return new SendMailResponse("abo-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, MAIL_STATUS_QUEUED);
+        return new SendMailResponse(
+                "abo-confirmation",
+                request.recipientEmail(),
+                renderedMail.subject(),
+                messageId,
+                MAIL_STATUS_QUEUED);
     }
 
     @POST
@@ -67,7 +73,12 @@ public class MailResource {
         log.info("Delivery announcement sent successfully - messageId={}, recipient={}",
                 messageId, request.recipientEmail());
 
-        return new SendMailResponse("delivery-announcement", request.recipientEmail(), renderedMail.subject(), messageId, MAIL_STATUS_QUEUED);
+        return new SendMailResponse(
+                "delivery-announcement",
+                request.recipientEmail(),
+                renderedMail.subject(),
+                messageId,
+                MAIL_STATUS_QUEUED);
     }
 
     @POST
@@ -96,7 +107,12 @@ public class MailResource {
         log.info("Delivery confirmation sent successfully - messageId={}, recipient={}",
                 messageId, request.recipientEmail());
 
-        return new SendMailResponse("delivery-confirmation", request.recipientEmail(), renderedMail.subject(), messageId, MAIL_STATUS_QUEUED);
+        return new SendMailResponse(
+                "delivery-confirmation",
+                request.recipientEmail(),
+                renderedMail.subject(),
+                messageId,
+                MAIL_STATUS_QUEUED);
     }
 
     @POST

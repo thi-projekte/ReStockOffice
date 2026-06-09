@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.mails;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

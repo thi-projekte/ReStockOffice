@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.deliveries;
 
 import java.util.List;
 

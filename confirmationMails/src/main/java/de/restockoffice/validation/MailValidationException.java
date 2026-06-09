@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.validation;
 
 public class MailValidationException extends RuntimeException {
 
