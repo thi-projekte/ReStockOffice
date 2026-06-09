@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
 public class CustomerDeliveryOverviewDto {
     private DeliverySummaryDto lastDelivery;

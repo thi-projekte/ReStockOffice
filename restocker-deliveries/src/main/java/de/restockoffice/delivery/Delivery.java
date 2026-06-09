@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;

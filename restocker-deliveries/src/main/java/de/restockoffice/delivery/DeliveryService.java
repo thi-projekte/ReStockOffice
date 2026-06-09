@@ -1,5 +1,11 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
+import de.restockoffice.article.ArticleClient;
+import de.restockoffice.article.ArticleDto;
+import de.restockoffice.order.OrderClient;
+import de.restockoffice.order.OrderDto;
+import de.restockoffice.user.UserClient;
+import de.restockoffice.user.UserDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;

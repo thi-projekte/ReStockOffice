@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.order;
 
 import java.time.LocalDateTime;
 

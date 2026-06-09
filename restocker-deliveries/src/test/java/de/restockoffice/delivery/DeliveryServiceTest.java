@@ -1,5 +1,7 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
+import de.restockoffice.order.OrderDto;
+import de.restockoffice.user.UserDto;
 import org.junit.jupiter.api.Test;
 
 import jakarta.ws.rs.BadRequestException;

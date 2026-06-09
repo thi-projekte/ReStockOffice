@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
 import java.util.UUID;
 

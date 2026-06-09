@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.article;
 
 public class ArticleDto {
     private String productId;

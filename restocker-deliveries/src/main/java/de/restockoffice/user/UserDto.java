@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.user;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

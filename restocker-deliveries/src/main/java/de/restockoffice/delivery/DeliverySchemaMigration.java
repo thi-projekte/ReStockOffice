@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.runtime.StartupEvent;

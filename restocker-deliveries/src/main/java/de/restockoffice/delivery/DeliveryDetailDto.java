@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
 import java.time.LocalDateTime;
 import java.util.List;

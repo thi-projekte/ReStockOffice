@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.order;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;

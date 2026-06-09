@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
