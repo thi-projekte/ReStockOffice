@@ -299,6 +299,7 @@ export function AppShell({ children }: AppShellProps) {
     setMenuOpen(false);
     setIsHeaderAssistOpen(false);
     setIsProfileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
 
   useEffect(() => {
