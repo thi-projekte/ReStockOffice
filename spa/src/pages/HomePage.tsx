@@ -179,8 +179,8 @@ export function HomePage() {
                                 {(() => {
                                   switch (overview?.lastDelivery?.status) {
                                     case "DELIVERED":  return "Vollständig eingegangen";
-                                    case "COLLECTED":  return "Abgeholt";
-                                    case "ACCEPTED":   return "Angenommen";
+                                    case "COLLECTED":  return "Vom Restocker abgeholt";
+                                    case "ACCEPTED":   return "Vom Restocker angenommen";
                                     case "OPEN":       return "Offen";
                                     default:             return overview?.lastDelivery?.status ?? "Keine Daten";
                                   }
@@ -211,8 +211,8 @@ export function HomePage() {
                               {(() => {
                                 switch (overview?.nextDelivery?.status) {
                                   case "DELIVERED":  return "Vollständig eingegangen";
-                                  case "COLLECTED":  return "Abgeholt";
-                                  case "ACCEPTED":   return "Angenommen";
+                                  case "COLLECTED":  return "Vom Restocker abgeholt";
+                                  case "ACCEPTED":   return "vom Restocker angenommen";
                                   case "OPEN":       return "Offen";
                                   default:             return overview?.nextDelivery?.status ?? "Keine Daten";
                                 }
