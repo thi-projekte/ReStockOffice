@@ -18,7 +18,7 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - default
+      - processengine
       - nginx-proxy-manager
       - mailer
     depends_on:
@@ -35,7 +35,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - default
+      - processengine
 
 volumes:
   postgres_data:
@@ -45,3 +45,5 @@ networks:
     external: true
   mailer:
     external: true
+  processengine:
+    external: false
