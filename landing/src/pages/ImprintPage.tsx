@@ -3,50 +3,57 @@ import Header from "../components/Header.tsx";
 import Footer from "../components/Footer.tsx";
 
 export default function ImprintPage() {
-
   return (
-          <div className={styles.page}>
-            <Header />
-            <main className={styles.main}>
-              <div className={styles.content}>
-                <h1 className={styles.title}>Impressum</h1>
+      <div className={styles.page}>
+        <Header />
+        <main className={styles.main}>
+          <div className={styles.content}>
+            <span className={styles.eyebrow}>Rechtliches</span>
+            <h1 className={styles.title}>Impressum</h1>
 
-                <p><strong>Angaben gemäß § 5 TMG</strong></p>
+            <div className={styles.body}>
+              <section className={styles.section}>
+                <h2 className={styles.h2}>Angaben gemäß § 5 TMG</h2>
+                <div className={styles.contactRow}>
+                  <p>Max Mustermann</p>
+                  <p>Studentisches Projekt der Technischen Hochschule Ingolstadt</p>
+                  <p>
+                    Musterstraße 1<br />
+                    12345 Musterstadt<br />
+                    Deutschland
+                  </p>
+                  <p>
+                    E-Mail:{" "}
+                    <a href="mailto:restockoffice@info.de">restockoffice@info.de</a>
+                  </p>
+                </div>
+              </section>
 
-                <p>
-                  Max Mustermann<br/>
-                  Studentisches Projekt der Technischen Hochschule Ingolstadt<br/>
-                  Musterstraße 1<br/>
-                  12345 Musterstadt<br/>
-                  Deutschland
-                </p>
+              <section className={styles.section}>
+                <h2 className={styles.h2}>Verantwortlich für den Inhalt</h2>
+                <p>nach § 18 Abs. 2 MStV</p>
+                <div className={styles.contactRow}>
+                  <p>Max Mustermann</p>
+                  <p>
+                    Musterstraße 1<br />
+                    12345 Musterstadt
+                  </p>
+                </div>
+              </section>
 
-                <p>
-                  E-Mail: restockoffice@info.de
-                </p>
-
-                <p><strong>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</strong></p>
-
-                <p>
-                  Max Mustermann<br/>
-                  Musterstraße 1<br/>
-                  12345 Musterstadt
-                </p>
-
-
-
-                <h2>Hinweis</h2>
-
-                <p>
-                  Diese Website ist ein studentisches Projekt im Rahmen einer Lehrveranstaltung an der
-                  Technischen Hochschule Ingolstadt. Es handelt sich nicht um einen kommerziellen Online-Shop.
-                  Es werden keine rechtsverbindlichen Kaufverträge abgeschlossen.
-                </p>
-
-              </div>
-            </main>
-            <Footer/>
+              <section className={styles.section}>
+                <h2 className={styles.h2}>Hinweis</h2>
+                <div className={styles.infoBox}>
+                  Diese Website ist ein studentisches Projekt im Rahmen einer
+                  Lehrveranstaltung an der Technischen Hochschule Ingolstadt. Es
+                  handelt sich nicht um einen kommerziellen Online-Shop. Es werden
+                  keine rechtsverbindlichen Kaufverträge abgeschlossen.
+                </div>
+              </section>
+            </div>
           </div>
-  )
-
+        </main>
+        <Footer />
+      </div>
+  );
 }
