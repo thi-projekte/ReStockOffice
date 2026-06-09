@@ -1978,7 +1978,10 @@
   color: var(--color-text);
 }
 
-:root[data-theme="dark"] .product-card__badge,
+:root[data-theme="dark"] .product-card__badge {
+  background: var(--color-primary);
+  color: #fff;
+}
 :root[data-theme="dark"] .category-tile__label {
   background: rgba(102, 189, 164, 0.18);
   color: var(--color-primary);
