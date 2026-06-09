@@ -32,6 +32,7 @@
   color: var(--color-primary);
   font-size: clamp(2.25rem, 6vw, 4.5rem);
   line-height: 1;
+  padding-bottom: 18px;
 }
 
 .body {
@@ -48,10 +49,12 @@
   gap: 12px;
 }
 
-.section h2 {
+. h2 {
   margin: 0;
   color: var(--color-text);
   font-size: 1.35rem;
+  padding-top: 12px;
+  padding-bottom: 8px;
 }
 
 .section p {

@@ -35,6 +35,8 @@ export default function TermsPrivacyPage() {
               Der Schutz Ihrer persönlichen Daten ist uns wichtig.
             </p>
 
+            <br/>
+
             <h3>Datenerfassung beim Besuch der Website</h3>
             <p>Beim Aufruf der Website werden automatisch folgende Daten erfasst:</p>
             <ul>
@@ -43,6 +45,8 @@ export default function TermsPrivacyPage() {
               <li>Browsertyp und Version</li>
               <li>Betriebssystem</li>
             </ul>
+
+            <br/>
 
             <p>
               Diese Daten dienen ausschließlich der technischen Bereitstellung und Sicherheit der Website.
@@ -53,10 +57,14 @@ export default function TermsPrivacyPage() {
               Bei Kontakt per E-Mail werden die angegebenen Daten nur zur Bearbeitung der Anfrage verwendet.
             </p>
 
+            <br/>
+
             <h2>Speicherdauer</h2>
             <p>
               Personenbezogene Daten werden nur so lange gespeichert, wie es für den jeweiligen Zweck erforderlich ist.
             </p>
+
+            <br/>
 
             <h2>Ihre Rechte</h2>
             <p>

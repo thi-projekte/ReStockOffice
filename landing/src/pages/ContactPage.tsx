@@ -9,7 +9,7 @@ export default function ContactPage() {
         <Header />
         <main className={styles.main}>
           <div className={styles.content}>
-            <h1>Kontakt</h1>
+            <h1 className={styles.title}>Kontakt</h1>
 
             <p>
               Dieses Projekt ist ein studentisches Demonstrationsprojekt im Rahmen einer universitären

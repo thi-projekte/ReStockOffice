@@ -25,13 +25,15 @@ export default function ImprintPage() {
                   E-Mail: restockoffice@info.de
                 </p>
 
-                <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+                <p><strong>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</strong></p>
 
                 <p>
                   Max Mustermann<br/>
                   Musterstraße 1<br/>
                   12345 Musterstadt
                 </p>
+
+
 
                 <h2>Hinweis</h2>
 
