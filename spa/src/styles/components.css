@@ -995,13 +995,14 @@
   position: absolute;
   top: 0.9rem;
   left: 0.9rem;
-  padding: 0.35rem 0.65rem;
+  padding: 0.3rem 0.7rem;
   border-radius: 999px;
-  background: rgba(59, 107, 97, 0.12);
-  color: var(--color-primary);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .works-steps {
