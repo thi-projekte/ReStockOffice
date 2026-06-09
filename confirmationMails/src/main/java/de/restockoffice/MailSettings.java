@@ -18,4 +18,6 @@ public interface MailSettings {
     Optional<String> resendApiKey();
 
     String resendBaseUrl();
+
+    boolean dryRun();
 }

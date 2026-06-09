@@ -58,13 +58,27 @@ public class UserResource {
     // Any Customer by ID (admin-role or own user needed)
     @GET
     @Path("customer")
-    public Customer getCustomerById(@QueryParam("userId") String userId){
+    public CustomerProfileResponse getCustomerById(@QueryParam("userId") String userId){
         String loggedInId = jwt.getSubject();
 
-        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin")) {
+        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin") && !securityIdentity.hasRole("process-engine")) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
         }
-        return findCustomerOrThrow(userId);
+        Customer customer =  findCustomerOrThrow(userId);
+
+        String customerEmail = null;
+        try{
+            customerEmail = keycloak.realm("restockoffice")
+                    .users()
+                    .get(userId)
+                    .toRepresentation()
+                    .getEmail();
+        }catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Fehler beim Abrufen der Keycloak-Email: " + e.getMessage());
+            customerEmail = "E-Mail nicht verfügbar";
+        }
+        return new CustomerProfileResponse(customer, customerEmail);
     }
 
     // Extra view for Restockers with limited access (only for Restocker and Admin)

@@ -138,6 +138,7 @@ export function useSubscriptionCart({
           : [
             ...previousSubscription.items,
             {
+              id: savedOrder.id,
               customerId: previousSubscription.customerId,
               productId: savedOrder.productId,
               status: savedOrder.status,
@@ -167,7 +168,7 @@ export function useSubscriptionCart({
       customerId: effectiveCustomerId,
       token,
       productId: item.productId,
-      orderId: item.id,
+      existingItem: item,
     });
 
     setSubscription((previousSubscription) => ({

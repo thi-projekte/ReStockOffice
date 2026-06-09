@@ -1,6 +1,7 @@
 package de.restockoffice;
 
 import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Application;
@@ -16,7 +17,6 @@ import java.util.List;
 
 @Path("/")
 @Consumes(MediaType.APPLICATION_JSON)
-@Authenticated
 public class InvoiceResource {
 
     private static final Logger log = LoggerFactory.getLogger(InvoiceResource.class);
@@ -30,6 +30,7 @@ public class InvoiceResource {
     @POST
     @Path("invoices/create")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("process-engine")
     public Response createInvoice(InvoiceRequest request)throws IOException {
         log.info("Process Engine triggers: Creating invoice {} for user {}", request.invoiceNumber(), request.recipientEmail());
         String generatedNumber = invoiceService.createAndPersistInvoice(request);
@@ -42,6 +43,7 @@ public class InvoiceResource {
     @Path("invoices/send-mail")
     @Produces(MediaType.APPLICATION_JSON)
     @jakarta.transaction.Transactional
+    @RolesAllowed("process-engine")
     public Response sendInvoiceMail(InvoiceRequest request) throws IOException{
         invoiceService.sendInvoiceViaEmail(request);
 
@@ -51,6 +53,7 @@ public class InvoiceResource {
     @POST
     @Path("emails/invoice")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("process-engine")
     public Response sendInvoice(InvoiceRequest request) throws IOException {
         log.info("Sending invoice-mail to {}", request.recipientEmail());
         invoiceService.processInvoice(request);
@@ -62,6 +65,7 @@ public class InvoiceResource {
     @Path("invoices")
     @Produces(MediaType.APPLICATION_JSON)
     @jakarta.transaction.Transactional
+    @Authenticated
     public List<InvoiceEntity> getInvoices(@QueryParam("userId") String userID){
         String loggedInId = jwt.getSubject();
 
@@ -80,6 +84,7 @@ public class InvoiceResource {
     @Path("invoices/download")
     @Produces("application/pdf")
     @jakarta.transaction.Transactional
+    @Authenticated
     public Response downloadInvoicePdf(
             @QueryParam("userId") String userId,
             @QueryParam("invoiceNumber") String invoiceNumber){

@@ -28,7 +28,7 @@ public class SendAboConfirmationDelegate implements JavaDelegate {
 
     @Override
     public void execute(DelegateExecution execution) {
-        log.info("Sending abo confirmation for order {}", execution.getVariable("orderNumber"));
+        log.info("Sending abo confirmation for orders {}", execution.getVariable("orderIdsCsv"));
         mailDataEnrichmentService.enrichAboConfirmation(execution);
 
         Map<String, Object> request = new HashMap<>();
@@ -40,13 +40,27 @@ public class SendAboConfirmationDelegate implements JavaDelegate {
         request.put("deliveryLocation",      execution.getVariable("deliveryLocation"));
         request.put("changeDeadline",        execution.getVariable("changeDeadline"));
         request.put("manageSubscriptionUrl", execution.getVariable("manageSubscriptionUrl"));
-        Map<String, Object> orderItem = new HashMap<>();
-        orderItem.put("name",                execution.getVariable("itemName"));
-        orderItem.put("articleNumber",       execution.getVariable("itemArticleNumber"));
-        orderItem.put("quantity",            execution.getVariable("itemQuantity"));
-        orderItem.put("intervalDescription", execution.getVariable("itemIntervalDescription"));
-        orderItem.put("nextDeliveryDate",    execution.getVariable("itemNextDeliveryDate"));
-        request.put("orderItems", List.of(orderItem));
+
+        Object orderItems = execution.getVariable("orderItems");
+        if (orderItems instanceof List<?> list) {
+            if (list.isEmpty()) {
+                log.info(
+                        "Skipping abo confirmation for {} because all changes were cancelled within the confirmation window",
+                        execution.getVariable("recipientEmail")
+                );
+                return;
+            }
+
+            request.put("orderItems", list);
+        } else {
+            Map<String, Object> orderItem = new HashMap<>();
+            orderItem.put("name",                execution.getVariable("itemName"));
+            orderItem.put("articleNumber",       execution.getVariable("itemArticleNumber"));
+            orderItem.put("quantity",            execution.getVariable("itemQuantity"));
+            orderItem.put("intervalDescription", execution.getVariable("itemIntervalDescription"));
+            orderItem.put("nextDeliveryDate",    execution.getVariable("itemNextDeliveryDate"));
+            request.put("orderItems", List.of(orderItem));
+        }
 
         new RestTemplate().postForEntity(
                 mailServiceBaseUrl + "/emails/abo-confirmation",

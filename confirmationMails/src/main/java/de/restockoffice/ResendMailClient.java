@@ -3,6 +3,8 @@ package de.restockoffice;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +20,7 @@ import java.util.Map;
 @ApplicationScoped
 public class ResendMailClient {
 
+    private static final Logger log = LoggerFactory.getLogger(ResendMailClient.class);
     private static final String INLINE_LOGO_CID = "restockoffice-logo";
     private static final String INLINE_LOGO_SRC = "cid:" + INLINE_LOGO_CID;
     private static final String LOGO_RESOURCE = "META-INF/resources/assets/logo_colored.png";
@@ -31,11 +34,16 @@ public class ResendMailClient {
     MailSettings mailSettings;
 
     public String send(String recipientEmail, String subject, String html) {
+        validateInputs(recipientEmail, subject, html);
+
+        if (mailSettings.dryRun()) {
+            log.info("Dry-run mail rendered for recipient={} subject={}", recipientEmail, subject);
+            return "dry-run-message-id";
+        }
+
         String resendApiKey = mailSettings.resendApiKey()
                 .filter(value -> !value.isBlank())
                 .orElseThrow(() -> new MailValidationException("QUARKUS_MAILER_PASSWORD is missing"));
-
-        validateInputs(recipientEmail, subject, html);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("from", mailSettings.sender());

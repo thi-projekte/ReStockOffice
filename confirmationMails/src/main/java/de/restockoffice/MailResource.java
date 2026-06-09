@@ -127,9 +127,9 @@ public class MailResource {
                 PREVIEW_LOGO_URL,
                 null,
                 List.of(
-                        new OrderItem("Haferdrink Barista", "HD-2048", "12", "Alle 2 Wochen", PREVIEW_NEXT_DELIVERY_DATE),
-                        new OrderItem("Kaffeebohnen House Blend", "KB-1102", "6", "Monatlich", PREVIEW_NEXT_DELIVERY_DATE),
-                        new OrderItem("Bio Tee Mix", "TM-7781", "8", "Alle 4 Wochen", PREVIEW_NEXT_DELIVERY_DATE)
+                        new OrderItem("Haferdrink Barista", "HD-2048", "12", "Alle 2 Wochen", PREVIEW_NEXT_DELIVERY_DATE, null),
+                        new OrderItem("Kaffeebohnen House Blend", "KB-1102", "6", "Monatlich", PREVIEW_NEXT_DELIVERY_DATE, null),
+                        new OrderItem("Bio Tee Mix", "TM-7781", "8", "Alle 4 Wochen", PREVIEW_NEXT_DELIVERY_DATE, null)
                 )
         );
     }

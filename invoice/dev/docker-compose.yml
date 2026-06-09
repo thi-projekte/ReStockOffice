@@ -1,0 +1,60 @@
+services:
+  invoice:
+    image: ghcr.io/thi-projekte/restockoffice-invoice:latest
+    container_name: invoice-service-dev
+    ports:
+      - "8085:8080" # Erreichbar unter http://localhost:8085
+    environment:
+      # Datenbank-Verbindung
+      DB_JDBC_URL: jdbc:postgresql://invoice-db-dev:5432/invoices_db
+      DB_USERNAME: reStockOffice
+      DB_PASSWORD: reStockOffice123$
+
+      # Echte Resend-Konfiguration
+      RESTOCK_MAIL_SENDER: noreply@restockoffice.de
+      RESTOCK_MAIL_REPLY_TO: support@restockoffice.de
+      RESTOCK_MAIL_SUPPORT_EMAIL: support@restockoffice.de
+      RESTOCK_MAIL_LOGO_URL: https://restockoffice.de/assets/logo_colored.png
+      QUARKUS_MAILER_PASSWORD: ${RESEND_API_KEY}
+      RESTOCK_MAIL_RESEND_BASE_URL: https://api.resend.com
+
+      # Keycloak / OIDC (Lokal)
+      QUARKUS_OIDC_ENABLED: "true"
+      QUARKUS_OIDC_PRINCIPAL_CLAIM: client_id
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://host.docker.internal:8180/realms/restockoffice
+      QUARKUS_OIDC_CLIENT_ID: restockoffice-spa
+      QUARKUS_OIDC_TOKEN_ISSUER: any
+
+      # Damit sehen wir, warum das Token vom Camunda-Request vielleicht nicht passt
+      QUARKUS_LOG_CATEGORY__IO_QUARKUS_OIDC__LEVEL: DEBUG
+      # Damit sehen wir, ob die Validierung (JSON) scheitert
+      QUARKUS_LOG_CATEGORY__ORG_HIBERNATE__LEVEL: DEBUG
+      QUARKUS_LOG_CATEGORY__IO_QUARKUS_REST__LEVEL: DEBUG
+
+      # Profil
+      QUARKUS_PROFILE: dev
+
+
+    depends_on:
+      invoice-db-dev:
+        condition: service_healthy
+
+  invoice-db-dev:
+    image: postgres:15
+    container_name: invoice-db-dev
+    ports:
+      - "5439:5432" # Mapping auf Port 5439
+    environment:
+      POSTGRES_USER: reStockOffice
+      POSTGRES_PASSWORD: reStockOffice123$
+      POSTGRES_DB: invoices_db
+    volumes:
+      - invoice_dev_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U reStockOffice" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  invoice_dev_db_data:

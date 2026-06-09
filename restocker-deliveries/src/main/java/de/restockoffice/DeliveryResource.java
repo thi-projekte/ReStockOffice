@@ -29,9 +29,6 @@ public class DeliveryResource {
     @Inject
     DeliveryService deliveryService;
 
-    @Inject
-    DeliveryProcessClient deliveryProcessClient;
-
     @Context
     HttpHeaders headers;
 
@@ -95,12 +92,14 @@ public class DeliveryResource {
     public List<DeliveryDetailDto> createTestDeliveries(
             @QueryParam("deliveryDate") String deliveryDate,
             @QueryParam("firstCustomerId") String firstCustomerId,
-            @QueryParam("secondCustomerId") String secondCustomerId
+            @QueryParam("secondCustomerId") String secondCustomerId,
+            @QueryParam("recipientEmail") String recipientEmail
     ) {
         return deliveryService.createTestDeliveries(
                 deliveryDate,
                 firstCustomerId,
                 secondCustomerId,
+                recipientEmail,
                 authorizationHeader()
         );
     }
@@ -172,7 +171,6 @@ public class DeliveryResource {
     @Path("/{deliveryId}/confirm")
     public Response confirmDelivery(@PathParam("deliveryId") UUID deliveryId) {
         Delivery delivery = deliveryService.confirmDelivery(deliveryId);
-        deliveryProcessClient.correlateDeliveryConfirmed(deliveryId);
         return Response.ok(deliveryStatusResponse(delivery)).build();
     }
 

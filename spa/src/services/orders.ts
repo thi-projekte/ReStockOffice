@@ -60,12 +60,12 @@ interface UpsertOrderPayload extends OrdersRequestContext {
   productId: string;
   quantity: number;
   intervalCount: number;
-  existingItem?: Pick<RestockOrder, "createdAt" | "status">;
+  existingItem?: Pick<RestockOrder, "id" | "createdAt" | "status">;
 }
 
 interface DeleteOrderPayload extends OrdersRequestContext {
   productId: string;
-  orderId?: number;
+  existingItem?: Pick<RestockOrder, "id" | "quantity" | "interval">;
 }
 
 interface MarketplaceCustomerData {
@@ -638,9 +638,10 @@ function getMockOrdersForCustomer(customerId: string) {
 
 function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   const source = rawOrder as Record<string, unknown>;
+  const id = Number(source.id);
 
   return {
-    id: source.id != null ? Number(source.id) : undefined,
+    ...(Number.isFinite(id) ? { id } : {}),
     customerId: String(source.customerId ?? ""),
     productId: String(source.productId ?? ""),
     status: String(source.status ?? "ACTIVE"),
@@ -663,7 +664,9 @@ function createSubscriptionFromOrders(
   orders: RestockOrder[],
   customerId: string,
 ): Subscription {
-  const customerOrders = orders.filter((order) => order.customerId === customerId);
+  const customerOrders = orders.filter(
+    (order) => order.customerId === customerId && order.status.toUpperCase() === "ACTIVE",
+  );
   const firstOrder = customerOrders[0];
   const today = formatDate(new Date());
 
@@ -995,7 +998,7 @@ export async function upsertSubscriptionOrder({
   quantity,
   intervalCount,
   existingItem,
-}: UpsertOrderPayload): Promise<{ productId: string; status: string; quantity: number; interval: number }> {
+}: UpsertOrderPayload): Promise<Pick<RestockOrder, "id" | "productId" | "status" | "quantity" | "interval">> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
@@ -1035,9 +1038,13 @@ export async function upsertSubscriptionOrder({
 
   let response: Response;
 
+  const orderUrl = existingItem?.id
+    ? `${ORDERS_API_URL}/${existingItem.id}`
+    : ORDERS_API_URL;
+
   try {
-    response = await fetch(ORDERS_API_URL, {
-      method: "POST",
+    response = await fetch(orderUrl, {
+      method: existingItem?.id ? "PUT" : "POST",
       headers: createHeaders(resolvedToken),
       body: JSON.stringify(orderPayload),
     });
@@ -1063,18 +1070,18 @@ export async function upsertSubscriptionOrder({
 }
 
 export async function deleteSubscriptionOrder({
-    customerId,
-    token,
-    productId,
-    orderId,
-  }: DeleteOrderPayload): Promise<void> {
+  customerId,
+  token,
+  productId,
+  existingItem,
+}: DeleteOrderPayload): Promise<void> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
     }
 
     const existingMockOrderIndex = mockRestockOrders.findIndex(
-        (order) => order.customerId === customerId && order.productId === productId,
+      (order) => order.customerId === customerId && order.productId === productId,
     );
 
     if (existingMockOrderIndex >= 0) {
@@ -1086,16 +1093,23 @@ export async function deleteSubscriptionOrder({
 
   const resolvedToken = await resolveToken(token);
 
-  if (!orderId) {
-    throw new Error(`Order für Produkt ${productId} kann nicht gelöscht werden: Keine ID vorhanden.`);
-  }
 
   let response: Response;
 
+  const orderUrl = existingItem?.id
+    ? `${ORDERS_API_URL}/${existingItem.id}`
+    : ORDERS_API_URL;
+
   try {
-    response = await fetch(`${ORDERS_API_URL}/${orderId}`, {
-      method: "DELETE",
+    response = await fetch(orderUrl, {
+      method: existingItem?.id ? "PUT" : "POST",
       headers: createHeaders(resolvedToken),
+      body: JSON.stringify({
+        productId,
+        status: "CANCELLED",
+        quantity: existingItem?.quantity ?? 1,
+        interval: existingItem?.interval ?? 1,
+      }),
     });
   } catch {
     throw new Error(buildOrdersNetworkErrorMessage("gelöscht"));
@@ -1103,16 +1117,10 @@ export async function deleteSubscriptionOrder({
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      throw new Error(
-          "Die Orders-API hat das Löschen abgelehnt. Bitte prüfe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.",
-      );
+      throw new Error("Die Orders-API hat das Speichern abgelehnt. Bitte pruefe Keycloak-Token, Rollen oder Backend-Auth-Konfiguration.");
     }
 
-    if (response.status === 404) {
-      throw new Error(`Order für Produkt ${productId} wurde nicht gefunden.`);
-    }
-
-    throw new Error(`RestockOrder konnte nicht gelöscht werden (HTTP ${response.status}).`);
+    throw new Error(`RestockOrder konnte nicht gespeichert werden (HTTP ${response.status}).`);
   }
 }
 

@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -34,6 +35,8 @@ public class MailDataEnrichmentService {
 
     private static final Logger log = LoggerFactory.getLogger(MailDataEnrichmentService.class);
     private static final Locale GERMAN = Locale.GERMANY;
+    private static final ZoneId UTC = ZoneId.of("UTC");
+    private static final ZoneId BERLIN = ZoneId.of("Europe/Berlin");
     private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy", GERMAN);
     private static final DateTimeFormatter DISPLAY_DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm 'Uhr'", GERMAN);
 
@@ -55,7 +58,8 @@ public class MailDataEnrichmentService {
     private String appBaseUrl;
 
     public void enrichAboConfirmation(DelegateExecution execution) {
-        EnrichmentContext context = loadContext(execution);
+        List<EnrichmentContext> contexts = loadAboConfirmationContexts(execution);
+        EnrichmentContext context = contexts.isEmpty() ? loadContext(execution) : contexts.get(0);
         enrichCommonVariables(execution, context);
 
         OrderDto order = context.order();
@@ -74,6 +78,7 @@ public class MailDataEnrichmentService {
         }
 
         setIfBlank(execution, "itemQuantity", formatOrderItemQuantity(resolveQuantity(execution, order), article));
+        execution.setVariable("orderItems", buildAboOrderItems(execution, contexts.isEmpty() ? List.of(context) : contexts));
     }
 
     public void enrichDeliveryAnnouncement(DelegateExecution execution) {
@@ -132,31 +137,166 @@ public class MailDataEnrichmentService {
     }
 
     private EnrichmentContext loadContext(DelegateExecution execution) {
+        return loadContext(execution, null);
+    }
+
+    private EnrichmentContext loadContext(DelegateExecution execution, String requestedOrderId) {
         String authorizationHeader = stringVariable(execution, "authorizationHeader");
-        String orderId = firstNonBlank(stringVariable(execution, "orderId"), stringVariable(execution, "deliveredOrderId"));
-        String customerId = stringVariable(execution, "customerId");
-        String productId = stringVariable(execution, "productId");
-        String deliveryId = firstNonBlank(stringVariable(execution, "deliveredDeliveryId"), stringVariable(execution, "deliveryId"));
+        DeliveryMonitoringItem monitoringDelivery = monitoringDelivery(execution);
+        String orderId = firstNonBlank(
+                requestedOrderId,
+                stringVariable(execution, "orderId"),
+                stringVariable(execution, "deliveredOrderId"),
+                monitoringDelivery != null ? monitoringDelivery.orderId() : null
+        );
+        OrderSnapshot orderSnapshot = orderSnapshot(execution, orderId);
+        String customerId = firstNonBlank(
+                orderSnapshot.customerId(),
+                stringVariable(execution, "customerId"),
+                monitoringDelivery != null ? monitoringDelivery.customerId() : null
+        );
+        String productId = firstNonBlank(orderSnapshot.productId(), stringVariable(execution, "productId"));
+        String deliveryId = firstNonBlank(
+                stringVariable(execution, "deliveredDeliveryId"),
+                stringVariable(execution, "deliveryId"),
+                monitoringDelivery != null ? monitoringDelivery.deliveryId() : null
+        );
 
         OrderDto order = loadOrder(orderId, authorizationHeader);
         if (order != null) {
-            customerId = firstNonBlank(customerId, order.customerId);
-            productId = firstNonBlank(productId, order.productId);
+            customerId = firstNonBlank(order.customerId, customerId);
+            productId = firstNonBlank(order.productId, productId);
         }
 
         DeliveryDetailDto delivery = loadDelivery(deliveryId, authorizationHeader);
         if (delivery != null) {
-            customerId = firstNonBlank(customerId, delivery.userId);
-            orderId = firstNonBlank(orderId, delivery.orderId);
+            customerId = firstNonBlank(delivery.userId, customerId);
+            orderId = firstNonBlank(delivery.orderId, orderId);
             if (delivery.items != null && !delivery.items.isEmpty()) {
-                productId = firstNonBlank(productId, delivery.items.get(0).articleNumber);
+                productId = firstNonBlank(delivery.items.get(0).articleNumber, productId);
             }
         }
 
         UserDto user = loadUser(customerId, authorizationHeader);
         ArticleDto article = loadArticle(productId);
 
-        return new EnrichmentContext(orderId, customerId, productId, order, user, article, delivery);
+        return new EnrichmentContext(orderId, customerId, productId, orderSnapshot, order, user, article, delivery);
+    }
+
+    private DeliveryMonitoringItem monitoringDelivery(DelegateExecution execution) {
+        Object delivery = execution.getVariable("delivery");
+        return delivery instanceof DeliveryMonitoringItem monitoringDelivery ? monitoringDelivery : null;
+    }
+
+    private List<EnrichmentContext> loadAboConfirmationContexts(DelegateExecution execution) {
+        List<String> orderIds = parseOrderIdsCsv(firstNonBlank(
+                stringVariable(execution, "orderIdsCsv"),
+                stringVariable(execution, "orderId")
+        ));
+
+        if (orderIds.isEmpty()) {
+            return List.of();
+        }
+
+        return orderIds.stream()
+                .map(orderId -> loadContext(execution, orderId))
+                .toList();
+    }
+
+    private List<String> parseOrderIdsCsv(String orderIdsCsv) {
+        if (isBlank(orderIdsCsv)) {
+            return List.of();
+        }
+
+        List<String> orderIds = new java.util.ArrayList<>();
+        for (String value : orderIdsCsv.split(",")) {
+            String normalizedValue = value.trim();
+            if (!normalizedValue.isBlank() && !orderIds.contains(normalizedValue)) {
+                orderIds.add(normalizedValue);
+            }
+        }
+
+        return orderIds;
+    }
+
+    private OrderSnapshot orderSnapshot(DelegateExecution execution, String orderId) {
+        if (isBlank(orderId)) {
+            return OrderSnapshot.empty();
+        }
+
+        Object snapshots = execution.getVariable("orderSnapshots");
+        if (!(snapshots instanceof Map<?, ?> snapshotsMap)) {
+            return OrderSnapshot.empty();
+        }
+
+        Object snapshot = snapshotsMap.get(orderId);
+        if (!(snapshot instanceof Map<?, ?> snapshotMap)) {
+            return OrderSnapshot.empty();
+        }
+
+        return new OrderSnapshot(
+                stringValue(snapshotMap.get("customerId")),
+                stringValue(snapshotMap.get("productId")),
+                stringValue(snapshotMap.get("firstChangeType")),
+                stringValue(snapshotMap.get("changeType")),
+                stringValue(snapshotMap.get("status")),
+                integerValue(snapshotMap.get("quantity")),
+                integerValue(snapshotMap.get("interval"))
+        );
+    }
+
+    private List<Map<String, Object>> buildAboOrderItems(DelegateExecution execution, List<EnrichmentContext> contexts) {
+        return contexts.stream()
+                .filter(context -> !isTransientCreatedThenCancelled(context))
+                .map(context -> {
+                    OrderDto order = context.order();
+                    String productId = resolveProductIdForItem(context);
+                    ArticleDto article = articleForProductId(context.article(), productId);
+                    LocalDate deliveryDate = resolveDeliveryDate(context);
+
+                    Map<String, Object> orderItem = new HashMap<>();
+                    orderItem.put("name", firstNonBlank(article != null ? article.name : null, "Artikel " + productId));
+                    orderItem.put("articleNumber", firstNonBlank(article != null ? article.productId : null, productId));
+                    if (isCancelled(context)) {
+                        orderItem.put("quantity", "Deabonniert");
+                        orderItem.put("statusLabel", "Deabonniert");
+                    } else {
+                        orderItem.put("quantity", formatOrderItemQuantity(resolveQuantityForItem(context), article));
+                        orderItem.put("intervalDescription", formatInterval(resolveIntervalForItem(context)));
+                        orderItem.put("nextDeliveryDate", formatDate(deliveryDate));
+                    }
+                    return orderItem;
+                })
+                .toList();
+    }
+
+    private boolean isTransientCreatedThenCancelled(EnrichmentContext context) {
+        return isCancelled(context) && "CREATED".equalsIgnoreCase(context.orderSnapshot().firstChangeType());
+    }
+
+    private boolean isCancelled(EnrichmentContext context) {
+        OrderDto order = context.order();
+        return "CANCELLED".equalsIgnoreCase(firstNonBlank(
+                order != null ? order.status : null,
+                context.orderSnapshot().status()
+        ));
+    }
+
+    private String resolveProductIdForItem(EnrichmentContext context) {
+        OrderDto order = context.order();
+        return firstNonBlank(
+                order != null ? order.productId : null,
+                context.orderSnapshot().productId(),
+                context.productId()
+        );
+    }
+
+    private ArticleDto articleForProductId(ArticleDto article, String productId) {
+        if (article != null && !isBlank(article.productId) && article.productId.equals(productId)) {
+            return article;
+        }
+
+        return loadArticle(productId);
     }
 
     private OrderDto loadOrder(String orderId, String authorizationHeader) {
@@ -184,8 +324,25 @@ public class MailDataEnrichmentService {
             return null;
         }
 
+        UserDto customer = loadUserFromPath("customer", customerId, authorizationHeader);
+        if (customer != null) {
+            return customer;
+        }
+
+        customer = loadUserFromPath("customer/me", null, authorizationHeader);
+        if (customer != null) {
+            return customer;
+        }
+
+        return loadUserFromPath("customerForRestocker", customerId, authorizationHeader);
+    }
+
+    private UserDto loadUserFromPath(String path, String customerId, String authorizationHeader) {
         try {
-            String url = trimTrailingSlash(usersServiceBaseUrl) + "/customerForRestocker?userId=" + encode(customerId);
+            String url = trimTrailingSlash(usersServiceBaseUrl) + "/" + path;
+            if (!isBlank(customerId)) {
+                url += "?userId=" + encode(customerId);
+            }
             ResponseEntity<UserDto> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
@@ -194,7 +351,7 @@ public class MailDataEnrichmentService {
             );
             return response.getBody();
         } catch (RestClientException exception) {
-            log.warn("Could not enrich mail data with customer {}", customerId, exception);
+            log.warn("Could not enrich mail data with customer {} via {}", customerId, path, exception);
             return null;
         }
     }
@@ -336,6 +493,16 @@ public class MailDataEnrichmentService {
         return order != null && order.quantity != null ? order.quantity : 1;
     }
 
+    private int resolveQuantityForItem(EnrichmentContext context) {
+        OrderDto order = context.order();
+        if (order != null && order.quantity != null) {
+            return order.quantity;
+        }
+
+        Integer snapshotQuantity = context.orderSnapshot().quantity();
+        return snapshotQuantity != null ? snapshotQuantity : 1;
+    }
+
     private int resolveInterval(DelegateExecution execution, OrderDto order) {
         Object variable = execution.getVariable("interval");
         if (variable instanceof Number number) {
@@ -349,6 +516,16 @@ public class MailDataEnrichmentService {
             }
         }
         return order != null && order.interval != null ? order.interval : 1;
+    }
+
+    private int resolveIntervalForItem(EnrichmentContext context) {
+        OrderDto order = context.order();
+        if (order != null && order.interval != null) {
+            return order.interval;
+        }
+
+        Integer snapshotInterval = context.orderSnapshot().interval();
+        return snapshotInterval != null ? snapshotInterval : 1;
     }
 
     private LocalDate parseDate(String value) {
@@ -381,7 +558,10 @@ public class MailDataEnrichmentService {
     }
 
     private String formatDateTime(LocalDateTime dateTime) {
-        return dateTime.format(DISPLAY_DATE_TIME);
+        return dateTime
+                .atZone(UTC)
+                .withZoneSameInstant(BERLIN)
+                .format(DISPLAY_DATE_TIME);
     }
 
     private String formatDayName(LocalDate date) {
@@ -471,6 +651,26 @@ public class MailDataEnrichmentService {
         return value != null ? String.valueOf(value) : null;
     }
 
+    private String stringValue(Object value) {
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private Integer integerValue(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+
+        if (value instanceof String stringValue && !stringValue.isBlank()) {
+            try {
+                return Integer.parseInt(stringValue.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
     private void setIfBlank(DelegateExecution execution, String variableName, String value) {
         if (!isBlank(stringVariable(execution, variableName)) || isBlank(value)) {
             return;
@@ -547,7 +747,7 @@ public class MailDataEnrichmentService {
     }
 
     private String userDeliveryTime(UserDto user) {
-        return user != null ? user.deliveryTime : null;
+        return user != null ? stringValue(user.deliveryTime) : null;
     }
 
     private String userDeliveryHint(UserDto user) {
@@ -607,11 +807,26 @@ public class MailDataEnrichmentService {
             String orderId,
             String customerId,
             String productId,
+            OrderSnapshot orderSnapshot,
             OrderDto order,
             UserDto user,
             ArticleDto article,
             DeliveryDetailDto delivery
     ) {
+    }
+
+    private record OrderSnapshot(
+            String customerId,
+            String productId,
+            String firstChangeType,
+            String changeType,
+            String status,
+            Integer quantity,
+            Integer interval
+    ) {
+        static OrderSnapshot empty() {
+            return new OrderSnapshot(null, null, null, null, null, null, null);
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -643,7 +858,7 @@ public class MailDataEnrichmentService {
         public String roleInCompany;
         public String deliveryHint;
         public String deliveryDay;
-        public String deliveryTime;
+        public Object deliveryTime;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

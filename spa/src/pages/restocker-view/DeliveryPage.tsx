@@ -26,9 +26,10 @@ import "../../styles/restocker-deliveries.css";
 
 const EARNINGS_PER_COMPANY = 7;
 const RESTOCKER_TOUR_PROCESS_API_URL =
+  import.meta.env.VITE_RESTOCKER_TOUR_PROCESS_API_URL ??
   "https://pe.restockoffice.de/api/restocker-tour-process";
-const START_TOUR_TASK_DEFINITION_KEY = "Activity_06o1eiy";
-const CONFIRM_DELIVERY_TASK_DEFINITION_KEY = "Activity_1cx1i45";
+const START_TOUR_TASK_DEFINITION_KEY = "Activity_Ware_eingeladen";
+const CONFIRM_DELIVERY_TASK_DEFINITION_KEY = "Activity_Auslieferung_bestaetigen";
 
 interface ProcessTaskLookupResponse {
   id: string | null;

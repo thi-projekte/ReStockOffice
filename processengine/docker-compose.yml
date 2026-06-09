@@ -8,7 +8,7 @@ services:
       SPRING_DATASOURCE_USERNAME: processengine
       SPRING_DATASOURCE_PASSWORD: processengine
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      CORS_ORIGINS: https://app.restockoffice.de
+      CORS_ORIGINS: https://app.restockoffice.de,http://localhost:5173,http://127.0.0.1:5173
       MAILSERVICE_BASE_URL: http://confirmation-mails:8081
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       USERS_SERVICE_URL: https://users.restockoffice.de
@@ -18,7 +18,7 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - default
+      - processengine
       - nginx-proxy-manager
       - mailer
     depends_on:
@@ -35,7 +35,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - default
+      - processengine
 
 volumes:
   postgres_data:
@@ -45,3 +45,5 @@ networks:
     external: true
   mailer:
     external: true
+  processengine:
+    external: false
