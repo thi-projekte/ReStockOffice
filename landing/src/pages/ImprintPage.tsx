@@ -8,7 +8,6 @@ export default function ImprintPage() {
         <Header />
         <main className={styles.main}>
           <div className={styles.content}>
-            <span className={styles.eyebrow}>Rechtliches</span>
             <h1 className={styles.title}>Impressum</h1>
 
             <div className={styles.body}>

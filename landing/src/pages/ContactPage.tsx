@@ -8,7 +8,6 @@ export default function ContactPage() {
         <Header />
         <main className={styles.main}>
           <div className={styles.content}>
-            <span className={styles.eyebrow}>Kontakt</span>
             <h1 className={styles.title}>Kontakt</h1>
             <p className={styles.lead}>
               Dieses Projekt ist ein studentisches Demonstrationsprojekt im Rahmen
