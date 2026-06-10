@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cibseven.getstarted.loanapproval;
+
+package de.restockoffice.app;
 
 import org.cibseven.bpm.spring.boot.starter.annotation.EnableProcessApplication;
 import org.springframework.boot.SpringApplication;
@@ -23,14 +24,10 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @EnableProcessApplication
-@ComponentScan(basePackages = {
-        "org.cibseven.getstarted.loanapproval",
-        "de.restockoffice"
-})
-
+@ComponentScan(basePackages = "de.restockoffice")
 public class WebappExampleProcessApplication {
 
-  public static void main(String... args) {
-    SpringApplication.run(WebappExampleProcessApplication.class, args);
-  }
+    public static void main(String... args) {
+        SpringApplication.run(WebappExampleProcessApplication.class, args);
+    }
 }

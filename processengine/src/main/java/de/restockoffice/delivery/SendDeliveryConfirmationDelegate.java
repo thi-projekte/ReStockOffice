@@ -1,5 +1,9 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
+import de.restockoffice.MailDataEnrichmentService;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.cibseven.bpm.engine.delegate.JavaDelegate;
 import org.slf4j.Logger;
@@ -7,10 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Component("sendDeliveryConfirmationDelegate")
 public class SendDeliveryConfirmationDelegate implements JavaDelegate {
@@ -32,13 +32,13 @@ public class SendDeliveryConfirmationDelegate implements JavaDelegate {
         mailDataEnrichmentService.enrichDeliveryConfirmation(execution);
 
         Map<String, Object> request = new HashMap<>();
-        request.put("recipientEmail",      execution.getVariable("recipientEmail"));
-        request.put("customerName",        execution.getVariable("customerName"));
-        request.put("deliveryDate",        mailValue(execution, "deliveryDateLabel", "deliveryDate"));
-        request.put("deliveryWindow",      execution.getVariable("deliveryWindow"));
-        request.put("orderNumber",         execution.getVariable("orderNumber"));
-        request.put("supplierName",        execution.getVariable("supplierName"));
-        request.put("deliveryDetailsUrl",  execution.getVariable("deliveryDetailsUrl"));
+        request.put("recipientEmail", execution.getVariable("recipientEmail"));
+        request.put("customerName", execution.getVariable("customerName"));
+        request.put("deliveryDate", mailValue(execution, "deliveryDateLabel", "deliveryDate"));
+        request.put("deliveryWindow", execution.getVariable("deliveryWindow"));
+        request.put("orderNumber", execution.getVariable("orderNumber"));
+        request.put("supplierName", execution.getVariable("supplierName"));
+        request.put("deliveryDetailsUrl", execution.getVariable("deliveryDetailsUrl"));
         request.put("deliveryItems", deliveryItems(execution));
 
         new RestTemplate().postForEntity(
@@ -62,9 +62,9 @@ public class SendDeliveryConfirmationDelegate implements JavaDelegate {
         }
 
         Map<String, Object> deliveryItem = new HashMap<>();
-        deliveryItem.put("name",          execution.getVariable("itemName"));
+        deliveryItem.put("name", execution.getVariable("itemName"));
         deliveryItem.put("articleNumber", execution.getVariable("itemArticleNumber"));
-        deliveryItem.put("quantity",      execution.getVariable("itemQuantity"));
+        deliveryItem.put("quantity", execution.getVariable("itemQuantity"));
         return List.of(deliveryItem);
     }
 }

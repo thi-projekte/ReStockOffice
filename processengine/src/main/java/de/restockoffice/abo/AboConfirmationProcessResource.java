@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.abo;
 
 import org.cibseven.bpm.engine.RuntimeService;
 import org.cibseven.bpm.engine.runtime.ProcessInstance;

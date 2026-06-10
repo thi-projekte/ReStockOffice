@@ -2,6 +2,7 @@ package de.restockoffice;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import de.restockoffice.delivery.DeliveryMonitoringItem;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

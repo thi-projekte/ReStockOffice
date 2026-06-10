@@ -1,5 +1,7 @@
-package de.restockoffice;
-
+package de.restockoffice.delivery;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.cibseven.bpm.engine.delegate.JavaDelegate;
 import org.slf4j.Logger;
@@ -7,10 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
 
 @Component("fetchDeliveriesForAnnouncementDelegate")
 public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
@@ -30,11 +28,12 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         String url = trimTrailingSlash(deliveriesServiceBaseUrl) + "/api/deliveries/admin/all-deliveries";
 
         DeliveryDetailResponse[] response = restTemplate.getForObject(url, DeliveryDetailResponse[].class);
-        List<DeliveryMonitoringItem> deliveries = Arrays.stream(response != null ? response : new DeliveryDetailResponse[0])
-                .filter(delivery -> announcementTargetDate.equals(parseDate(delivery.deliveryDate())))
-                .filter(this::isOpenDelivery)
-                .map(this::toMonitoringItem)
-                .toList();
+        List<DeliveryMonitoringItem> deliveries =
+                Arrays.stream(response != null ? response : new DeliveryDetailResponse[0])
+                        .filter(delivery -> announcementTargetDate.equals(parseDate(delivery.deliveryDate())))
+                        .filter(this::isOpenDelivery)
+                        .map(this::toMonitoringItem)
+                        .toList();
 
         execution.setVariable("deliveries", deliveries);
         execution.setVariable("announcementTargetDate", announcementTargetDate.toString());
