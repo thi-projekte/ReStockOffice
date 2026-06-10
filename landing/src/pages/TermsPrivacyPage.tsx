@@ -8,7 +8,7 @@ export default function TermsPrivacyPage() {
         <Header />
         <main className={styles.main}>
           <div className={styles.content}>
-            <h1 className={styles.title}>AGBs & Datenschutz</h1>
+            <h1 className={styles.title}>Rechtliche Hinweise</h1>
 
             <div className={styles.body}>
               <section className={styles.section}>

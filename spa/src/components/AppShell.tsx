@@ -873,7 +873,7 @@ export function AppShell({ children }: AppShellProps) {
         <div className="container site-footer__inner">
           <a href="https://restockoffice.de/kontakt">Kontakt</a>
           <a href="https://restockoffice.de/impressum">Impressum</a>
-          <a href="https://restockoffice.de/agb-datenschutz">AGB & Datenschutz</a>
+          <a href="https://restockoffice.de/rechtliches">Rechtliche Hinweise</a>
           <span>ReStockOffice {'\u00A9'}2026</span>
         </div>
 

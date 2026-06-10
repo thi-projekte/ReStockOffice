@@ -14,7 +14,7 @@ export default function App() {
     return <ImprintPage />
   }
 
-  if (path === '/agb-datenschutz') {
+  if (path === '/rechtliches') {
     return <TermsPrivacyPage />
   }
 
