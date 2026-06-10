@@ -138,6 +138,7 @@ export function AppShell({ children }: AppShellProps) {
   });
 
   const isRestocker = hasRole("Restocker");
+  const userKind = isRestocker ? "restocker" : "customer";
   const canModifySubscription = subscriptionProfileStatus?.isComplete !== false;
 
   function resetSubscriptionLayer() {
@@ -283,7 +284,7 @@ export function AppShell({ children }: AppShellProps) {
 
     getMyUser({
       token: auth.token,
-      kind: isRestocker ? "restocker" : "customer",
+      kind: userKind,
     })
       .then((loadedUser) => {
         setProfilePictureUrl(loadedUser.profilePictureUrl);
@@ -293,7 +294,7 @@ export function AppShell({ children }: AppShellProps) {
         setProfilePictureUrl(undefined);
         setSubscriptionProfileStatus(null);
       });
-  }, [auth.token, isLoggedIn, isRestocker, location.pathname]);
+  }, [auth.token, isLoggedIn, location.pathname, userKind]);
 
   useEffect(() => {
     setMenuOpen(false);

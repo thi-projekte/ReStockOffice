@@ -169,14 +169,32 @@ function collectKeycloakRoles(): string[] {
   return [...realmRoles, ...clientRoles];
 }
 
-function resolveUserKind(context: UserRequestContext = {}): UserKind {
+function resolveKeycloakUserKind(): UserKind | undefined {
+  const roles = collectKeycloakRoles();
+  const hasRestockerRole = roles.some(
+      (role) => role.trim().toLowerCase() === "restocker"
+  );
+
+  if (hasRestockerRole) {
+    return "restocker";
+  }
+
+  if (keycloak.authenticated || roles.length > 0) {
+    return "customer";
+  }
+
+  return undefined;
+}
+
+function resolveUserKind(
+    context: UserRequestContext = {},
+    fallbackKind?: UserKind,
+): UserKind {
   if (context.kind) {
     return context.kind;
   }
 
-  return collectKeycloakRoles().some(
-      (role) => role.trim().toLowerCase() === "restocker"
-  ) ? "restocker" : "customer";
+  return resolveKeycloakUserKind() ?? fallbackKind ?? "customer";
 }
 
 function getMeApiUrl(kind: UserKind) {
@@ -448,7 +466,7 @@ export async function saveMyUser(
     user: SaveUserPayload,
     context: UserRequestContext = {},
 ): Promise<UserProfile> {
-  const kind = context.kind ?? user.kind ?? resolveUserKind(context);
+  const kind = resolveUserKind(context, user.kind);
   const isCreateRequest = user.existsInUserService === false;
 
   if (!useAPIs) {

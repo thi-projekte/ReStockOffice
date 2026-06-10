@@ -73,6 +73,7 @@ export function AccountPage() {
     } = useOutletContext<OutletContext>();
     const {hasRole, token, user} = useAuth();
     const isRestocker = hasRole("Restocker");
+    const userKind = isRestocker ? "restocker" : "customer";
     const location = useLocation();
 
     const username = keycloak.tokenParsed?.preferred_username ?? "";
@@ -104,7 +105,7 @@ export function AccountPage() {
 
     useEffect(() => {
         if (!isLoggedIn || !user) return;
-        getMyUser({token, kind: isRestocker ? "restocker" : "customer"})
+        getMyUser({token, kind: userKind})
             .then((u) => {
                 setLoadedUser(u);
                 const form: ProfileFormState = {
@@ -128,17 +129,17 @@ export function AccountPage() {
                 lastSavedForm.current = form;
             })
             .catch((e) => console.error("Benutzerdaten konnten nicht geladen werden.", e));
-    }, [isLoggedIn, isRestocker, token, user]);
+    }, [isLoggedIn, isRestocker, token, user, userKind]);
 
     useEffect(() => {
         if (!isLoggedIn || !user) return;
-        getInvoices({token, kind: isRestocker ? "restocker" : "customer"})
+        getInvoices({token, kind: userKind})
             .then((loaded) => {
                 setInvoices(loaded);
                 setVisibleInvoiceCount(INVOICE_PAGE_SIZE);
             })
             .catch((e) => console.error("Rechnungen konnten nicht geladen werden.", e));
-    }, [isLoggedIn, isRestocker, token, user]);
+    }, [isLoggedIn, token, user, userKind]);
 
     useEffect(() => {
         if (!location.hash) return;
@@ -293,7 +294,7 @@ export function AccountPage() {
                         accountHolder: form.accountHolder,
                         existsInUserService: loadedUser.existsInUserService,
                     },
-                    {token, kind: "restocker"},
+                    {token, kind: userKind},
                 )
                 : await saveMyUser(
                     {
@@ -315,7 +316,7 @@ export function AccountPage() {
                         iban: form.iban || undefined,
                         existsInUserService: loadedUser.existsInUserService,
                     },
-                    {token, kind: "customer"},
+                    {token, kind: userKind},
                 );
 
             setLoadedUser(savedUser);
@@ -359,7 +360,7 @@ export function AccountPage() {
         setLoadingInvoiceId(invoice.invoiceId);
         try {
             await requestInvoicePdf(invoice.invoiceId, {
-                token, kind: isRestocker ? "restocker" : "customer",
+                token, kind: userKind,
             });
         } catch (e) {
             console.error("Die Rechnung konnte nicht geladen werden.", e);
