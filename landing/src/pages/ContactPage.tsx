@@ -22,9 +22,9 @@ export default function ContactPage() {
                 <div className={styles.contactRow}>
                   <p>
                     E-Mail:{" "}
-                    <a href="mailto:restockoffice@info.de">restockoffice@info.de</a>
+                    <a href="mailto:support@restockoffice.de">support@restockoffice.de</a>
                   </p>
-                  <p>Telefon: +49 123 456789 (Demo-Nummer)</p>
+                  <p>Telefon: +49 000 000000 (Demo-Nummer)</p>
                 </div>
               </section>
 

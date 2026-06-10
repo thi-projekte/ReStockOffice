@@ -17,13 +17,13 @@ export default function ImprintPage() {
                   <p>Max Mustermann</p>
                   <p>Studentisches Projekt der Technischen Hochschule Ingolstadt</p>
                   <p>
-                    Musterstraße 1<br />
-                    12345 Musterstadt<br />
+                    Esplanade 10<br />
+                    85049 Ingolstadt<br />
                     Deutschland
                   </p>
                   <p>
                     E-Mail:{" "}
-                    <a href="mailto:restockoffice@info.de">restockoffice@info.de</a>
+                    <a href="mailto:support@restockoffice.de">support@restockoffice.de</a>
                   </p>
                 </div>
               </section>
@@ -32,10 +32,10 @@ export default function ImprintPage() {
                 <h2 className={styles.h2}>Verantwortlich für den Inhalt</h2>
                 <p>nach § 18 Abs. 2 MStV</p>
                 <div className={styles.contactRow}>
-                  <p>Max Mustermann</p>
                   <p>
-                    Musterstraße 1<br />
-                    12345 Musterstadt
+                    Max Mustermann <br />
+                    Esplanade 10 <br />
+                    85049 Ingolstadt
                   </p>
                 </div>
               </section>
