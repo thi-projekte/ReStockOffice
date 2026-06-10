@@ -1,66 +1,228 @@
-# bestellungsservice
+# Orders Service
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Der Orders Service verwaltet RestockOrders für eingeloggte Customer. Beim Erstellen oder Ändern einer Order wird nach dem Commit der Abo-Bestätigungsprozess gestartet und der Delivery Service für eine Neuplanung informiert.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Base URL
 
-## Running the application in dev mode
-
-You can run your application in dev mode that enables live coding using:
-
-```shell script
-./mvnw quarkus:dev
+```text
+https://orders.restockoffice.de
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+Lokal im Dev Mode läuft der Service standardmäßig auf:
 
-## Packaging and running the application
-
-The application can be packaged using:
-
-```shell script
-./mvnw package
+```text
+http://localhost:8081
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+Alle API-Requests benötigen ein Keycloak Bearer Token:
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
+```http
+Authorization: Bearer <token>
+Content-Type: application/json
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+## APIs
 
-## Creating a native executable
+### Alle RestockOrders bekommen
 
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
+```http
+GET /orders
 ```
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
+```text
+GET https://orders.restockoffice.de/orders
 ```
 
-You can then execute your native executable with: `./target/bestellungsservice-1.0.0-SNAPSHOT-runner`
+### Alle aktiven RestockOrders bekommen
 
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
+```http
+GET /orders/active
+```
 
-## Related Guides
+```text
+GET https://orders.restockoffice.de/orders/active
+```
 
-- REST ([guide](https://quarkus.io/guides/rest)): A Jakarta REST implementation utilizing build time processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it.
+### Alle RestockOrders des eingeloggten Users bekommen
 
-## Provided Code
+Die UserID wird aus dem Token gelesen. Es wird keine UserID im Pfad übergeben.
 
-### REST
+```http
+GET /orders/my
+```
 
-Easily start your REST Web Services
+```text
+GET https://orders.restockoffice.de/orders/my
+```
 
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+### Bestimmte RestockOrder bekommen
+
+```http
+GET /orders/{orderId}
+```
+
+```text
+GET https://orders.restockoffice.de/orders/123
+```
+
+### RestockOrder für Delivery Service bekommen
+
+```http
+GET /orders/delivery/{orderId}
+```
+
+```text
+GET https://orders.restockoffice.de/orders/delivery/123
+```
+
+### RestockOrder erstellen
+
+```http
+POST /orders
+```
+
+```text
+POST https://orders.restockoffice.de/orders
+```
+
+Beispiel-Body:
+
+```json
+{
+  "productId": "10003",
+  "status": "ACTIVE",
+  "quantity": 2,
+  "interval": 1
+}
+```
+
+`customerId` wird serverseitig aus dem Token gesetzt.
+
+### Abo updaten
+
+Damit können Menge, Intervall und optional der Status geändert werden.
+
+```http
+PUT /orders/{orderId}
+```
+
+```text
+PUT https://orders.restockoffice.de/orders/123
+```
+
+Beispiel-Body:
+
+```json
+{
+  "status": "ACTIVE",
+  "quantity": 4,
+  "interval": 2
+}
+```
+
+### CustomerID für Orders ersetzen
+
+Admin-Hilfsendpoint, z.B. wenn Orders auf eine andere CustomerID umgehängt werden müssen.
+
+```http
+PUT /orders/admin/customer-id
+```
+
+Beispiel-Body:
+
+```json
+{
+  "oldCustomerId": "alte-user-id",
+  "newCustomerId": "neue-user-id"
+}
+```
+
+### Alle Orders löschen
+
+```http
+DELETE /orders
+```
+
+```text
+DELETE https://orders.restockoffice.de/orders
+```
+
+Achtung: Dieser Endpoint löscht alle Orders.
+
+### Bestimmte Order löschen
+
+```http
+DELETE /orders/{orderId}
+```
+
+```text
+DELETE https://orders.restockoffice.de/orders/123
+```
+
+## Lokal starten
+
+```powershell
+cd orders
+.\mvnw.cmd quarkus:dev
+```
+
+Falls Port `8080` schon belegt ist:
+
+```powershell
+.\mvnw.cmd quarkus:dev "-Dquarkus.http.port=8081"
+```
+
+## Tests ausführen
+
+```powershell
+cd orders
+.\mvnw.cmd test
+```
+
+Nur die Orders-Tests:
+
+```powershell
+.\mvnw.cmd "-Dtest=OrderResourceTest" test
+```
+
+## Build
+
+JVM Build:
+
+```powershell
+cd orders
+.\mvnw.cmd clean package
+```
+
+Native Build:
+
+```powershell
+.\mvnw.cmd clean package -Pnative -DskipTests
+```
+
+## Image bauen und veröffentlichen
+
+Der GitHub Actions Workflow für Orders wird durch Tags mit dem Präfix `orders-v*` gestartet.
+
+Beispiel:
+
+```powershell
+git tag orders-v1.0.1
+git push origin orders-v1.0.1
+```
+
+Vorher prüfen, welche Tags es schon gibt:
+
+```powershell
+git fetch --tags origin
+git tag --list "orders-v*" --sort=-v:refname
+```
+
+Der Workflow baut und pusht das Image nach GHCR:
+
+```text
+ghcr.io/<repository-owner>/restockoffice-orders:latest
+ghcr.io/<repository-owner>/restockoffice-orders:<commit-sha>
+```
+
+Im Workflow ist zusätzlich ein fixer Image-Tag eingetragen. Wenn eine neue feste Versionsnummer gebraucht wird, muss der Tag in `.github/workflows/orders.yml` angepasst werden.
