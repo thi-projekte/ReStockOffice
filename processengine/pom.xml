@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.cibseven.bpm.getstarted</groupId>
+  <groupId>de.restockoffice</groupId>
   <artifactId>restockoffice-processengine</artifactId>
   <version>1.0.0</version>
 
@@ -48,11 +48,6 @@
       <version>${cibseven.version.extension}</version>
     </dependency>
     <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>runtime</scope>
@@ -61,6 +56,11 @@
       <groupId>com.sun.xml.bind</groupId>
       <artifactId>jaxb-impl</artifactId>
       <version>4.0.3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -82,7 +82,7 @@
     </profile>
   </profiles>
 
-   <build>
+  <build>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
@@ -114,5 +114,4 @@
       <url>https://artifacts.cibseven.org/repository/enterprise-group/</url>
     </repository>
   </repositories>
-  
 </project>

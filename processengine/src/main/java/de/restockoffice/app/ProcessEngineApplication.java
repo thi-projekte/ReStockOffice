@@ -25,9 +25,9 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @EnableProcessApplication
 @ComponentScan(basePackages = "de.restockoffice")
-public class WebappExampleProcessApplication {
+public class ProcessEngineApplication {
 
     public static void main(String... args) {
-        SpringApplication.run(WebappExampleProcessApplication.class, args);
+        SpringApplication.run(ProcessEngineApplication.class, args);
     }
 }
