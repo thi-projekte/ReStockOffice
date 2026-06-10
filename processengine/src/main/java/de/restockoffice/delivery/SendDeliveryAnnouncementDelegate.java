@@ -18,6 +18,8 @@ public class SendDeliveryAnnouncementDelegate implements JavaDelegate {
     private static final Logger log = LoggerFactory.getLogger(SendDeliveryAnnouncementDelegate.class);
 
     private final MailDataEnrichmentService mailDataEnrichmentService;
+    //necessary for tests
+    private RestTemplate restTemplate = new RestTemplate();
 
     @Value("${mailservice.base-url}")
     private String mailServiceBaseUrl;
@@ -45,7 +47,7 @@ public class SendDeliveryAnnouncementDelegate implements JavaDelegate {
         request.put("deliveryDetailsUrl", execution.getVariable("deliveryDetailsUrl"));
         request.put("deliveryItems", deliveryItems(execution));
 
-        new RestTemplate().postForEntity(
+        restTemplate.postForEntity(
                 mailServiceBaseUrl + "/emails/delivery-announcement",
                 request,
                 String.class
