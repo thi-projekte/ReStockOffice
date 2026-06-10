@@ -282,6 +282,10 @@ export function AppShell({ children }: AppShellProps) {
       return;
     }
 
+    if (!auth.user) {
+      return;
+    }
+
     getMyUser({
       token: auth.token,
       kind: userKind,
@@ -294,7 +298,7 @@ export function AppShell({ children }: AppShellProps) {
         setProfilePictureUrl(undefined);
         setSubscriptionProfileStatus(null);
       });
-  }, [auth.token, isLoggedIn, location.pathname, userKind]);
+  }, [auth.token, auth.user, isLoggedIn, location.pathname, userKind]);
 
   useEffect(() => {
     setMenuOpen(false);

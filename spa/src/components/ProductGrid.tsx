@@ -16,13 +16,13 @@ export function ProductGrid({ products }: ProductGridProps) {
   }
 
   return (
-    <div className="product-grid-shell">
-      <div className="product-grid">
-        {products.map((product) => (
-          <ProductCard key={product.productId} product={product} />
-        ))}
+      <div className="product-grid-shell">
+        <div className="product-grid">
+          {products.map((product) => (
+              <ProductCard key={product.productId} product={product} />
+          ))}
+        </div>
       </div>
-    </div>
   );
 }
 
