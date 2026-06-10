@@ -1,5 +1,9 @@
-package de.restockoffice;
+package de.restockoffice.delivery;
 
+import de.restockoffice.MailDataEnrichmentService;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.cibseven.bpm.engine.delegate.JavaDelegate;
 import org.slf4j.Logger;
@@ -7,10 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Component("sendDeliveryAnnouncementDelegate")
 public class SendDeliveryAnnouncementDelegate implements JavaDelegate {

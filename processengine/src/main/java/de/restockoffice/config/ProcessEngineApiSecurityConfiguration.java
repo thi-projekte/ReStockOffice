@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

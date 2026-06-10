@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.invoice;
 
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.cibseven.bpm.engine.delegate.JavaDelegate;

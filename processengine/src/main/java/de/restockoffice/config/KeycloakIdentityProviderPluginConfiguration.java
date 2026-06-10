@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.config;
 
 import org.cibseven.bpm.extension.keycloak.plugin.KeycloakIdentityProviderPlugin;
 import org.springframework.boot.context.properties.ConfigurationProperties;

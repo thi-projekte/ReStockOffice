@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.config;
 
 import java.util.Arrays;
 import java.util.List;
