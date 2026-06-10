@@ -2092,6 +2092,18 @@
   box-shadow: 0 18px 42px rgba(31, 42, 46, 0.18);
 }
 
+.subscription-remove-dialog {
+  width: min(100% - 2rem, 380px);
+  grid-template-rows: auto auto;
+  gap: 1rem;
+}
+
+.subscription-remove-dialog p {
+  margin: 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
 .subscription-modal__header,
 .subscription-modal__actions,
 .subscription-field__head {

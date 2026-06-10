@@ -34,8 +34,25 @@ export function SubscriptionPage() {
         subscriptionProfileStatus,
     } = useOutletContext<OutletContext>();
     const [isEditMode, setIsEditMode] = useState(false);
+    const [itemPendingRemoval, setItemPendingRemoval] = useState<RestockOrderWithProduct | null>(null);
+    const [isRemovingItem, setIsRemovingItem] = useState(false);
 
     const canEditSubscription = canModifySubscription && isEditMode;
+
+    async function handleConfirmRemoveItem() {
+        if (!itemPendingRemoval || isRemovingItem) {
+            return;
+        }
+
+        setIsRemovingItem(true);
+
+        try {
+            await onRemoveSubscriptionItem(itemPendingRemoval);
+            setItemPendingRemoval(null);
+        } finally {
+            setIsRemovingItem(false);
+        }
+    }
 
     if (!isLoggedIn) {
         return <Navigate to="/login" replace/>;
@@ -116,9 +133,7 @@ export function SubscriptionPage() {
                                                 className="button button--ghost subscription-account-item__delete"
                                                 type="button"
                                                 disabled={!canEditSubscription}
-                                                onClick={() => {
-                                                    void onRemoveSubscriptionItem(item);
-                                                }}
+                                                onClick={() => setItemPendingRemoval(item)}
                                             >
                                                 <MdDeleteOutline/>
                                                 Entfernen
@@ -131,6 +146,53 @@ export function SubscriptionPage() {
                     </div>
                 </div>
             </section>
+
+            {itemPendingRemoval ? (
+                <>
+                    <button
+                        className="subscription-modal__overlay"
+                        type="button"
+                        aria-label="Bestätigungsdialog schließen"
+                        onClick={() => setItemPendingRemoval(null)}
+                        disabled={isRemovingItem}
+                    />
+
+                    <section
+                        className="subscription-modal subscription-remove-dialog"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="subscription-remove-dialog-title"
+                    >
+                        <div className="subscription-modal__body">
+                            <p id="subscription-remove-dialog-title">
+                                Möchtest du diesen Artikel wirklich entfernen?
+                            </p>
+                        </div>
+
+                        <div className="subscription-modal__actions">
+                            <button
+                                className="button button--ghost"
+                                type="button"
+                                onClick={() => setItemPendingRemoval(null)}
+                                disabled={isRemovingItem}
+                            >
+                                Abbrechen
+                            </button>
+
+                            <button
+                                className="button subscription-account-item__delete"
+                                type="button"
+                                onClick={() => {
+                                    void handleConfirmRemoveItem();
+                                }}
+                                disabled={isRemovingItem}
+                            >
+                                Bestätigen
+                            </button>
+                        </div>
+                    </section>
+                </>
+            ) : null}
         </div>
     );
 }
