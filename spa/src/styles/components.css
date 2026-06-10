@@ -2038,7 +2038,6 @@
 }
 
 :root[data-theme="dark"] .product-grid-empty {
-  border-color: rgba(153, 153, 153, 0.16);
   background: rgba(31, 42, 46, 0.58);
 }
 
@@ -2056,8 +2055,6 @@
 .product-grid-empty {
   margin: 1rem 0 0;
   padding: 2.25rem;
-  border: 1px solid rgba(38, 64, 55, 0.12);
-  border-radius: 1rem;
   background: rgba(244, 247, 242, 0.72);
 }
 

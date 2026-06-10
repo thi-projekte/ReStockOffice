@@ -432,6 +432,19 @@ export async function getMyUser(context: UserRequestContext = {}): Promise<UserP
 
 function createUserData(user: SaveUserPayload, isCreateRequest: boolean) {
   const userData = { ...user } as Record<string, unknown>;
+  const iban = userData.iban;
+  const bic = userData.bic;
+
+  if (iban !== undefined) {
+    userData.IBAN = iban;
+    delete userData.iban;
+  }
+
+  if (bic !== undefined) {
+    userData.BIC = bic;
+    delete userData.bic;
+  }
+
   delete userData.kind;
   delete userData.profilePictureFile;
   delete userData.existsInUserService;
