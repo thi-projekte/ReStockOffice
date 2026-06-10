@@ -2,8 +2,6 @@ services:
   orders:
     image: ghcr.io/thi-projekte/restockoffice-orders:latest
     container_name: orders
-    #ports:
-    #  - "8081:8081"
     networks:
       - nginx-proxy-manager
       - orders
