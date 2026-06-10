@@ -15,7 +15,8 @@ import org.springframework.web.client.RestTemplate;
 public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
 
     private static final Logger log = LoggerFactory.getLogger(FetchDeliveriesForAnnouncementDelegate.class);
-    private final RestTemplate restTemplate = new RestTemplate();
+    //necessary for tests
+    private RestTemplate restTemplate = new RestTemplate();
 
     @Value("${deliveriesservice.base-url:https://restocker-deliveries.restockoffice.de}")
     private String deliveriesServiceBaseUrl;
@@ -65,7 +66,7 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 
-    private record DeliveryDetailResponse(
+    record DeliveryDetailResponse(
             String id,
             String orderId,
             String userId,
