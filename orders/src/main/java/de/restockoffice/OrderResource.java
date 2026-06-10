@@ -1,4 +1,4 @@
-package org.acme;
+package de.restockoffice;
 
 import io.quarkus.security.Authenticated;
 import jakarta.persistence.EntityManager;
@@ -83,7 +83,7 @@ public class OrderResource {
     public List<Order> getAll() {
         if (securityIdentity == null || securityIdentity.isAnonymous()) {
             throw new NotAuthorizedException("Nicht autorisiert");
-        }else{
+        } else {
             LOG.infof("GET /orders requested by: %s", securityIdentity.getPrincipal().getName());
             return Order.listAll();
         }
@@ -302,7 +302,21 @@ public class OrderResource {
 
     private Map<String, Object> processVariables(Order order, String authHeader) {
         Map<String, Object> variables = new LinkedHashMap<>();
-        String customerId = firstNonBlank(tokenClaim("sub"), order.customerId);
+        String customerId = resolveProcessCustomerId(order);
+
+        addOrderProcessVariables(variables, order, customerId);
+        addAuthorizationHeaderVariable(variables, authHeader);
+        addCustomerProfileVariables(variables, customerId, authHeader);
+        addTokenProfileVariables(variables, order);
+
+        return variables;
+    }
+
+    private String resolveProcessCustomerId(Order order) {
+        return firstNonBlank(tokenClaim("sub"), order.customerId);
+    }
+
+    private void addOrderProcessVariables(Map<String, Object> variables, Order order, String customerId) {
         variables.put("orderId", processVariable(order.id, PROCESS_VARIABLE_LONG));
         variables.put("orderIdsCsv", stringProcessVariable(String.valueOf(order.id)));
         variables.put("aboConfirmationWindowDuration", stringProcessVariable(aboConfirmationWindowDuration));
@@ -311,34 +325,53 @@ public class OrderResource {
         variables.put("status", stringProcessVariable(order.status));
         variables.put("quantity", processVariable(order.quantity, PROCESS_VARIABLE_INTEGER));
         variables.put("interval", processVariable(order.interval, PROCESS_VARIABLE_INTEGER));
+    }
 
+    private void addAuthorizationHeaderVariable(Map<String, Object> variables, String authHeader) {
         if (authHeader != null && !authHeader.isBlank()) {
             variables.put("authorizationHeader", stringProcessVariable(authHeader));
         }
+    }
 
+    private void addCustomerProfileVariables(
+            Map<String, Object> variables,
+            String customerId,
+            String authHeader
+    ) {
         CustomerMailProfile customer = loadCustomerProfile(customerId, authHeader);
-        if (customer != null) {
-            String deliveryWindow = formatDeliveryWindow(customer.getDeliveryTime());
-            String deliveryLocation = formatDeliveryLocation(customer);
-            if (deliveryWindow != null) {
-                variables.put("deliveryWindow", stringProcessVariable(deliveryWindow));
-            }
-            if (deliveryLocation != null) {
-                variables.put("deliveryLocation", stringProcessVariable(deliveryLocation));
-            }
+        if (customer == null) {
+            return;
         }
 
-        String recipientEmail = tokenClaim("email");
-        if (recipientEmail != null) {
-            variables.put("recipientEmail", stringProcessVariable(recipientEmail));
-        }
+        putStringVariableIfPresent(
+                variables,
+                "deliveryWindow",
+                formatDeliveryWindow(customer.getDeliveryTime())
+        );
+        putStringVariableIfPresent(
+                variables,
+                "deliveryLocation",
+                formatDeliveryLocation(customer)
+        );
+    }
 
-        String customerName = firstNonBlank(tokenClaim("name"), tokenClaim("preferred_username"), order.customerId);
-        if (customerName != null) {
-            variables.put("customerName", stringProcessVariable(customerName));
-        }
+    private void addTokenProfileVariables(Map<String, Object> variables, Order order) {
+        putStringVariableIfPresent(variables, "recipientEmail", tokenClaim("email"));
+        putStringVariableIfPresent(
+                variables,
+                "customerName",
+                firstNonBlank(tokenClaim("name"), tokenClaim("preferred_username"), order.customerId)
+        );
+    }
 
-        return variables;
+    private void putStringVariableIfPresent(
+            Map<String, Object> variables,
+            String name,
+            String value
+    ) {
+        if (value != null) {
+            variables.put(name, stringProcessVariable(value));
+        }
     }
 
     private Map<String, Object> stringProcessVariable(Object value) {
