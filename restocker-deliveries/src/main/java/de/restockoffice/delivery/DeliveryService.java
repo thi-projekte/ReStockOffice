@@ -1,13 +1,13 @@
 package de.restockoffice.delivery;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.restockoffice.article.ArticleClient;
 import de.restockoffice.article.ArticleDto;
 import de.restockoffice.order.OrderClient;
 import de.restockoffice.order.OrderDto;
 import de.restockoffice.user.UserClient;
 import de.restockoffice.user.UserDto;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -15,6 +15,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
@@ -24,20 +25,13 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class DeliveryService {
 
+    private static final Logger LOG = Logger.getLogger(DeliveryService.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     static final int PLANNING_HORIZON_DAYS = 14;
     private static final String TEST_ORDER_PREFIX = "test-delivery-";
@@ -214,6 +208,24 @@ public class DeliveryService {
     }
 
     @Transactional
+    public List<DeliveryDetailDto> replanCustomerDeliveries(String customerId, String authorizationHeader) {
+        String normalizedCustomerId = normalizeRequiredCustomerId(customerId);
+        lockPlanningHorizon();
+
+        LocalDate today = LocalDate.now();
+        LocalDate horizonEnd = today.plusDays(PLANNING_HORIZON_DAYS);
+        deleteFutureFreeDeliveries(normalizedCustomerId, today, horizonEnd);
+
+        List<OrderDto> customerOrders = activeOrdersForCustomer(
+                normalizedCustomerId,
+                orderClient.getActiveOrders(authorizationHeader)
+        );
+        planDeliveries(customerOrders, today, horizonEnd, authorizationHeader);
+
+        return toDetailDtos(Delivery.findByCustomer(normalizedCustomerId), authorizationHeader);
+    }
+
+    @Transactional
     public DeliveryDetailDto acceptDelivery(UUID deliveryId, String restockerName, String authorizationHeader) {
         validateRestockerName(restockerName);
 
@@ -298,6 +310,15 @@ public class DeliveryService {
             return;
         }
 
+        planDeliveries(activeOrders, today, horizonEnd, authorizationHeader);
+    }
+
+    private void planDeliveries(
+            List<OrderDto> activeOrders,
+            LocalDate today,
+            LocalDate horizonEnd,
+            String authorizationHeader
+    ) {
         Map<String, UserDto> customerCache = new HashMap<>();
         Map<String, List<Delivery>> customerDeliveriesCache = new HashMap<>();
         Map<DeliveryGroupKey, DeliveryGroup> groupedOrders = new LinkedHashMap<>();
@@ -328,6 +349,40 @@ public class DeliveryService {
         for (Map.Entry<DeliveryGroupKey, DeliveryGroup> entry : groupedOrders.entrySet()) {
             upsertPlannedDelivery(entry.getKey(), entry.getValue().orders, today);
         }
+    }
+
+    private List<OrderDto> activeOrdersForCustomer(String customerId, List<OrderDto> activeOrders) {
+        if (activeOrders == null || activeOrders.isEmpty()) {
+            return List.of();
+        }
+
+        return activeOrders.stream()
+                .filter(this::isPlannableOrder)
+                .filter(order -> customerId.equals(order.getCustomerId()))
+                .collect(Collectors.toList());
+    }
+
+    private void deleteFutureFreeDeliveries(String customerId, LocalDate today, LocalDate horizonEnd) {
+        List<Delivery> replannableDeliveries = Delivery.findFutureUnassignedByCustomerBetween(
+                customerId,
+                today,
+                horizonEnd
+        );
+
+        for (Delivery delivery : replannableDeliveries) {
+            if (canReplanDelivery(delivery, today)) {
+                entityManager.remove(entityManager.contains(delivery) ? delivery : entityManager.merge(delivery));
+            }
+        }
+    }
+
+    boolean canReplanDelivery(Delivery delivery, LocalDate today) {
+        return delivery != null
+                && delivery.deliveryDate != null
+                && delivery.deliveryDate.isAfter(today)
+                && delivery.tour == null
+                && delivery.acceptedAt == null
+                && delivery.deliveredAt == null;
     }
 
     private void lockPlanningHorizon() {
@@ -390,6 +445,14 @@ public class DeliveryService {
         List<LocalDate> dueDates = new ArrayList<>();
         DayOfWeek deliveryDay = resolveDeliveryDay(user, order);
         int intervalWeeks = order.getInterval() != null && order.getInterval() > 0 ? order.getInterval() : 1;
+        if (deliveryDay == null) {
+            LOG.warnf(
+                    "Überspringe Lieferplanung für Order %s / Kunde %s, da kein gültiger Liefertag verfügbar ist.",
+                    order.getId(),
+                    order.getCustomerId()
+            );
+            return dueDates;
+        }
 
         if ((existingOrderDeliveryDates == null || existingOrderDeliveryDates.isEmpty())
                 && existingCustomerDeliveryDates != null
@@ -487,11 +550,7 @@ public class DeliveryService {
             return configuredDeliveryDay;
         }
 
-        if (order.getCreatedAt() != null) {
-            return order.getCreatedAt().getDayOfWeek();
-        }
-
-        return LocalDate.now().getDayOfWeek();
+        return null;
     }
 
     private DayOfWeek parseDeliveryDay(String deliveryDay) {
@@ -952,6 +1011,14 @@ public class DeliveryService {
         }
     }
 
+    private String normalizeRequiredCustomerId(String customerId) {
+        if (customerId == null || customerId.isBlank()) {
+            throw new BadRequestException("customerId muss angegeben werden.");
+        }
+
+        return customerId.trim();
+    }
+
     private UserDto loadCachedUser(
             String userId,
             Map<String, UserDto> userCache,
@@ -968,48 +1035,17 @@ public class DeliveryService {
         try {
             return userClient.getCustomerAddressForRestocker(userId, authorizationHeader);
         } catch (RuntimeException exception) {
-            return createTestCustomerFallback(userId);
+            try {
+                return userClient.getCustomerProfile(userId, authorizationHeader);
+            } catch (RuntimeException fallbackException) {
+                LOG.warnf(
+                        fallbackException,
+                        "Could not load customer profile for delivery planning: %s",
+                        userId
+                );
+                return null;
+            }
         }
-    }
-
-    private UserDto createTestCustomerFallback(String userId) {
-        if (DEFAULT_TEST_CUSTOMER_ONE.equals(userId)) {
-            UserDto user = new UserDto();
-            user.setUserId(userId);
-            user.setEmail("corinna.niedermeier01@gmail.com");
-            user.setCompanyName("Muster GmbH");
-            user.setStreet("Teststrasse");
-            user.setHouseNumber("12");
-            user.setPostalCode("85049");
-            user.setCity("Ingolstadt");
-            user.setCountry("Deutschland");
-            user.setPhoneNumber("+49 841 123456");
-            user.setRoleInCompany("Warenannahme");
-            user.setDeliveryHint("Bitte am Empfang melden.");
-            user.setDeliveryDay("Samstag");
-            user.setDeliveryTime("10:00");
-            return user;
-        }
-
-        if (DEFAULT_TEST_CUSTOMER_TWO.equals(userId)) {
-            UserDto user = new UserDto();
-            user.setUserId(userId);
-            user.setEmail("corinna.niedermeier01@gmail.com");
-            user.setCompanyName("Beispiel Office AG");
-            user.setStreet("Demoweg");
-            user.setHouseNumber("7");
-            user.setPostalCode("90402");
-            user.setCity("Nürnberg");
-            user.setCountry("Deutschland");
-            user.setPhoneNumber("+49 911 987654");
-            user.setRoleInCompany("Office Management");
-            user.setDeliveryHint("Anlieferung über Seiteneingang.");
-            user.setDeliveryDay("Samstag");
-            user.setDeliveryTime("14:00");
-            return user;
-        }
-
-        return null;
     }
 
     private DeliveryItem createDeliveryItem(OrderDto order) {

@@ -62,6 +62,12 @@ public class DeliveryResource {
         return deliveryService.getCustomerDeliveryOverview(customerId);
     }
 
+    @POST
+    @Path("/customers/{customerId}/replan")
+    public List<DeliveryDetailDto> replanCustomerDeliveries(@PathParam("customerId") String customerId) {
+        return deliveryService.replanCustomerDeliveries(customerId, authorizationHeader());
+    }
+
     @GET
     @Path("/customers")
     public MonthlyDeliveryCustomersDto getCustomersWithDeliveriesInMonth(@QueryParam("month") String month) {

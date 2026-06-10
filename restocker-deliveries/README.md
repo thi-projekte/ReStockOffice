@@ -283,11 +283,13 @@ Dadurch reduziert sich der Countdown automatisch jeden Tag.
 | -------- | ----- |
 | `QUARKUS_DATASOURCE_JDBC_URL` | JDBC-URL zur PostgreSQL-Datenbank. |
 | `QUARKUS_DATASOURCE_USERNAME` | Datenbank-User. |
-| `QUARKUS_DATASOURCE_PASSWORD` | Datenbank-Passwort. |
+| `DELIVERIES_DB_PASSWORD` | Datenbank-Passwort fuer Docker Compose. Wird an Postgres und Quarkus weitergereicht. |
+| `QUARKUS_DATASOURCE_PASSWORD` | Datenbank-Passwort, wenn der Service direkt ohne Compose gestartet wird. |
 | `QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION` | Hibernate DB-Strategie, lokal meist `update`. |
 | `QUARKUS_OIDC_AUTH_SERVER_URL` | Keycloak/OIDC Realm URL. |
 | `QUARKUS_OIDC_CLIENT_ID` | OIDC Client ID. |
-| `QUARKUS_OIDC_CREDENTIALS_SECRET` | OIDC Client Secret, falls benötigt. |
+| `RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET` | OIDC Client Secret fuer Docker Compose. |
+| `QUARKUS_OIDC_CREDENTIALS_SECRET` | OIDC Client Secret, wenn der Service direkt ohne Compose gestartet wird. |
 | `ORDERS_SERVICE_URL` | Basis-URL des Orders-Service. |
 | `USERS_SERVICE_URL` | Basis-URL des Users-Service. |
 | `ARTICLES_SERVICE_URL` | Basis-URL des Articles-Service. |
@@ -351,6 +353,6 @@ Ohne lokale GraalVM-Installation:
 
 ## Docker
 
-Für lokale Container-Tests gibt es `dev/docker-compose.yml`. Der Service wird dort auf `http://localhost:8082` veröffentlicht und die Datenbank auf Host-Port `5435`.
+Für lokale Container-Tests gibt es `dev/docker-compose.yml`. Der Service wird dort auf `http://localhost:8082` veröffentlicht und die Datenbank auf Host-Port `5435`. Lege dafuer lokal eine `.env` auf Basis von `.env.example` an.
 
-Für Deployment-nahe Setups gibt es `docker-compose.yml` im Projektroot. Secrets und produktive Werte sollten über die jeweilige Deployment-Umgebung verwaltet werden.
+Für Deployment-nahe Setups gibt es `docker-compose.yml` im Projektroot. Dort muessen `DELIVERIES_DB_PASSWORD` und `RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET` ebenfalls gesetzt sein. Secrets und produktive Werte sollten ueber die jeweilige Deployment-Umgebung verwaltet werden.

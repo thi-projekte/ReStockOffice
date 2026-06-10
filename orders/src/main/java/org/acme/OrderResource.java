@@ -5,7 +5,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaUpdate;
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.TransactionSynchronizationRegistry;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -66,6 +69,12 @@ public class OrderResource {
 
     @ConfigProperty(name = "usersservice.base-url", defaultValue = "https://users.restockoffice.de")
     String usersServiceBaseUrl;
+
+    @ConfigProperty(name = "deliveriesservice.base-url", defaultValue = "https://restocker-deliveries.restockoffice.de")
+    String deliveriesServiceBaseUrl;
+
+    @Inject
+    TransactionSynchronizationRegistry transactionSynchronizationRegistry;
 
     @Context
     HttpHeaders headers;
@@ -180,6 +189,7 @@ public class OrderResource {
         variables.put("changeType", stringProcessVariable("CANCELLED".equalsIgnoreCase(order.status) ? "CANCELLED" : "UPDATED"));
 
         startAboConfirmationProcess(order, authHeader, variables);
+        scheduleCustomerDeliveryReplanAfterCommit(order.customerId, authHeader);
 
         return order;
     }
@@ -212,8 +222,50 @@ public class OrderResource {
         Map<String, Object> variables = processVariables(order, authHeader);
         variables.put("changeType", stringProcessVariable("CREATED"));
         startAboConfirmationProcess(order, authHeader, variables);
+        scheduleCustomerDeliveryReplanAfterCommit(order.customerId, authHeader);
 
         return order;
+    }
+
+    private void scheduleCustomerDeliveryReplanAfterCommit(String customerId, String authHeader) {
+        if (customerId == null || customerId.isBlank()) {
+            return;
+        }
+
+        transactionSynchronizationRegistry.registerInterposedSynchronization(new Synchronization() {
+            @Override
+            public void beforeCompletion() {
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                if (status == Status.STATUS_COMMITTED) {
+                    triggerCustomerDeliveryReplan(customerId, authHeader);
+                }
+            }
+        });
+    }
+
+    private void triggerCustomerDeliveryReplan(String customerId, String authHeader) {
+        try (Client client = ClientBuilder.newClient()) {
+            String url = trimTrailingSlash(deliveriesServiceBaseUrl)
+                    + "/api/deliveries/customers/"
+                    + java.net.URLEncoder.encode(customerId.trim(), java.nio.charset.StandardCharsets.UTF_8)
+                    + "/replan";
+            var request = client.target(url).request(MediaType.APPLICATION_JSON);
+            if (authHeader != null && !authHeader.isBlank()) {
+                request.header(AUTHORIZATION_HEADER, authHeader);
+            }
+
+            try (Response response = request.post(Entity.json(Map.of()))) {
+                if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+                    String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
+                    LOG.warnf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.getStatus(), responseBody);
+                }
+            }
+        } catch (RuntimeException exception) {
+            LOG.warnf(exception, "Delivery replan request failed for customer %s", customerId);
+        }
     }
 
     private void startAboConfirmationProcess(Order order, String authHeader, Map<String, Object> variables) {

@@ -18,4 +18,11 @@ public interface UserClient {
             @QueryParam("userId") String userId,
             @HeaderParam("Authorization") String authorizationHeader
     );
+
+    @GET
+    @Path("/customer")
+    UserDto getCustomerProfile(
+            @QueryParam("userId") String userId,
+            @HeaderParam("Authorization") String authorizationHeader
+    );
 }

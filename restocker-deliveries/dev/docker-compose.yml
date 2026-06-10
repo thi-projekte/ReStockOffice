@@ -17,7 +17,7 @@ services:
       QUARKUS_OIDC_ENABLED: "true"
       QUARKUS_OIDC_AUTH_SERVER_URL: http://host.docker.internal:8180/realms/restockoffice
       QUARKUS_OIDC_CLIENT_ID: restock-deliveries
-      QUARKUS_OIDC_CREDENTIALS_SECRET: "restock-deliveries-secret"
+      QUARKUS_OIDC_CREDENTIALS_SECRET: ${RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET:?Set RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET}
       QUARKUS_OIDC_APPLICATION_TYPE: service
 
       # Postman-Rettungsanker

@@ -112,6 +112,21 @@ public class Delivery extends PanacheEntityBase {
         );
     }
 
+    public static List<Delivery> findFutureUnassignedByCustomerBetween(
+            String customerId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        return list(
+                "userId = ?1 and tour is null and acceptedAt is null and deliveredAt is null " +
+                        "and deliveryDate > ?2 and deliveryDate <= ?3 " +
+                        "order by deliveryDate asc",
+                customerId,
+                startDate,
+                endDate
+        );
+    }
+
     public static List<Delivery> findDeliveredByCustomerBetween(
             String customerId,
             LocalDate startDate,

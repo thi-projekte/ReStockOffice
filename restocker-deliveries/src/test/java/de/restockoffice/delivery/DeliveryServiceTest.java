@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DeliveryServiceTest {
 
@@ -96,6 +97,23 @@ class DeliveryServiceTest {
     }
 
     @Test
+    void missingDeliveryDayDoesNotFallBackToOrderCreationDay() {
+        OrderDto order = order(1L, CUSTOMER_ID, ARTICLE_NUMBER_10001, 1, 1, LocalDate.of(2026, 6, 5));
+        UserDto user = user(null);
+
+        List<LocalDate> dueDates = service.calculateDueDates(
+                order,
+                user,
+                LocalDate.of(2026, 6, 5),
+                LocalDate.of(2026, 6, 18),
+                List.of(),
+                List.of()
+        );
+
+        assertIterableEquals(List.of(), dueDates);
+    }
+
+    @Test
     void newOrderUsesExistingCustomerDeliveriesInsideCurrentHorizon() {
         OrderDto order = order(2L, CUSTOMER_ID, ARTICLE_NUMBER_10002, 1, 1, LocalDate.of(2026, 6, 4));
         UserDto user = user(DELIVERY_DAY_THURSDAY);
@@ -167,6 +185,21 @@ class DeliveryServiceTest {
         );
 
         assertFalse(canAppend);
+    }
+
+    @Test
+    void onlyFutureFreeDeliveriesCanBeReplanned() {
+        LocalDate today = LocalDate.of(2026, 6, 1);
+        Delivery futureFree = openDelivery(CUSTOMER_ID, LocalDate.of(2026, 6, 9), item(ARTICLE_NUMBER_10001, 1));
+        Delivery todayFree = openDelivery(CUSTOMER_ID, today, item(ARTICLE_NUMBER_10001, 1));
+        Delivery accepted = openDelivery(CUSTOMER_ID, LocalDate.of(2026, 6, 10), item(ARTICLE_NUMBER_10001, 1));
+        Delivery delivered = deliveredDelivery(CUSTOMER_ID, LocalDate.of(2026, 6, 11), item(ARTICLE_NUMBER_10001, 1));
+        accepted.acceptedAt = LocalDateTime.of(2026, 6, 1, 8, 0);
+
+        assertTrue(service.canReplanDelivery(futureFree, today));
+        assertFalse(service.canReplanDelivery(todayFree, today));
+        assertFalse(service.canReplanDelivery(accepted, today));
+        assertFalse(service.canReplanDelivery(delivered, today));
     }
 
     @Test
