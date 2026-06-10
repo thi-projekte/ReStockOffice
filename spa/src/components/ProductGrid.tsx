@@ -8,14 +8,22 @@ interface ProductGridProps {
 
 export function ProductGrid({ products }: ProductGridProps) {
   if (products.length === 0) {
-    return <p className="empty-state">Keine Artikel für die Suche gefunden.</p>;
+    return (
+      <div className="product-grid-shell product-grid-shell--empty">
+        <p className="empty-state product-grid-empty">
+          Keine Artikel für die Suche gefunden.
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="product-grid">
-      {products.map((product) => (
-        <ProductCard key={product.productId} product={product} />
-      ))}
+    <div className="product-grid-shell">
+      <div className="product-grid">
+        {products.map((product) => (
+          <ProductCard key={product.productId} product={product} />
+        ))}
+      </div>
     </div>
   );
 }
