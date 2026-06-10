@@ -38,7 +38,6 @@ import org.jboss.logging.Logger;
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-//@RolesAllowed("camunda-admin") admin || user
 @Authenticated
 public class OrderResource {
     private static final Logger LOG = Logger.getLogger(OrderResource.class);
@@ -213,7 +212,6 @@ public class OrderResource {
                 input.quantity,
                 input.interval
         );
-        LOG.debug("Order created in resource");
         order.persist();
         LOG.infof("Order persisted: id=%s", order.id);
 
