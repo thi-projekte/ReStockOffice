@@ -184,7 +184,7 @@ GET /q/health/ready
 
 ## Deployment
 
-Die GitHub Action unter `.github/workflows/confirmation-mails.yml` baut und publiziert das Image nach GHCR. Für Portainer liegt die Compose-Datei unter `confirmationMails/docker-compose.yml`.
+Die GitHub Action unter `.github/workflows/confirmation-mails.yml` baut und publiziert das Image nach GHCR. Für Portainer liegt die Compose-Datei unter `confirmation-mails/docker-compose.yml`.
 
 Das Deployment erwartet mindestens einen Resend-API-Key über `QUARKUS_MAILER_PASSWORD` oder
 `RESTOCK_MAIL_RESEND_API_KEY`. Ohne API-Key kann der Service nur im Dry-Run sinnvoll genutzt werden.
