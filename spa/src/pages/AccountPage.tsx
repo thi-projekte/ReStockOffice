@@ -650,7 +650,6 @@ export function AccountPage() {
                                         className="account-field__select"
                                         onChange={(e) => updateField("deliveryDay", e.target.value)}
                                     >
-                                        <option value="">Kein Vorzugstag</option>
                                         {DELIVERY_DAYS.map((d) => (
                                             <option key={d} value={d}>{d}</option>
                                         ))}
