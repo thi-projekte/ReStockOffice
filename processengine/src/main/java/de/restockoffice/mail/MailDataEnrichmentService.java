@@ -1,6 +1,7 @@
 package de.restockoffice.mail;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import de.restockoffice.delivery.DeliveryMonitoringItem;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
@@ -17,12 +18,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -40,6 +36,11 @@ public class MailDataEnrichmentService {
     private static final ZoneId BERLIN = ZoneId.of("Europe/Berlin");
     private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy", GERMAN);
     private static final DateTimeFormatter DISPLAY_DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm 'Uhr'", GERMAN);
+    private static final String ARTICLE_LABEL_PREFIX = "Artikel ";
+    private static final String FIELD_QUANTITY = "quantity";
+    private static final String VARIABLE_ITEM_ARTICLE_NUMBER = "itemArticleNumber";
+    private static final String VARIABLE_ITEM_NAME = "itemName";
+    private static final String VARIABLE_ITEM_QUANTITY = "itemQuantity";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -74,12 +75,12 @@ public class MailDataEnrichmentService {
         setIfBlank(execution, "itemNextDeliveryDate", formatDate(deliveryDate));
 
         if (article != null) {
-            setIfBlank(execution, "itemArticleNumber", firstNonBlank(article.productId, context.productId()));
-            setIfBlank(execution, "itemName", firstNonBlank(article.name, "Artikel " + context.productId()));
+            setIfBlank(execution, VARIABLE_ITEM_ARTICLE_NUMBER, firstNonBlank(article.productId, context.productId()));
+            setIfBlank(execution, VARIABLE_ITEM_NAME, firstNonBlank(article.name, articleLabel(context.productId())));
         }
 
-        setIfBlank(execution, "itemQuantity", formatOrderItemQuantity(resolveQuantity(execution, order), article));
-        execution.setVariable("orderItems", buildAboOrderItems(execution, contexts.isEmpty() ? List.of(context) : contexts));
+        setIfBlank(execution, VARIABLE_ITEM_QUANTITY, formatOrderItemQuantity(resolveQuantity(execution, order), article));
+        execution.setVariable("orderItems", buildAboOrderItems(contexts.isEmpty() ? List.of(context) : contexts));
     }
 
     public void enrichDeliveryAnnouncement(DelegateExecution execution) {
@@ -121,20 +122,20 @@ public class MailDataEnrichmentService {
 
         DeliveryItemDetailDto deliveryItem = firstDeliveryItem(delivery);
         if (deliveryItem != null) {
-            setIfBlank(execution, "itemName", firstNonBlank(deliveryItem.name, article != null ? article.name : null, "Artikel " + context.productId()));
-            setIfBlank(execution, "itemArticleNumber", firstNonBlank(deliveryItem.articleNumber, article != null ? article.productId : null, context.productId()));
-            setIfBlank(execution, "itemQuantity", formatDeliveryItemQuantity(deliveryItem));
+            setIfBlank(execution, VARIABLE_ITEM_NAME, firstNonBlank(deliveryItem.name, article != null ? article.name : null, articleLabel(context.productId())));
+            setIfBlank(execution, VARIABLE_ITEM_ARTICLE_NUMBER, firstNonBlank(deliveryItem.articleNumber, article != null ? article.productId : null, context.productId()));
+            setIfBlank(execution, VARIABLE_ITEM_QUANTITY, formatDeliveryItemQuantity(deliveryItem));
         }
 
         if (article != null) {
-            setIfBlank(execution, "itemName", firstNonBlank(article.name, "Artikel " + context.productId()));
-            setIfBlank(execution, "itemArticleNumber", firstNonBlank(article.productId, context.productId()));
+            setIfBlank(execution, VARIABLE_ITEM_NAME, firstNonBlank(article.name, articleLabel(context.productId())));
+            setIfBlank(execution, VARIABLE_ITEM_ARTICLE_NUMBER, firstNonBlank(article.productId, context.productId()));
         } else {
-            setIfBlank(execution, "itemName", "Artikel " + context.productId());
-            setIfBlank(execution, "itemArticleNumber", context.productId());
+            setIfBlank(execution, VARIABLE_ITEM_NAME, articleLabel(context.productId()));
+            setIfBlank(execution, VARIABLE_ITEM_ARTICLE_NUMBER, context.productId());
         }
 
-        setIfBlank(execution, "itemQuantity", formatOrderItemQuantity(resolveQuantity(execution, order), article));
+        setIfBlank(execution, VARIABLE_ITEM_QUANTITY, formatOrderItemQuantity(resolveQuantity(execution, order), article));
     }
 
     private EnrichmentContext loadContext(DelegateExecution execution) {
@@ -241,28 +242,27 @@ public class MailDataEnrichmentService {
                 stringValue(snapshotMap.get("firstChangeType")),
                 stringValue(snapshotMap.get("changeType")),
                 stringValue(snapshotMap.get("status")),
-                integerValue(snapshotMap.get("quantity")),
+                integerValue(snapshotMap.get(FIELD_QUANTITY)),
                 integerValue(snapshotMap.get("interval"))
         );
     }
 
-    private List<Map<String, Object>> buildAboOrderItems(DelegateExecution execution, List<EnrichmentContext> contexts) {
+    private List<Map<String, Object>> buildAboOrderItems(List<EnrichmentContext> contexts) {
         return contexts.stream()
                 .filter(context -> !isTransientCreatedThenCancelled(context))
                 .map(context -> {
-                    OrderDto order = context.order();
                     String productId = resolveProductIdForItem(context);
                     ArticleDto article = articleForProductId(context.article(), productId);
                     LocalDate deliveryDate = resolveDeliveryDate(context);
 
                     Map<String, Object> orderItem = new HashMap<>();
-                    orderItem.put("name", firstNonBlank(article != null ? article.name : null, "Artikel " + productId));
+                    orderItem.put("name", firstNonBlank(article != null ? article.name : null, articleLabel(productId)));
                     orderItem.put("articleNumber", firstNonBlank(article != null ? article.productId : null, productId));
                     if (isCancelled(context)) {
-                        orderItem.put("quantity", "Deabonniert");
+                        orderItem.put(FIELD_QUANTITY, "Deabonniert");
                         orderItem.put("statusLabel", "Deabonniert");
                     } else {
-                        orderItem.put("quantity", formatOrderItemQuantity(resolveQuantityForItem(context), article));
+                        orderItem.put(FIELD_QUANTITY, formatOrderItemQuantity(resolveQuantityForItem(context), article));
                         orderItem.put("intervalDescription", formatInterval(resolveIntervalForItem(context)));
                         orderItem.put("nextDeliveryDate", formatDate(deliveryDate));
                     }
@@ -480,7 +480,7 @@ public class MailDataEnrichmentService {
     }
 
     private int resolveQuantity(DelegateExecution execution, OrderDto order) {
-        Object variable = execution.getVariable("quantity");
+        Object variable = execution.getVariable(FIELD_QUANTITY);
         if (variable instanceof Number number) {
             return number.intValue();
         }
@@ -600,7 +600,7 @@ public class MailDataEnrichmentService {
 
     private String formatInterval(int intervalWeeks) {
         if (intervalWeeks <= 1) {
-            return "Woechentlich";
+            return "Wöchentlich";
         }
         return "Alle " + intervalWeeks + " Wochen";
     }
@@ -620,9 +620,9 @@ public class MailDataEnrichmentService {
         List<Map<String, Object>> deliveryItems = delivery.items.stream()
                 .map(item -> {
                     Map<String, Object> deliveryItem = new HashMap<>();
-                    deliveryItem.put("name", firstNonBlank(item.name, "Artikel " + item.articleNumber));
+                    deliveryItem.put("name", firstNonBlank(item.name, articleLabel(item.articleNumber)));
                     deliveryItem.put("articleNumber", item.articleNumber);
-                    deliveryItem.put("quantity", formatDeliveryItemQuantity(item));
+                    deliveryItem.put(FIELD_QUANTITY, formatDeliveryItemQuantity(item));
                     return deliveryItem;
                 })
                 .toList();
@@ -645,6 +645,10 @@ public class MailDataEnrichmentService {
             return "RSO";
         }
         return orderId.startsWith("RSO-") ? orderId : "RSO-" + orderId;
+    }
+
+    private String articleLabel(String articleNumber) {
+        return ARTICLE_LABEL_PREFIX + articleNumber;
     }
 
     private String stringVariable(DelegateExecution execution, String variableName) {
@@ -831,69 +835,74 @@ public class MailDataEnrichmentService {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     public static class OrderDto {
-        public Long id;
-        public String customerId;
-        public String productId;
-        public String status;
-        public Integer quantity;
-        public Integer interval;
-        public LocalDateTime createdAt;
-        public LocalDateTime updatedAt;
+        Long id;
+        String customerId;
+        String productId;
+        String status;
+        Integer quantity;
+        Integer interval;
+        LocalDateTime createdAt;
+        LocalDateTime updatedAt;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     public static class UserDto {
-        public String userId;
+        String userId;
         @JsonAlias({"recipientEmail", "customerEmail", "mail"})
-        public String email;
-        public String postalCode;
-        public String city;
-        public String street;
-        public String houseNumber;
-        public String country;
+        String email;
+        String postalCode;
+        String city;
+        String street;
+        String houseNumber;
+        String country;
         @JsonAlias({"customerName", "name"})
-        public String companyName;
-        public String phoneNumber;
+        String companyName;
+        String phoneNumber;
         @JsonAlias({"contactPerson"})
-        public String roleInCompany;
-        public String deliveryHint;
-        public String deliveryDay;
-        public Object deliveryTime;
+        String roleInCompany;
+        String deliveryHint;
+        String deliveryDay;
+        Object deliveryTime;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     public static class ArticleDto {
-        public String productId;
-        public String name;
-        public String unit;
-        public Integer unitCount;
+        String productId;
+        String name;
+        String unit;
+        Integer unitCount;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     public static class DeliveryDetailDto {
-        public String id;
-        public String orderId;
-        public String userId;
-        public String recipientEmail;
-        public String companyName;
-        public String street;
-        public String houseNumber;
-        public String postalCode;
-        public String city;
-        public String deliveryHint;
-        public String deliveryDay;
-        public String deliveryTime;
-        public String deliveryDate;
-        public String restockerName;
-        public java.util.List<DeliveryItemDetailDto> items;
+        String id;
+        String orderId;
+        String userId;
+        String recipientEmail;
+        String companyName;
+        String street;
+        String houseNumber;
+        String postalCode;
+        String city;
+        String deliveryHint;
+        String deliveryDay;
+        String deliveryTime;
+        String deliveryDate;
+        String restockerName;
+        List<DeliveryItemDetailDto> items;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     public static class DeliveryItemDetailDto {
-        public String articleNumber;
-        public String name;
-        public Integer quantity;
-        public String unit;
+        String articleNumber;
+        String name;
+        Integer quantity;
+        String unit;
     }
 }
