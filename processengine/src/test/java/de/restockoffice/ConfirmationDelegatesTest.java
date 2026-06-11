@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.restockoffice.abo.SendAboConfirmationDelegate;
 import de.restockoffice.delivery.SendDeliveryConfirmationDelegate;
+import de.restockoffice.mail.MailDataEnrichmentService;
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.util.List;

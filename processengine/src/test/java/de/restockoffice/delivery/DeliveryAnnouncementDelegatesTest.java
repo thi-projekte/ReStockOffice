@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.restockoffice.MailDataEnrichmentService;
+import de.restockoffice.mail.MailDataEnrichmentService;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Proxy;

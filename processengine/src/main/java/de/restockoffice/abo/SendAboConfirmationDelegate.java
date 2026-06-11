@@ -1,6 +1,6 @@
 package de.restockoffice.abo;
 
-import de.restockoffice.MailDataEnrichmentService;
+import de.restockoffice.mail.MailDataEnrichmentService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
