@@ -1,9 +1,12 @@
-package de.restockoffice.delivery;
+package de.restockoffice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.restockoffice.delivery.DeliveryMonitoringItem;
+import de.restockoffice.delivery.FetchDeliveriesForAnnouncementDelegate;
+import de.restockoffice.delivery.SendDeliveryAnnouncementDelegate;
 import de.restockoffice.mail.MailDataEnrichmentService;
 import java.io.IOException;
 import java.io.Serializable;

@@ -66,7 +66,7 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 
-    record DeliveryDetailResponse(
+    public record DeliveryDetailResponse(
             String id,
             String orderId,
             String userId,
