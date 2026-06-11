@@ -41,6 +41,30 @@
   gap: 8px;
 }
 
+.menuButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.menuButton span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--color-text);
+  transition: transform 0.15s, opacity 0.15s;
+}
+
 .navLink {
   font-weight: 500;
   color: var(--color-text-muted);
@@ -74,27 +98,60 @@
 @media (max-width: 680px) {
   .inner {
     height: auto;
-    padding: 10px 16px 8px;
+    padding: 8px 16px;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 0;
   }
   .logoImg { height: 72px; width: auto; }
-  .nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 6px;
+  .menuButton { display: flex; }
+  .menuButton[aria-expanded="true"] span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
   }
-  .navActions { gap: 6px; order: 0; }
-  .navLinks {
-    gap: 10px;
+  .menuButton[aria-expanded="true"] span:nth-child(2) {
+    opacity: 0;
+  }
+  .menuButton[aria-expanded="true"] span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+  .nav {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 8px 0 12px;
+  }
+  .navOpen {
+    display: flex;
+  }
+  .navActions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
     order: 1;
+  }
+  .navActions :global(.btn-primary),
+  .navActions :global(.btn-outline) {
     width: 100%;
     justify-content: center;
-    padding-bottom: 4px;
   }
-  .navLink { font-size: 0.8rem; }
-  .userName { display: none; }
-  .authPlaceholder { width: 120px; height: 36px; }
+  .navLinks {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    order: 0;
+    width: 100%;
+  }
+  .navLink {
+    width: 100%;
+    padding: 10px 0;
+    font-size: 0.95rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .userName {
+    max-width: 100%;
+    text-align: center;
+  }
+  .authPlaceholder { width: 100%; height: 40px; }
 }
