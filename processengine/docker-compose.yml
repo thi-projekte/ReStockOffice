@@ -1,6 +1,7 @@
 services:
   processengine:
     image: ghcr.io/thi-projekte/restockoffice-processengine:latest
+    container_name: restockoffice-processengine
     restart: unless-stopped
     environment:
       SERVER_FORWARD_HEADERS_STRATEGY: framework
