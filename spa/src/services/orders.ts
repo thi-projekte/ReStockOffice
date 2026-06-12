@@ -221,7 +221,10 @@ function normalizeMarketplaceText(value: string | null | undefined) {
 }
 
 function normalizeDeliveryNotes(value: string | null | undefined) {
-  return value?.trim() || EMPTY_DELIVERY_NOTES_VALUE;
+  const normalizedValue = value?.trim();
+  return !normalizedValue || normalizedValue === MISSING_MARKETPLACE_VALUE
+    ? EMPTY_DELIVERY_NOTES_VALUE
+    : normalizedValue;
 }
 
 function buildStreetLine(detail?: DeliveryDetail) {
@@ -492,7 +495,7 @@ function applyCustomerProfile(
         ? order.deliveryTime
         : profileDeliveryTime,
     deliveryNotes: profileDeliveryNotes === EMPTY_DELIVERY_NOTES_VALUE
-      ? order.deliveryNotes
+      ? normalizeDeliveryNotes(order.deliveryNotes)
       : profileDeliveryNotes,
   };
 
