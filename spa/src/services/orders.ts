@@ -33,6 +33,7 @@ const RESTOCKER_ASSIGNMENTS_STORAGE_KEY = "restockoffice-restocker-order-assignm
 const RESTOCKER_LOOKAHEAD_DAYS = 28;
 const DEMO_OPEN_TODAY_CUSTOMER_ID = "104";
 const DEMO_COMPLETED_TODAY_CUSTOMER_ID = "105";
+const EMPTY_DELIVERY_NOTES_VALUE = "Keine zusätzlichen Hinweise";
 
 interface OrdersRequestContext {
   customerId?: string;
@@ -218,6 +219,10 @@ function normalizeMarketplaceText(value: string | null | undefined) {
   return value?.trim() || MISSING_MARKETPLACE_VALUE;
 }
 
+function normalizeDeliveryNotes(value: string | null | undefined) {
+  return value?.trim() || EMPTY_DELIVERY_NOTES_VALUE;
+}
+
 function buildStreetLine(detail?: DeliveryDetail) {
   if (!detail) {
     return MISSING_MARKETPLACE_VALUE;
@@ -377,12 +382,18 @@ function resolveMarketplaceCustomerData({
       postalCode: normalizeMarketplaceText(deliveryDetail.postalCode),
       city: normalizeMarketplaceText(deliveryDetail.city),
       deliveryTime: formatMarketplaceDeliveryTime(deliveryDetail.deliveryTime),
-      deliveryNotes: normalizeMarketplaceText(deliveryDetail.deliveryHint),
+      deliveryNotes: normalizeDeliveryNotes(deliveryDetail.deliveryHint),
     };
 
     return {
       ...customerData,
-      isPlaceholder: Object.values(customerData).includes(MISSING_MARKETPLACE_VALUE),
+      isPlaceholder: [
+        customerData.companyName,
+        customerData.street,
+        customerData.postalCode,
+        customerData.city,
+        customerData.deliveryTime,
+      ].includes(MISSING_MARKETPLACE_VALUE),
     };
   }
 
@@ -405,7 +416,7 @@ function resolveMarketplaceCustomerData({
     postalCode: MISSING_MARKETPLACE_VALUE,
     city: MISSING_MARKETPLACE_VALUE,
     deliveryTime: MISSING_MARKETPLACE_VALUE,
-    deliveryNotes: MISSING_MARKETPLACE_VALUE,
+    deliveryNotes: EMPTY_DELIVERY_NOTES_VALUE,
     isPlaceholder: true,
   };
 }
@@ -419,7 +430,6 @@ function hasMissingCustomerData(order: RestockMarketplaceOrder) {
       order.postalCode,
       order.city,
       order.deliveryTime,
-      order.deliveryNotes,
     ].includes(MISSING_MARKETPLACE_VALUE)
   );
 }
@@ -449,6 +459,7 @@ function applyCustomerProfile(
   const profileDeliveryTime = formatMarketplaceDeliveryTime(
     profile.deliveryTime ?? null,
   );
+  const profileDeliveryNotes = normalizeDeliveryNotes(profile.deliveryHint);
   const nextOrder = {
     ...order,
     companyName: profileValueOrCurrent(profile.companyName, order.companyName),
@@ -462,10 +473,9 @@ function applyCustomerProfile(
       profileDeliveryTime === MISSING_MARKETPLACE_VALUE
         ? order.deliveryTime
         : profileDeliveryTime,
-    deliveryNotes: profileValueOrCurrent(
-      profile.deliveryHint,
-      order.deliveryNotes,
-    ),
+    deliveryNotes: profileDeliveryNotes === EMPTY_DELIVERY_NOTES_VALUE
+      ? order.deliveryNotes
+      : profileDeliveryNotes,
   };
 
   return {
@@ -515,7 +525,7 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
     .filter((detail) => !isDeliveryDateInPast(detail.deliveryDate))
     .map((detail) => {
       const deliveryTime = formatMarketplaceDeliveryTime(detail.deliveryTime);
-      const deliveryNotes = normalizeMarketplaceText(detail.deliveryHint);
+      const deliveryNotes = normalizeDeliveryNotes(detail.deliveryHint);
       const assignment = detail.acceptedAt || detail.restockerName
         ? {
           restockerId: detail.restockerName ?? "",
