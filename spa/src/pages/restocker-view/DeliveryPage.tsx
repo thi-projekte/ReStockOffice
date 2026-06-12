@@ -30,6 +30,7 @@ const RESTOCKER_TOUR_PROCESS_API_URL =
   "https://pe.restockoffice.de/api/restocker-tour-process";
 const START_TOUR_TASK_DEFINITION_KEY = "Activity_Ware_eingeladen";
 const CONFIRM_DELIVERY_TASK_DEFINITION_KEY = "Activity_Auslieferung_bestaetigen";
+const MISSING_DELIVERY_TIME_LABEL = "Keine Angabe";
 
 interface ProcessTaskLookupResponse {
   id: string | null;
@@ -80,8 +81,15 @@ function formatDeliveryTime(value: DeliveryDetail["deliveryTime"]) {
   }
 
   const normalizedValue = String(value).trim();
-  if (!normalizedValue) {
-    return "";
+  const normalizedTimeValue = normalizedValue.replace(/\s*uhr$/i, "").trim();
+
+  if (
+    !normalizedTimeValue ||
+    normalizedTimeValue === "0" ||
+    normalizedTimeValue === "00" ||
+    normalizedTimeValue === "00:00"
+  ) {
+    return MISSING_DELIVERY_TIME_LABEL;
   }
 
   if (
@@ -101,12 +109,20 @@ function formatDeliveryTime(value: DeliveryDetail["deliveryTime"]) {
       return normalizedValue;
     }
 
+    if (hours === 0 && minutes === 0) {
+      return MISSING_DELIVERY_TIME_LABEL;
+    }
+
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} Uhr`;
   }
 
   const hours = Number(normalizedValue);
   if (!Number.isFinite(hours)) {
     return normalizedValue;
+  }
+
+  if (hours === 0) {
+    return MISSING_DELIVERY_TIME_LABEL;
   }
 
   return `${String(hours).padStart(2, "0")}:00 Uhr`;

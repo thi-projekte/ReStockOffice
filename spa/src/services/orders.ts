@@ -34,6 +34,7 @@ const RESTOCKER_LOOKAHEAD_DAYS = 28;
 const DEMO_OPEN_TODAY_CUSTOMER_ID = "104";
 const DEMO_COMPLETED_TODAY_CUSTOMER_ID = "105";
 const EMPTY_DELIVERY_NOTES_VALUE = "Keine zusätzlichen Hinweise";
+const MISSING_DELIVERY_TIME_VALUE = "Keine Angabe";
 
 interface OrdersRequestContext {
   customerId?: string;
@@ -252,12 +253,19 @@ function formatMarketplaceDeliveryTime(
   deliveryTime: DeliveryDetail["deliveryTime"] | null | undefined,
 ) {
   if (deliveryTime == null) {
-    return MISSING_MARKETPLACE_VALUE;
+    return MISSING_DELIVERY_TIME_VALUE;
   }
 
   const normalizedValue = String(deliveryTime).trim();
-  if (!normalizedValue) {
-    return MISSING_MARKETPLACE_VALUE;
+  const normalizedTimeValue = normalizedValue.replace(/\s*uhr$/i, "").trim();
+
+  if (
+    !normalizedTimeValue ||
+    normalizedTimeValue === "0" ||
+    normalizedTimeValue === "00" ||
+    normalizedTimeValue === "00:00"
+  ) {
+    return MISSING_DELIVERY_TIME_VALUE;
   }
 
   if (
@@ -277,12 +285,20 @@ function formatMarketplaceDeliveryTime(
       return normalizedValue;
     }
 
+    if (hours === 0 && minutes === 0) {
+      return MISSING_DELIVERY_TIME_VALUE;
+    }
+
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} Uhr`;
   }
 
   const hours = Number(normalizedValue);
   if (!Number.isFinite(hours)) {
     return normalizedValue;
+  }
+
+  if (hours === 0) {
+    return MISSING_DELIVERY_TIME_VALUE;
   }
 
   return `${String(hours).padStart(2, "0")}:00 Uhr`;
@@ -393,7 +409,8 @@ function resolveMarketplaceCustomerData({
         customerData.postalCode,
         customerData.city,
         customerData.deliveryTime,
-      ].includes(MISSING_MARKETPLACE_VALUE),
+      ].includes(MISSING_MARKETPLACE_VALUE) ||
+        customerData.deliveryTime === MISSING_DELIVERY_TIME_VALUE,
     };
   }
 
@@ -415,7 +432,7 @@ function resolveMarketplaceCustomerData({
     street: MISSING_MARKETPLACE_VALUE,
     postalCode: MISSING_MARKETPLACE_VALUE,
     city: MISSING_MARKETPLACE_VALUE,
-    deliveryTime: MISSING_MARKETPLACE_VALUE,
+    deliveryTime: MISSING_DELIVERY_TIME_VALUE,
     deliveryNotes: EMPTY_DELIVERY_NOTES_VALUE,
     isPlaceholder: true,
   };
@@ -430,7 +447,8 @@ function hasMissingCustomerData(order: RestockMarketplaceOrder) {
       order.postalCode,
       order.city,
       order.deliveryTime,
-    ].includes(MISSING_MARKETPLACE_VALUE)
+    ].includes(MISSING_MARKETPLACE_VALUE) ||
+    order.deliveryTime === MISSING_DELIVERY_TIME_VALUE
   );
 }
 
@@ -470,7 +488,7 @@ function applyCustomerProfile(
     postalCode: profileValueOrCurrent(profile.postalCode, order.postalCode),
     city: profileValueOrCurrent(profile.city, order.city),
     deliveryTime:
-      profileDeliveryTime === MISSING_MARKETPLACE_VALUE
+      profileDeliveryTime === MISSING_DELIVERY_TIME_VALUE
         ? order.deliveryTime
         : profileDeliveryTime,
     deliveryNotes: profileDeliveryNotes === EMPTY_DELIVERY_NOTES_VALUE
@@ -557,7 +575,7 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
         articleCount: detail.items.length,
         items,
         isPlaceholderCustomerData:
-          deliveryTime === MISSING_MARKETPLACE_VALUE ||
+          deliveryTime === MISSING_DELIVERY_TIME_VALUE ||
           [detail.companyName, detail.street, detail.postalCode, detail.city].some(
             (value) => !value?.trim(),
           ),

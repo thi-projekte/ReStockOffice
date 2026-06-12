@@ -4,6 +4,8 @@ export type SortOption = "delivery-desc" | "delivery-asc" | "company-asc";
 export type DeliveryWindowOption = "week-1" | "week-2";
 export type RelativeDayOption = "today" | "tomorrow";
 
+const MISSING_DELIVERY_WINDOW_LABEL = "Keine Angabe";
+
 export function parseDisplayDate(dateValue: string) {
   const [day, month, year] = dateValue.split(".");
   return new Date(`${year}-${month}-${day}T00:00:00`);
@@ -126,17 +128,32 @@ export function formatDeliveryWindowOption(option: DeliveryWindowOption) {
 }
 
 export function formatDeliveryWindow(timeValue: string) {
+  const normalizedValue = timeValue.replace(/\s*uhr$/i, "").trim();
+
+  if (
+    !normalizedValue ||
+    normalizedValue === "0" ||
+    normalizedValue === "00" ||
+    normalizedValue === "00:00" ||
+    timeValue === MISSING_DELIVERY_WINDOW_LABEL
+  ) {
+    return MISSING_DELIVERY_WINDOW_LABEL;
+  }
+
   if (timeValue.includes("-") || timeValue.toLowerCase().includes("bis")) {
     return timeValue;
   }
 
-  const normalizedValue = timeValue.replace(" Uhr", "").trim();
   const [hoursPart, minutesPart = "00"] = normalizedValue.split(":");
   const startHours = Number(hoursPart);
   const startMinutes = Number(minutesPart);
 
   if (!Number.isFinite(startHours) || !Number.isFinite(startMinutes)) {
     return timeValue;
+  }
+
+  if (startHours === 0 && startMinutes === 0) {
+    return MISSING_DELIVERY_WINDOW_LABEL;
   }
 
   const endDate = new Date();
