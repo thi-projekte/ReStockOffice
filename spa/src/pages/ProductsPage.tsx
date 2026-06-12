@@ -22,23 +22,23 @@ type Step = {
 const steps: Step[] = [
     {
         number: '01',
-        title: 'Step 1',
-        description: 'Beschreibung 1',
+        title: 'Konto erstellen',
+        description: 'Registrierung in unter 2 Minuten. Direkt loslegen, ohne Aufwand.',
     },
     {
         number: '02',
-        title: 'Step 2',
-        description: 'Beschreibung 2',
+        title: 'Artikel abonnieren',
+        description: 'Gewünschte Büroartikel auswählen und ein Lieferintervall festlegen – einmalig, fertig.',
     },
     {
         number: '03',
-        title: 'Step 3',
-        description: 'Beschreibung 3',
+        title: 'Öffnungszeiten hinterlegen',
+        description: 'Teilt uns eure Bürozeiten mit, damit der Restocker zur richtigen Zeit liefern kann.',
     },
     {
         number: '04',
-        title: 'Step 4',
-        description: 'Beschreibung 4',
+        title: 'Fertig – wir liefern automatisch',
+        description: 'ReStockOffice kündigt jede Lieferung rechtzeitig per Mail an und bestätigt die Ankunft.',
     },
 ]
 

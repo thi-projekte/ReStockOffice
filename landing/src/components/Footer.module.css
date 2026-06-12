@@ -5,11 +5,11 @@
 }
 
 .inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
   gap: 16px;
+  text-align: center;
 }
 
 .payments {
@@ -31,11 +31,24 @@
   transform: translateY(-2px);
 }
 
+.link,
 .copy {
-  font-size: 0.875rem;
   color: var(--color-text-muted);
+  font-size: 0.875rem;
+  transition: color 0.15s;
+}
+
+.link:hover {
+  color: var(--color-primary);
+}
+
+.copy {
+  margin: 0;
 }
 
 @media (max-width: 560px) {
-  .inner { flex-direction: column; align-items: flex-start; }
+  .inner {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
 }
