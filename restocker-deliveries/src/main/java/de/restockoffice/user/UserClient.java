@@ -1,0 +1,28 @@
+package de.restockoffice.user;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+
+@RegisterRestClient(configKey = "users-service")
+@Produces(MediaType.APPLICATION_JSON)
+public interface UserClient {
+
+    @GET
+    @Path("/customerForRestocker")
+    UserDto getCustomerAddressForRestocker(
+            @QueryParam("userId") String userId,
+            @HeaderParam("Authorization") String authorizationHeader
+    );
+
+    @GET
+    @Path("/customer")
+    UserDto getCustomerProfile(
+            @QueryParam("userId") String userId,
+            @HeaderParam("Authorization") String authorizationHeader
+    );
+}

@@ -4,14 +4,27 @@ import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.TransactionSynchronizationRegistry;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestForm;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -21,6 +34,8 @@ import java.util.Objects;
 @Produces(MediaType.APPLICATION_JSON)
 @Authenticated
 public class UserResource {
+    private static final Logger LOG = Logger.getLogger(UserResource.class);
+    private static final String AUTHORIZATION_HEADER = "Authorization";
 
     // S3 for Pics
     @Inject
@@ -36,6 +51,15 @@ public class UserResource {
 
     @Inject
     SecurityIdentity securityIdentity;
+
+    @Inject
+    TransactionSynchronizationRegistry transactionSynchronizationRegistry;
+
+    @ConfigProperty(name = "deliveriesservice.base-url", defaultValue = "https://restocker-deliveries.restockoffice.de")
+    String deliveriesServiceBaseUrl;
+
+    @Context
+    HttpHeaders headers;
 
     // logged-in Customer
     @GET
@@ -234,6 +258,7 @@ public class UserResource {
         updatedData.userId = userId;
 
         Customer entity = findCustomerOrThrow(userId);
+        boolean deliveryDayChanged = !Objects.equals(entity.deliveryDay, updatedData.deliveryDay);
         boolean hasChanged = applyCustomerChanges(entity, updatedData);
 
         if (file != null && file.uploadedFile() != null) {
@@ -253,6 +278,10 @@ public class UserResource {
 
         if (hasChanged) {
             entity.updatedAt = LocalDateTime.now();
+        }
+
+        if (deliveryDayChanged) {
+            scheduleCustomerDeliveryReplanAfterCommit(userId, headers.getHeaderString(AUTHORIZATION_HEADER));
         }
 
         return Response.ok(entity).build();
@@ -329,6 +358,62 @@ public class UserResource {
         if (!Objects.equals(entity.deliveryHint, updated.deliveryHint)) { entity.deliveryHint = updated.deliveryHint; changed = true; }
         if (!Objects.equals(entity.IBAN, updated.IBAN)) { entity.IBAN = updated.IBAN; changed = true; }
         return changed;
+    }
+
+    private void scheduleCustomerDeliveryReplanAfterCommit(String customerId, String authHeader) {
+        if (customerId == null || customerId.isBlank()) {
+            return;
+        }
+
+        transactionSynchronizationRegistry.registerInterposedSynchronization(new Synchronization() {
+            @Override
+            public void beforeCompletion() {
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                if (status == Status.STATUS_COMMITTED) {
+                    triggerCustomerDeliveryReplan(customerId, authHeader);
+                }
+            }
+        });
+    }
+
+    private void triggerCustomerDeliveryReplan(String customerId, String authHeader) {
+        String url = trimTrailingSlash(deliveriesServiceBaseUrl)
+                + "/api/deliveries/customers/"
+                + URLEncoder.encode(customerId.trim(), StandardCharsets.UTF_8)
+                + "/replan";
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(url))
+                .header("Accept", MediaType.APPLICATION_JSON)
+                .header("Content-Type", MediaType.APPLICATION_JSON)
+                .POST(HttpRequest.BodyPublishers.noBody());
+        if (authHeader != null && !authHeader.isBlank()) {
+            requestBuilder.header(AUTHORIZATION_HEADER, authHeader);
+        }
+
+        try {
+            HttpResponse<String> response = HttpClient.newHttpClient().send(
+                    requestBuilder.build(),
+                    HttpResponse.BodyHandlers.ofString()
+            );
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                LOG.warnf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.statusCode(), response.body());
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            LOG.warnf(exception, "Delivery replan request interrupted for customer %s", customerId);
+        } catch (IOException | RuntimeException exception) {
+            LOG.warnf(exception, "Delivery replan request failed for customer %s", customerId);
+        }
+    }
+
+    private String trimTrailingSlash(String value) {
+        if (value == null || !value.endsWith("/")) {
+            return value;
+        }
+
+        return value.substring(0, value.length() - 1);
     }
 
     private boolean applyRestockerChanges(Restocker entity, Restocker updated) {

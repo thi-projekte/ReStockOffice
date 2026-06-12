@@ -13,6 +13,8 @@ spring:
   jersey:
     application-path: /engine-rest
     type: filter
+    init:
+      jersey.config.servlet.filter.forwardOn404: true
 
   user:
     name: admin

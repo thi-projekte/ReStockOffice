@@ -1,5 +1,4 @@
 services:
-
   restocker-deliveries:
     image: ghcr.io/thi-projekte/restockoffice-restocker-deliveries:latest
     container_name: restocker-deliveries
@@ -16,12 +15,10 @@ services:
       QUARKUS_OIDC_TOKEN_AUDIENCE: account
       QUARKUS_OIDC_AUTH_SERVER_URL: https://id.restockoffice.de/realms/restockoffice
       QUARKUS_OIDC_CLIENT_ID: restock-deliveries
-      QUARKUS_OIDC_CREDENTIALS_SECRET: "BwUxqphre1ZsdsrHzc8f6KWqfKcIS9xx"
+      QUARKUS_OIDC_CREDENTIALS_SECRET: ${RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET:?Set RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET}
       QUARKUS_OIDC_APPLICATION_TYPE: service
       ORDERS_SERVICE_URL: https://orders.restockoffice.de
       USERS_SERVICE_URL: https://users.restockoffice.de
-      #ORDERS_SERVICE_URL: http://orders:8080   # internal via nginx-proxy-manager network
-      #USERS_SERVICE_URL: http://users:8080
       CORS_ORIGINS: https://app.restockoffice.de
     depends_on:
       - restocker-deliveries-db
@@ -38,7 +35,7 @@ services:
     networks:
       - restocker-deliveries
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U reStockOffice"]
+      test: [ "CMD-SHELL", "pg_isready -U reStockOffice" ]
       interval: 5s
       timeout: 3s
       retries: 5
