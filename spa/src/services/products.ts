@@ -1,6 +1,6 @@
 import products from "../mocks/products.json";
 import logoColored from "../assets/logos/logo_colored.png";
-import type { Product } from "../types/shop";
+import type {Product} from "../types/shop";
 
 export const useAPIs = true;
 

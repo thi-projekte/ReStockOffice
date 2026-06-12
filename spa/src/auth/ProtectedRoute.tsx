@@ -1,8 +1,8 @@
-import { type ReactNode } from "react";
-import { useAuth } from "./AuthProvider";
+import {type ReactNode} from "react";
+import {useAuth} from "./AuthProvider";
 
-export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { error, isAuthenticated, isInitializing } = useAuth();
+export function ProtectedRoute({children}: { children: ReactNode }) {
+  const {error, isAuthenticated, isInitializing} = useAuth();
 
   if (error) {
     return <section className="page-card error-box">{error}</section>;

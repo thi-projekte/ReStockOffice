@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import type { Product, RestockOrderWithProduct } from "../types/shop";
+import {useEffect, useRef, useState} from "react";
+import type {Product, RestockOrderWithProduct} from "../types/shop";
 
 interface SubscriptionDialogProps {
   items: RestockOrderWithProduct[];
@@ -18,13 +18,13 @@ function formatInterval(intervalCount: number) {
 }
 
 export function SubscriptionDialog({
-  product,
-  selectedItem,
-  open,
-  isProfileComplete,
-  onClose,
-  onConfirm,
-}: SubscriptionDialogProps) {
+                                     product,
+                                     selectedItem,
+                                     open,
+                                     isProfileComplete,
+                                     onClose,
+                                     onConfirm,
+                                   }: SubscriptionDialogProps) {
   const [quantity, setQuantity] = useState(1);
   const [intervalCount, setIntervalCount] = useState(1);
   const [isClosingToHeader, setIsClosingToHeader] = useState(false);
@@ -106,7 +106,7 @@ export function SubscriptionDialog({
     setIsClosingToHeader(true);
 
     try {
-      await onConfirm({ quantity, intervalCount });
+      await onConfirm({quantity, intervalCount});
       await animateDialogIntoHeader();
     } catch (error) {
       setIsClosingToHeader(false);

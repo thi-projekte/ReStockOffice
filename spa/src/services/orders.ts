@@ -1,8 +1,8 @@
 import mockRestockOrderTemplates from "../mocks/restockOrders.json";
-import { getProducts, useAPIs } from "./products";
+import {getProducts, useAPIs} from "./products";
 import keycloak from "../auth/keycloak";
 
-import { createDemoRestockOrders, getRestockerCustomerProfile } from "../mocks/restockerMarketplace";
+import {createDemoRestockOrders, getRestockerCustomerProfile} from "../mocks/restockerMarketplace";
 import type {
   Product,
   RestockMarketplaceAssignment,
@@ -23,8 +23,8 @@ import {
   syncTodayOrders,
   type DeliveryDetail,
 } from "./deliveries";
-import { loadCustomerProfile } from "./users";
-import type { CustomerUser } from "./users";
+import {loadCustomerProfile} from "./users";
+import type {CustomerUser} from "./users";
 
 const ORDERS_API_URL =
   import.meta.env.VITE_ORDERS_API_URL ?? "https://orders.restockoffice.de/orders";
@@ -293,12 +293,12 @@ async function loadDeliveryDetailsByCustomerId(
 
   try {
     try {
-      await syncTodayOrders({ restockerName, token });
+      await syncTodayOrders({restockerName, token});
     } catch {
       // Keep reading existing routed deliveries even when today's sync fails.
     }
 
-    const todaysTours = await loadTodayTours({ restockerName, token });
+    const todaysTours = await loadTodayTours({restockerName, token});
 
     if (todaysTours.length === 0) {
       return new Map<string, DeliveryDetail>();
@@ -335,12 +335,12 @@ async function loadDeliveryDetailsForRestocker(
 
   try {
     try {
-      await syncTodayOrders({ restockerName, token });
+      await syncTodayOrders({restockerName, token});
     } catch {
       // Keep reading existing routed deliveries even when today's sync fails.
     }
 
-    const todaysTours = await loadTodayTours({ restockerName, token });
+    const todaysTours = await loadTodayTours({restockerName, token});
 
     if (todaysTours.length === 0) {
       return [];
@@ -362,10 +362,10 @@ async function loadDeliveryDetailsForRestocker(
 }
 
 function resolveMarketplaceCustomerData({
-  customerId,
-  deliveryDetail,
-  useMockFallback,
-}: {
+                                          customerId,
+                                          deliveryDetail,
+                                          useMockFallback,
+                                        }: {
   customerId: string;
   deliveryDetail?: DeliveryDetail;
   useMockFallback: boolean;
@@ -495,7 +495,7 @@ async function enrichMarketplaceOrdersWithCustomerProfiles(
   await Promise.all(
     missingCustomerIds.map(async (customerId) => {
       try {
-        const profile = await loadCustomerProfile({ token, userId: customerId });
+        const profile = await loadCustomerProfile({token, userId: customerId});
         profilesByCustomerId.set(customerId, profile);
       } catch {
         // Keep the Delivery API payload when a profile cannot be resolved.
@@ -641,7 +641,7 @@ function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   const id = Number(source.id);
 
   return {
-    ...(Number.isFinite(id) ? { id } : {}),
+    ...(Number.isFinite(id) ? {id} : {}),
     customerId: String(source.customerId ?? ""),
     productId: String(source.productId ?? ""),
     status: String(source.status ?? "ACTIVE"),
@@ -787,10 +787,10 @@ function isAssignedDemoOrderKey(orderKey: string) {
 }
 
 async function syncStoredDeliveryAssignments({
-  assignments,
-  token,
-  restockerName,
-}: {
+                                               assignments,
+                                               token,
+                                               restockerName,
+                                             }: {
   assignments: RestockerOrderAssignment[];
   token: string;
   restockerName?: string;
@@ -948,57 +948,57 @@ export function createSubscription(customerId = ""): Subscription {
 }
 
 export async function loadSubscription({
-       customerId,
-       token,
-   }: OrdersRequestContext): Promise<Subscription> {
-    if (!customerId) {
-        return createSubscription();
+                                         customerId,
+                                         token,
+                                       }: OrdersRequestContext): Promise<Subscription> {
+  if (!customerId) {
+    return createSubscription();
+  }
+
+  if (!useAPIs) {
+    return createSubscriptionFromOrders(getMockOrdersForCustomer(customerId), customerId);
+  }
+
+  const resolvedToken = await resolveToken(token);
+
+  let response: Response;
+
+  try {
+    response = await fetch(ORDERS_API_URL, {
+      method: "GET",
+      headers: createHeaders(resolvedToken),
+    });
+  } catch {
+    throw new Error(buildOrdersNetworkErrorMessage("geladen"));
+  }
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Orders-API hat den Request abgelehnt.");
     }
 
-    if (!useAPIs) {
-        return createSubscriptionFromOrders(getMockOrdersForCustomer(customerId), customerId);
-    }
+    throw new Error(`RestockOrders konnten nicht geladen werden (HTTP ${response.status}).`);
+  }
 
-    const resolvedToken = await resolveToken(token);
+  const payload = (await response.json()) as unknown;
 
-    let response: Response;
+  if (!Array.isArray(payload)) {
+    throw new Error("Die Orders-API hat ein unerwartetes Antwortformat geliefert.");
+  }
 
-    try {
-        response = await fetch(ORDERS_API_URL, {
-            method: "GET",
-            headers: createHeaders(resolvedToken),
-        });
-    } catch {
-        throw new Error(buildOrdersNetworkErrorMessage("geladen"));
-    }
+  const normalizedOrders = payload.map(normalizeRestockOrder);
 
-    if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-            throw new Error("Orders-API hat den Request abgelehnt.");
-        }
-
-        throw new Error(`RestockOrders konnten nicht geladen werden (HTTP ${response.status}).`);
-    }
-
-    const payload = (await response.json()) as unknown;
-
-    if (!Array.isArray(payload)) {
-        throw new Error("Die Orders-API hat ein unerwartetes Antwortformat geliefert.");
-    }
-
-    const normalizedOrders = payload.map(normalizeRestockOrder);
-
-    return createSubscriptionFromOrders(normalizedOrders, customerId);
+  return createSubscriptionFromOrders(normalizedOrders, customerId);
 }
 
 export async function upsertSubscriptionOrder({
-  customerId,
-  token,
-  productId,
-  quantity,
-  intervalCount,
-  existingItem,
-}: UpsertOrderPayload): Promise<Pick<RestockOrder, "id" | "productId" | "status" | "quantity" | "interval">> {
+                                                customerId,
+                                                token,
+                                                productId,
+                                                quantity,
+                                                intervalCount,
+                                                existingItem,
+                                              }: UpsertOrderPayload): Promise<Pick<RestockOrder, "id" | "productId" | "status" | "quantity" | "interval">> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
@@ -1070,11 +1070,11 @@ export async function upsertSubscriptionOrder({
 }
 
 export async function deleteSubscriptionOrder({
-  customerId,
-  token,
-  productId,
-  existingItem,
-}: DeleteOrderPayload): Promise<void> {
+                                                customerId,
+                                                token,
+                                                productId,
+                                                existingItem,
+                                              }: DeleteOrderPayload): Promise<void> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
@@ -1125,9 +1125,9 @@ export async function deleteSubscriptionOrder({
 }
 
 export async function loadOpenRestockOrders({
-  token,
-  restockerName,
-}: RestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
+                                              token,
+                                              restockerName,
+                                            }: RestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
   const resolvedToken = await resolveToken(token);
   const assignments = readRestockerAssignments();
   const products = await getProducts().catch(() => []);
@@ -1136,7 +1136,7 @@ export async function loadOpenRestockOrders({
   try {
     const marketplaceOrders = await enrichMarketplaceOrdersWithCustomerProfiles(
       deriveMarketplaceOrdersFromDeliveryDetails(
-        await loadOpenDeliveries({ token: resolvedToken }),
+        await loadOpenDeliveries({token: resolvedToken}),
       ).filter(
         (order) =>
           !order.assignment &&
@@ -1216,11 +1216,11 @@ export async function loadOpenRestockOrders({
 }
 
 export async function loadAssignedRestockOrders({
-  token,
-  restockerId,
-  restockerName,
-  includeCompletedDeliveries = true,
-}: AssignedRestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
+                                                  token,
+                                                  restockerId,
+                                                  restockerName,
+                                                  includeCompletedDeliveries = true,
+                                                }: AssignedRestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
   const resolvedToken = await resolveToken(token);
   const assignments = mergeAssignments(
     readRestockerAssignments().filter(
@@ -1351,11 +1351,11 @@ export async function loadAssignedRestockOrders({
 }
 
 export async function acceptRestockOrder({
-  orderKey,
-  restockerId,
-  restockerName,
-  token,
-}: {
+                                           orderKey,
+                                           restockerId,
+                                           restockerName,
+                                           token,
+                                         }: {
   orderKey: string;
   restockerId: string;
   restockerName?: string;

@@ -1,7 +1,7 @@
-import { useRef } from "react";
-import { Link } from "react-router-dom";
+import {useRef} from "react";
+import {Link} from "react-router-dom";
 import logoColored from "../assets/logos/logo_colored.png";
-import type { Product } from "../types/shop";
+import type {Product} from "../types/shop";
 
 interface ProductCarouselProps {
   anchorId: string;
@@ -14,14 +14,14 @@ interface ProductCarouselProps {
 }
 
 export function ProductCarousel({
-  anchorId,
-  eyebrow,
-  title,
-  description,
-  products,
-  isLoading = false,
-  getBadge,
-}: ProductCarouselProps) {
+                                  anchorId,
+                                  eyebrow,
+                                  title,
+                                  description,
+                                  products,
+                                  isLoading = false,
+                                  getBadge,
+                                }: ProductCarouselProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   function scrollSection(direction: "left" | "right") {

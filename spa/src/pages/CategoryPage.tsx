@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import { Link, Navigate, useOutletContext, useParams } from "react-router-dom";
-import { ProductGrid } from "../components/ProductGrid";
+import {useEffect, useState} from "react";
+import {Link, Navigate, useOutletContext, useParams} from "react-router-dom";
+import {ProductGrid} from "../components/ProductGrid";
 import {
   getCategoryNameBySlug,
   getProductsByCategorySlug,
 } from "../services/products";
-import type { Product, RestockOrderWithProduct } from "../types/shop";
+import type {Product, RestockOrderWithProduct} from "../types/shop";
 
 interface OutletContext {
   isLoggedIn: boolean;
@@ -20,8 +20,8 @@ interface OutletContext {
 }
 
 export function CategoryPage() {
-  const { isLoggedIn } = useOutletContext<OutletContext>();
-  const { categorySlug } = useParams();
+  const {isLoggedIn} = useOutletContext<OutletContext>();
+  const {categorySlug} = useParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryName, setCategoryName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -47,11 +47,11 @@ export function CategoryPage() {
   }, [categorySlug]);
 
   if (!isLoggedIn) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace/>;
   }
 
   if (!categorySlug) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" replace/>;
   }
 
   if (isLoading) {
@@ -90,7 +90,7 @@ export function CategoryPage() {
           </Link>
         </div>
 
-        <ProductGrid products={products} />
+        <ProductGrid products={products}/>
       </section>
     </div>
   );

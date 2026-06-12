@@ -15,7 +15,7 @@ export interface RestockOrder {
   id?: number;
   customerId: string;
   productId: string;
-  status:  string;
+  status: string;
   quantity: number;
   interval: number;
   createdAt: string;

@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { Link, Navigate, NavLink, useOutletContext, useParams } from "react-router-dom";
-import { ProductCarousel } from "../components/ProductCarousel";
-import { SubscriptionProfileProgress } from "../components/SubscriptionProfileProgress";
-import { getProductById, getProducts } from "../services/products";
-import type { Product, RestockOrderWithProduct } from "../types/shop";
-import type { SubscriptionProfileStatus } from "../utils/subscriptionProfile";
+import {useEffect, useState} from "react";
+import {Link, Navigate, NavLink, useOutletContext, useParams} from "react-router-dom";
+import {ProductCarousel} from "../components/ProductCarousel";
+import {SubscriptionProfileProgress} from "../components/SubscriptionProfileProgress";
+import {getProductById, getProducts} from "../services/products";
+import type {Product, RestockOrderWithProduct} from "../types/shop";
+import type {SubscriptionProfileStatus} from "../utils/subscriptionProfile";
 
 interface ProductDetailProps {
   onAddToSubscription: (product: Product) => void;
@@ -84,7 +84,7 @@ export function ProductDetailPage() {
   }, [productId]);
 
   if (Number.isNaN(productId)) {
-    return <Navigate to="/products" replace />;
+    return <Navigate to="/products" replace/>;
   }
 
   if (isLoading) {
@@ -129,7 +129,7 @@ export function ProductDetailPage() {
           <span className="eyebrow">{product.category}</span>
         </div>
         <div className="product-detail__media">
-          <img src={product.imageUrl} alt={product.name} />
+          <img src={product.imageUrl} alt={product.name}/>
         </div>
         <div className="product-detail__summary">
           <h1>{product.name}</h1>
@@ -199,10 +199,10 @@ export function ProductDetailPage() {
                   Zuerst Profil vervollständigen
                 </button>
                 <NavLink to="/account" className="small-link-text">
-                <small>
-                  Solange dein Profil unvollständig ist, kannst du kein Produkt hinzufügen.
-                </small>
-              </NavLink>
+                  <small>
+                    Solange dein Profil unvollständig ist, kannst du kein Produkt hinzufügen.
+                  </small>
+                </NavLink>
               </div>
             )}
           </div>

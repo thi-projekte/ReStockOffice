@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import {useEffect, useMemo, useState} from "react";
 import type {
   Product,
   RestockOrder,
   RestockOrderWithProduct,
   Subscription,
 } from "../types/shop";
-import { useAPIs } from "../services/products";
+import {useAPIs} from "../services/products";
 import {
   createSubscription,
   deleteSubscriptionOrder,
@@ -27,12 +27,12 @@ interface UseSubscriptionCartOptions {
 const MOCK_CUSTOMER_ID = "mock-user";
 
 export function useSubscriptionCart({
-                                       customerId,
-                                       token,
-                                     }: UseSubscriptionCartOptions) {
+                                      customerId,
+                                      token,
+                                    }: UseSubscriptionCartOptions) {
   const effectiveCustomerId = useAPIs ? customerId : (customerId ?? MOCK_CUSTOMER_ID);
   const [subscription, setSubscription] = useState<Subscription>(() =>
-      createSubscription(effectiveCustomerId),
+    createSubscription(effectiveCustomerId),
   );
   const [isLoaded, setIsLoaded] = useState(false);
   const [productsById, setProductsById] = useState<Record<string, Product>>({});
@@ -51,7 +51,7 @@ export function useSubscriptionCart({
         return;
       }
 
-      const loadedSubscription = await loadSubscription({ customerId: effectiveCustomerId, token });
+      const loadedSubscription = await loadSubscription({customerId: effectiveCustomerId, token});
 
       if (!ignoreResult) {
         setSubscription(loadedSubscription);
@@ -75,7 +75,7 @@ export function useSubscriptionCart({
 
   function registerProducts(products: Product[]) {
     setProductsById((previousProducts) => {
-      const nextProducts = { ...previousProducts };
+      const nextProducts = {...previousProducts};
 
       for (const product of products) {
         nextProducts[String(product.productId)] = product;
@@ -97,7 +97,7 @@ export function useSubscriptionCart({
     const productId = String(product.productId);
 
     const existingItem = subscription.items.find(
-        (item) => item.productId === productId,
+      (item) => item.productId === productId,
     );
 
     const hasExistingItem = Boolean(existingItem);
@@ -118,36 +118,36 @@ export function useSubscriptionCart({
 
     setSubscription((previousSubscription) => {
       const currentItem = previousSubscription.items.find(
-          (item) => item.productId === productId,
+        (item) => item.productId === productId,
       );
 
       const today = new Date().toISOString().slice(0, 10);
 
       const nextItems: RestockOrder[] = currentItem
-          ? previousSubscription.items.map((item) =>
-              item.productId === productId
-                  ? {
-                    ...item,
-                    ...savedOrder,
-                    customerId: item.customerId,
-                    createdAt: item.createdAt,
-                    updatedAt: today,
-                  }
-                  : item,
-          )
-          : [
-            ...previousSubscription.items,
-            {
-              id: savedOrder.id,
-              customerId: previousSubscription.customerId,
-              productId: savedOrder.productId,
-              status: savedOrder.status,
-              quantity: savedOrder.quantity,
-              interval: savedOrder.interval,
-              createdAt: today,
+        ? previousSubscription.items.map((item) =>
+          item.productId === productId
+            ? {
+              ...item,
+              ...savedOrder,
+              customerId: item.customerId,
+              createdAt: item.createdAt,
               updatedAt: today,
-            },
-          ];
+            }
+            : item,
+        )
+        : [
+          ...previousSubscription.items,
+          {
+            id: savedOrder.id,
+            customerId: previousSubscription.customerId,
+            productId: savedOrder.productId,
+            status: savedOrder.status,
+            quantity: savedOrder.quantity,
+            interval: savedOrder.interval,
+            createdAt: today,
+            updatedAt: today,
+          },
+        ];
 
       return {
         ...previousSubscription,
@@ -181,37 +181,37 @@ export function useSubscriptionCart({
   }
 
   const items = useMemo<RestockOrderWithProduct[]>(
-      () =>
-          subscription.items
-              .map((item) => {
-                const product = productsById[item.productId];
+    () =>
+      subscription.items
+        .map((item) => {
+          const product = productsById[item.productId];
 
-                if (!product) {
-                  return null;
-                }
+          if (!product) {
+            return null;
+          }
 
-                return {
-                  ...item,
-                  product,
-                };
-              })
-              .filter((item): item is RestockOrderWithProduct => item !== null),
-      [productsById, subscription.items],
+          return {
+            ...item,
+            product,
+          };
+        })
+        .filter((item): item is RestockOrderWithProduct => item !== null),
+    [productsById, subscription.items],
   );
 
   const totalItems = subscription.items.reduce(
-      (sum, item) => sum + item.quantity,
-      0,
+    (sum, item) => sum + item.quantity,
+    0,
   );
 
   const totalPrice = items.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
-      0,
+    (sum, item) => sum + item.product.price * item.quantity,
+    0,
   );
 
   function getExistingItem(productId: number) {
     return subscription.items.find(
-        (item) => item.productId === String(productId),
+      (item) => item.productId === String(productId),
     );
   }
 

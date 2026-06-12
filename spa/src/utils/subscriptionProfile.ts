@@ -1,4 +1,4 @@
-import type { UserProfile } from "../services/users";
+import type {UserProfile} from "../services/users";
 
 type RequiredFieldDefinition = {
   keys: string[];
@@ -14,20 +14,20 @@ export interface SubscriptionProfileStatus {
 }
 
 const CUSTOMER_REQUIRED_FIELDS = [
-  { keys: ["phoneNumber", "phone"], label: "Telefon" },
-  { keys: ["companyName", "company"], label: "Unternehmen" },
-  { keys: ["country"], label: "Land" },
-  { keys: ["street"], label: "Straße" },
-  { keys: ["houseNumber"], label: "Hausnummer" },
-  { keys: ["postalCode", "zipCode"], label: "PLZ" },
-  { keys: ["city"], label: "Ort" },
+  {keys: ["phoneNumber", "phone"], label: "Telefon"},
+  {keys: ["companyName", "company"], label: "Unternehmen"},
+  {keys: ["country"], label: "Land"},
+  {keys: ["street"], label: "Straße"},
+  {keys: ["houseNumber"], label: "Hausnummer"},
+  {keys: ["postalCode", "zipCode"], label: "PLZ"},
+  {keys: ["city"], label: "Ort"},
 ] as const satisfies readonly RequiredFieldDefinition[];
 
 const RESTOCKER_REQUIRED_FIELDS = [
-  { keys: ["phoneNumber", "phone"], label: "Telefon" },
-  { keys: ["iban", "IBAN"], label: "IBAN" },
-  { keys: ["bic", "BIC"], label: "BIC" },
-  { keys: ["accountHolder"], label: "Kontoinhaber" },
+  {keys: ["phoneNumber", "phone"], label: "Telefon"},
+  {keys: ["iban", "IBAN"], label: "IBAN"},
+  {keys: ["bic", "BIC"], label: "BIC"},
+  {keys: ["accountHolder"], label: "Kontoinhaber"},
 ] as const satisfies readonly RequiredFieldDefinition[];
 
 function hasValue(value: unknown) {
@@ -60,8 +60,8 @@ export function getSubscriptionProfileStatus(
   const requiredFields = getRequiredFields(user);
   const profileValues = user as unknown as Record<string, unknown>;
   const missingFields = requiredFields
-    .filter(({ keys }) => !hasAnyValue(profileValues, keys))
-    .map(({ label }) => label);
+    .filter(({keys}) => !hasAnyValue(profileValues, keys))
+    .map(({label}) => label);
   const completedFields = requiredFields.length - missingFields.length;
 
   return {

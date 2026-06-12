@@ -1,28 +1,28 @@
-import {KeyboardEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import type { Product } from "../types/shop";
+import {KeyboardEvent} from "react";
+import {useNavigate} from "react-router-dom";
+import type {Product} from "../types/shop";
 
 interface ProductGridProps {
   products: Product[];
 }
 
-export function ProductGrid({ products }: ProductGridProps) {
+export function ProductGrid({products}: ProductGridProps) {
   if (products.length === 0) {
     return (
-        <p className="empty-state product-grid-empty">
-          Keine Artikel für die Suche gefunden.
-        </p>
+      <p className="empty-state product-grid-empty">
+        Keine Artikel für die Suche gefunden.
+      </p>
     );
   }
 
   return (
-      <div className="product-grid-shell">
-        <div className="product-grid">
-          {products.map((product) => (
-              <ProductCard key={product.productId} product={product} />
-          ))}
-        </div>
+    <div className="product-grid-shell">
+      <div className="product-grid">
+        {products.map((product) => (
+          <ProductCard key={product.productId} product={product}/>
+        ))}
       </div>
+    </div>
   );
 }
 
@@ -30,7 +30,7 @@ interface ProductCardProps {
   product: Product;
 }
 
-function ProductCard({ product }: ProductCardProps) {
+function ProductCard({product}: ProductCardProps) {
   const navigate = useNavigate();
 
 

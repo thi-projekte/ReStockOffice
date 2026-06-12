@@ -1,7 +1,7 @@
 import invoices from "../mocks/invoices.json";
 import keycloak from "../auth/keycloak";
-import { useAPIs } from "./products";
-import type { UserKind } from "./users";
+import {useAPIs} from "./products";
+import type {UserKind} from "./users";
 
 const INVOICES_API_URL = "https://invoice.restockoffice.de/invoices";
 const INVOICE_PDF_API_URL = "https://invoice.restockoffice.de/invoices/download";
@@ -86,7 +86,7 @@ function resolveUserId(): string {
 async function loadInvoicesFromApi(context: InvoiceRequestContext = {}) {
   const token = await resolveToken(context.token);
   const userId = resolveUserId();
-  const query = new URLSearchParams({ userId });
+  const query = new URLSearchParams({userId});
 
   let response: Response;
 
@@ -119,8 +119,8 @@ export async function getInvoices(context: InvoiceRequestContext = {}) {
 }
 
 export async function requestInvoicePdf(
-    invoiceId: string,
-    context: InvoiceRequestContext = {},
+  invoiceId: string,
+  context: InvoiceRequestContext = {},
 ): Promise<void> {
   if (!useAPIs) {
     return;
@@ -128,7 +128,7 @@ export async function requestInvoicePdf(
 
   const token = await resolveToken(context.token);
   const userId = resolveUserId();
-  const query = new URLSearchParams({ userId, invoiceNumber: invoiceId });
+  const query = new URLSearchParams({userId, invoiceNumber: invoiceId});
 
   const response = await fetch(`${INVOICE_PDF_API_URL}?${query.toString()}`, {
     headers: createHeaders(token),

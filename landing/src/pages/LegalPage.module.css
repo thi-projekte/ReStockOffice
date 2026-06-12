@@ -1,131 +1,131 @@
 .page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg);
 }
 
 .main {
-  flex: 1;
-  padding: 96px 24px;
-  background: linear-gradient(180deg, var(--color-bg-subtle) 0%, var(--color-bg) 48%);
+    flex: 1;
+    padding: 96px 24px;
+    background: linear-gradient(180deg, var(--color-bg-subtle) 0%, var(--color-bg) 48%);
 }
 
 .content {
-  width: min(100%, var(--max-width));
-  margin: 0 auto;
+    width: min(100%, var(--max-width));
+    margin: 0 auto;
 }
 
 .eyebrow {
-  display: inline-block;
-  margin-bottom: 12px;
-  color: var(--color-primary);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 12px;
+    color: var(--color-primary);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .title {
-  margin: 0;
-  color: var(--color-primary);
-  font-size: clamp(2.25rem, 6vw, 4.5rem);
-  line-height: 1;
-  padding-bottom: 18px;
+    margin: 0;
+    color: var(--color-primary);
+    font-size: clamp(2.25rem, 6vw, 4.5rem);
+    line-height: 1;
+    padding-bottom: 18px;
 }
 
 .lead {
-  margin: 16px 0 0;
-  color: var(--color-text-muted);
-  font-size: 1.1rem;
-  line-height: 1.65;
-  max-width: 60ch;
+    margin: 16px 0 0;
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    line-height: 1.65;
+    max-width: 60ch;
 }
 
 .body {
-  display: grid;
-  gap: 40px;
-  min-height: 320px;
-  margin-top: 40px;
-  padding-top: 32px;
-  border-top: 1px solid var(--color-border);
+    display: grid;
+    gap: 40px;
+    min-height: 320px;
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 1px solid var(--color-border);
 }
 
 .section {
-  display: grid;
-  gap: 14px;
+    display: grid;
+    gap: 14px;
 }
 
 .h2 {
-  margin: 0;
-  color: var(--color-text);
-  font-size: 1.35rem;
-  padding-top: 12px;
-  padding-bottom: 4px;
+    margin: 0;
+    color: var(--color-text);
+    font-size: 1.35rem;
+    padding-top: 12px;
+    padding-bottom: 4px;
 }
 
 .h3 {
-  margin: 0;
-  color: var(--color-text);
-  font-size: 1.05rem;
-  font-weight: 600;
+    margin: 0;
+    color: var(--color-text);
+    font-size: 1.05rem;
+    font-weight: 600;
 }
 
 .section p {
-  margin: 0;
-  color: var(--color-text);
-  line-height: 1.7;
+    margin: 0;
+    color: var(--color-text);
+    line-height: 1.7;
 }
 
 .section ul {
-  margin: 0;
-  padding-left: 1.25rem;
-  display: grid;
-  gap: 6px;
-  color: var(--color-text);
-  line-height: 1.65;
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 6px;
+    color: var(--color-text);
+    line-height: 1.65;
 }
 
 .section ul li::marker {
-  color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .infoBox {
-  padding: 14px 18px;
-  background: var(--color-bg-subtle);
-  border-left: 3px solid var(--color-primary);
-  border-radius: 0 6px 6px 0;
-  color: var(--color-text);
-  font-size: 0.95rem;
-  line-height: 1.65;
+    padding: 14px 18px;
+    background: var(--color-bg-subtle);
+    border-left: 3px solid var(--color-primary);
+    border-radius: 0 6px 6px 0;
+    color: var(--color-text);
+    font-size: 0.95rem;
+    line-height: 1.65;
 }
 
 .contactRow {
-  display: grid;
-  gap: 6px;
+    display: grid;
+    gap: 6px;
 }
 
 .contactRow a {
-  color: var(--color-primary);
-  text-decoration: none;
+    color: var(--color-primary);
+    text-decoration: none;
 }
 
 .contactRow a:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 @media (max-width: 680px) {
-  .main {
-    padding: 64px 16px;
-  }
+    .main {
+        padding: 64px 16px;
+    }
 
-  .body {
-    min-height: 240px;
-    margin-top: 28px;
-    gap: 32px;
-  }
+    .body {
+        min-height: 240px;
+        margin-top: 28px;
+        gap: 32px;
+    }
 
-  .title {
-    font-size: clamp(2rem, 8vw, 3rem);
-  }
+    .title {
+        font-size: clamp(2rem, 8vw, 3rem);
+    }
 }

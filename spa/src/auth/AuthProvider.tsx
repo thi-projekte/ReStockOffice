@@ -13,7 +13,7 @@ import type {
   KeycloakTokenParsed,
 } from "keycloak-js";
 import keycloak from "./keycloak";
-import { keycloakConfig } from "./keycloakConfig";
+import {keycloakConfig} from "./keycloakConfig";
 
 interface RealmAccess {
   roles: string[];
@@ -55,14 +55,14 @@ function normalizeRoleName(role: string | undefined) {
 function collectRoles(tokenParsed?: RestockTokenParsed) {
   const realmRoles = tokenParsed?.realm_access?.roles ?? [];
   const clientRoles =
-      tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
+    tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
 
   return Array.from(new Set([...realmRoles, ...clientRoles]));
 }
 
 function mapUser(
-    tokenParsed: RestockTokenParsed | undefined,
-    profile: KeycloakProfile | null,
+  tokenParsed: RestockTokenParsed | undefined,
+  profile: KeycloakProfile | null,
 ): AuthUser | null {
   if (!tokenParsed?.sub) return null;
 
@@ -77,7 +77,7 @@ function mapUser(
   };
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({children}: { children: ReactNode }) {
   const refreshTimerRef = useRef<number | undefined>(undefined);
 
   const [isInitializing, setIsInitializing] = useState(true);
@@ -171,28 +171,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-      () => ({
-        isAuthenticated,
-        isInitializing,
-        error,
-        token,
-        user,
-        login,
-        logout,
-        hasRole: (role) => {
-          const normalizedRole = normalizeRoleName(role);
-          return user?.roles.some(
-            (userRole) => normalizeRoleName(userRole) === normalizedRole,
-          ) ?? false;
-        },
-      }),
-      [isAuthenticated, isInitializing, error, token, user, login, logout],
+    () => ({
+      isAuthenticated,
+      isInitializing,
+      error,
+      token,
+      user,
+      login,
+      logout,
+      hasRole: (role) => {
+        const normalizedRole = normalizeRoleName(role);
+        return user?.roles.some(
+          (userRole) => normalizeRoleName(userRole) === normalizedRole,
+        ) ?? false;
+      },
+    }),
+    [isAuthenticated, isInitializing, error, token, user, login, logout],
   );
 
   return (
-      <AuthContext.Provider value={value}>
-        {children}
-      </AuthContext.Provider>
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
