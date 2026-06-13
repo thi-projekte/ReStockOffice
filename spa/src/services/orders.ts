@@ -202,18 +202,8 @@ function buildOrderNumber(customerId: string, deliveryDateKey: string) {
   return String(1000 + (hashValue % 9000));
 }
 
-function buildQuantityLabel(product: Product | undefined, quantity: number) {
-  if (!product) {
-    return `${quantity} Einheit${quantity === 1 ? "" : "en"}`;
-  }
-
-  const unitCount = Number(product.unitCount);
-
-  if (Number.isFinite(unitCount) && unitCount > 1) {
-    return `${quantity} Karton${quantity === 1 ? "" : "s"} a ${product.unitCount} ${product.unit}`;
-  }
-
-  return `${quantity} x ${product.unit}`;
+function buildQuantityLabel(_product: Product | undefined, quantity: number) {
+  return `${quantity}x`;
 }
 
 function normalizeMarketplaceText(value: string | null | undefined) {
@@ -560,7 +550,7 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
         productId: item.articleNumber,
         name: normalizeMarketplaceText(item.name),
         quantity: item.quantity,
-        quantityLabel: `${item.quantity} ${normalizeMarketplaceText(item.unit)}`,
+        quantityLabel: `${item.quantity}x`,
         interval: 1,
       }));
 

@@ -50,6 +50,10 @@ function formatMoney(value: number) {
   }).format(value);
 }
 
+function formatQuantityLabel(quantity: number) {
+  return `${quantity}x`;
+}
+
 function sortDeliveries(deliveries: DeliveryDetail[]) {
   return [...deliveries].sort((a, b) => a.stopOrder - b.stopOrder);
 }
@@ -511,7 +515,7 @@ export function DeliveryPage() {
           type: "String",
         },
         itemQuantity: {
-          value: firstItem ? `${firstItem.quantity} ${firstItem.unit}`.trim() : "",
+          value: firstItem ? formatQuantityLabel(firstItem.quantity) : "",
           type: "String",
         },
         isLastDelivery: {
@@ -721,7 +725,7 @@ export function DeliveryPage() {
                 </button>
                 <span className={item.delivered ? "delivery-line-muted" : ""}>{item.articleNumber}</span>
                 <span className={item.delivered ? "delivery-line-muted" : ""}>{item.name}</span>
-                <span>{item.quantity} {item.unit}</span>
+                <span>{formatQuantityLabel(item.quantity)}</span>
               </div>
             ))}
           </div>

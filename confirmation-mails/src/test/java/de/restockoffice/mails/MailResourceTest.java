@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @QuarkusTest
@@ -55,6 +56,8 @@ class MailResourceTest {
                 .contentType(containsString("text/html"))
                 .body(containsString("Max Mustermann"))
                 .body(containsString("Kopierpapier A4 Premium"))
+                .body(containsString("4x"))
+                .body(not(containsString("4 Pack")))
                 .body(containsString("<style>"));
     }
 
@@ -134,6 +137,14 @@ class MailResourceTest {
         Assertions.assertTrue(
                 testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
                 "abo confirmation mail should use an inline logo CID"
+        );
+        Assertions.assertTrue(
+                testResendMailClient.lastHtml().contains("4x"),
+                "abo confirmation mail should render quantities as multipliers"
+        );
+        Assertions.assertFalse(
+                testResendMailClient.lastHtml().contains("4 Pack"),
+                "abo confirmation mail should not render article units in quantities"
         );
     }
 

@@ -209,13 +209,23 @@ public class NotificationMailService {
                     .append("<span class=\"qty-text\" ")
                     .append("style=\"display:inline-block;color:#264037;font-weight:700;")
                     .append("font-size:18px;line-height:1.3;white-space:nowrap;\">")
-                    .append(escapeHtml(item.quantity()))
+                    .append(escapeHtml(formatQuantityAsMultiplier(item.quantity())))
                     .append("</span>")
                     .append(TABLE_CELL_CLOSE)
                     .append("</tr>");
         }
 
         return html.toString();
+    }
+
+    private String formatQuantityAsMultiplier(String quantity) {
+        String normalizedQuantity = quantity == null ? "" : quantity.trim();
+        if (normalizedQuantity.isEmpty()) {
+            return "";
+        }
+
+        String numericPrefix = normalizedQuantity.split("\\s+", 2)[0];
+        return numericPrefix.endsWith("x") ? numericPrefix : numericPrefix + "x";
     }
 
 
