@@ -636,19 +636,36 @@ function getMockOrdersForCustomer(customerId: string): RestockOrder[] {
   return mockRestockOrders;
 }
 
+function stringifyOrderValue(value: unknown, fallback: string): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return value.toString();
+  }
+
+  return fallback;
+}
+
 function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   const source = rawOrder as Record<string, unknown>;
   const id = Number(source.id);
+  const fallbackDate = formatDate(new Date());
 
   return {
     ...(Number.isFinite(id) ? {id} : {}),
-    customerId: String(source.customerId ?? ""),
-    productId: String(source.productId ?? ""),
-    status: String(source.status ?? "ACTIVE"),
+    customerId: stringifyOrderValue(source.customerId, ""),
+    productId: stringifyOrderValue(source.productId, ""),
+    status: stringifyOrderValue(source.status, "ACTIVE"),
     quantity: Number(source.quantity ?? 1),
     interval: Number(source.interval ?? 1),
-    createdAt: String(source.createdAt ?? formatDate(new Date())),
-    updatedAt: String(source.updatedAt ?? formatDate(new Date())),
+    createdAt: stringifyOrderValue(source.createdAt, fallbackDate),
+    updatedAt: stringifyOrderValue(source.updatedAt, fallbackDate),
   };
 }
 
@@ -838,7 +855,7 @@ async function fetchAllOrders(token: string) {
   const payload = (await response.json()) as unknown;
 
   if (!Array.isArray(payload)) {
-    throw new Error("Die Orders-API hat ein unerwartetes Antwortformat geliefert.");
+    throw new TypeError("Die Orders-API hat ein unerwartetes Antwortformat geliefert.");
   }
 
   return payload.map(normalizeRestockOrder);
@@ -983,7 +1000,7 @@ export async function loadSubscription({
   const payload = (await response.json()) as unknown;
 
   if (!Array.isArray(payload)) {
-    throw new Error("Die Orders-API hat ein unerwartetes Antwortformat geliefert.");
+    throw new TypeError("Die Orders-API hat ein unerwartetes Antwortformat geliefert.");
   }
 
   const normalizedOrders = payload.map(normalizeRestockOrder);

@@ -3,10 +3,10 @@ import {useNavigate} from "react-router-dom";
 import type {Product} from "../types/shop";
 
 interface ProductGridProps {
-  products: Product[];
+  readonly products: readonly Product[];
 }
 
-export function ProductGrid({products}: ProductGridProps): ReactElement {
+export function ProductGrid({products}: Readonly<ProductGridProps>): ReactElement {
   if (products.length === 0) {
     return (
       <p className="empty-state product-grid-empty">
@@ -27,10 +27,10 @@ export function ProductGrid({products}: ProductGridProps): ReactElement {
 }
 
 interface ProductCardProps {
-  product: Product;
+  readonly product: Product;
 }
 
-function ProductCard({product}: ProductCardProps): ReactElement {
+function ProductCard({product}: Readonly<ProductCardProps>): ReactElement {
   const navigate = useNavigate();
 
 

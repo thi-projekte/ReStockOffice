@@ -2,14 +2,14 @@ import type {SubscriptionProfileStatus} from "../utils/subscriptionProfile";
 import {NavLink} from "react-router-dom";
 
 interface SubscriptionProfileProgressProps {
-  status: SubscriptionProfileStatus | null;
-  message: string;
+  readonly status: SubscriptionProfileStatus | null;
+  readonly message: string;
 }
 
 export function SubscriptionProfileProgress({
                                               status,
                                               message,
-                                            }: SubscriptionProfileProgressProps) {
+                                            }: Readonly<SubscriptionProfileProgressProps>) {
   if (status?.isComplete !== false) {
     return null;
   }

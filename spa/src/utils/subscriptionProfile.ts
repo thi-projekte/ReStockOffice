@@ -31,7 +31,15 @@ const RESTOCKER_REQUIRED_FIELDS = [
 ] as const satisfies readonly RequiredFieldDefinition[];
 
 function hasValue(value: unknown): boolean {
-  return String(value ?? "").trim().length > 0;
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+
+  return (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  );
 }
 
 function hasAnyValue(profileValues: Record<string, unknown>, keys: string[]): boolean {

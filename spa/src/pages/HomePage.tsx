@@ -66,7 +66,7 @@ export function HomePage(): ReactElement {
       });
     };
 
-    window.requestAnimationFrame(scrollToSection);
+    globalThis.requestAnimationFrame(scrollToSection);
   }, [location.hash, products.length]);
 
   const topCategories = createCategoryTiles(products);
@@ -83,7 +83,7 @@ export function HomePage(): ReactElement {
 
   function handleSectionJump(event: MouseEvent<HTMLAnchorElement>, sectionId: string): void {
     event.preventDefault();
-    window.history.replaceState(null, "", `#${sectionId}`);
+    globalThis.history.replaceState(null, "", `#${sectionId}`);
 
     const section = document.getElementById(sectionId);
 

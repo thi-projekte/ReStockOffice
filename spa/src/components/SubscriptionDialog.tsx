@@ -2,15 +2,15 @@ import {type ReactElement, useEffect, useRef, useState} from "react";
 import type {Product, RestockOrderWithProduct} from "../types/shop";
 
 interface SubscriptionDialogProps {
-  items: RestockOrderWithProduct[];
-  product: Product | null;
-  selectedItem?: RestockOrderWithProduct;
-  open: boolean;
-  isProfileComplete: boolean;
-  onClose: () => void;
-  onConfirm: (configuration: { quantity: number; intervalCount: number }) => Promise<void> | void;
-  onSelectItem: (item: RestockOrderWithProduct) => void;
-  onOpenOverview: () => void;
+  readonly items: readonly RestockOrderWithProduct[];
+  readonly product: Product | null;
+  readonly selectedItem?: RestockOrderWithProduct;
+  readonly open: boolean;
+  readonly isProfileComplete: boolean;
+  readonly onClose: () => void;
+  readonly onConfirm: (configuration: Readonly<{ quantity: number; intervalCount: number }>) => Promise<void> | void;
+  readonly onSelectItem: (item: RestockOrderWithProduct) => void;
+  readonly onOpenOverview: () => void;
 }
 
 function formatInterval(intervalCount: number): string {
@@ -24,7 +24,7 @@ export function SubscriptionDialog({
                                      isProfileComplete,
                                      onClose,
                                      onConfirm,
-                                   }: SubscriptionDialogProps): ReactElement | null {
+                                   }: Readonly<SubscriptionDialogProps>): ReactElement | null {
   const [quantity, setQuantity] = useState(1);
   const [intervalCount, setIntervalCount] = useState(1);
   const [isClosingToHeader, setIsClosingToHeader] = useState(false);

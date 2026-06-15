@@ -30,13 +30,13 @@ import {SubscriptionDialog} from "./SubscriptionDialog";
 import {SubscriptionProfileProgress} from "./SubscriptionProfileProgress";
 
 interface AppShellProps {
-  children: (context: {
+  readonly children: (context: Readonly<{
     isLoggedIn: boolean;
     onAddToSubscription: (product: Product) => void;
     onOpenSubscriptionOverview: () => void;
     onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
     onRemoveSubscriptionItem: (item: RestockOrderWithProduct) => Promise<void>;
-    subscriptionItems: RestockOrderWithProduct[];
+    subscriptionItems: readonly RestockOrderWithProduct[];
     canModifySubscription: boolean;
     subscriptionProfileStatus: SubscriptionProfileStatus | null;
     onSubscriptionProfileUpdated: (user: UserProfile) => void;
@@ -44,7 +44,7 @@ interface AppShellProps {
     theme: "light" | "dark";
     onToggleTheme: () => void;
     onSetTheme: (theme: "light" | "dark") => void;
-  }) => ReactNode;
+  }>) => ReactNode;
 }
 
 type ActiveSubscriptionLayer = "overview" | "dialog" | null;
@@ -56,7 +56,7 @@ function showIncompleteProfileWarning(): void {
   toast.error(INCOMPLETE_PROFILE_SUBSCRIPTION_MESSAGE);
 }
 
-export function AppShell({children}: AppShellProps): ReactElement {
+export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [query, setQuery] = useState("");

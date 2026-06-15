@@ -166,7 +166,7 @@ export function AccountPage(): ReactElement {
   useEffect(() => {
     if (!location.hash) return;
     const sectionId = location.hash.slice(1);
-    window.requestAnimationFrame(() => {
+    globalThis.requestAnimationFrame(() => {
       const section = document.getElementById(sectionId);
       if (!section) return;
       const top = section.getBoundingClientRect().top + window.scrollY - 96;

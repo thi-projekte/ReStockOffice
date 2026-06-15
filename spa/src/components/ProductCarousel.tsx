@@ -4,13 +4,13 @@ import logoColored from "../assets/logos/logo_colored.png";
 import type {Product} from "../types/shop";
 
 interface ProductCarouselProps {
-  anchorId: string;
-  eyebrow: string;
-  title: string;
-  description: string;
-  products: Product[];
-  isLoading?: boolean;
-  getBadge?: (product: Product, index: number) => string;
+  readonly anchorId: string;
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly description: string;
+  readonly products: readonly Product[];
+  readonly isLoading?: boolean;
+  readonly getBadge?: (product: Product, index: number) => string;
 }
 
 export function ProductCarousel({
@@ -21,7 +21,7 @@ export function ProductCarousel({
                                   products,
                                   isLoading = false,
                                   getBadge,
-                                }: ProductCarouselProps): ReactElement {
+                                }: Readonly<ProductCarouselProps>): ReactElement {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   function scrollSection(direction: "left" | "right"): void {
@@ -32,7 +32,7 @@ export function ProductCarousel({
     }
 
     const firstCard = target.children[0] as HTMLElement;
-    const styles = window.getComputedStyle(target);
+    const styles = globalThis.getComputedStyle(target);
     const gap = Number.parseFloat(styles.columnGap || styles.gap || "0");
     const scrollDistance = firstCard.offsetWidth + gap;
 

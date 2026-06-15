@@ -78,7 +78,7 @@ function mapUser(
   };
 }
 
-export function AuthProvider({children}: { children: ReactNode }): ReactElement {
+export function AuthProvider({children}: Readonly<{ children: ReactNode }>): ReactElement {
   const refreshTimerRef = useRef<number | undefined>(undefined);
 
   const [isInitializing, setIsInitializing] = useState(true);

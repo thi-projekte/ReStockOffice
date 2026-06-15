@@ -33,6 +33,22 @@ function resolveMockImageUrl(imageUrl: string): string {
   return imageUrl;
 }
 
+function stringifyProductValue(value: unknown, fallback: string): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return value.toString();
+  }
+
+  return fallback;
+}
+
 function normalizeProduct(rawProduct: unknown): Product {
   const source = rawProduct as Record<string, unknown>;
   const productIdValue = source.productId ?? source.articleId ?? source.id;
@@ -45,14 +61,14 @@ function normalizeProduct(rawProduct: unknown): Product {
 
   return {
     productId: Number(productIdValue),
-    name: String(source.name ?? source.articleName ?? source.title ?? ""),
-    description: String(descriptionValue),
+    name: stringifyProductValue(source.name ?? source.articleName ?? source.title, ""),
+    description: stringifyProductValue(descriptionValue, ""),
     price: Number(priceValue),
-    brand: String(source.brand ?? source.manufacturer ?? ""),
-    category: String(categoryValue),
-    unit: String(unitValue),
-    unitCount: String(unitCountValue),
-    imageUrl: String(imageUrlValue),
+    brand: stringifyProductValue(source.brand ?? source.manufacturer, ""),
+    category: stringifyProductValue(categoryValue, ""),
+    unit: stringifyProductValue(unitValue, "Einheit"),
+    unitCount: stringifyProductValue(unitCountValue, "1"),
+    imageUrl: stringifyProductValue(imageUrlValue, ""),
   };
 }
 

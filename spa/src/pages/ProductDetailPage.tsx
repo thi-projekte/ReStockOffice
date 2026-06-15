@@ -7,18 +7,18 @@ import type {Product, RestockOrderWithProduct} from "../types/shop";
 import type {SubscriptionProfileStatus} from "../utils/subscriptionProfile";
 
 interface ProductDetailProps {
-  onAddToSubscription: (product: Product) => void;
-  onOpenSubscriptionOverview: () => void;
-  onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
-  subscriptionItems: RestockOrderWithProduct[];
-  canModifySubscription: boolean;
-  subscriptionProfileStatus: SubscriptionProfileStatus | null;
-  isLoggedIn: boolean;
-  onLogin: (formData: unknown) => Promise<void>;
-  onLogout: () => void;
-  theme: "light" | "dark" | "auto";
-  onToggleTheme: () => void;
-  onSetTheme: (theme: "light" | "dark" | "auto") => void;
+  readonly onAddToSubscription: (product: Product) => void;
+  readonly onOpenSubscriptionOverview: () => void;
+  readonly onEditSubscriptionItem: (item: RestockOrderWithProduct) => void;
+  readonly subscriptionItems: readonly RestockOrderWithProduct[];
+  readonly canModifySubscription: boolean;
+  readonly subscriptionProfileStatus: SubscriptionProfileStatus | null;
+  readonly isLoggedIn: boolean;
+  readonly onLogin: (formData: unknown) => Promise<void>;
+  readonly onLogout: () => void;
+  readonly theme: "light" | "dark" | "auto";
+  readonly onToggleTheme: () => void;
+  readonly onSetTheme: (theme: "light" | "dark" | "auto") => void;
 }
 
 function formatPrice(value: number): string {
@@ -113,6 +113,58 @@ export function ProductDetailPage(): ReactElement {
     );
   }
 
+  let subscriptionAction: ReactElement;
+
+  if (isInSub && canModifySubscription) {
+    subscriptionAction = (
+      <div className="product-detail__subscription-action">
+        <button
+          className="button button--ghost product-detail__subscription-button"
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            if (subscriptionItem) {
+              onEditSubscriptionItem(subscriptionItem);
+            }
+          }}
+        >
+          Abo-Produkt bearbeiten
+        </button>
+        <NavLink to="/subscription" className="small-link-text">
+          <small>Dieses Produkt ist bereits Teil deines Abos.</small>
+        </NavLink>
+      </div>
+    );
+  } else if (canModifySubscription) {
+    subscriptionAction = (
+      <div className="product-detail__subscription-action">
+        <button
+          className="button product-detail__subscription-button"
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onAddToSubscription(product);
+          }}
+        >
+          Zum Abo hinzufügen
+        </button>
+      </div>
+    );
+  } else {
+    subscriptionAction = (
+      <div className="product-detail__subscription-lock">
+        <button className="button product-detail__subscription-button" type="button" disabled>
+          Zuerst Profil vervollständigen
+        </button>
+        <NavLink to="/account" className="small-link-text">
+          <small>
+            Solange dein Profil unvollständig ist, kannst du kein Produkt hinzufügen.
+          </small>
+        </NavLink>
+      </div>
+    );
+  }
+
   return (
     <div className="home-showcase">
       <SubscriptionProfileProgress
@@ -162,49 +214,7 @@ export function ProductDetailPage(): ReactElement {
           </dl>
 
           <div className="product-detail__actions">
-            {isInSub && canModifySubscription ? (
-              <div className="product-detail__subscription-action">
-                <button
-                  className="button button--ghost product-detail__subscription-button"
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    if (subscriptionItem) {
-                      onEditSubscriptionItem(subscriptionItem);
-                    }
-                  }}
-                >
-                  Abo-Produkt bearbeiten
-                </button>
-                <NavLink to="/subscription" className="small-link-text">
-                  <small>Dieses Produkt ist bereits Teil deines Abos.</small>
-                </NavLink>
-              </div>
-            ) : canModifySubscription ? (
-              <div className="product-detail__subscription-action">
-                <button
-                  className="button product-detail__subscription-button"
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onAddToSubscription(product);
-                  }}
-                >
-                  Zum Abo hinzufügen
-                </button>
-              </div>
-            ) : (
-              <div className="product-detail__subscription-lock">
-                <button className="button product-detail__subscription-button" type="button" disabled>
-                  Zuerst Profil vervollständigen
-                </button>
-                <NavLink to="/account" className="small-link-text">
-                  <small>
-                    Solange dein Profil unvollständig ist, kannst du kein Produkt hinzufügen.
-                  </small>
-                </NavLink>
-              </div>
-            )}
+            {subscriptionAction}
           </div>
         </div>
       </section>

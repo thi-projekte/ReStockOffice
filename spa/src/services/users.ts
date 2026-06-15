@@ -139,12 +139,29 @@ function createAuthHeaders(token: string): Record<string, string> {
   };
 }
 
+function stringifyUserValue(value: unknown, fallback: string): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return value.toString();
+  }
+
+  return fallback;
+}
+
 function optionalString(value: unknown): string | undefined {
   if (value === undefined || value === null || value === "") {
     return undefined;
   }
 
-  return String(value);
+  const stringValue = stringifyUserValue(value, "");
+  return stringValue || undefined;
 }
 
 function resolveProfileImageUrl(value: unknown): string | undefined {
@@ -227,14 +244,14 @@ function normalizeCustomer(rawUser: unknown): CustomerUser {
 
   return {
     kind: "customer",
-    userId: String(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub ?? ""),
-    postalCode: String(source.postalCode ?? source.zipCode ?? ""),
-    city: String(source.city ?? ""),
-    street: String(source.street ?? ""),
-    houseNumber: String(source.houseNumber ?? ""),
-    country: String(source.country ?? ""),
-    companyName: String(source.companyName ?? source.company ?? ""),
-    phoneNumber: String(source.phoneNumber ?? source.phone ?? ""),
+    userId: stringifyUserValue(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub, ""),
+    postalCode: stringifyUserValue(source.postalCode ?? source.zipCode, ""),
+    city: stringifyUserValue(source.city, ""),
+    street: stringifyUserValue(source.street, ""),
+    houseNumber: stringifyUserValue(source.houseNumber, ""),
+    country: stringifyUserValue(source.country, ""),
+    companyName: stringifyUserValue(source.companyName ?? source.company, ""),
+    phoneNumber: stringifyUserValue(source.phoneNumber ?? source.phone, ""),
     roleInCompany: optionalString(source.roleInCompany ?? source.role),
     birthDate: optionalString(source.birthDate),
     deliveryHint: optionalString(source.deliveryHint ?? source.deliveryNote),
@@ -242,7 +259,7 @@ function normalizeCustomer(rawUser: unknown): CustomerUser {
     deliveryTime: Number(source.deliveryTime ?? 0),
     iban: optionalString(source.iban ?? source.IBAN),
     profilePictureUrl: resolveProfileImageUrl(source.profilePictureUrl ?? source.profileImageUrl),
-    createdAt: String(source.createdAt ?? new Date().toISOString()),
+    createdAt: stringifyUserValue(source.createdAt, new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
     existsInUserService: source.existsInUserService !== false,
   };
@@ -256,19 +273,19 @@ function normalizeRestocker(rawUser: unknown): RestockerUser {
 
   return {
     kind: "restocker",
-    userId: String(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub ?? ""),
-    postalCode: String(source.postalCode ?? source.zipCode ?? ""),
-    city: String(source.city ?? ""),
-    street: String(source.street ?? ""),
-    houseNumber: String(source.houseNumber ?? ""),
-    country: String(source.country ?? ""),
-    phoneNumber: String(source.phoneNumber ?? source.phone ?? ""),
-    iban: String(source.iban ?? source.IBAN ?? ""),
-    bic: String(source.bic ?? source.BIC ?? ""),
-    accountHolder: String(source.accountHolder ?? ""),
+    userId: stringifyUserValue(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub, ""),
+    postalCode: stringifyUserValue(source.postalCode ?? source.zipCode, ""),
+    city: stringifyUserValue(source.city, ""),
+    street: stringifyUserValue(source.street, ""),
+    houseNumber: stringifyUserValue(source.houseNumber, ""),
+    country: stringifyUserValue(source.country, ""),
+    phoneNumber: stringifyUserValue(source.phoneNumber ?? source.phone, ""),
+    iban: stringifyUserValue(source.iban ?? source.IBAN, ""),
+    bic: stringifyUserValue(source.bic ?? source.BIC, ""),
+    accountHolder: stringifyUserValue(source.accountHolder, ""),
     birthDate: optionalString(source.birthDate),
     profilePictureUrl: resolveProfileImageUrl(source.profilePictureUrl ?? source.profileImageUrl),
-    createdAt: String(source.createdAt ?? new Date().toISOString()),
+    createdAt: stringifyUserValue(source.createdAt, new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
     existsInUserService: source.existsInUserService !== false,
   };
@@ -282,13 +299,13 @@ function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   const source = rawOrder as Record<string, unknown>;
 
   return {
-    customerId: String(source.customerId ?? source.userId ?? ""),
-    productId: String(source.productId ?? ""),
-    status: String(source.status ?? "ACTIVE"),
+    customerId: stringifyUserValue(source.customerId ?? source.userId, ""),
+    productId: stringifyUserValue(source.productId, ""),
+    status: stringifyUserValue(source.status, "ACTIVE"),
     quantity: Number(source.quantity ?? 1),
     interval: Number(source.interval ?? 1),
-    createdAt: String(source.createdAt ?? ""),
-    updatedAt: String(source.updatedAt ?? ""),
+    createdAt: stringifyUserValue(source.createdAt, ""),
+    updatedAt: stringifyUserValue(source.updatedAt, ""),
   };
 }
 

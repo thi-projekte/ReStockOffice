@@ -686,7 +686,7 @@
 .account-toggle-button.active .account-toggle-pill {
     border-color: rgba(59, 107, 97, 0.24);
     background: rgba(102, 189, 164, 0.16);
-    color: var(--color-primary);;
+    color: var(--color-primary);
 }
 
 
@@ -974,6 +974,8 @@
     scroll-snap-align: start;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    border-radius: 1rem;
 }
 
 .carousel-card .product-card {
@@ -1315,10 +1317,6 @@
     );
 }
 
-.carousel-card {
-    overflow: hidden;
-    border-radius: 1rem;
-}
 
 .carousel-card .product-card__image {
     background: transparent;
@@ -2133,11 +2131,9 @@
     color: var(--color-grey-300);
 }
 
-.subscription-modal__warning {
-    color: var(--color-danger)
-}
 
 .subscription-modal__warning {
+    color: var(--color-danger);
     padding: 0.85rem 1rem;
     border-radius: 0.9rem;
     background: rgba(59, 107, 97, 0.08);
