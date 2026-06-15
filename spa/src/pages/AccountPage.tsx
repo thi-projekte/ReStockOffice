@@ -64,6 +64,28 @@ const EMPTY_FORM: ProfileFormState = {
   note: "", deliveryDay: "", deliveryTime: "", iban: "", bic: "", accountHolder: "",
 };
 
+const NOTIFICATION_OPTIONS: {
+  key: keyof NotificationState;
+  title: string;
+  description: string;
+}[] = [
+  {
+    key: "email",
+    title: "E-Mail-Systemmeldungen",
+    description: "Kontostatus und allgemeine Systemupdates",
+  },
+  {
+    key: "confirmations",
+    title: "Auftragsbestätigungen",
+    description: "Benachrichtigung nach jeder Bestellung",
+  },
+  {
+    key: "reminders",
+    title: "Abo-Erinnerungen",
+    description: "Hinweise vor automatischen Lieferungen",
+  },
+];
+
 // ─── Komponente ──────────────────────────────────────────────────────────────
 
 export function AccountPage(): ReactElement {
@@ -787,7 +809,7 @@ export function AccountPage(): ReactElement {
               </div>
             </div>
             <div className="account-toggle-list">
-              {(["email", "confirmations", "reminders"] as const).map((key) => (
+              {NOTIFICATION_OPTIONS.map(({key, title, description}) => (
                 <button
                   key={key}
                   className={`account-toggle-button ${notifications[key] ? "active" : ""}`.trim()}
@@ -795,12 +817,8 @@ export function AccountPage(): ReactElement {
                   onClick={() => toggleNotification(key)}
                 >
                   <div>
-                    <strong>
-                      {key === "email" ? "E-Mail-Systemmeldungen" : key === "confirmations" ? "Auftragsbestätigungen" : "Abo-Erinnerungen"}
-                    </strong>
-                    <span>
-                      {key === "email" ? "Kontostatus und allgemeine Systemupdates" : key === "confirmations" ? "Benachrichtigung nach jeder Bestellung" : "Hinweise vor automatischen Lieferungen"}
-                    </span>
+                    <strong>{title}</strong>
+                    <span>{description}</span>
                   </div>
                   <span className="account-toggle-pill">
                     <FaBell/>

@@ -49,6 +49,13 @@ interface AppShellProps {
 
 type ActiveSubscriptionLayer = "overview" | "dialog" | null;
 
+const INCOMPLETE_PROFILE_SUBSCRIPTION_MESSAGE =
+  "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.";
+
+function showIncompleteProfileWarning(): void {
+  toast.error(INCOMPLETE_PROFILE_SUBSCRIPTION_MESSAGE);
+}
+
 export function AppShell({children}: AppShellProps): ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -154,9 +161,7 @@ export function AppShell({children}: AppShellProps): ReactElement {
 
   function handleAddToSubscription(product: Product): void {
     if (!canModifySubscription) {
-      toast.error(
-        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
-      );
+      showIncompleteProfileWarning();
       return;
     }
 
@@ -173,9 +178,7 @@ export function AppShell({children}: AppShellProps): ReactElement {
 
   function handleEditSubscriptionItem(item: RestockOrderWithProduct): void {
     if (!canModifySubscription) {
-      toast.error(
-        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
-      );
+      showIncompleteProfileWarning();
       return;
     }
 
@@ -186,9 +189,7 @@ export function AppShell({children}: AppShellProps): ReactElement {
 
   async function handleRemoveSubscriptionItem(item: RestockOrderWithProduct): Promise<void> {
     if (!canModifySubscription) {
-      toast.error(
-        "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
-      );
+      showIncompleteProfileWarning();
       return;
     }
 
@@ -914,9 +915,7 @@ export function AppShell({children}: AppShellProps): ReactElement {
             }
 
             if (!canModifySubscription) {
-              toast.error(
-                "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
-              );
+              showIncompleteProfileWarning();
               return;
             }
 
