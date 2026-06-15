@@ -1,5 +1,4 @@
 services:
-
   articles:
     image: ghcr.io/thi-projekte/restockoffice-articles:latest
     networks:
@@ -21,12 +20,12 @@ services:
       POSTGRES_USER: reStockOffice
       POSTGRES_PASSWORD: reStockOffice123$
       POSTGRES_DB: articles_db
-
     volumes:
       - db_data:/var/lib/postgresql/data
 
 volumes:
   db_data:
+
 networks:
   nginx-proxy-manager:
     external: true

@@ -1,28 +1,24 @@
 services:
-  # 1. Der Articles-Service zieht das fertige Image online aus der GHCR
   articles:
     image: ghcr.io/thi-projekte/restockoffice-articles:latest
     container_name: articles-service-dev
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "8083:8080" # Erreichbar unter localhost:8083
+      - "8083:8080"
     environment:
-      # host.docker.internal leitet den Traffic stabil auf die DB am PC-Port 5433 weiter
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://host.docker.internal:5433/articles_db
       QUARKUS_DATASOURCE_USERNAME: reStockOffice
       QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
-      # Keycloak (angepasst auf deinen Port)
       QUARKUS_OIDC_AUTH_SERVER_URL: http://host.docker.internal:8180/realms/restockoffice
     depends_on:
       - db-container
 
-  # 2. Die Datenbank – auf Port 5433 ausgelagert, damit es keine Fehlermeldungen gibt
   db-container:
     image: postgres:15
     container_name: db-container-dev
     ports:
-      - "5433:5432" # Mappt den internen Port 5432 auf deinen PC-Port 5433
+      - "5433:5432"
     environment:
       POSTGRES_USER: reStockOffice
       POSTGRES_PASSWORD: reStockOffice123$
