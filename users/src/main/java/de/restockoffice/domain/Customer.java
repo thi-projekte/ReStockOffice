@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.domain;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Table(name = "users")
@@ -52,11 +51,11 @@ public class Customer extends PanacheEntityBase {
     @Max(value = 24, message = "Die Lieferzeit darf nicht größer als 24 sein")
     public int deliveryTime;
 
-    public String IBAN;
+    public String iban;
 
     public String profilePictureUrl;
 
     public LocalDateTime createdAt = LocalDateTime.now();
-    public LocalDateTime updatedAt;
 
+    public LocalDateTime updatedAt;
 }

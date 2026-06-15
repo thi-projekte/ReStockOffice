@@ -1,9 +1,10 @@
-package de.restockoffice;
+package de.restockoffice.dto;
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import de.restockoffice.domain.Restocker;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
-// Klasse vereint Restocker und Keycloak-Daten (bisher Mail)
+// Klasse vereint Restocker und Keycloak-Daten
 @RegisterForReflection
 public class RestockerProfileResponse {
 

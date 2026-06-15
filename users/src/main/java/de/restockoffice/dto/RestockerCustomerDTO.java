@@ -1,10 +1,12 @@
-package de.restockoffice;
+package de.restockoffice.dto;
 
+import de.restockoffice.domain.Customer;
+import de.restockoffice.domain.DeliveryDay;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 // Klasse für eingeschränkte Rückgabe der Customer Daten für Restocker
 @RegisterForReflection
-public class RestockerCustomerView {
+public class RestockerCustomerDTO {
     public String companyName;
     public String postalCode;
     public String city;
@@ -17,7 +19,7 @@ public class RestockerCustomerView {
     public String phoneNumber;
     public String email;
 
-    public RestockerCustomerView(Customer customer, String email) {
+    public RestockerCustomerDTO(Customer customer, String email) {
         this.companyName = customer.companyName;
         this.postalCode = customer.postalCode;
         this.city = customer.city;

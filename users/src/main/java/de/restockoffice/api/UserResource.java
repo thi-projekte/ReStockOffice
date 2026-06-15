@@ -1,5 +1,13 @@
-package de.restockoffice;
+package de.restockoffice.api;
 
+import static security.SecurityConstants.*;
+
+import de.restockoffice.domain.Customer;
+import de.restockoffice.domain.Restocker;
+import de.restockoffice.dto.CustomerProfileResponse;
+import de.restockoffice.dto.RestockerCustomerDTO;
+import de.restockoffice.dto.RestockerProfileResponse;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
@@ -25,6 +33,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -37,11 +46,15 @@ public class UserResource {
     private static final Logger LOG = Logger.getLogger(UserResource.class);
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(5))
+            .build();
+
     // S3 for Pics
     @Inject
     software.amazon.awssdk.services.s3.S3Client s3;
 
-    // Token for Keycloak
+    // Token for Keycloak E-Mail
     @Inject
     JsonWebToken jwt;
 
@@ -49,6 +62,7 @@ public class UserResource {
     @Inject
     org.keycloak.admin.client.Keycloak keycloak;
 
+    // Identity and Roles
     @Inject
     SecurityIdentity securityIdentity;
 
@@ -65,7 +79,7 @@ public class UserResource {
     @GET
     @Path("customer/me")
     public CustomerProfileResponse getMyCustomerData() {
-        Customer customer =  findCustomerOrThrow(jwt.getSubject());
+        Customer customer =  findCustomerOrThrow(securityIdentity.getPrincipal().getName());
         String email = jwt.getClaim("email");
         return new CustomerProfileResponse(customer, email);
     }
@@ -74,7 +88,7 @@ public class UserResource {
     @GET
     @Path("restocker/me")
     public RestockerProfileResponse getMyRestockerData() {
-        Restocker restocker = findRestockerOrThrow(jwt.getSubject());
+        Restocker restocker = findRestockerOrThrow(securityIdentity.getPrincipal().getName());
         String email = jwt.getClaim("email");
         return new RestockerProfileResponse(restocker, email);
     }
@@ -83,23 +97,22 @@ public class UserResource {
     @GET
     @Path("customer")
     public CustomerProfileResponse getCustomerById(@QueryParam("userId") String userId){
-        String loggedInId = jwt.getSubject();
+        String loggedInId = securityIdentity.getPrincipal().getName();
 
-        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin") && !securityIdentity.hasRole("process-engine")) {
+        if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN) && !securityIdentity.hasRole(ROLE_PROCESS_ENGINE)) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
         }
         Customer customer =  findCustomerOrThrow(userId);
 
         String customerEmail = null;
         try{
-            customerEmail = keycloak.realm("restockoffice")
+            customerEmail = keycloak.realm(KEYCLOAK_REALM)
                     .users()
                     .get(userId)
                     .toRepresentation()
                     .getEmail();
         }catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Fehler beim Abrufen der Keycloak-Email: " + e.getMessage());
+            LOG.error("Fehler beim Abrufen der Keycloak-Email für User {}: ", userId, e);
             customerEmail = "E-Mail nicht verfügbar";
         }
         return new CustomerProfileResponse(customer, customerEmail);
@@ -108,40 +121,38 @@ public class UserResource {
     // Extra view for Restockers with limited access (only for Restocker and Admin)
     @GET
     @Path("customerForRestocker")
-    public RestockerCustomerView getCustomerAddressForRestocker(@QueryParam("userId") String userId){
-        if (!securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole("restocker") && !securityIdentity.hasRole("admin")) {
+    public RestockerCustomerDTO getCustomerAddressForRestocker(@QueryParam("userId") String userId){
+        if (!securityIdentity.hasRole(ROLE_RESTOCKER) && !securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole(ROLE_ADMIN)) {
             throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.", 403);
         }
-
         if (userId == null || userId.isBlank()) {
             throw new WebApplicationException("Übergebene userId darf nicht leer sein.", 400);
         }
+
         Customer customer = findCustomerOrThrow(userId);
         String customerEmail = null;
 
         // Get mail from Keycloak
         try {
-            customerEmail = keycloak.realm("restockoffice")
+            customerEmail = keycloak.realm(KEYCLOAK_REALM)
                     .users()
                     .get(userId)
                     .toRepresentation()
                     .getEmail();
         } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Fehler beim Abrufen der Keycloak-Email: " + e.getMessage());
+            LOG.error("Error at calling the Keycloak-Mail for user: {} ", userId, e);
             customerEmail = "E-Mail nicht verfügbar";
         }
-
-        return new RestockerCustomerView(customer, customerEmail);
+        return new RestockerCustomerDTO(customer, customerEmail);
     }
 
     // Any Restocker by ID (admin-role or own user needed)
     @GET
     @Path("restocker")
     public Restocker getRestockerById(@QueryParam("userId") String userId){
-        String loggedInId = jwt.getSubject();
+        String loggedInId = securityIdentity.getPrincipal().getName();
 
-        if (!loggedInId.equals(userId) && !securityIdentity.hasRole("admin")) {
+        if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN)) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
         }
         return findRestockerOrThrow(userId);
@@ -152,7 +163,7 @@ public class UserResource {
     @Path("customers")
     @RolesAllowed("admin")
     public List<Customer> getAllCustomers(){
-        return Customer.listAll();
+        return PanacheEntityBase.listAll();
     }
 
     // All Restockers (Admin Only)
@@ -160,7 +171,7 @@ public class UserResource {
     @Path("restockers")
     @RolesAllowed("admin")
     public List<Restocker> getAllRestockers(){
-        return Restocker.listAll();
+        return PanacheEntityBase.listAll();
     }
 
     // Create a new Customer
@@ -168,17 +179,15 @@ public class UserResource {
     @Path("customer/create")
     @Transactional
     public Response createCustomer(Customer newCustomer){
-        String userId = jwt.getSubject();
+        String userId = securityIdentity.getPrincipal().getName();
         newCustomer.userId = userId;
 
-        if (Customer.findById(userId) != null) {
+        if (PanacheEntityBase.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
 
-
         newCustomer.createdAt = LocalDateTime.now();
-
         newCustomer.persist();
 
         return Response.created(URI.create("customer/me")).entity(newCustomer).build();
@@ -188,12 +197,11 @@ public class UserResource {
     @Path("url")
     @Transactional
     public Response updateProfilePictureUrl() {
-
-        String userId = jwt.getSubject();
+        String userId = securityIdentity.getPrincipal().getName();
         String newImageUrl = "https://hel1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";
         boolean foundAndUpdated = false;
+        Customer customer = PanacheEntityBase.findById(userId);
 
-        Customer customer = Customer.findById(userId);
         if (customer != null) {
             customer.profilePictureUrl = newImageUrl;
             customer.updatedAt = LocalDateTime.now();
@@ -202,7 +210,7 @@ public class UserResource {
         }
 
         if (!foundAndUpdated) {
-            Restocker restocker = Restocker.findById(userId);
+            Restocker restocker = PanacheEntityBase.findById(userId);
             if (restocker != null) {
                 restocker.profilePictureUrl = newImageUrl;
                 restocker.updatedAt = LocalDateTime.now();
@@ -220,23 +228,20 @@ public class UserResource {
                 .build();
     }
 
-
     // Create a new Customer
     @POST
     @Path("restocker/create")
     @Transactional
     public Response createRestocker(Restocker newRestocker){
-        String userId = jwt.getSubject();
+        String userId = securityIdentity.getPrincipal().getName();
         newRestocker.userId = userId;
 
-        if (Restocker.findById(userId) != null) {
+        if (PanacheEntityBase.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
 
-
         newRestocker.createdAt = LocalDateTime.now();
-
         newRestocker.persist();
 
         return Response.created(URI.create("restocker/me")).entity(newRestocker).build();
@@ -253,16 +258,13 @@ public class UserResource {
             // File for Profile-Picture
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
     ){
-
-        String userId = jwt.getSubject();
+        String userId = securityIdentity.getPrincipal().getName();
         updatedData.userId = userId;
-
         Customer entity = findCustomerOrThrow(userId);
         boolean deliveryDayChanged = !Objects.equals(entity.deliveryDay, updatedData.deliveryDay);
         boolean hasChanged = applyCustomerChanges(entity, updatedData);
 
         if (file != null && file.uploadedFile() != null) {
-
             // Prüfung Dateityp
             if(!file.contentType().startsWith("image/")){
                 throw new WebApplicationException("Ungültiger Dateityp. Nur Bilder sind erlaubt.", 400);
@@ -272,7 +274,7 @@ public class UserResource {
                 throw new WebApplicationException("Datei ist zu groß. Maximal 5MB erlaubt.", 400);
             }
 
-            entity.profilePictureUrl = "https://restockoffice.hel1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";//uploadProfilePicture(userId, file);
+            entity.profilePictureUrl = uploadProfilePicture(userId, file);
             hasChanged = true;
         }
 
@@ -298,10 +300,8 @@ public class UserResource {
             // File for Profile-Picture
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
     ){
-
-        String userId = jwt.getSubject();
+        String userId = securityIdentity.getPrincipal().getName();
         updatedData.userId = userId;
-
         Restocker entity = findRestockerOrThrow(userId);
         boolean hasChanged = applyRestockerChanges(entity, updatedData);
 
@@ -315,7 +315,7 @@ public class UserResource {
                 throw new WebApplicationException("Datei ist zu groß. Maximal 5MB erlaubt.", 400);
             }
 
-            entity.profilePictureUrl ="https://restockoffice.hel1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";//uploadProfilePicture(userId, file);
+            entity.profilePictureUrl =uploadProfilePicture(userId, file);
             hasChanged = true;
         }
 
@@ -327,7 +327,8 @@ public class UserResource {
     }
 
     private Customer findCustomerOrThrow(String userId) {
-        Customer user = Customer.findById(userId);
+        Customer user = PanacheEntityBase.findById(userId);
+
         if (user == null) {
             throw new WebApplicationException("Customer-Profil nicht gefunden.", 404);
         }
@@ -335,7 +336,8 @@ public class UserResource {
     }
 
     private Restocker findRestockerOrThrow(String userId) {
-        Restocker user = Restocker.findById(userId);
+        Restocker user = PanacheEntityBase.findById(userId);
+
         if (user == null) {
             throw new WebApplicationException("Restocker-Profil nicht gefunden.", 404);
         }
@@ -356,7 +358,7 @@ public class UserResource {
         if (!Objects.equals(entity.deliveryDay, updated.deliveryDay)) { entity.deliveryDay = updated.deliveryDay; changed = true; }
         if (!Objects.equals(entity.deliveryTime, updated.deliveryTime)) { entity.deliveryTime = updated.deliveryTime; changed = true; }
         if (!Objects.equals(entity.deliveryHint, updated.deliveryHint)) { entity.deliveryHint = updated.deliveryHint; changed = true; }
-        if (!Objects.equals(entity.IBAN, updated.IBAN)) { entity.IBAN = updated.IBAN; changed = true; }
+        if (!Objects.equals(entity.iban, updated.iban)) { entity.iban = updated.iban; changed = true; }
         return changed;
     }
 
@@ -367,7 +369,7 @@ public class UserResource {
 
         transactionSynchronizationRegistry.registerInterposedSynchronization(new Synchronization() {
             @Override
-            public void beforeCompletion() {
+            public void beforeCompletion() { // default implementation ignored
             }
 
             @Override
@@ -393,7 +395,7 @@ public class UserResource {
         }
 
         try {
-            HttpResponse<String> response = HttpClient.newHttpClient().send(
+            HttpResponse<String> response = HTTP_CLIENT.send(
                     requestBuilder.build(),
                     HttpResponse.BodyHandlers.ofString()
             );
@@ -438,10 +440,9 @@ public class UserResource {
                             .acl(software.amazon.awssdk.services.s3.model.ObjectCannedACL.PUBLIC_READ)
                             .contentType(file.contentType()).build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromFile(file.uploadedFile()));
-            return "https://hel1.nbg1.your-objectstorage.com/" +bucketName+ "/"+ fileName;
+            return "https://hel1.your-objectstorage.com/" +bucketName+ "/"+ fileName;
         } catch (Exception e) {
             throw new WebApplicationException("S3 Fehler beim Upload des Profilbilds", 500);
         }
     }
-
 }

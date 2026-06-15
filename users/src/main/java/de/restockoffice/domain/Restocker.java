@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.domain;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -6,7 +6,6 @@ import io.smallrye.common.constraint.NotNull;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Table(name = "restockers")
@@ -35,19 +34,20 @@ public class Restocker extends PanacheEntityBase {
     public String phoneNumber;
 
     @NotNull
-    public String IBAN;
+    public String iban;
 
     @NotNull
-    public String BIC;
+    public String bic;
 
     @NotNull
     public String accountHolder;
 
-    public Date birthDate;
+    public java.time.LocalDate birthDate;
 
     public String profilePictureUrl;
 
     public LocalDateTime createdAt = LocalDateTime.now();
+
     public LocalDateTime updatedAt;
 
 }
