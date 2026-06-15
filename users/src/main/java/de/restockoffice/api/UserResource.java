@@ -7,7 +7,6 @@ import de.restockoffice.domain.Restocker;
 import de.restockoffice.dto.CustomerProfileResponse;
 import de.restockoffice.dto.RestockerCustomerDTO;
 import de.restockoffice.dto.RestockerProfileResponse;
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
@@ -163,7 +162,7 @@ public class UserResource {
     @Path("customers")
     @RolesAllowed("admin")
     public List<Customer> getAllCustomers(){
-        return PanacheEntityBase.listAll();
+        return Customer.listAll();
     }
 
     // All Restockers (Admin Only)
@@ -171,7 +170,7 @@ public class UserResource {
     @Path("restockers")
     @RolesAllowed("admin")
     public List<Restocker> getAllRestockers(){
-        return PanacheEntityBase.listAll();
+        return Restocker.listAll();
     }
 
     // Create a new Customer
@@ -182,7 +181,7 @@ public class UserResource {
         String userId = securityIdentity.getPrincipal().getName();
         newCustomer.userId = userId;
 
-        if (PanacheEntityBase.findById(userId) != null) {
+        if (Customer.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
@@ -200,7 +199,7 @@ public class UserResource {
         String userId = securityIdentity.getPrincipal().getName();
         String newImageUrl = "https://hel1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";
         boolean foundAndUpdated = false;
-        Customer customer = PanacheEntityBase.findById(userId);
+        Customer customer = Customer.findById(userId);
 
         if (customer != null) {
             customer.profilePictureUrl = newImageUrl;
@@ -210,7 +209,7 @@ public class UserResource {
         }
 
         if (!foundAndUpdated) {
-            Restocker restocker = PanacheEntityBase.findById(userId);
+            Restocker restocker = Restocker.findById(userId);
             if (restocker != null) {
                 restocker.profilePictureUrl = newImageUrl;
                 restocker.updatedAt = LocalDateTime.now();
@@ -236,7 +235,7 @@ public class UserResource {
         String userId = securityIdentity.getPrincipal().getName();
         newRestocker.userId = userId;
 
-        if (PanacheEntityBase.findById(userId) != null) {
+        if (Restocker.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
@@ -327,7 +326,7 @@ public class UserResource {
     }
 
     private Customer findCustomerOrThrow(String userId) {
-        Customer user = PanacheEntityBase.findById(userId);
+        Customer user = Customer.findById(userId);
 
         if (user == null) {
             throw new WebApplicationException("Customer-Profil nicht gefunden.", 404);
@@ -336,7 +335,7 @@ public class UserResource {
     }
 
     private Restocker findRestockerOrThrow(String userId) {
-        Restocker user = PanacheEntityBase.findById(userId);
+        Restocker user = Restocker.findById(userId);
 
         if (user == null) {
             throw new WebApplicationException("Restocker-Profil nicht gefunden.", 404);

@@ -1,7 +1,6 @@
 package de.restockoffice.api;
 
 import de.restockoffice.domain.Customer;
-import de.restockoffice.domain.Restocker;
 import io.quarkus.panache.mock.PanacheMock;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
@@ -26,14 +25,13 @@ class UserResourceTest {
 
     @BeforeEach
     void setup() {
-        PanacheMock.mock(Customer.class);
-        PanacheMock.mock(Restocker.class);
         RestAssured.port = 8081;
     }
 
     @Test
     @TestSecurity(user = "max", roles = {"customer"})
     void testGetMyCustomerData() {
+        PanacheMock.mock(Customer.class);
         Customer c = new Customer();
         c.userId = "max";
         Mockito.when(Customer.findById("max")).thenReturn(c);
@@ -46,6 +44,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void testGetAllCustomersAsAdmin() {
+        PanacheMock.mock(Customer.class);
         given().when().get("/customers")
                 .then().statusCode(200);
     }
@@ -53,6 +52,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "new-user", roles = {"customer"})
     void testCreateCustomer() {
+        PanacheMock.mock(Customer.class);
         Customer c = new Customer();
         c.userId = "new-user";
 
@@ -68,6 +68,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "max", roles = {"customer"})
     void testUpdateCustomerWithoutFile() {
+        PanacheMock.mock(Customer.class);
         Customer c = new Customer();
         c.userId = "max";
         Mockito.when(Customer.findById("max")).thenReturn(c);
@@ -87,6 +88,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "non-existent", roles = {"customer"})
     void testCustomerNotFound() {
+        PanacheMock.mock(Customer.class);
         Mockito.when(Customer.findById("non-existent")).thenReturn(null);
 
         given().queryParam("userId", "non-existent")
