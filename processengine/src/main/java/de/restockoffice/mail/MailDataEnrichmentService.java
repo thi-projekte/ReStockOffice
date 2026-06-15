@@ -36,6 +36,7 @@ public class MailDataEnrichmentService {
     private static final ZoneId BERLIN = ZoneId.of("Europe/Berlin");
     private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy", GERMAN);
     private static final DateTimeFormatter DISPLAY_DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm 'Uhr'", GERMAN);
+    private static final DateTimeFormatter ISO_DATE_TIME_WITH_SECONDS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     private static final String ARTICLE_LABEL_PREFIX = "Artikel ";
     private static final String FIELD_QUANTITY = "quantity";
     private static final String VARIABLE_ITEM_ARTICLE_NUMBER = "itemArticleNumber";
@@ -92,7 +93,7 @@ public class MailDataEnrichmentService {
         setIfBlank(execution, "daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
         setIfBlank(execution, "deliveryDay", formatDayName(deliveryDate));
         setIfBlank(execution, "supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
-        setIfBlank(execution, "deliveryInstructions", firstNonBlank(userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
+        setIfBlank(execution, "deliveryInstructions", firstNonBlank(deliveryDeliveryHint(context.delivery()), userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
         setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
 
@@ -115,7 +116,7 @@ public class MailDataEnrichmentService {
         setIfBlank(execution, "recipientEmail", firstNonBlank(deliveryRecipientEmail(delivery), userEmail(user)));
         setIfBlank(execution, "customerName", firstNonBlank(deliveryCompanyName(delivery), userCompanyName(user), context.customerId()));
         setIfBlank(execution, "orderNumber", formatOrderNumber(firstNonBlank(deliveryOrderId(delivery), orderId(order), context.orderId())));
-        setIfBlank(execution, "deliveryDate", deliveryDate.atTime(8, 0).toString());
+        setIfBlank(execution, "deliveryDate", formatDate(deliveryDate));
         setIfBlank(execution, "deliveryDateLabel", formatDate(deliveryDate));
         setIfBlank(execution, "deliveryWindow", formatDeliveryWindow(firstNonBlank(deliveryDeliveryTime(delivery), userDeliveryTime(user))));
         setIfBlank(execution, "deliveryLocation", formatDeliveryLocation(delivery, user));
@@ -538,11 +539,23 @@ public class MailDataEnrichmentService {
         try {
             return LocalDate.parse(normalized);
         } catch (DateTimeParseException ignored) {
+            // Try display and date-time formats below.
+        }
+
+        try {
+            return LocalDate.parse(normalized, DISPLAY_DATE);
+        } catch (DateTimeParseException ignored) {
             // Try date-time formats below.
         }
 
         try {
             return LocalDateTime.parse(normalized).toLocalDate();
+        } catch (DateTimeParseException ignored) {
+            // Try date-time without fractional seconds below.
+        }
+
+        try {
+            return LocalDateTime.parse(normalized, ISO_DATE_TIME_WITH_SECONDS).toLocalDate();
         } catch (DateTimeParseException ignored) {
             // Try offset date-time below.
         }
@@ -779,17 +792,17 @@ public class MailDataEnrichmentService {
         return delivery != null ? delivery.deliveryTime : null;
     }
 
+    private String deliveryDeliveryHint(DeliveryDetailDto delivery) {
+        return delivery != null ? delivery.deliveryHint : null;
+    }
+
     private String deliveryRestockerName(DeliveryDetailDto delivery) {
         return delivery != null ? delivery.restockerName : null;
     }
 
     private String restockerDisplayName(DeliveryDetailDto delivery) {
         String restockerName = deliveryRestockerName(delivery);
-        if (isBlank(restockerName) || !restockerName.trim().contains(" ")) {
-            return null;
-        }
-
-        return restockerName.trim();
+        return isBlank(restockerName) ? null : restockerName.trim();
     }
 
     private String deliveryStreet(DeliveryDetailDto delivery) {
