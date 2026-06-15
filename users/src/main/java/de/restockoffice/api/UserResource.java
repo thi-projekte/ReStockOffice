@@ -45,9 +45,7 @@ public class UserResource {
     private static final Logger LOG = Logger.getLogger(UserResource.class);
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
-    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(5))
-            .build();
+    private HttpClient httpClient;
 
     // S3 for Pics
     @Inject
@@ -394,7 +392,7 @@ public class UserResource {
         }
 
         try {
-            HttpResponse<String> response = HTTP_CLIENT.send(
+            HttpResponse<String> response = getHttpClient().send(
                     requestBuilder.build(),
                     HttpResponse.BodyHandlers.ofString()
             );
@@ -443,5 +441,14 @@ public class UserResource {
         } catch (Exception e) {
             throw new WebApplicationException("S3 Fehler beim Upload des Profilbilds", 500);
         }
+    }
+
+    private HttpClient getHttpClient() {
+        if (this.httpClient == null) {
+            this.httpClient = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(5))
+                    .build();
+        }
+        return this.httpClient;
     }
 }
