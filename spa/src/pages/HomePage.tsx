@@ -132,7 +132,7 @@ export function HomePage() {
         <div className="hero-copy">
           <h1>Alles für den Büroalltag an einem Ort</h1>
           <p>
-            Hallo {firstName}, lass uns direkt loslegen ...
+            Hey {firstName}, lass uns direkt loslegen ...
           </p>
 
           <div className="hero-highlights" aria-label="Schnelle Übersicht">
