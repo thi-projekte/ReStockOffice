@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {type ReactElement, useEffect, useState} from "react";
 import {Link, Navigate, useOutletContext, useParams} from "react-router-dom";
 import {ProductGrid} from "../components/ProductGrid";
 import {
@@ -19,7 +19,7 @@ interface OutletContext {
   onSetTheme: (theme: "light" | "dark" | "auto") => void;
 }
 
-export function CategoryPage() {
+export function CategoryPage(): ReactElement {
   const {isLoggedIn} = useOutletContext<OutletContext>();
   const {categorySlug} = useParams();
   const [products, setProducts] = useState<Product[]>([]);
@@ -27,7 +27,7 @@ export function CategoryPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function loadCategory() {
+    async function loadCategory(): Promise<void> {
       if (!categorySlug) {
         setIsLoading(false);
         return;

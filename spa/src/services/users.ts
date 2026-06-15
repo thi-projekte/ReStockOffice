@@ -90,7 +90,7 @@ const mockAssetModules = import.meta.glob("../assets/**/*.{png,jpg,jpeg,svg}", {
 const mockUsers = new Map<string, UserProfile>();
 const mockUserRestockOrders: Record<string, RestockOrder[]> = {};
 
-function buildUsersNetworkErrorMessage(action: "geladen" | "gespeichert") {
+function buildUsersNetworkErrorMessage(): string {
   return "Die Users-API konnte nicht erreicht werden.";
 }
 
@@ -100,7 +100,7 @@ class UserProfileNotFoundError extends Error {
   }
 }
 
-async function resolveToken(token?: string) {
+async function resolveToken(token?: string): Promise<string> {
   if (!useAPIs) {
     return "";
   }
@@ -126,20 +126,20 @@ async function resolveToken(token?: string) {
   return keycloak.token;
 }
 
-function createJsonHeaders(token: string) {
+function createJsonHeaders(token: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   };
 }
 
-function createAuthHeaders(token: string) {
+function createAuthHeaders(token: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
   };
 }
 
-function optionalString(value: unknown) {
+function optionalString(value: unknown): string | undefined {
   if (value === undefined || value === null || value === "") {
     return undefined;
   }
@@ -147,7 +147,7 @@ function optionalString(value: unknown) {
   return String(value);
 }
 
-function resolveProfileImageUrl(value: unknown) {
+function resolveProfileImageUrl(value: unknown): string | undefined {
   const imageUrl = optionalString(value);
 
   if (!imageUrl) {
@@ -197,19 +197,19 @@ function resolveUserKind(
   return resolveKeycloakUserKind() ?? fallbackKind ?? "customer";
 }
 
-function getMeApiUrl(kind: UserKind) {
+function getMeApiUrl(kind: UserKind): string {
   return kind === "restocker" ? RESTOCKER_ME_API_URL : CUSTOMER_ME_API_URL;
 }
 
-function getCreateApiUrl(kind: UserKind) {
+function getCreateApiUrl(kind: UserKind): string {
   return kind === "restocker" ? RESTOCKER_CREATE_API_URL : CUSTOMER_CREATE_API_URL;
 }
 
-function getUpdateApiUrl(kind: UserKind) {
+function getUpdateApiUrl(kind: UserKind): string {
   return kind === "restocker" ? RESTOCKER_UPDATE_API_URL : CUSTOMER_UPDATE_API_URL;
 }
 
-export function getAdminUsersApiUrl(kind: UserKind, userId?: string) {
+export function getAdminUsersApiUrl(kind: UserKind, userId?: string): string {
   const baseUrl = kind === "restocker" ? RESTOCKERS_API_URL : CUSTOMERS_API_URL;
 
   if (!userId) {
@@ -341,7 +341,7 @@ function createEmptyUserProfile(kind: UserKind): UserProfile {
   );
 }
 
-function getMockUser(userId: string, kind: UserKind) {
+function getMockUser(userId: string, kind: UserKind): UserProfile {
   const cacheKey = `${kind}:${userId}`;
   let mockUser = mockUsers.get(cacheKey);
 
@@ -360,11 +360,11 @@ function getMockUser(userId: string, kind: UserKind) {
   return mockUser;
 }
 
-async function readJsonResponse(response: Response) {
+async function readJsonResponse(response: Response): Promise<unknown> {
   return (await response.json().catch(() => null)) as unknown;
 }
 
-function assertSuccessfulResponse(response: Response, action: "geladen" | "gespeichert") {
+function assertSuccessfulResponse(response: Response, action: "geladen" | "gespeichert"): void {
   if (response.ok) {
     return;
   }
@@ -403,7 +403,7 @@ async function fetchCurrentUserPayload(context: UserRequestContext = {}): Promis
       headers: createAuthHeaders(resolvedToken),
     });
   } catch {
-    throw new Error(buildUsersNetworkErrorMessage("geladen"));
+    throw new Error(buildUsersNetworkErrorMessage());
   }
 
   assertSuccessfulResponse(response, "geladen");
@@ -430,7 +430,7 @@ export async function getMyUser(context: UserRequestContext = {}): Promise<UserP
   }
 }
 
-function createUserData(user: SaveUserPayload, isCreateRequest: boolean) {
+function createUserData(user: SaveUserPayload, isCreateRequest: boolean): Record<string, unknown> {
   const userData = {...user} as Record<string, unknown>;
   const iban = userData.iban;
   const bic = userData.bic;
@@ -459,7 +459,7 @@ function createUserData(user: SaveUserPayload, isCreateRequest: boolean) {
   return userData;
 }
 
-function createMultipartUserBody(user: SaveUserPayload) {
+function createMultipartUserBody(user: SaveUserPayload): FormData {
   const formData = new FormData();
   formData.append(
     "userData",
@@ -511,7 +511,7 @@ export async function saveMyUser(
         : createMultipartUserBody(user),
     });
   } catch {
-    throw new Error(buildUsersNetworkErrorMessage("gespeichert"));
+    throw new Error(buildUsersNetworkErrorMessage());
   }
 
   assertSuccessfulResponse(response, "gespeichert");

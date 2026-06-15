@@ -80,7 +80,7 @@ interface MarketplaceCustomerData {
 
 const MISSING_MARKETPLACE_VALUE = "Fehlt noch";
 
-function formatDate(date: Date) {
+function formatDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
@@ -103,11 +103,11 @@ function isDeliveryDateInPast(dateValue?: string | null, referenceDate = new Dat
     normalizedDate < formatLocalIsoDate(referenceDate);
 }
 
-function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert" | "gelöscht") {
+function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert" | "gelöscht"): string {
   return `Die Orders-API konnte nicht erreicht werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration, falls Orders nicht ${action} werden konnten.`;
 }
 
-async function resolveToken(token?: string) {
+async function resolveToken(token?: string): Promise<string> {
 
   if (token) {
     return token;
@@ -131,14 +131,14 @@ async function resolveToken(token?: string) {
   return keycloak.token;
 }
 
-function createHeaders(token: string) {
+function createHeaders(token: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   };
 }
 
-function resolveCustomerId(customerId?: string) {
+function resolveCustomerId(customerId?: string): string {
   return customerId ?? TEMPORARY_CUSTOMER_ID;
 }
 
@@ -424,7 +424,7 @@ function hasMissingCustomerData(order: RestockMarketplaceOrder) {
   );
 }
 
-function buildStreetLineFromProfile(profile: CustomerUser) {
+function buildStreetLineFromProfile(profile: CustomerUser): string {
   return [profile.street, profile.houseNumber]
     .map((part) => part?.trim())
     .filter(Boolean)
@@ -620,7 +620,7 @@ function mergeDeliveryDetailsById(deliveryDetails: DeliveryDetail[]) {
 
 const mockRestockOrders: RestockOrder[] = [];
 
-function getMockOrdersForCustomer(customerId: string) {
+function getMockOrdersForCustomer(customerId: string): RestockOrder[] {
   const customerOrders = mockRestockOrders.filter((order) => order.customerId === customerId);
 
   if (customerOrders.length > 0) {

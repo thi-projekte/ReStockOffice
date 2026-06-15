@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {type ReactElement, useEffect, useState} from "react";
 import {Link, Navigate, NavLink, useOutletContext, useParams} from "react-router-dom";
 import {ProductCarousel} from "../components/ProductCarousel";
 import {SubscriptionProfileProgress} from "../components/SubscriptionProfileProgress";
@@ -21,14 +21,14 @@ interface ProductDetailProps {
   onSetTheme: (theme: "light" | "dark" | "auto") => void;
 }
 
-function formatPrice(value: number) {
+function formatPrice(value: number): string {
   return value.toLocaleString("de-DE", {
     style: "currency",
     currency: "EUR",
   });
 }
 
-function getSimilarProducts(products: Product[], currentProduct: Product) {
+function getSimilarProducts(products: Product[], currentProduct: Product): Product[] {
   const sameCategory = products.filter(
     (product) =>
       product.productId !== currentProduct.productId &&
@@ -48,7 +48,7 @@ function getSimilarProducts(products: Product[], currentProduct: Product) {
   return [...sameCategory, ...fallbackProducts].slice(0, 6);
 }
 
-export function ProductDetailPage() {
+export function ProductDetailPage(): ReactElement {
   const params = useParams();
   const productId = Number(params.productId);
   const [product, setProduct] = useState<Product | null>(null);
@@ -64,7 +64,7 @@ export function ProductDetailPage() {
     useOutletContext<ProductDetailProps>();
 
   useEffect(() => {
-    async function loadProduct() {
+    async function loadProduct(): Promise<void> {
       if (Number.isNaN(productId)) {
         setIsLoading(false);
         return;

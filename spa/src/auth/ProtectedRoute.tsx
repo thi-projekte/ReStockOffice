@@ -1,7 +1,7 @@
 import {type ReactNode} from "react";
 import {useAuth} from "./AuthProvider";
 
-export function ProtectedRoute({children}: { children: ReactNode }) {
+export function ProtectedRoute({children}: { children: ReactNode }): ReactNode {
   const {error, isAuthenticated, isInitializing} = useAuth();
 
   if (error) {

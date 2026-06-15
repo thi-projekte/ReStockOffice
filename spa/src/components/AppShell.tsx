@@ -1,4 +1,4 @@
-import {type ReactNode, useEffect, useRef, useState} from "react";
+import {type ReactElement, type ReactNode, useEffect, useRef, useState} from "react";
 import {Link, NavLink, useLocation, useNavigate} from "react-router-dom";
 import {
   FaBars,
@@ -49,7 +49,7 @@ interface AppShellProps {
 
 type ActiveSubscriptionLayer = "overview" | "dialog" | null;
 
-export function AppShell({children}: AppShellProps) {
+export function AppShell({children}: AppShellProps): ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [query, setQuery] = useState("");
@@ -113,7 +113,7 @@ export function AppShell({children}: AppShellProps) {
       .filter((articleType) => articleType.toLowerCase().includes(normalizedQuery))
       .slice(0, 6)
     : [];
-  const hasBrands = (articleType: string) =>
+  const hasBrands = (articleType: string): boolean =>
     (articleTypeBrandMap.get(articleType)?.length ?? 0) > 1;
   const activeAssistArticleType =
     quickArticleTypeMatches.includes(selectedArticleType) &&
@@ -141,18 +141,18 @@ export function AppShell({children}: AppShellProps) {
   const userKind = isRestocker ? "restocker" : "customer";
   const canModifySubscription = subscriptionProfileStatus?.isComplete !== false;
 
-  function resetSubscriptionLayer() {
+  function resetSubscriptionLayer(): void {
     setActiveSubscriptionLayer(null);
     setSelectedProduct(null);
     setSelectedSubscriptionItem(undefined);
   }
 
-  function handleLogout() {
+  function handleLogout(): void {
     resetSubscriptionLayer();
     void auth.logout();
   }
 
-  function handleAddToSubscription(product: Product) {
+  function handleAddToSubscription(product: Product): void {
     if (!canModifySubscription) {
       toast.error(
         "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
@@ -165,13 +165,13 @@ export function AppShell({children}: AppShellProps) {
     setActiveSubscriptionLayer("dialog");
   }
 
-  function openSubscriptionOverview() {
+  function openSubscriptionOverview(): void {
     setSelectedProduct(null);
     setSelectedSubscriptionItem(undefined);
     setActiveSubscriptionLayer("overview");
   }
 
-  function handleEditSubscriptionItem(item: RestockOrderWithProduct) {
+  function handleEditSubscriptionItem(item: RestockOrderWithProduct): void {
     if (!canModifySubscription) {
       toast.error(
         "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
@@ -184,7 +184,7 @@ export function AppShell({children}: AppShellProps) {
     setActiveSubscriptionLayer("dialog");
   }
 
-  async function handleRemoveSubscriptionItem(item: RestockOrderWithProduct) {
+  async function handleRemoveSubscriptionItem(item: RestockOrderWithProduct): Promise<void> {
     if (!canModifySubscription) {
       toast.error(
         "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.",
@@ -196,7 +196,6 @@ export function AppShell({children}: AppShellProps) {
       await subscriptionCart.removeItem(item);
       toast.success(`${item.product.name} wurde aus dem Abo entfernt`);
     } catch (error) {
-      console.error(error);
       toast.error(
         error instanceof Error
           ? error.message
@@ -205,24 +204,24 @@ export function AppShell({children}: AppShellProps) {
     }
   }
 
-  function handleSubscriptionProfileUpdated(user: UserProfile) {
+  function handleSubscriptionProfileUpdated(user: UserProfile): void {
     setSubscriptionProfileStatus(getSubscriptionProfileStatus(user));
   }
 
-  function handleQueryChange(value: string) {
+  function handleQueryChange(value: string): void {
     setQuery(value);
   }
 
-  function handleArticleTypeChange(value: string) {
+  function handleArticleTypeChange(value: string): void {
     setSelectedArticleType(value);
     setSelectedBrand("");
   }
 
-  function handleBrandChange(value: string) {
+  function handleBrandChange(value: string): void {
     setSelectedBrand(value);
   }
 
-  function openProfileMenu() {
+  function openProfileMenu(): void {
     if (profileMenuCloseTimerRef.current) {
       window.clearTimeout(profileMenuCloseTimerRef.current);
       profileMenuCloseTimerRef.current = null;
@@ -231,7 +230,7 @@ export function AppShell({children}: AppShellProps) {
     setIsProfileMenuOpen(true);
   }
 
-  function closeProfileMenuWithDelay() {
+  function closeProfileMenuWithDelay(): void {
     if (profileMenuCloseTimerRef.current) {
       window.clearTimeout(profileMenuCloseTimerRef.current);
     }
@@ -242,7 +241,7 @@ export function AppShell({children}: AppShellProps) {
     }, 180);
   }
 
-  function handleSearchToggle() {
+  function handleSearchToggle(): void {
     setIsAdvancedSearch((current) => {
       const next = !current;
 
@@ -256,7 +255,7 @@ export function AppShell({children}: AppShellProps) {
   }
 
   useEffect(() => {
-    async function loadProducts() {
+    async function loadProducts(): Promise<void> {
       const loadedProducts = await getProducts();
       setProducts(loadedProducts);
       subscriptionCart.registerProducts(loadedProducts);
@@ -316,7 +315,7 @@ export function AppShell({children}: AppShellProps) {
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent): void {
       const target = event.target as Node;
 
       if (headerSearchRef.current && !headerSearchRef.current.contains(target)) {
@@ -383,7 +382,7 @@ export function AppShell({children}: AppShellProps) {
     },
   ];
 
-  function renderSearchControls(source: "header" | "page") {
+  function renderSearchControls(source: "header" | "page"): ReactElement {
     const isHeader = source === "header";
     const showToggle = !isHeader;
     const showQuickAssist =
@@ -941,7 +940,6 @@ export function AppShell({children}: AppShellProps) {
               );
 
             } catch (error) {
-              console.error(error);
               toast.error(
                 error instanceof Error
                   ? error.message

@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactElement,
   type ReactNode,
 } from "react";
 import type {
@@ -48,11 +49,11 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function normalizeRoleName(role: string | undefined) {
+function normalizeRoleName(role: string | undefined): string {
   return role?.trim().toLowerCase() ?? "";
 }
 
-function collectRoles(tokenParsed?: RestockTokenParsed) {
+function collectRoles(tokenParsed?: RestockTokenParsed): string[] {
   const realmRoles = tokenParsed?.realm_access?.roles ?? [];
   const clientRoles =
     tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
@@ -77,7 +78,7 @@ function mapUser(
   };
 }
 
-export function AuthProvider({children}: { children: ReactNode }) {
+export function AuthProvider({children}: { children: ReactNode }): ReactElement {
   const refreshTimerRef = useRef<number | undefined>(undefined);
 
   const [isInitializing, setIsInitializing] = useState(true);
@@ -119,7 +120,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
       setUser(null);
     };
 
-    async function init() {
+    async function init(): Promise<void> {
       try {
         await keycloak.init({
           onLoad: "login-required",
@@ -196,7 +197,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
 
   if (!ctx) {

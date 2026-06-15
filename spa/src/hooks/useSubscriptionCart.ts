@@ -24,12 +24,24 @@ interface UseSubscriptionCartOptions {
   token?: string;
 }
 
+interface UseSubscriptionCartResult {
+  subscription: Subscription;
+  isLoaded: boolean;
+  items: RestockOrderWithProduct[];
+  totalItems: number;
+  totalPrice: number;
+  registerProducts: (products: Product[]) => void;
+  addOrUpdateItem: (payload: AddSubscriptionPayload) => Promise<"created" | "updated">;
+  removeItem: (item: RestockOrderWithProduct) => Promise<void>;
+  getExistingItem: (productId: number) => RestockOrder | undefined;
+}
+
 const MOCK_CUSTOMER_ID = "mock-user";
 
 export function useSubscriptionCart({
                                       customerId,
                                       token,
-                                    }: UseSubscriptionCartOptions) {
+                                    }: UseSubscriptionCartOptions): UseSubscriptionCartResult {
   const effectiveCustomerId = useAPIs ? customerId : (customerId ?? MOCK_CUSTOMER_ID);
   const [subscription, setSubscription] = useState<Subscription>(() =>
     createSubscription(effectiveCustomerId),
@@ -42,7 +54,7 @@ export function useSubscriptionCart({
 
     setIsLoaded(false);
 
-    async function loadCurrentSubscription() {
+    async function loadCurrentSubscription(): Promise<void> {
       if (useAPIs && !token) {
         if (!ignoreResult) {
           setSubscription(createSubscription(effectiveCustomerId));
@@ -59,9 +71,7 @@ export function useSubscriptionCart({
       }
     }
 
-    void loadCurrentSubscription().catch((error: unknown) => {
-      console.error(error);
-
+    void loadCurrentSubscription().catch(() => {
       if (!ignoreResult) {
         setSubscription(createSubscription(effectiveCustomerId));
         setIsLoaded(true);
@@ -73,7 +83,7 @@ export function useSubscriptionCart({
     };
   }, [effectiveCustomerId, token]);
 
-  function registerProducts(products: Product[]) {
+  function registerProducts(products: Product[]): void {
     setProductsById((previousProducts) => {
       const nextProducts = {...previousProducts};
 
@@ -209,7 +219,7 @@ export function useSubscriptionCart({
     0,
   );
 
-  function getExistingItem(productId: number) {
+  function getExistingItem(productId: number): RestockOrder | undefined {
     return subscription.items.find(
       (item) => item.productId === String(productId),
     );

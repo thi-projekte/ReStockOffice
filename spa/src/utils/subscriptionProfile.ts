@@ -30,11 +30,11 @@ const RESTOCKER_REQUIRED_FIELDS = [
   {keys: ["accountHolder"], label: "Kontoinhaber"},
 ] as const satisfies readonly RequiredFieldDefinition[];
 
-function hasValue(value: unknown) {
+function hasValue(value: unknown): boolean {
   return String(value ?? "").trim().length > 0;
 }
 
-function hasAnyValue(profileValues: Record<string, unknown>, keys: string[]) {
+function hasAnyValue(profileValues: Record<string, unknown>, keys: string[]): boolean {
   return keys.some((key) => hasValue(profileValues[key]));
 }
 

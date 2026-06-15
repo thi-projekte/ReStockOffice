@@ -20,7 +20,7 @@ export interface InvoiceRequestContext {
   kind?: UserKind;
 }
 
-async function resolveToken(token?: string) {
+async function resolveToken(token?: string): Promise<string> {
   if (!useAPIs) {
     return "";
   }
@@ -46,7 +46,7 @@ async function resolveToken(token?: string) {
   return keycloak.token;
 }
 
-function createHeaders(token: string) {
+function createHeaders(token: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
@@ -56,7 +56,6 @@ function createHeaders(token: string) {
 function normalizeInvoice(rawInvoice: unknown): InvoiceSummary {
   const source = rawInvoice as Record<string, unknown>;
 
-  // API fields: issueDate, invoiceNumber, grossAmount
   const issuedAt = String(source.issueDate ?? "");
   const issuedDate = new Date(issuedAt);
   const monthLabel = new Intl.DateTimeFormat("de-DE", {
@@ -75,7 +74,7 @@ function normalizeInvoice(rawInvoice: unknown): InvoiceSummary {
   };
 }
 
-function sortInvoicesDescending(left: InvoiceSummary, right: InvoiceSummary) {
+function sortInvoicesDescending(left: InvoiceSummary, right: InvoiceSummary): number {
   return new Date(right.issuedAt).getTime() - new Date(left.issuedAt).getTime();
 }
 
@@ -83,7 +82,7 @@ function resolveUserId(): string {
   return keycloak.tokenParsed?.sub ?? "";
 }
 
-async function loadInvoicesFromApi(context: InvoiceRequestContext = {}) {
+async function loadInvoicesFromApi(context: InvoiceRequestContext = {}): Promise<InvoiceSummary[]> {
   const token = await resolveToken(context.token);
   const userId = resolveUserId();
   const query = new URLSearchParams({userId});
@@ -106,11 +105,11 @@ async function loadInvoicesFromApi(context: InvoiceRequestContext = {}) {
   return payload.map(normalizeInvoice).sort(sortInvoicesDescending);
 }
 
-async function loadInvoicesFromMock() {
+async function loadInvoicesFromMock(): Promise<InvoiceSummary[]> {
   return (invoices as unknown[]).map(normalizeInvoice).sort(sortInvoicesDescending);
 }
 
-export async function getInvoices(context: InvoiceRequestContext = {}) {
+export async function getInvoices(context: InvoiceRequestContext = {}): Promise<InvoiceSummary[]> {
   if (useAPIs) {
     return loadInvoicesFromApi(context);
   }
@@ -138,7 +137,6 @@ export async function requestInvoicePdf(
     throw new Error(`Die Rechnung konnte nicht geladen werden (HTTP ${response.status}).`);
   }
 
-  // Open PDF in new tab
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
   window.open(url, "_blank");

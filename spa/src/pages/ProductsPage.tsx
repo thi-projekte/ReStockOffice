@@ -1,3 +1,4 @@
+import type {ReactElement} from "react";
 import {Navigate, useOutletContext} from "react-router-dom";
 import type {Product, RestockOrderWithProduct} from "../types/shop";
 
@@ -45,7 +46,7 @@ const steps: Step[] = [
 const lastIndex = steps.length - 1
 
 
-export function ProductsPage() {
+export function ProductsPage(): ReactElement {
   const {isLoggedIn} = useOutletContext<OutletContext>();
 
   if (!isLoggedIn) {

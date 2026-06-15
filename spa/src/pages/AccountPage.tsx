@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {type ReactElement, useEffect, useRef, useState} from "react";
 import {Navigate, useLocation, useOutletContext} from "react-router-dom";
 import {MdEdit, MdLogout, MdOutlineWarningAmber, MdReceiptLong, MdSave} from "react-icons/md";
 import {FaBell, FaMoon, FaSun} from "react-icons/fa";
@@ -66,7 +66,7 @@ const EMPTY_FORM: ProfileFormState = {
 
 // ─── Komponente ──────────────────────────────────────────────────────────────
 
-export function AccountPage() {
+export function AccountPage(): ReactElement {
   const {
     isLoggedIn, onLogout, onSetTheme, theme,
     subscriptionProfileStatus, onSubscriptionProfileUpdated,
@@ -128,7 +128,7 @@ export function AccountPage() {
         setProfileForm(form);
         lastSavedForm.current = form;
       })
-      .catch((e) => console.error("Benutzerdaten konnten nicht geladen werden.", e));
+      .catch(() => undefined);
   }, [isLoggedIn, isRestocker, token, user, userKind]);
 
   useEffect(() => {
@@ -138,7 +138,7 @@ export function AccountPage() {
         setInvoices(loaded);
         setVisibleInvoiceCount(INVOICE_PAGE_SIZE);
       })
-      .catch((e) => console.error("Rechnungen konnten nicht geladen werden.", e));
+      .catch(() => undefined);
   }, [isLoggedIn, token, user, userKind]);
 
   useEffect(() => {
@@ -154,7 +154,7 @@ export function AccountPage() {
 
   // Suggestionen schließen bei Klick außerhalb
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handleClickOutside(e: MouseEvent): void {
       if (addressContainerRef.current && !addressContainerRef.current.contains(e.target as Node)) {
         setShowAddressSuggestions(false);
       }
@@ -182,7 +182,7 @@ export function AccountPage() {
     return required || hasError;
   }
 
-  function getFieldLabel(field: keyof ProfileFormState, label: string) {
+  function getFieldLabel(field: keyof ProfileFormState, label: string): string {
     return getRequiredFields().includes(field) ? `${label} *` : label;
   }
 
@@ -198,7 +198,7 @@ export function AccountPage() {
 
   // ── Feldaktualisierung ─────────────────────────────────────────────────────
 
-  function updateField<K extends keyof ProfileFormState>(field: K, value: string) {
+  function updateField<K extends keyof ProfileFormState>(field: K, value: string): void {
     let sanitized = value;
 
     switch (field) {
@@ -227,20 +227,20 @@ export function AccountPage() {
     setFormErrors(computeErrors(updated));
   }
 
-  function touchField(field: keyof ProfileFormState) {
+  function touchField(field: keyof ProfileFormState): void {
     setTouchedFields((prev) => new Set([...prev, field]));
   }
 
   // ── Adress-Autocomplete ────────────────────────────────────────────────────
 
-  function handleAddressSearchChange(value: string) {
+  function handleAddressSearchChange(value: string): void {
     addressAC.setQuery(value);
     setShowAddressSuggestions(true);
     // Straße direkt in das Feld schreiben während der User tippt
     updateField("street", value);
   }
 
-  function handleAddressSelect(suggestion: typeof addressAC.suggestions[0]) {
+  function handleAddressSelect(suggestion: typeof addressAC.suggestions[0]): void {
     const updated: ProfileFormState = {
       ...profileForm,
       street: suggestion.street,
@@ -323,8 +323,7 @@ export function AccountPage() {
       onSubscriptionProfileUpdated(savedUser);
       lastSavedForm.current = form;
       return true;
-    } catch (error) {
-      console.error("Benutzerdaten konnten nicht gespeichert werden.", error);
+    } catch {
       toast.error("Deine Änderungen konnten nicht gespeichert werden.");
       return false;
     } finally {
@@ -332,7 +331,7 @@ export function AccountPage() {
     }
   }
 
-  async function handleProfileAction() {
+  async function handleProfileAction(): Promise<void> {
     if (!isEditingProfile) {
       setIsEditingProfile(true);
       return;
@@ -345,25 +344,25 @@ export function AccountPage() {
     setIsEditingProfile(false);
   }
 
-  function toggleNotification(field: keyof NotificationState) {
+  function toggleNotification(field: keyof NotificationState): void {
     setNotifications((c) => ({...c, [field]: !c[field]}));
   }
 
-  function formatInvoiceAmount(invoice: InvoiceSummary) {
+  function formatInvoiceAmount(invoice: InvoiceSummary): string {
     return new Intl.NumberFormat("de-DE", {
       style: "currency",
       currency: invoice.currency,
     }).format(invoice.totalAmount);
   }
 
-  async function handleInvoiceOpen(invoice: InvoiceSummary) {
+  async function handleInvoiceOpen(invoice: InvoiceSummary): Promise<void> {
     setLoadingInvoiceId(invoice.invoiceId);
     try {
       await requestInvoicePdf(invoice.invoiceId, {
         token, kind: userKind,
       });
-    } catch (e) {
-      console.error("Die Rechnung konnte nicht geladen werden.", e);
+    } catch {
+      return;
     } finally {
       setLoadingInvoiceId(null);
     }

@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {type ReactElement, useEffect, useRef, useState} from "react";
 import type {Product, RestockOrderWithProduct} from "../types/shop";
 
 interface SubscriptionDialogProps {
@@ -13,7 +13,7 @@ interface SubscriptionDialogProps {
   onOpenOverview: () => void;
 }
 
-function formatInterval(intervalCount: number) {
+function formatInterval(intervalCount: number): string {
   return `Alle ${intervalCount} Woche${intervalCount === 1 ? "" : "n"}`;
 }
 
@@ -24,7 +24,7 @@ export function SubscriptionDialog({
                                      isProfileComplete,
                                      onClose,
                                      onConfirm,
-                                   }: SubscriptionDialogProps) {
+                                   }: SubscriptionDialogProps): ReactElement | null {
   const [quantity, setQuantity] = useState(1);
   const [intervalCount, setIntervalCount] = useState(1);
   const [isClosingToHeader, setIsClosingToHeader] = useState(false);
@@ -48,7 +48,7 @@ export function SubscriptionDialog({
   const hasInvalidQuantity = quantity < 1 || Number.isNaN(quantity);
   const canConfirmChanges = isProfileComplete && !hasInvalidQuantity;
 
-  function getSubscriptionTargetElement() {
+  function getSubscriptionTargetElement(): HTMLElement | null {
     const isMobile = window.matchMedia("(max-width: 720px)").matches;
 
     if (isMobile) {
@@ -58,7 +58,7 @@ export function SubscriptionDialog({
     return document.querySelector('a[href="/subscription"]') as HTMLElement | null;
   }
 
-  async function animateDialogIntoHeader() {
+  async function animateDialogIntoHeader(): Promise<void> {
     const modalElement = modalRef.current;
     const overlayElement = overlayRef.current;
     const targetElement = getSubscriptionTargetElement();
@@ -98,7 +98,7 @@ export function SubscriptionDialog({
     onClose();
   }
 
-  async function handleConfirm() {
+  async function handleConfirm(): Promise<void> {
     if (isClosingToHeader || !canConfirmChanges) {
       return;
     }
@@ -108,9 +108,8 @@ export function SubscriptionDialog({
     try {
       await onConfirm({quantity, intervalCount});
       await animateDialogIntoHeader();
-    } catch (error) {
+    } catch {
       setIsClosingToHeader(false);
-      console.error(error);
     }
   }
 

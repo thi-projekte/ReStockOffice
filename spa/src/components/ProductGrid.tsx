@@ -1,4 +1,4 @@
-import {KeyboardEvent} from "react";
+import {type KeyboardEvent, type ReactElement} from "react";
 import {useNavigate} from "react-router-dom";
 import type {Product} from "../types/shop";
 
@@ -6,7 +6,7 @@ interface ProductGridProps {
   products: Product[];
 }
 
-export function ProductGrid({products}: ProductGridProps) {
+export function ProductGrid({products}: ProductGridProps): ReactElement {
   if (products.length === 0) {
     return (
       <p className="empty-state product-grid-empty">
@@ -30,16 +30,16 @@ interface ProductCardProps {
   product: Product;
 }
 
-function ProductCard({product}: ProductCardProps) {
+function ProductCard({product}: ProductCardProps): ReactElement {
   const navigate = useNavigate();
 
 
-  function openDetails() {
+  function openDetails(): void {
     navigate(`/products/${product.productId}`);
     window.scrollTo(0, 0);
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>): void {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       openDetails();

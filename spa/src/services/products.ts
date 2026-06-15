@@ -17,11 +17,11 @@ const mockAssetModules = import.meta.glob("../assets/**/*.{png,jpg,jpeg,svg}", {
   import: "default",
 }) as Record<string, string>;
 
-function buildProductsNetworkErrorMessage(scope: "Produkte" | "Produkt" | "Kategorie") {
+function buildProductsNetworkErrorMessage(scope: "Produkte" | "Produkt" | "Kategorie"): string {
   return `${scope} konnten nicht geladen werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration des Article-Service.`;
 }
 
-function resolveMockImageUrl(imageUrl: string) {
+function resolveMockImageUrl(imageUrl: string): string {
   if (!imageUrl) {
     return logoColored;
   }
@@ -68,7 +68,7 @@ const productsCache = new Map<number, Product>();
 const categoryNameCache = new Map<string, string>();
 let allProductsCache: Product[] | null = null;
 
-function seedCaches(loadedProducts: Product[]) {
+function seedCaches(loadedProducts: Product[]): void {
   allProductsCache = loadedProducts;
 
   for (const product of loadedProducts) {
@@ -189,7 +189,7 @@ export async function getProductById(productId: number): Promise<Product | undef
   return productMocks.find((product) => product.productId === productId);
 }
 
-export function getCategorySlug(category: string) {
+export function getCategorySlug(category: string): string {
   return category.trim().toLowerCase().replace(/\s+/g, "-");
 }
 
@@ -241,6 +241,6 @@ export async function getCategoryNameBySlug(categorySlug: string): Promise<strin
   return matchingProduct?.category;
 }
 
-export function getProductsApiUrl() {
+export function getProductsApiUrl(): string {
   return PRODUCTS_API_URL;
 }

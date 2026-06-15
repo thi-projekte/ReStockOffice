@@ -1,4 +1,4 @@
-import {type MouseEvent, useEffect, useState} from "react";
+import {type MouseEvent, type ReactElement, useEffect, useState} from "react";
 import {Link, useLocation} from "react-router-dom";
 import {getCategorySlug, getProducts} from "../services/products";
 import type {Product} from "../types/shop";
@@ -30,13 +30,13 @@ function createCategoryTiles(products: Product[]): CategoryTile[] {
   }));
 }
 
-export function HomePage() {
+export function HomePage(): ReactElement {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
-    async function loadProducts() {
+    async function loadProducts(): Promise<void> {
       const loadedProducts = await getProducts();
       setProducts(loadedProducts);
       setIsLoading(false);
@@ -51,7 +51,7 @@ export function HomePage() {
     }
 
     const sectionId = location.hash.slice(1);
-    const scrollToSection = () => {
+    const scrollToSection = (): void => {
       const section = document.getElementById(sectionId);
 
       if (!section) {
@@ -72,7 +72,7 @@ export function HomePage() {
   const topCategories = createCategoryTiles(products);
   const firstName = keycloak.tokenParsed?.given_name ?? keycloak.tokenParsed?.preferred_username;
 
-  const getRandomProducts = (products: Product[], max: number) =>
+  const getRandomProducts = (products: Product[], max: number): Product[] =>
     [...products]
       .sort(() => Math.random() - 0.5)
       .slice(0, max);
@@ -81,7 +81,7 @@ export function HomePage() {
   const reorderProducts = getRandomProducts(products, 12);
   const officeProducts = getRandomProducts(products, 12);
 
-  function handleSectionJump(event: MouseEvent<HTMLAnchorElement>, sectionId: string) {
+  function handleSectionJump(event: MouseEvent<HTMLAnchorElement>, sectionId: string): void {
     event.preventDefault();
     window.history.replaceState(null, "", `#${sectionId}`);
 
@@ -112,7 +112,7 @@ export function HomePage() {
     }).then(setOverview);
   }, [customerId, token]);
 
-  function formatDate(date?: string | null) {
+  function formatDate(date?: string | null): string {
     if (!date) return "—";
 
     return new Intl.DateTimeFormat("de-DE", {

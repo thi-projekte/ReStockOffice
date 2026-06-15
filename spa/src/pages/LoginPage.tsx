@@ -1,6 +1,7 @@
+import type {ReactElement} from "react";
 import {useAuth} from "../auth/AuthProvider";
 
-export function LoginPage() {
+export function LoginPage(): ReactElement {
   const {login, isInitializing, error} = useAuth();
 
   return (

@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {type ReactElement, useState} from "react";
 import {Navigate, useOutletContext} from "react-router-dom";
 import {MdDeleteOutline, MdEdit, MdSave} from "react-icons/md";
 import {SubscriptionProfileProgress} from "../components/SubscriptionProfileProgress";
@@ -20,11 +20,11 @@ interface OutletContext {
   onSetTheme: (theme: "light" | "dark" | "auto") => void;
 }
 
-function formatInterval(intervalCount: number) {
+function formatInterval(intervalCount: number): string {
   return `Alle ${intervalCount} Woche${intervalCount === 1 ? "" : "n"}`;
 }
 
-export function SubscriptionPage() {
+export function SubscriptionPage(): ReactElement {
   const {
     isLoggedIn,
     onEditSubscriptionItem,
@@ -39,7 +39,7 @@ export function SubscriptionPage() {
 
   const canEditSubscription = canModifySubscription && isEditMode;
 
-  async function handleConfirmRemoveItem() {
+  async function handleConfirmRemoveItem(): Promise<void> {
     if (!itemPendingRemoval || isRemovingItem) {
       return;
     }

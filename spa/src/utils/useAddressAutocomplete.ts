@@ -10,6 +10,14 @@ export interface AddressSuggestion {
   countryCode: string;
 }
 
+interface UseAddressAutocompleteResult {
+  query: string;
+  setQuery: (value: string) => void;
+  suggestions: AddressSuggestion[];
+  setSuggestions: (value: AddressSuggestion[]) => void;
+  isLoading: boolean;
+}
+
 const ALLOWED_COUNTRIES = ["de", "at", "ch"];
 
 function mapCountryCode(code: string): string {
@@ -25,14 +33,14 @@ function mapCountryCode(code: string): string {
   }
 }
 
-export function useAddressAutocomplete() {
+export function useAddressAutocomplete(): UseAddressAutocompleteResult {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const search = useCallback(async (value: string) => {
+  const search = useCallback(async (value: string): Promise<void> => {
     if (value.trim().length < 4) {
       setSuggestions([]);
       return;
