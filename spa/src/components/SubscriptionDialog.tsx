@@ -49,7 +49,7 @@ export function SubscriptionDialog({
   const canConfirmChanges = isProfileComplete && !hasInvalidQuantity;
 
   function getSubscriptionTargetElement(): HTMLElement | null {
-    const isMobile = window.matchMedia("(max-width: 720px)").matches;
+    const isMobile = globalThis.matchMedia("(max-width: 720px)").matches;
 
     if (isMobile) {
       return document.querySelector(".hamburger-btn") as HTMLElement | null;
@@ -82,7 +82,7 @@ export function SubscriptionDialog({
     modalElement.style.transform = "translate(0, 0) scale(1)";
     modalElement.style.transformOrigin = "center center";
 
-    window.requestAnimationFrame(() => {
+    globalThis.requestAnimationFrame(() => {
       overlayElement.classList.add("subscription-modal__overlay--closing");
       modalElement.classList.add("subscription-modal--closing");
       modalElement.style.top = `${targetTop}px`;
@@ -94,7 +94,7 @@ export function SubscriptionDialog({
       modalElement.style.transform = "translate(0, 0) scale(0.18)";
     });
 
-    await new Promise((resolve) => window.setTimeout(resolve, 480));
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 480));
     onClose();
   }
 
