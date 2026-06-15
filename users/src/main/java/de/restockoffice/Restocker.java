@@ -43,7 +43,7 @@ public class Restocker extends PanacheEntityBase {
     @NotNull
     public String accountHolder;
 
-    public Date birthDate;
+    public java.time.LocalDate birthDate;
 
     public String profilePictureUrl;
 
