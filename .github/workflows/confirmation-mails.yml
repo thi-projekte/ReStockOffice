@@ -30,13 +30,13 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        working-directory: confirmationMails
+        working-directory: confirmation-mails
         run: |
           chmod +x mvnw
           ./mvnw -B verify
 
       - name: Package native
-        working-directory: confirmationMails
+        working-directory: confirmation-mails
         run: |
           chmod +x mvnw
           ./mvnw -B package -Dnative -DskipTests
@@ -52,17 +52,21 @@ jobs:
         id: image_tags
         run: |
           IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/restockoffice-confirmation-mails"
+          VERSION="${GITHUB_REF_NAME#confirmation-mails-v}"
           {
             echo "tags<<EOF"
             echo "${IMAGE_NAME}:latest"
             echo "${IMAGE_NAME}:${GITHUB_SHA}"
+            if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == confirmation-mails-v* ]]; then
+              echo "${IMAGE_NAME}:${VERSION}"
+            fi
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./confirmationMails
-          file: ./confirmationMails/src/main/docker/Dockerfile.native-micro
+          context: ./confirmation-mails
+          file: ./confirmation-mails/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
           tags: ${{ steps.image_tags.outputs.tags }}
