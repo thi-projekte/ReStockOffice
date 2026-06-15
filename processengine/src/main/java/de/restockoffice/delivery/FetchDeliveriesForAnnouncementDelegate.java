@@ -33,7 +33,7 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         List<DeliveryMonitoringItem> deliveries =
                 Arrays.stream(response != null ? response : new DeliveryDetailResponse[0])
                         .filter(delivery -> announcementTargetDate.equals(parseDate(delivery.deliveryDate())))
-                        .filter(this::isOpenDelivery)
+                        .filter(this::isMonitorableDelivery)
                         .map(this::toMonitoringItem)
                         .toList();
 
@@ -55,8 +55,12 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         return value != null && !value.isBlank() ? LocalDate.parse(value) : null;
     }
 
-    private boolean isOpenDelivery(DeliveryDetailResponse delivery) {
-        return delivery.status() == null || delivery.status().isBlank() || "OPEN".equalsIgnoreCase(delivery.status());
+    private boolean isMonitorableDelivery(DeliveryDetailResponse delivery) {
+        return delivery.status() == null
+                || delivery.status().isBlank()
+                || "OPEN".equalsIgnoreCase(delivery.status())
+                || "ACCEPTED".equalsIgnoreCase(delivery.status())
+                || "COLLECTED".equalsIgnoreCase(delivery.status());
     }
 
     private String trimTrailingSlash(String value) {
