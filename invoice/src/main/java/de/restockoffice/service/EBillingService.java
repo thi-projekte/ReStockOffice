@@ -1,35 +1,29 @@
-package de.restockoffice;
+package de.restockoffice.service;
 
+import de.restockoffice.api.InvoiceRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.mustangproject.Item;
 import org.mustangproject.Product;
 import org.mustangproject.TradeParty;
 import org.mustangproject.ZUGFeRD.*;
 
-import org.mustangproject.ZUGFeRD.PDFAConformanceLevel;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EBillingService {
 
     public byte[] makeZUGFeRD(byte[] pdf, InvoiceRequest request) {
-        try{
-            ZUGFeRDExporterFromPDFA exporter = new ZUGFeRDExporterFromPDFA();
+        try (ZUGFeRDExporterFromPDFA exporter = new ZUGFeRDExporterFromPDFA()) {
 
             exporter.load(pdf);
-
             exporter.setConformanceLevel(PDFAConformanceLevel.UNICODE);
-
             exporter.setZUGFeRDVersion(2);
-
             exporter.setProfile(Profiles.getByName("EN16931"));
-
             exporter.setProducer("ReStockOffice")
                     .setCreator("ReStockOffice");
 
@@ -38,18 +32,13 @@ public class EBillingService {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             exporter.export(out);
             return out.toByteArray();
+
         } catch (Exception e) {
             throw new RuntimeException("ZUGFeRD-Generierung fehlgeschlagen: " + e.getMessage(), e);
         }
     }
 
-    private static class InvoiceTransaction implements IExportableTransaction {
-
-        private final InvoiceRequest request;
-
-        InvoiceTransaction(InvoiceRequest request) {
-            this.request = request;
-        }
+    private record InvoiceTransaction(InvoiceRequest request) implements IExportableTransaction {
 
         @Override
         public String getNumber() {
@@ -111,7 +100,7 @@ public class EBillingService {
                         Item item = new Item(product, orderItem.price(), orderItem.quantity());
                         return (IZUGFeRDExportableItem) item;
                     })
-                    .collect(Collectors.toList());
+                    .toList();
 
             return zfItems.toArray(new IZUGFeRDExportableItem[0]);
         }
@@ -136,6 +125,9 @@ public class EBillingService {
             return "Zahlbar innerhalb von 14 Tagen ohne Abzug.";
         }
 
-        public String getCurrency() { return "EUR"; }
+        @Override
+        public String getCurrency() {
+            return "EUR";
+        }
     }
 }

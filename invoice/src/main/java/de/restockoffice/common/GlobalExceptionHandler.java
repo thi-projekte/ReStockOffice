@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.common;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;

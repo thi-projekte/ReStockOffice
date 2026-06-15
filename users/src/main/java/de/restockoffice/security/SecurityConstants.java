@@ -1,4 +1,4 @@
-package security;
+package de.restockoffice.security;
 
 public final class SecurityConstants {
     private SecurityConstants() { }

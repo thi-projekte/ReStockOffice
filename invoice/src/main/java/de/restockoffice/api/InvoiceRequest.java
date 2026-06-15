@@ -1,4 +1,4 @@
-package de.restockoffice;
+package de.restockoffice.api;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

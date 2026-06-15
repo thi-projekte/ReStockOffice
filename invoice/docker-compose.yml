@@ -18,7 +18,6 @@ services:
       DB_PASSWORD: reStockOffice123$
       QUARKUS_PROFILE: prod
       KEYCLOAK_URL: http://id.restockoffice.de/realms/restockoffice
-
     depends_on:
       - db-container
 
@@ -32,7 +31,6 @@ services:
       POSTGRES_USER: reStockOffice
       POSTGRES_PASSWORD: reStockOffice123$
       POSTGRES_DB: invoices_db
-
     volumes:
       - db_data:/var/lib/postgresql/data
 

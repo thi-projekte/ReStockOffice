@@ -1,5 +1,7 @@
-package de.restockoffice;
+package de.restockoffice.service;
 
+import de.restockoffice.api.InvoiceRequest;
+import de.restockoffice.domain.InvoiceEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -16,12 +18,15 @@ public class InvoiceService {
     private static final Logger log = LoggerFactory.getLogger(InvoiceService.class);
 
     // Service für Generierung der PDF mittels OpenHTMLtoPDF und ZUGFeRD Konvertierung mittels MUSTANG
-    @Inject PDFGenerator pdfGenerator;
-    @Inject EBillingService eBillingService;
-    @Inject ResendMailClient mailClient;
+    @Inject
+    PDFGenerator pdfGenerator;
+    @Inject
+    EBillingService eBillingService;
+    @Inject
+    ResendMailClient mailClient;
 
     @Transactional
-    public String createAndPersistInvoice(InvoiceRequest request) throws IOException{
+    public String createAndPersistInvoice(InvoiceRequest request) throws IOException {
         int year = java.time.Year.now().getValue();
         Long nextVal = (Long) InvoiceEntity.getEntityManager()
                 .createNativeQuery("SELECT nextval('invoice_num_seq')")
@@ -52,22 +57,27 @@ public class InvoiceService {
         // PDF mit eRechnung Metadaten anreichern
         byte[] eBillingPdf = eBillingService.makeZUGFeRD(rawPdf, updatedRequest);
 
-        InvoiceEntity entity = new InvoiceEntity();
-        entity.userId = request.userId();
-        entity.invoiceNumber = generatedInvoiceNumber;
-        entity.recipientName = request.recipientName();
-        entity.recipientEmail = request.recipientEmail();
-        entity.issueDate = request.issueDate();
-        entity.netAmount = request.netAmount();
-        entity.taxAmount = request.taxAmount();
-        entity.grossAmount = request.grossAmount();
-
-        entity.zugferdPdf = eBillingPdf;
+        InvoiceEntity entity = getInvoiceEntity(request, generatedInvoiceNumber, eBillingPdf);
 
         entity.persist();
         log.info("Invoice {} successfully persisted to database.", generatedInvoiceNumber);
 
         return generatedInvoiceNumber;
+    }
+
+    private static InvoiceEntity getInvoiceEntity(InvoiceRequest request, String generatedInvoiceNumber, byte[] eBillingPdf) {
+        InvoiceEntity entity = new InvoiceEntity();
+        entity.setUserId(request.userId());
+        entity.setInvoiceNumber(generatedInvoiceNumber);
+        entity.setRecipientName(request.recipientName());
+        entity.setRecipientEmail(request.recipientEmail());
+        entity.setIssueDate(request.issueDate());
+        entity.setNetAmount(request.netAmount());
+        entity.setTaxAmount(request.taxAmount());
+        entity.setGrossAmount(request.grossAmount());
+
+        entity.setZugferdPdf(eBillingPdf);
+        return entity;
     }
 
     @Transactional
@@ -78,13 +88,13 @@ public class InvoiceService {
                 .find("invoiceNumber", request.invoiceNumber())
                 .firstResult();
 
-        if (entity == null || entity.zugferdPdf == null) {
+        if (entity == null || entity.getZugferdPdf() == null) {
             log.error("Cannot send email: Invoice {} not found in database!", request.invoiceNumber());
             throw new WebApplicationException("Rechnung für den Mailversand nicht in der Datenbank gefunden.", 404);
         }
 
         // Versenden der Mail mit dem PDF aus der Datenbank
-        mailClient.sendInvoiceMail(request.recipientEmail(), entity.zugferdPdf, request);
+        mailClient.sendInvoiceMail(request.recipientEmail(), entity.getZugferdPdf(), request);
         log.info("Invoice-mail for {} successfully sent.", request.invoiceNumber());
     }
 
@@ -99,20 +109,7 @@ public class InvoiceService {
         // Versenden der Mail
         mailClient.sendInvoiceMail(request.recipientEmail(), eBillingPdf, request);
 
-        // Sichern in DB
-        InvoiceEntity entity = new InvoiceEntity();
-        entity.userId = request.userId();
-
-        entity.invoiceNumber = request.invoiceNumber();
-        entity.recipientName = request.recipientName();
-        entity.recipientEmail = request.recipientEmail();
-        entity.issueDate = request.issueDate();
-        entity.netAmount = request.netAmount();
-        entity.taxAmount = request.taxAmount();
-        entity.grossAmount = request.grossAmount();
-
-        entity.zugferdPdf = eBillingPdf;
-
+        InvoiceEntity entity = getInvoiceEntity(request, request.invoiceNumber(), eBillingPdf);
         entity.persist();
     }
 

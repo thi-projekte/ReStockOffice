@@ -1,10 +1,11 @@
-package de.restockoffice;
+package de.restockoffice.service;
 
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import de.restockoffice.api.InvoiceRequest;
+import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import io.quarkus.qute.Template;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.io.ByteArrayOutputStream;
@@ -19,15 +20,17 @@ public class PDFGenerator {
     @ConfigProperty(name = "invoice.logo.url")
     String logoUrl;
 
-    public byte[] createPDF(InvoiceRequest request){
+    @ConfigProperty(name = "invoice.icc.profile.path", defaultValue = "/sRGB2014.icc")
+    String profilePath;
+
+    public byte[] createPDF(InvoiceRequest request) {
         String html = invoiceFile
                 .data("invoice", request)
                 .data("logoUrl", logoUrl)
                 .render();
 
-        try(ByteArrayOutputStream os = new ByteArrayOutputStream()){
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
             PdfRendererBuilder builder = new PdfRendererBuilder();
-            // builder.useFastMode();
 
             builder.usePdfAConformance(PdfRendererBuilder.PdfAConformance.PDFA_3_U);
 
@@ -36,26 +39,22 @@ public class PDFGenerator {
             builder.useFont(() -> getClass().getResourceAsStream("/fonts/Arimo-Bold.ttf"),
                     "Arial", 700, FontStyle.NORMAL, true);
 
-            String profilePath = "/sRGB2014.icc";
-            InputStream is = getClass().getResourceAsStream(profilePath);
+            try (InputStream is = getClass().getResourceAsStream(profilePath)) {
+                if (is == null) {
+                    throw new RuntimeException("Kritischer Fehler: Die Datei " + profilePath +
+                            " wurde nicht gefunden.");
+                }
 
-            if (is == null) {
-                // Dieser Block hilft uns beim Debuggen
-                throw new RuntimeException("Kritischer Fehler: Die Datei " + profilePath +
-                        " wurde im resources-Ordner nicht gefunden. " +
-                        "Stellen Sie sicher, dass sie in src/main/resources/ liegt.");
+                byte[] profileData = is.readAllBytes();
+                builder.useColorProfile(profileData);
+
+                builder.withHtmlContent(html, "/");
+                builder.toStream(os);
+                builder.run();
             }
 
-            byte[] profileData = is.readAllBytes();
-            builder.useColorProfile(profileData);
-
-            builder.withHtmlContent(html, "/");
-            builder.toStream(os);
-            builder.run();
-
             return os.toByteArray();
-
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Fehler beim Generieren des PDFs: " + e.getMessage(), e);
         }
     }

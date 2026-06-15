@@ -1,6 +1,6 @@
 package de.restockoffice.api;
 
-import static security.SecurityConstants.*;
+import static de.restockoffice.security.SecurityConstants.*;
 
 import de.restockoffice.domain.Customer;
 import de.restockoffice.domain.Restocker;
