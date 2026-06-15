@@ -19,7 +19,8 @@ import java.util.Map;
 @ApplicationScoped
 public class ResendMailClient {
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    @Inject
+    HttpClient httpClient;
 
     @Inject
     MailSettings mailSettings;

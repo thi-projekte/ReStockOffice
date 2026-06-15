@@ -9,7 +9,6 @@ import jakarta.ws.rs.WebApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 
 @ApplicationScoped
@@ -26,7 +25,7 @@ public class InvoiceService {
     ResendMailClient mailClient;
 
     @Transactional
-    public String createAndPersistInvoice(InvoiceRequest request) throws IOException {
+    public String createAndPersistInvoice(InvoiceRequest request) {
         int year = java.time.Year.now().getValue();
         Long nextVal = (Long) InvoiceEntity.getEntityManager()
                 .createNativeQuery("SELECT nextval('invoice_num_seq')")
@@ -81,7 +80,7 @@ public class InvoiceService {
     }
 
     @Transactional
-    public void sendInvoiceViaEmail(InvoiceRequest request) throws IOException {
+    public void sendInvoiceViaEmail(InvoiceRequest request) {
         log.info("Fetching invoice {} from DB to send email to {}", request.invoiceNumber(), request.recipientEmail());
 
         InvoiceEntity entity = InvoiceEntity
@@ -99,7 +98,7 @@ public class InvoiceService {
     }
 
     @Transactional
-    public void processInvoice(InvoiceRequest request) throws IOException {
+    public void processInvoice(InvoiceRequest request) {
         // PDF Generieren
         byte[] rawPdf = pdfGenerator.createPDF(request);
 

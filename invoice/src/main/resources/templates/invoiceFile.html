@@ -103,20 +103,20 @@
         <tr>
             <td>
                 <span class="footer-label">Sitz der Gesellschaft</span>
-                {name}<br/>
-                {street}<br/>
-                {zip} {city}
+                {NAME}<br/>
+                {STREET}<br/>
+                {ZIP} {CITY}
             </td>
             <td>
                 <span class="footer-label">Kontakt</span>
-                E-Mail: {email}<br/>
-                Web: {web}
+                E-Mail: {EMAIL}<br/>
+                Web: {WEB}
             </td>
             <td>
                 <span class="footer-label">Bankverbindung</span>
-                {bankName}<br/>
-                IBAN: {iban}<br/>
-                BIC: {bic}
+                {BANK_NAME}<br/>
+                IBAN: {IBAN}<br/>
+                BIC: {BIC}
             </td>
         </tr>
     </table>
@@ -128,10 +128,10 @@
             <img src="{logoUrl}" class="logo" alt="Logo" />
         </td>
         <td class="header-company-data">
-            <strong>{name}</strong><br/>
-            {street} | {zip} {city}<br/>
-            Geschäftsführer: {ceo}<br/>
-            {hrb}
+            <strong>{NAME}</strong><br/>
+            {STREET} | {ZIP} {CITY}<br/>
+            Geschäftsführer: {CEO}<br/>
+            {HRB}
         </td>
     </tr>
 </table>
@@ -139,7 +139,7 @@
 <table id="address-block">
     <tr>
         <td class="recipient">
-            <div class="sender-line">{fullAddressLine}</div>
+            <div class="sender-line">{FULL_ADDRESS_LINE}</div>
             <div style="margin-top: 15px;">
                 <strong>{invoice.recipientName}</strong><br/>
                 {invoice.recipientStreet}<br/>
