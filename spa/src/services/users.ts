@@ -466,13 +466,13 @@ function createUserData(user: SaveUserPayload, isCreateRequest: boolean): Record
 
   if (hasIban) {
     userData.iban = stringifyUserValue(iban, "");
+    userData.IBAN = stringifyUserValue(iban, "");
   }
-  delete userData.IBAN;
 
   if (hasBic) {
     userData.bic = stringifyUserValue(bic, "");
+    userData.BIC = stringifyUserValue(bic, "");
   }
-  delete userData.BIC;
 
   delete userData.kind;
   delete userData.profilePictureFile;
