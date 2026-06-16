@@ -508,6 +508,18 @@ public class UserResource {
         if (!Objects.equals(entity.country, updated.country)) { entity.country = updated.country; changed = true; }
         if (!Objects.equals(entity.phoneNumber, updated.phoneNumber)) { entity.phoneNumber = updated.phoneNumber; changed = true; }
         if (!Objects.equals(entity.birthDate, updated.birthDate)) { entity.birthDate = updated.birthDate; changed = true; }
+        if (updated.iban != null && !Objects.equals(entity.iban, updated.iban)) {
+            entity.iban = updated.iban;
+            changed = true;
+        }
+        if (updated.bic != null && !Objects.equals(entity.bic, updated.bic)) {
+            entity.bic = updated.bic;
+            changed = true;
+        }
+        if (updated.accountHolder != null && !Objects.equals(entity.accountHolder, updated.accountHolder)) {
+            entity.accountHolder = updated.accountHolder;
+            changed = true;
+        }
         return changed;
     }
 
