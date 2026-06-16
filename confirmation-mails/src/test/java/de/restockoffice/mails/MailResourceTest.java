@@ -103,42 +103,6 @@ class MailResourceTest {
     }
 
     @Test
-    void previewDeliveryAnnouncementRendersTodayArrivalText() {
-        String payload = """
-                {
-                  "recipientEmail": "max.mustermann@example.com",
-                  "customerName": "Max Mustermann",
-                  "daysUntilDelivery": "0",
-                  "deliveryDay": "Montag",
-                  "deliveryDate": "04.05.2026",
-                  "deliveryWindow": "08:30 bis 10:00 Uhr",
-                  "orderNumber": "RSO-2026-004281",
-                  "supplierName": "Sabrina Keller",
-                  "deliveryLocation": "ReStockOffice GmbH\\n3. OG, Office West",
-                  "deliveryInstructions": "Bitte am Sideboard abstellen.",
-                  "deliveryDetailsUrl": "https://restockoffice.example.com/account/deliveries/RSO-2026-004281",
-                  "deliveryItems": [
-                    {
-                      "name": "Kopierpapier A4 Premium",
-                      "articleNumber": "RS-10023",
-                      "quantity": "4 Pack"
-                    }
-                  ]
-                }
-                """;
-
-        given().contentType(ContentType.JSON)
-                .body(payload)
-                .when()
-                .post("/emails/delivery-announcement/preview")
-                .then()
-                .statusCode(200)
-                .contentType(containsString("text/html"))
-                .body(containsString("Deine Lieferung kommt heute an."))
-                .body(not(containsString("Deine Lieferung kommt in 0 Tagen.")));
-    }
-
-    @Test
     void sendAboConfirmationUsesInlineLogoCid() {
         String payload = """
                 {

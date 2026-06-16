@@ -16,8 +16,7 @@ public class ProcessEngineApiSecurityConfiguration {
     http
         .securityMatcher(
             "/api/abo-confirmation-process/**",
-            "/api/restocker-tour-process/**",
-            "/engine-rest/process-definition/key/*/start")
+            "/api/restocker-tour-process/**")
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
 

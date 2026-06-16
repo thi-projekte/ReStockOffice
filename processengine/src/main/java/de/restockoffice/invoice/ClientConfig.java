@@ -11,14 +11,17 @@ import org.springframework.web.client.RestClient;
 public class ClientConfig {
 
     @Bean
-    public RestClient.Builder oauth2RestClientBuilder(
-            OAuth2AuthorizedClientManager authorizedClientManager) {
+    public RestClient invoiceClient(
+            @Value("${invoiceservice.base-url}") String invoiceUrl,
+            OAuth2AuthorizedClientManager authorizedClientManager,
+            RestClient.Builder builder) {
 
-        return RestClient.builder()
+        return builder.clone()
+                .baseUrl(invoiceUrl)
                 .requestInterceptor((request, body, env) -> {
                     OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
                             .withClientRegistrationId("keycloak")
-                            .principal("restockoffice-backend")
+                            .principal("CamundaTimerService")
                             .build();
 
                     var authorizedClient = authorizedClientManager.authorize(authRequest);
@@ -26,14 +29,7 @@ public class ClientConfig {
                         request.getHeaders().setBearerAuth(authorizedClient.getAccessToken().getTokenValue());
                     }
                     return env.execute(request, body);
-                });
-    }
-
-    @Bean
-    public RestClient invoiceClient(
-            @Value("${invoiceservice.base-url}") String invoiceUrl,
-            RestClient.Builder oauth2RestClientBuilder) {
-
-        return oauth2RestClientBuilder.clone().baseUrl(invoiceUrl).build();
+                })
+                .build();
     }
 }

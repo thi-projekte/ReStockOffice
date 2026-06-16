@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.cibseven.bpm.engine.delegate.JavaDelegate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,11 +17,6 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
     private static final Logger log = LoggerFactory.getLogger(FetchDeliveriesForAnnouncementDelegate.class);
     //necessary for tests
     private RestTemplate restTemplate = new RestTemplate();
-
-    @Autowired(required = false)
-    void setRestTemplate(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
 
     @Value("${deliveriesservice.base-url:https://restocker-deliveries.restockoffice.de}")
     private String deliveriesServiceBaseUrl;

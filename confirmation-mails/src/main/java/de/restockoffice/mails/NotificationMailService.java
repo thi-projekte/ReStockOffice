@@ -90,7 +90,6 @@ public class NotificationMailService {
         values.put(LOGO_URL_KEY, escapeHtml(logoUrl));
         values.put(CUSTOMER_NAME_KEY, escapeHtml(request.customerName()));
         values.put("daysUntilDelivery", escapeHtml(request.daysUntilDelivery()));
-        values.put("deliveryArrivalText", escapeHtml(deliveryArrivalText(request.daysUntilDelivery())));
         values.put("deliveryDay", escapeHtml(request.deliveryDay()));
         values.put(DELIVERY_DATE_KEY, escapeHtml(request.deliveryDate()));
         values.put(DELIVERY_WINDOW_KEY, escapeHtml(request.deliveryWindow()));
@@ -290,17 +289,6 @@ public class NotificationMailService {
         }
 
         return html.toString();
-    }
-
-    private String deliveryArrivalText(String daysUntilDelivery) {
-        String normalizedDays = daysUntilDelivery == null ? "" : daysUntilDelivery.trim();
-        if ("0".equals(normalizedDays)) {
-            return "Deine Lieferung kommt heute an.";
-        }
-        if ("1".equals(normalizedDays)) {
-            return "Deine Lieferung kommt morgen an.";
-        }
-        return "Deine Lieferung kommt in " + normalizedDays + " Tagen.";
     }
 
 

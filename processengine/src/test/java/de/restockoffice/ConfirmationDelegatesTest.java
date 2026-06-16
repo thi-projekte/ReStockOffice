@@ -8,7 +8,6 @@ import de.restockoffice.abo.SendAboConfirmationDelegate;
 import de.restockoffice.delivery.SendDeliveryConfirmationDelegate;
 import de.restockoffice.mail.MailDataEnrichmentService;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -89,27 +86,6 @@ class ConfirmationDelegatesTest {
                         .containsEntry("name", "Kaffee")
                         .containsEntry("articleNumber", "A-1")
                         .containsEntry("quantity", "2"));
-    }
-
-    @Test
-    void deliveryConfirmationEnrichmentUsesDeliveredDateAndResolvedRestockerName() {
-        Map<String, Object> variables = new java.util.HashMap<>();
-        variables.put("deliveredDeliveryId", "delivery-1");
-        variables.put("deliveryDateLabel", "2026-06-16");
-        variables.put("supplierName", "max.restocker");
-        MailDataEnrichmentService service = new MailDataEnrichmentService();
-        ReflectionTestUtils.setField(service, "deliveriesServiceBaseUrl", "http://deliveries.test");
-        ReflectionTestUtils.setField(service, "usersServiceBaseUrl", "http://users.test");
-        ReflectionTestUtils.setField(service, "ordersServiceBaseUrl", "");
-        ReflectionTestUtils.setField(service, "articlesServiceBaseUrl", "");
-        ReflectionTestUtils.setField(service, "restTemplate", new EnrichmentRestTemplate());
-
-        service.enrichDeliveryConfirmation(execution(variables));
-
-        assertThat(variables)
-                .containsEntry("deliveryDate", "15.06.2026")
-                .containsEntry("deliveryDateLabel", "15.06.2026")
-                .containsEntry("supplierName", "Sabrina Keller");
     }
 
     @Test
@@ -229,38 +205,6 @@ class ConfirmationDelegatesTest {
             postUrl = url;
             postBody = request;
             return ResponseEntity.ok().build();
-        }
-    }
-
-    private static class EnrichmentRestTemplate extends RestTemplate {
-
-        @Override
-        public <T> ResponseEntity<T> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) {
-            if (url.contains("/api/deliveries/")) {
-                return ResponseEntity.ok(instance(responseType, Map.of(
-                        "deliveredAt", "2026-06-15T18:30:00",
-                        "deliveryDate", "2026-06-16",
-                        "restockerName", "max.restocker"
-                )));
-            }
-            if (url.contains("/restocker/display-name")) {
-                return ResponseEntity.ok(instance(responseType, Map.of("displayName", "Sabrina Keller")));
-            }
-            return ResponseEntity.ok().build();
-        }
-
-        private static <T> T instance(Class<T> responseType, Map<String, Object> values) {
-            try {
-                T instance = responseType.getDeclaredConstructor().newInstance();
-                for (Map.Entry<String, Object> entry : values.entrySet()) {
-                    Field field = responseType.getDeclaredField(entry.getKey());
-                    field.setAccessible(true);
-                    field.set(instance, entry.getValue());
-                }
-                return instance;
-            } catch (ReflectiveOperationException exception) {
-                throw new IllegalStateException("Could not create test response for " + responseType.getName(), exception);
-            }
         }
     }
 }
