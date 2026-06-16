@@ -124,7 +124,13 @@ public class MailDataEnrichmentService {
         EnrichmentContext context = loadContext(execution);
         enrichCommonVariables(execution, context);
 
-        execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
+        LocalDate deliveredDate = resolveDeliveredDate(context);
+        execution.setVariable("deliveryDate", formatDate(deliveredDate));
+        execution.setVariable("deliveryDateLabel", formatDate(deliveredDate));
+        execution.setVariable("supplierName", firstNonBlank(
+                resolveRestockerDisplayName(execution, context.delivery()),
+                UNASSIGNED_RESTOCKER_LABEL
+        ));
         setDeliveryItemsVariable(execution, context.delivery());
         setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
@@ -442,6 +448,11 @@ public class MailDataEnrichmentService {
         }
 
         return firstDeliveryDate;
+    }
+
+    private LocalDate resolveDeliveredDate(EnrichmentContext context) {
+        LocalDate deliveredDate = parseDate(deliveryDeliveredAt(context.delivery()));
+        return deliveredDate != null ? deliveredDate : resolveDeliveryDate(context);
     }
 
     private DayOfWeek resolveDeliveryDay(UserDto user, OrderDto order, LocalDate anchorDate) {
@@ -822,6 +833,10 @@ public class MailDataEnrichmentService {
         return delivery != null ? delivery.deliveryDate : null;
     }
 
+    private String deliveryDeliveredAt(DeliveryDetailDto delivery) {
+        return delivery != null ? delivery.deliveredAt : null;
+    }
+
     private String deliveryDeliveryTime(DeliveryDetailDto delivery) {
         return delivery != null ? delivery.deliveryTime : null;
     }
@@ -1020,6 +1035,7 @@ public class MailDataEnrichmentService {
         String deliveryDay;
         String deliveryTime;
         String deliveryDate;
+        String deliveredAt;
         String restockerName;
         List<DeliveryItemDetailDto> items;
     }

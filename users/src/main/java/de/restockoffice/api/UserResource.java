@@ -162,8 +162,8 @@ public class UserResource {
         }
 
         return new RestockerDisplayNameResponse(firstNonBlank(
-                keycloakDisplayName(keycloakUser),
                 restocker != null ? restocker.accountHolder : null,
+                keycloakDisplayName(keycloakUser),
                 identifier
         ));
     }
