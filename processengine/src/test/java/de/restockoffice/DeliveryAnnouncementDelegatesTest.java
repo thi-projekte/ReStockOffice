@@ -117,7 +117,7 @@ class DeliveryAnnouncementDelegatesTest {
     }
 
     @Test
-    void deliveryAnnouncementEnrichmentKeepsRequiredMailFieldsNonBlankWithoutHintsOrRestocker() {
+    void deliveryAnnouncementEnrichmentUsesUnassignedFallbackWithoutRestocker() {
         Map<String, Object> variables = new java.util.HashMap<>();
         MailDataEnrichmentService service = new MailDataEnrichmentService();
 
@@ -125,7 +125,7 @@ class DeliveryAnnouncementDelegatesTest {
 
         assertThat(variables)
                 .containsEntry("deliveryInstructions", "Kein Lieferhinweis hinterlegt.")
-                .containsEntry("supplierName", "ReStockOffice");
+                .containsEntry("supplierName", "Noch nicht zugewiesen");
     }
 
     private DelegateExecution execution(Map<String, Object> variables) {

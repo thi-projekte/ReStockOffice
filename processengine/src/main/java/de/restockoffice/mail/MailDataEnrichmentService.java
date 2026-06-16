@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.restockoffice.delivery.DeliveryMonitoringItem;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,9 +46,15 @@ public class MailDataEnrichmentService {
     private static final String VARIABLE_ITEM_ARTICLE_NUMBER = "itemArticleNumber";
     private static final String VARIABLE_ITEM_NAME = "itemName";
     private static final String VARIABLE_ITEM_QUANTITY = "itemQuantity";
+    private static final String UNASSIGNED_RESTOCKER_LABEL = "Noch nicht zugewiesen";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private RestTemplate restTemplate = new RestTemplate();
+
+    @Autowired(required = false)
+    void setRestTemplate(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     @Value("${ordersservice.base-url:https://orders.restockoffice.de}")
     private String ordersServiceBaseUrl;
@@ -104,7 +111,7 @@ public class MailDataEnrichmentService {
         execution.setVariable("deliveryInstructions", deliveryHint);
         execution.setVariable("supplierName", firstNonBlank(
                 resolveRestockerDisplayName(execution, context.delivery()),
-                "ReStockOffice"
+                UNASSIGNED_RESTOCKER_LABEL
         ));
         execution.setVariable("daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
         execution.setVariable("deliveryDay", formatDayName(deliveryDate));
@@ -832,10 +839,34 @@ public class MailDataEnrichmentService {
         String deliveryRestockerName = restockerDisplayName(delivery);
         return firstNonBlank(
                 authenticatedRestockerDisplayName(stringVariable(execution, "authorizationHeader")),
+                loadRestockerDisplayName(currentSupplierName, stringVariable(execution, "authorizationHeader")),
+                loadRestockerDisplayName(deliveryRestockerName, stringVariable(execution, "authorizationHeader")),
                 looksLikeTechnicalIdentifier(currentSupplierName) ? null : currentSupplierName,
                 looksLikeTechnicalIdentifier(deliveryRestockerName) ? null : deliveryRestockerName,
                 deliveryRestockerName
         );
+    }
+
+    private String loadRestockerDisplayName(String identifier, String authorizationHeader) {
+        if (isBlank(identifier)) {
+            return null;
+        }
+
+        try {
+            String url = trimTrailingSlash(usersServiceBaseUrl) + "/restocker/display-name?identifier=" + encode(identifier);
+            ResponseEntity<RestockerDisplayNameDto> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    httpEntity(authorizationHeader),
+                    RestockerDisplayNameDto.class
+            );
+            RestockerDisplayNameDto body = response.getBody();
+            String displayName = body != null ? body.displayName : null;
+            return looksLikeTechnicalIdentifier(displayName) ? null : displayName;
+        } catch (RestClientException exception) {
+            log.warn("Could not enrich mail data with restocker display name for {}", identifier, exception);
+            return null;
+        }
     }
 
     private String authenticatedRestockerDisplayName(String authorizationHeader) {
@@ -1001,5 +1032,11 @@ public class MailDataEnrichmentService {
         String name;
         Integer quantity;
         String unit;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+    public static class RestockerDisplayNameDto {
+        String displayName;
     }
 }
