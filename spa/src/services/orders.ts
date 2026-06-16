@@ -561,7 +561,7 @@ function normalizeRestockerIdentifier(value?: string | null) {
 }
 
 function readTokenClaim(claimName: string) {
-  const tokenParsed = keycloak.tokenParsed as Record<string, unknown> | undefined;
+  const tokenParsed = keycloak.tokenParsed;
   const claimValue = tokenParsed?.[claimName];
 
   return typeof claimValue === "string" ? claimValue.trim() : "";

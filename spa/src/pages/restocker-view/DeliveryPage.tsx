@@ -137,7 +137,14 @@ export function DeliveryPage() {
   const hasTourEndTime = Boolean(tour?.endTime);
   const isTourFinished = hasTourEndTime && allStopsDelivered;
   const shouldShowDoneDialog = allStopsDelivered && (showDoneDialog || hasTourEndTime);
-  const phase = !isTourStarted ? "warehouse" : isTourFinished ? "finished" : "route";
+  let phase = "route";
+
+  if (!isTourStarted) {
+    phase = "warehouse";
+  } else if (isTourFinished) {
+    phase = "finished";
+  }
+
   const currentItemsReady =
     activeDelivery?.items.length > 0 &&
     activeDelivery.items.every((item) => item.delivered);

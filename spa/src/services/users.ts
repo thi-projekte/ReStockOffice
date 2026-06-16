@@ -319,13 +319,15 @@ function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
 
 function normalizeUserRestockOrders(payload: unknown): RestockOrder[] {
   const source = payload as Record<string, unknown>;
-  const rawOrders = Array.isArray(payload)
-    ? payload
-    : Array.isArray(source.restockOrders)
-      ? source.restockOrders
-      : Array.isArray(source.orders)
-        ? source.orders
-        : [];
+  let rawOrders: unknown[] = [];
+
+  if (Array.isArray(payload)) {
+    rawOrders = payload;
+  } else if (Array.isArray(source.restockOrders)) {
+    rawOrders = source.restockOrders;
+  } else if (Array.isArray(source.orders)) {
+    rawOrders = source.orders;
+  }
 
   return rawOrders.map(normalizeRestockOrder);
 }
@@ -499,9 +501,7 @@ function createUserData(
     return removeUndefinedValues({
       ...userData,
       iban,
-      IBAN: iban,
       bic,
-      BIC: bic,
       accountHolder: stringifyUserValue(source.accountHolder, ""),
     });
   }
@@ -514,7 +514,6 @@ function createUserData(
     deliveryDay: source.deliveryDay,
     deliveryTime: source.deliveryTime,
     iban,
-    IBAN: iban,
   });
 }
 

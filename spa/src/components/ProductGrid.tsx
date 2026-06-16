@@ -1,5 +1,5 @@
-import {type KeyboardEvent, type ReactElement} from "react";
-import {useNavigate} from "react-router-dom";
+import {type ReactElement} from "react";
+import {Link} from "react-router-dom";
 import type {Product} from "../types/shop";
 
 interface ProductGridProps {
@@ -31,28 +31,11 @@ interface ProductCardProps {
 }
 
 function ProductCard({product}: Readonly<ProductCardProps>): ReactElement {
-  const navigate = useNavigate();
-
-
-  function openDetails(): void {
-    navigate(`/products/${product.productId}`);
-    window.scrollTo(0, 0);
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLElement>): void {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openDetails();
-    }
-  }
-
   return (
-    <article
-      className="product-card product-card--interactive"
-      role="link"
-      tabIndex={0}
-      onClick={openDetails}
-      onKeyDown={handleKeyDown}
+    <Link
+      className="product-card product-card--link"
+      to={`/products/${product.productId}`}
+      onClick={() => window.scrollTo(0, 0)}
     >
       <img
         className="product-card__image"
@@ -84,6 +67,6 @@ function ProductCard({product}: Readonly<ProductCardProps>): ReactElement {
           </strong>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

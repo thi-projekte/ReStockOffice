@@ -78,6 +78,12 @@ function mapUser(
   };
 }
 
+function refreshTokenOrLogin(): void {
+  void keycloak.updateToken(60).catch(() => {
+    void keycloak.login();
+  });
+}
+
 export function AuthProvider({children}: Readonly<{ children: ReactNode }>): ReactElement {
   const refreshTimerRef = useRef<number | undefined>(undefined);
 
@@ -100,7 +106,7 @@ export function AuthProvider({children}: Readonly<{ children: ReactNode }>): Rea
 
     const profile = await keycloak.loadUserProfile().catch(() => null);
 
-    setUser(mapUser(keycloak.tokenParsed as RestockTokenParsed | undefined, profile));
+    setUser(mapUser(keycloak.tokenParsed, profile));
   }, []);
 
   useEffect(() => {
@@ -134,11 +140,7 @@ export function AuthProvider({children}: Readonly<{ children: ReactNode }>): Rea
         await syncAuthState();
 
         if (keycloak.authenticated) {
-          refreshTimerRef.current = window.setInterval(() => {
-            keycloak.updateToken(60).catch(() => {
-              keycloak.login();
-            });
-          }, 30000);
+          refreshTimerRef.current = globalThis.setInterval(refreshTokenOrLogin, 30000);
         }
       } catch {
         if (isMounted) {
@@ -154,20 +156,20 @@ export function AuthProvider({children}: Readonly<{ children: ReactNode }>): Rea
     return () => {
       isMounted = false;
       if (refreshTimerRef.current) {
-        window.clearInterval(refreshTimerRef.current);
+        globalThis.clearInterval(refreshTimerRef.current);
       }
     };
   }, [syncAuthState]);
 
   const login = useCallback(async () => {
     await keycloak.login({
-      redirectUri: window.location.origin,
+      redirectUri: globalThis.location.origin,
     });
   }, []);
 
   const logout = useCallback(async () => {
     await keycloak.logout({
-      redirectUri: `${window.location.origin}/login`,
+      redirectUri: `${globalThis.location.origin}/login`,
     });
   }, []);
 

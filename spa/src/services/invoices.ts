@@ -53,10 +53,35 @@ function createHeaders(token: string): Record<string, string> {
   };
 }
 
+function stringifyInvoiceValue(value: unknown, fallback = ""): string {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return value.toString();
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return fallback;
+  }
+}
+
 function normalizeInvoice(rawInvoice: unknown): InvoiceSummary {
   const source = rawInvoice as Record<string, unknown>;
 
-  const issuedAt = String(source.issueDate ?? "");
+  const issuedAt = stringifyInvoiceValue(source.issueDate);
+  const invoiceNumber = stringifyInvoiceValue(source.invoiceNumber);
   const issuedDate = new Date(issuedAt);
   const monthLabel = new Intl.DateTimeFormat("de-DE", {
     month: "long",
@@ -65,12 +90,12 @@ function normalizeInvoice(rawInvoice: unknown): InvoiceSummary {
   const capitalizedMonthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
   return {
-    invoiceId: String(source.invoiceNumber ?? ""),
+    invoiceId: invoiceNumber,
     issuedAt,
     totalAmount: Number(source.grossAmount ?? 0),
     currency: "EUR",
     monthLabel: capitalizedMonthLabel,
-    title: `Rechnung ${source.invoiceNumber ?? ""}`,
+    title: `Rechnung ${invoiceNumber}`,
   };
 }
 

@@ -29,7 +29,7 @@ export function SubscriptionDialog({
   const [intervalCount, setIntervalCount] = useState(1);
   const [isClosingToHeader, setIsClosingToHeader] = useState(false);
   const overlayRef = useRef<HTMLButtonElement | null>(null);
-  const modalRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDialogElement | null>(null);
 
   useEffect(() => {
     if (!open || !product) {
@@ -46,7 +46,8 @@ export function SubscriptionDialog({
   }
 
   const hasInvalidQuantity = quantity < 1 || Number.isNaN(quantity);
-  const canConfirmChanges = isProfileComplete && !hasInvalidQuantity;
+  const isProfileIncomplete = !isProfileComplete;
+  const canConfirmChanges = !isProfileIncomplete && !hasInvalidQuantity;
 
   function getSubscriptionTargetElement(): HTMLElement | null {
     const isMobile = globalThis.matchMedia("(max-width: 720px)").matches;
@@ -124,10 +125,10 @@ export function SubscriptionDialog({
         disabled={isClosingToHeader}
       />
 
-      <section
+      <dialog
         ref={modalRef}
         className="subscription-modal"
-        role="dialog"
+        open
         aria-modal="true"
         aria-labelledby="subscription-dialog-title"
       >
@@ -159,7 +160,7 @@ export function SubscriptionDialog({
             </div>
           ) : null}
 
-          {!isProfileComplete ? (
+          {isProfileIncomplete ? (
             <div className="subscription-modal__warning subscription-modal__warning--locked">
               Dein Profil ist noch nicht vollständig. Solange Pflichtfelder fehlen, kannst du
               dein Abo nicht ändern.
@@ -178,12 +179,13 @@ export function SubscriptionDialog({
             />
           </label>
 
-          <label className="subscription-field">
-            <div className="subscription-field__head">
+          <div className="subscription-field">
+            <label className="subscription-field__head" htmlFor="subscription-interval">
               <span>Intervall</span>
               <strong>{formatInterval(intervalCount)}</strong>
-            </div>
+            </label>
             <input
+              id="subscription-interval"
               className="subscription-slider"
               type="range"
               min={1}
@@ -196,7 +198,7 @@ export function SubscriptionDialog({
               <span>1 Woche</span>
               <span>12 Wochen</span>
             </div>
-          </label>
+          </div>
 
           <div className="subscription-modal__summary">
             Alle {intervalCount} Wochen werden {quantity}x {product.name} zugeliefert.
@@ -223,7 +225,7 @@ export function SubscriptionDialog({
             Änderungen übernehmen
           </button>
         </div>
-      </section>
+      </dialog>
     </>
   );
 }

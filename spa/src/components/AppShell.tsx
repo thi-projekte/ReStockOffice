@@ -1,4 +1,4 @@
-import {type ReactElement, type ReactNode, useEffect, useRef, useState} from "react";
+﻿import {type FocusEvent, type KeyboardEvent, type ReactElement, type ReactNode, useEffect, useRef, useState} from "react";
 import {Link, NavLink, useLocation, useNavigate} from "react-router-dom";
 import {
   FaBars,
@@ -222,9 +222,13 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
     setSelectedBrand(value);
   }
 
+  function closeProfileMenu(): void {
+    setIsProfileMenuOpen(false);
+  }
+
   function openProfileMenu(): void {
     if (profileMenuCloseTimerRef.current) {
-      window.clearTimeout(profileMenuCloseTimerRef.current);
+      globalThis.clearTimeout(profileMenuCloseTimerRef.current);
       profileMenuCloseTimerRef.current = null;
     }
 
@@ -233,13 +237,19 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
 
   function closeProfileMenuWithDelay(): void {
     if (profileMenuCloseTimerRef.current) {
-      window.clearTimeout(profileMenuCloseTimerRef.current);
+      globalThis.clearTimeout(profileMenuCloseTimerRef.current);
     }
 
-    profileMenuCloseTimerRef.current = window.setTimeout(() => {
+    profileMenuCloseTimerRef.current = globalThis.setTimeout(() => {
       setIsProfileMenuOpen(false);
       profileMenuCloseTimerRef.current = null;
     }, 180);
+  }
+
+  function handleProfileMenuBlur(event: FocusEvent<HTMLElement>): void {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      closeProfileMenu();
+    }
   }
 
   function handleSearchToggle(): void {
@@ -310,7 +320,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
   useEffect(() => {
     return () => {
       if (profileMenuCloseTimerRef.current) {
-        window.clearTimeout(profileMenuCloseTimerRef.current);
+        globalThis.clearTimeout(profileMenuCloseTimerRef.current);
       }
     };
   }, []);
@@ -338,14 +348,14 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
   }, [query]);
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("restockoffice-theme");
+    const savedTheme = globalThis.localStorage.getItem("restockoffice-theme");
 
     if (savedTheme === "light" || savedTheme === "dark") {
       setTheme(savedTheme);
       return;
     }
 
-    const systemPrefersDark = window.matchMedia(
+    const systemPrefersDark = globalThis.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
     setTheme(systemPrefersDark ? "dark" : "light");
@@ -383,6 +393,135 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
     },
   ];
 
+  function openProductsPage(): void {
+    if (location.pathname !== "/products") {
+      navigate("/products");
+    }
+  }
+
+  function handleHeaderAssistOpen(isHeader: boolean): void {
+    if (isHeader) {
+      setIsHeaderAssistOpen(true);
+    }
+  }
+
+  function handleSearchInputChange(value: string, isHeader: boolean): void {
+    handleQueryChange(value);
+    handleHeaderAssistOpen(isHeader);
+  }
+
+  function handleSearchInputKeyDown(
+    event: KeyboardEvent<HTMLInputElement>,
+    isHeader: boolean,
+  ): void {
+    if (event.key === "Escape" && isHeader) {
+      setIsHeaderAssistOpen(false);
+      return;
+    }
+
+    if (event.key === "Enter" && queryLength >= 2) {
+      openProductsPage();
+    }
+  }
+
+  function handleQuickArticleTypeSelect(articleType: string): void {
+    setSelectedArticleType(articleType);
+    setSelectedBrand("");
+    setIsHeaderAssistOpen(false);
+    openProductsPage();
+  }
+
+  function handleQuickBrandSelect(brand: string): void {
+    setSelectedBrand(brand);
+    setIsHeaderAssistOpen(false);
+    openProductsPage();
+  }
+
+  function renderQuickSearchAssist(
+    isHeader: boolean,
+    showBrandColumn: boolean,
+  ): ReactElement {
+    return (
+      <div
+        className={`search-quick-table ${isHeader ? "search-quick-table--floating" : ""} ${showBrandColumn ? "search-quick-table--two-cols" : "search-quick-table--single-col"}`}
+        role="group"
+        aria-label="Schnellauswahl"
+      >
+        <div className="search-quick-column">
+          {quickArticleTypeMatches.map((articleType) => (
+            <button
+              key={articleType}
+              className={`search-quick-row ${activeAssistArticleType === articleType ? "active" : ""}`}
+              type="button"
+              onClick={() => handleQuickArticleTypeSelect(articleType)}
+            >
+              <span>{articleType}</span>
+              {hasBrands(articleType) ? (
+                <FaChevronRight
+                  className="search-quick-row__arrow"
+                  aria-hidden="true"
+                />
+              ) : null}
+            </button>
+          ))}
+        </div>
+
+        {showBrandColumn ? (
+          <div className="search-quick-column">
+            {quickBrandMatches.map((brand) => (
+              <button
+                key={brand}
+                className={`search-quick-row ${selectedBrand === brand ? "active" : ""}`}
+                type="button"
+                onClick={() => handleQuickBrandSelect(brand)}
+              >
+                <span>{brand}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  function renderAdvancedSearch(isHeader: boolean): ReactElement | null {
+    if (!isAdvancedSearch || isHeader) {
+      return null;
+    }
+
+    return (
+      <div className="search-controls__advanced">
+        <select
+          className="search-select"
+          value={selectedArticleType}
+          onChange={(event) => handleArticleTypeChange(event.target.value)}
+          aria-label="Kategorie auswÃ¤hlen"
+        >
+          <option value="">Alle Kategorien</option>
+          {articleTypeOptions.map((articleType) => (
+            <option key={articleType} value={articleType}>
+              {articleType}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="search-select"
+          value={selectedBrand}
+          onChange={(event) => handleBrandChange(event.target.value)}
+          aria-label="Unterkategorie auswÃ¤hlen"
+        >
+          <option value="">Alle Marken</option>
+          {brandOptions.map((brand) => (
+            <option key={brand} value={brand}>
+              {brand}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
   function renderSearchControls(source: "header" | "page"): ReactElement {
     const isHeader = source === "header";
     const showToggle = !isHeader;
@@ -402,43 +541,16 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
               type="search"
               placeholder="Artikel oder Kategorie suchen"
               value={query}
-              onChange={(event) => {
-                handleQueryChange(event.target.value);
-
-                if (isHeader) {
-                  setIsHeaderAssistOpen(true);
-                }
-              }}
-              onFocus={() => {
-                if (isHeader) {
-                  setIsHeaderAssistOpen(true);
-                }
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Escape" && isHeader) {
-                  setIsHeaderAssistOpen(false);
-                  return;
-                }
-
-                if (
-                  event.key === "Enter" &&
-                  queryLength >= 2 &&
-                  location.pathname !== "/products"
-                ) {
-                  navigate("/products");
-                }
-              }}
+              onChange={(event) => handleSearchInputChange(event.target.value, isHeader)}
+              onFocus={() => handleHeaderAssistOpen(isHeader)}
+              onKeyDown={(event) => handleSearchInputKeyDown(event, isHeader)}
               aria-label="Artikel oder Kategorie suchen"
             />
 
             <button
               className="search-inline-button"
               type="button"
-              onClick={() => {
-                if (location.pathname !== "/products") {
-                  navigate("/products");
-                }
-              }}
+              onClick={openProductsPage}
               aria-label="Suche starten"
               title="Suche starten"
             >
@@ -468,95 +580,383 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
           ) : null}
         </div>
 
-        {showQuickAssist ? (
-          <div
-            className={`search-quick-table ${isHeader ? "search-quick-table--floating" : ""} ${showBrandColumn ? "search-quick-table--two-cols" : "search-quick-table--single-col"}`}
-            role="listbox"
-            aria-label="Schnellauswahl"
-          >
-            <div className="search-quick-column">
-              {quickArticleTypeMatches.map((articleType) => (
-                <button
-                  key={articleType}
-                  className={`search-quick-row ${activeAssistArticleType === articleType ? "active" : ""}`}
-                  type="button"
-                  onClick={() => {
-                    setSelectedArticleType(articleType);
-                    setSelectedBrand("");
-                    setIsHeaderAssistOpen(false);
+        {showQuickAssist ? renderQuickSearchAssist(isHeader, showBrandColumn) : null}
 
-                    if (location.pathname !== "/products") {
-                      navigate("/products");
-                    }
-                  }}
-                >
-                  <span>{articleType}</span>
-                  {hasBrands(articleType) ? (
-                    <FaChevronRight
-                      className="search-quick-row__arrow"
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                </button>
-              ))}
-            </div>
-
-            {showBrandColumn ? (
-              <div className="search-quick-column">
-                {quickBrandMatches.map((brand) => (
-                  <button
-                    key={brand}
-                    className={`search-quick-row ${selectedBrand === brand ? "active" : ""}`}
-                    type="button"
-                    onClick={() => {
-                      setSelectedBrand(brand);
-                      setIsHeaderAssistOpen(false);
-
-                      if (location.pathname !== "/products") {
-                        navigate("/products");
-                      }
-                    }}
-                  >
-                    <span>{brand}</span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {isAdvancedSearch && !isHeader ? (
-          <div className="search-controls__advanced">
-            <select
-              className="search-select"
-              value={selectedArticleType}
-              onChange={(event) => handleArticleTypeChange(event.target.value)}
-              aria-label="Kategorie auswählen"
-            >
-              <option value="">Alle Kategorien</option>
-              {articleTypeOptions.map((articleType) => (
-                <option key={articleType} value={articleType}>
-                  {articleType}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="search-select"
-              value={selectedBrand}
-              onChange={(event) => handleBrandChange(event.target.value)}
-              aria-label="Unterkategorie auswählen"
-            >
-              <option value="">Alle Marken</option>
-              {brandOptions.map((brand) => (
-                <option key={brand} value={brand}>
-                  {brand}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
+        {renderAdvancedSearch(isHeader)}
       </div>
+    );
+  }
+
+  async function handleConfirmSubscription({
+    quantity,
+    intervalCount,
+  }: Readonly<{ quantity: number; intervalCount: number }>): Promise<void> {
+    if (!selectedProduct) {
+      return;
+    }
+
+    if (!canModifySubscription) {
+      showIncompleteProfileWarning();
+      return;
+    }
+
+    if (isSavingSubscription) {
+      return;
+    }
+
+    setIsSavingSubscription(true);
+
+    try {
+      const action = await subscriptionCart.addOrUpdateItem({
+        product: selectedProduct,
+        quantity,
+        intervalCount,
+      });
+
+      toast.success(
+        action === "updated"
+          ? `${selectedProduct.name} wurde im Abo aktualisiert`
+          : `${selectedProduct.name} wurde zum Abo hinzugefÃ¼gt`,
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Das Abo konnte nicht gespeichert werden.",
+      );
+    } finally {
+      setIsSavingSubscription(false);
+    }
+  }
+
+  function renderProfileMenu(): ReactElement {
+    return (
+      <nav
+        className="header-profile-menu"
+        aria-label="Kontomenu"
+        onMouseEnter={openProfileMenu}
+        onMouseLeave={closeProfileMenuWithDelay}
+        onFocus={openProfileMenu}
+        onBlur={handleProfileMenuBlur}
+      >
+        <NavLink
+          className={`button button--ghost nav-btn ${profilePictureUrl ? "header-profile-button" : ""}`.trim()}
+          to="/account"
+          title="Konto"
+          aria-label="Konto"
+        >
+          {profilePictureUrl ? (
+            <img
+              className="header-profile-avatar"
+              src={profilePictureUrl}
+              alt="Profilbild"
+              onError={() => setProfilePictureUrl(undefined)}
+            />
+          ) : (
+            <FaUser/>
+          )}
+        </NavLink>
+
+        {isProfileMenuOpen ? (
+          <section
+            className="header-profile-popover"
+            aria-label="Kontobereiche"
+          >
+            <Link
+              className="header-profile-popover__link"
+              to="/account#profile"
+              onClick={closeProfileMenu}
+            >
+              <FaUser/>
+              <span>Profil</span>
+            </Link>
+
+            <Link
+              className="header-profile-popover__link"
+              to="/account#settings"
+              onClick={closeProfileMenu}
+            >
+              <FaPaintBrush/>
+              <span>Darstellung</span>
+            </Link>
+
+            <Link
+              className="header-profile-popover__link"
+              to="/account#finance"
+              onClick={closeProfileMenu}
+            >
+              <FaFileInvoiceDollar/>
+              <span>Finanzen</span>
+            </Link>
+
+            <Link
+              className="header-profile-popover__link"
+              to="/account#security"
+              onClick={closeProfileMenu}
+            >
+              <FaShieldAlt/>
+              <span>Sicherheit</span>
+            </Link>
+
+            <button
+              className="header-profile-popover__link header-profile-popover__link--danger"
+              type="button"
+              onClick={handleLogout}
+            >
+              <FaSignOutAlt/>
+              <span>Abmelden</span>
+            </button>
+          </section>
+        ) : null}
+      </nav>
+    );
+  }
+
+  function renderHeaderActions(): ReactElement | null {
+    if (!isLoggedIn) {
+      return null;
+    }
+
+    return (
+      <>
+        {/* Startseite: Unterschiedliche Seiten für Customer bzw. Restocker  */}
+        <NavLink
+          className={`button button--ghost nav-btn ${isHomeActive ? "active" : ""}`}
+          to={isRestocker ? "/restocker" : "/"}
+          title="Startseite"
+        >
+          <FaHome/>
+        </NavLink>
+
+        {/* Produkte: Nur Customer  */}
+        {!isRestocker && (
+          <NavLink
+            className="button button--ghost nav-btn"
+            to="/products"
+            title="Alle Produkte"
+          >
+            <FaArchive/>
+          </NavLink>
+        )}
+
+        {/* Subscription: Nur für Customer */}
+        {!isRestocker && (
+          <NavLink
+            className="button button--ghost nav-btn"
+            to="/subscription"
+            title="Abo-Übersicht"
+            aria-label="Abo-Übersicht"
+          >
+            <FaCalendarAlt/>
+          </NavLink>
+        )}
+
+        {/* Aufträge: Nur für Restocker */}
+        {isRestocker && (
+          <NavLink
+            className="button button--ghost nav-btn"
+            to="/restocker-orders"
+            title="Offene Aufträge"
+          >
+            <FaClipboardList/>
+          </NavLink>
+        )}
+
+        {isRestocker && (
+          <NavLink
+            className="button button--ghost nav-btn"
+            to="/restocker-my-orders"
+            title="Meine Aufträge"
+          >
+            <FaCalendarAlt/>
+          </NavLink>
+        )}
+
+        {/* Hamburger immer sichtbar */}
+        <button
+          className={`button button--ghost hamburger-btn ${isRestocker ? "hamburger-btn--restocker" : ""}`.trim()}
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
+        >
+          {menuOpen ? <FaTimes/> : <FaBars/>}
+        </button>
+
+        {/* Account: Für beide gleich*/}
+        {renderProfileMenu()}
+      </>
+    );
+  }
+
+  function renderMobileNavigation(): ReactElement | null {
+    if (!isLoggedIn || !menuOpen) {
+      return null;
+    }
+
+    return (
+      <nav className="mobile-nav" aria-label="Mobile Navigation">
+        <div className="container mobile-nav__inner">
+
+          {/* Startseite: Unterschiedliche Seiten für Customer bzw. Restocker */}
+          <NavLink
+            className="mobile-nav__link"
+            to={isRestocker ? "/restocker" : "/"}
+            onClick={() => setMenuOpen(false)}
+          >
+            <FaHome/> Startseite
+          </NavLink>
+
+          {/* Produkte: Nur Customer */}
+          {!isRestocker && (
+            <NavLink
+              className="mobile-nav__link"
+              to="/products"
+              onClick={() => setMenuOpen(false)}
+            >
+              <FaArchive/> Alle Produkte
+            </NavLink>
+          )}
+
+          {/* Subscription: Nur für Customer */}
+          {!isRestocker && (
+            <NavLink
+              className="mobile-nav__link"
+              to="/subscription"
+              onClick={() => setMenuOpen(false)}
+            >
+              <FaCalendarAlt/> Aboverwaltung
+            </NavLink>
+          )}
+
+          {/* Aufträge: Nur für Restocker */}
+          {isRestocker && (
+            <NavLink
+              className="mobile-nav__link"
+              to="/restocker-orders"
+              onClick={() => setMenuOpen(false)}
+            >
+              <FaClipboardList/> Offene Aufträge
+            </NavLink>
+          )}
+
+          {isRestocker && (
+            <NavLink
+              className="mobile-nav__link"
+              to="/restocker-my-orders"
+              onClick={() => setMenuOpen(false)}
+            >
+              <FaTruck/> Meine Aufträge
+            </NavLink>
+          )}
+
+          {/* Account: Für beide gleich */}
+          <NavLink
+            className="mobile-nav__link"
+            to="/account"
+            onClick={() => setMenuOpen(false)}
+          >
+            <FaUser/> Konto
+          </NavLink>
+
+        </div>
+      </nav>
+    );
+  }
+
+  function renderRestockerMobileTabbar(): ReactElement | null {
+    if (!isLoggedIn || !isRestocker) {
+      return null;
+    }
+
+    return (
+      <nav className="restocker-mobile-tabbar" aria-label="Restocker Navigation">
+        {restockerMobileNavItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({isActive}) => {
+              const isItemActive =
+                isActive || item.activePaths?.includes(location.pathname);
+
+              return `restocker-mobile-tabbar__item ${isItemActive ? "active" : ""}`;
+            }}
+            aria-label={item.label}
+          >
+            <span className="restocker-mobile-tabbar__icon" aria-hidden="true">
+              {item.icon}
+            </span>
+          </NavLink>
+        ))}
+      </nav>
+    );
+  }
+
+  function renderSubscriptionDialog(): ReactElement | null {
+    if (!isLoggedIn) {
+      return null;
+    }
+
+    return (
+      <SubscriptionDialog
+        items={subscriptionCart.items}
+        product={selectedProduct}
+        selectedItem={selectedSubscriptionItem}
+        open={activeSubscriptionLayer === "dialog"}
+        onClose={resetSubscriptionLayer}
+        onSelectItem={handleEditSubscriptionItem}
+        onOpenOverview={openSubscriptionOverview}
+        isProfileComplete={canModifySubscription}
+        onConfirm={handleConfirmSubscription}
+      />
+    );
+  }
+
+  function renderMobileBackdrop(): ReactElement | null {
+    if (!isLoggedIn || !menuOpen) {
+      return null;
+    }
+
+    return (
+      <button
+        className="mobile-nav-backdrop"
+        type="button"
+        onClick={() => setMenuOpen(false)}
+        aria-label="Menü schließen"
+      />
+    );
+  }
+
+  function renderSubscriptionProgress(): ReactElement | null {
+    if (!isLoggedIn || !onSearchPage) {
+      return null;
+    }
+
+    return (
+      <SubscriptionProfileProgress
+        status={subscriptionProfileStatus}
+        message="Solange Pflichtfelder fehlen, kannst du kein Produkt zum Abo hinzufügen."
+      />
+    );
+  }
+
+  function renderProductsSection(): ReactElement | null {
+    if (!isLoggedIn || !onSearchPage) {
+      return null;
+    }
+
+    return (
+      <section className="page-card section-space">
+        <div className="section-head">
+          <div>
+            <span className="eyebrow">Unser ReStockOrder Sortiment</span>
+            <h2>Alle verfügbaren Produkte</h2>
+          </div>
+        </div>
+        {renderSearchControls("page")}
+        <ProductGrid
+          products={filteredProducts}
+        />
+      </section>
     );
   }
 
@@ -588,252 +988,21 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
           <div className="header-search"/>
 
           <div className="header-actions">
-            {isLoggedIn ? (
-              <>
-                {/* Startseite: Unterschiedliche Seiten für Customer bzw. Restocker  */}
-                <NavLink
-                  className={`button button--ghost nav-btn ${isHomeActive ? "active" : ""}`}
-                  to={isRestocker ? "/restocker" : "/"}
-                  title="Startseite"
-                >
-                  <FaHome/>
-                </NavLink>
-
-                {/* Produkte: Nur Customer  */}
-                {!isRestocker && (
-                  <NavLink
-                    className="button button--ghost nav-btn"
-                    to="/products"
-                    title="Alle Produkte"
-                  >
-                    <FaArchive/>
-                  </NavLink>
-                )}
-
-                {/* Subscription: Nur für Customer */}
-                {!isRestocker && (
-                  <NavLink
-                    className="button button--ghost nav-btn"
-                    to="/subscription"
-                    title="Abo-Übersicht"
-                    aria-label="Abo-Übersicht"
-                  >
-                    <FaCalendarAlt/>
-                  </NavLink>
-                )}
-
-                {/* Aufträge: Nur für Restocker */}
-                {isRestocker && (
-                  <NavLink
-                    className="button button--ghost nav-btn"
-                    to="/restocker-orders"
-                    title="Offene Aufträge"
-                  >
-                    <FaClipboardList/>
-                  </NavLink>
-                )}
-
-                {isRestocker && (
-                  <NavLink
-                    className="button button--ghost nav-btn"
-                    to="/restocker-my-orders"
-                    title="Meine Aufträge"
-                  >
-                    <FaCalendarAlt/>
-                  </NavLink>
-                )}
-
-
-                {/* Hamburger immer sichtbar */}
-                <button
-                  className={`button button--ghost hamburger-btn ${isRestocker ? "hamburger-btn--restocker" : ""}`.trim()}
-                  type="button"
-                  onClick={() => setMenuOpen((v) => !v)}
-                  aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
-                >
-                  {menuOpen ? <FaTimes/> : <FaBars/>}
-                </button>
-
-                {/* Account: Für beide gleich*/}
-                <div
-                  className="header-profile-menu"
-                  onMouseEnter={openProfileMenu}
-                  onMouseLeave={closeProfileMenuWithDelay}
-                >
-                  <NavLink
-                    className={`button button--ghost nav-btn ${profilePictureUrl ? "header-profile-button" : ""}`.trim()}
-                    to="/account"
-                    title="Konto"
-                    aria-label="Konto"
-                    onFocus={openProfileMenu}
-                  >
-                    {profilePictureUrl ? (
-                      <img
-                        className="header-profile-avatar"
-                        src={profilePictureUrl}
-                        alt="Profilbild"
-                        onError={() => setProfilePictureUrl(undefined)}
-                      />
-                    ) : (
-                      <FaUser/>
-                    )}
-                  </NavLink>
-
-
-                  {isProfileMenuOpen ? (
-                    <div
-                      className="header-profile-popover"
-                      onMouseEnter={openProfileMenu}
-                      onMouseLeave={closeProfileMenuWithDelay}
-                      onBlur={(event) => {
-                        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                          setIsProfileMenuOpen(false);
-                        }
-                      }}
-                    >
-                      <Link
-                        className="header-profile-popover__link"
-                        to="/account#profile"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        <FaUser/>
-                        <span>Profil</span>
-                      </Link>
-
-                      <Link
-                        className="header-profile-popover__link"
-                        to="/account#settings"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        <FaPaintBrush/>
-                        <span>Darstellung</span>
-                      </Link>
-
-                      <Link
-                        className="header-profile-popover__link"
-                        to="/account#finance"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        <FaFileInvoiceDollar/>
-                        <span>Finanzen</span>
-                      </Link>
-
-                      <Link
-                        className="header-profile-popover__link"
-                        to="/account#security"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        <FaShieldAlt/>
-                        <span>Sicherheit</span>
-                      </Link>
-
-                      <button
-                        className="header-profile-popover__link header-profile-popover__link--danger"
-                        type="button"
-                        onClick={handleLogout}
-                      >
-                        <FaSignOutAlt/>
-                        <span>Abmelden</span>
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-
-              </>
-            ) : null}
+            {renderHeaderActions()}
           </div>
         </div>
 
         {/* ------------------- MOBILE HEADER MENÜ ------------------ */}
 
-        {isLoggedIn && menuOpen ? (
-          <nav className="mobile-nav" aria-label="Mobile Navigation">
-            <div className="container mobile-nav__inner">
-
-              {/* Startseite: Unterschiedliche Seiten für Customer bzw. Restocker */}
-              <NavLink
-                className="mobile-nav__link"
-                to={isRestocker ? "/restocker" : "/"}
-                onClick={() => setMenuOpen(false)}
-              >
-                <FaHome/> Startseite
-              </NavLink>
-
-              {/* Produkte: Nur Customer */}
-              {!isRestocker && (
-                <NavLink
-                  className="mobile-nav__link"
-                  to="/products"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <FaArchive/> Alle Produkte
-                </NavLink>
-              )}
-
-              {/* Subscription: Nur für Customer */}
-              {!isRestocker && (
-                <NavLink
-                  className="mobile-nav__link"
-                  to="/subscription"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <FaCalendarAlt/> Aboverwaltung
-                </NavLink>
-              )}
-
-              {/* Aufträge: Nur für Restocker */}
-              {isRestocker && (
-                <NavLink
-                  className="mobile-nav__link"
-                  to="/restocker-orders"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <FaClipboardList/> Offene Aufträge
-                </NavLink>
-              )}
-
-              {isRestocker && (
-                <NavLink
-                  className="mobile-nav__link"
-                  to="/restocker-my-orders"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <FaTruck/> Meine Aufträge
-                </NavLink>
-              )}
-
-              {/* Account: Für beide gleich */}
-              <NavLink
-                className="mobile-nav__link"
-                to="/account"
-                onClick={() => setMenuOpen(false)}
-              >
-                <FaUser/> Konto
-              </NavLink>
-
-            </div>
-          </nav>
-        ) : null}
+        {renderMobileNavigation()}
 
       </header>
 
-      {isLoggedIn && menuOpen ? (
-        <button
-          className="mobile-nav-backdrop"
-          type="button"
-          onClick={() => setMenuOpen(false)}
-          aria-label="Menü schließen"
-        />
-      ) : null}
+      {renderMobileBackdrop()}
 
       <main className="site-main">
         <div className="container">
-          {isLoggedIn && onSearchPage ? (
-            <SubscriptionProfileProgress
-              status={subscriptionProfileStatus}
-              message="Solange Pflichtfelder fehlen, kannst du kein Produkt zum Abo hinzufügen."
-            />
-          ) : null}
+          {renderSubscriptionProgress()}
 
           {children({
             isLoggedIn,
@@ -851,20 +1020,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             onSetTheme: (newTheme) => setTheme(newTheme),
           })}
 
-          {isLoggedIn && onSearchPage ? (
-            <section className="page-card section-space">
-              <div className="section-head">
-                <div>
-                  <span className="eyebrow">Unser ReStockOrder Sortiment</span>
-                  <h2>Alle verfügbaren Produkte</h2>
-                </div>
-              </div>
-              {renderSearchControls("page")}
-              <ProductGrid
-                products={filteredProducts}
-              />
-            </section>
-          ) : null}
+          {renderProductsSection()}
         </div>
       </main>
 
@@ -876,80 +1032,10 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
           <span>ReStockOffice {'\u00A9'}2026</span>
         </div>
 
-        {isLoggedIn && isRestocker ? (
-          <nav className="restocker-mobile-tabbar" aria-label="Restocker Navigation">
-            {restockerMobileNavItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({isActive}) => {
-                  const isItemActive =
-                    isActive || item.activePaths?.includes(location.pathname);
-
-                  return `restocker-mobile-tabbar__item ${isItemActive ? "active" : ""}`;
-                }}
-                aria-label={item.label}
-              >
-                <span className="restocker-mobile-tabbar__icon" aria-hidden="true">
-                  {item.icon}
-                </span>
-              </NavLink>
-            ))}
-          </nav>
-        ) : null}
+        {renderRestockerMobileTabbar()}
       </footer>
 
-      {isLoggedIn ? (
-        <SubscriptionDialog
-          items={subscriptionCart.items}
-          product={selectedProduct}
-          selectedItem={selectedSubscriptionItem}
-          open={activeSubscriptionLayer === "dialog"}
-          onClose={resetSubscriptionLayer}
-          onSelectItem={handleEditSubscriptionItem}
-          onOpenOverview={openSubscriptionOverview}
-          isProfileComplete={canModifySubscription}
-          onConfirm={async ({quantity, intervalCount}) => {
-            if (!selectedProduct) {
-              return;
-            }
-
-            if (!canModifySubscription) {
-              showIncompleteProfileWarning();
-              return;
-            }
-
-            if (isSavingSubscription) {
-              return;
-            }
-
-            setIsSavingSubscription(true);
-
-            try {
-              const action = await subscriptionCart.addOrUpdateItem({
-                product: selectedProduct,
-                quantity,
-                intervalCount,
-              });
-
-              toast.success(
-                action === "updated"
-                  ? `${selectedProduct.name} wurde im Abo aktualisiert`
-                  : `${selectedProduct.name} wurde zum Abo hinzugefügt`,
-              );
-
-            } catch (error) {
-              toast.error(
-                error instanceof Error
-                  ? error.message
-                  : "Das Abo konnte nicht gespeichert werden.",
-              );
-            } finally {
-              setIsSavingSubscription(false);
-            }
-          }}
-        />
-      ) : null}
+      {renderSubscriptionDialog()}
       <Toaster position="bottom-center"/>
     </div>
   );

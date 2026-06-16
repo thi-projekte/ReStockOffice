@@ -205,15 +205,27 @@ export function RestockerPage() {
     }, [auth.user?.id]);
 
     //Anzeigen für den Button Tour starten -> Ändert sie je nach dem, ob der Prozess bereits gestartet wurde
-    const startTourButtonLabel = startingTour
-        ? "Tour startet..."
-        : assignedLoading
-            ? "Lieferungen werden geladen..."
-            : !hasOpenAssignedToday
-                ? "Keine offenen Lieferungen heute"
-                : tourProcessId
-                    ? "Zur laufenden Tour wechseln"
-                    : "Tour von heute beginnen";
+    function getStartTourButtonLabel() {
+        if (startingTour) {
+            return "Tour startet...";
+        }
+
+        if (assignedLoading) {
+            return "Lieferungen werden geladen...";
+        }
+
+        if (!hasOpenAssignedToday) {
+            return "Keine offenen Lieferungen heute";
+        }
+
+        if (tourProcessId) {
+            return "Zur laufenden Tour wechseln";
+        }
+
+        return "Tour von heute beginnen";
+    }
+
+    const startTourButtonLabel = getStartTourButtonLabel();
 
     async function handleStartTourProcess() {
         // Verhindert, dass ein Doppelklick zwei Prozess-Start-Requests sendet.
@@ -321,6 +333,67 @@ export function RestockerPage() {
         void handleAcceptOrder(selectedOrder);
     }
 
+    function renderOpenOrdersContent() {
+        if (openLoading) {
+            return <p>Lade offene Aufträge...</p>;
+        }
+
+        if (openError) {
+            return <p style={{color: "red"}}>{openError}</p>;
+        }
+
+        return (
+            <>
+                <p>Es gibt weitere Lieferungen in deiner Nähe. </p>
+                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+                {/*Karusell mit RestockOrderCard (sind in Components definiert)*/}
+                <div className="open-orders-carousel">
+                    {openOrders.slice(0, 6).map((order) => (
+                        <RestockerOrderCard
+                            key={order.orderKey}
+                            order={order}
+                            detailLabel="Auftrag ansehen"
+                            onClick={() => setSelectedOrder(order)}
+                            secondaryActionLabel="Fahrt annehmen"
+                            onSecondaryAction={() => openAcceptConfirmation(order)}
+                        />
+                    ))}
+                </div>
+            </>
+        );
+    }
+
+    function renderAssignedOrdersContent() {
+        if (assignedLoading) {
+            return <p>Lade deine Aufträge...</p>;
+        }
+
+        if (assignedError) {
+            return <p style={{color: "red"}}>{assignedError}</p>;
+        }
+
+        if (openAssignedOrders.length === 0) {
+            return <p>Du hast aktuell keine offenen zugeordneten Aufträge.</p>;
+        }
+
+        return (
+            <>
+                <p>Du hast aktuell {openAssignedOrders.length} offene zugeordnete Aufträge.</p>
+                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+                <div className="open-orders-carousel">
+                    {openAssignedOrders.slice(0, 6).map((order) => (
+                        <RestockerOrderCard
+                            key={order.orderKey}
+                            order={order}
+                            detailLabel="Auftrag ansehen"
+                            onClick={() => setSelectedOrder(order)}
+                        />
+                    ))}
+                </div>
+            </>
+        );
+    }
+
     return (
         <div className="restocker-page">
             <div className="restocker-inner">
@@ -377,29 +450,7 @@ export function RestockerPage() {
                         </div>
                     </div>
 
-                    {openLoading ? (
-                        <p>Lade offene Aufträge...</p>
-                    ) : openError ? (
-                        <p style={{color: "red"}}>{openError}</p>
-                    ) : (
-                        <>
-                            <p>Es gibt weitere Lieferungen in deiner Nähe. </p>
-                            <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
-                            {/*Karusell mit RestockOrderCard (sind in Components definiert)*/}
-                            <div className="open-orders-carousel">
-                                {openOrders.slice(0, 6).map((order) => (
-                                    <RestockerOrderCard
-                                        key={order.orderKey}
-                                        order={order}
-                                        detailLabel="Auftrag ansehen"
-                                        onClick={() => setSelectedOrder(order)}
-                                        secondaryActionLabel="Fahrt annehmen"
-                                        onSecondaryAction={() => openAcceptConfirmation(order)}
-                                    />
-                                ))}
-                            </div>
-                        </>
-                    )}
+                    {renderOpenOrdersContent()}
 
                     <button
                         className="tour-btn"
@@ -418,28 +469,7 @@ export function RestockerPage() {
                         </div>
                     </div>
 
-                    {assignedLoading ? (
-                        <p>Lade deine Aufträge...</p>
-                    ) : assignedError ? (
-                        <p style={{color: "red"}}>{assignedError}</p>
-                    ) : openAssignedOrders.length === 0 ? (
-                        <p>Du hast aktuell keine offenen zugeordneten Aufträge.</p>
-                    ) : (
-                        <>
-                            <p>Du hast aktuell {openAssignedOrders.length} offene zugeordnete Aufträge.</p>
-                            <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
-                            <div className="open-orders-carousel">
-                                {openAssignedOrders.slice(0, 6).map((order) => (
-                                    <RestockerOrderCard
-                                        key={order.orderKey}
-                                        order={order}
-                                        detailLabel="Auftrag ansehen"
-                                        onClick={() => setSelectedOrder(order)}
-                                    />
-                                ))}
-                            </div>
-                        </>
-                    )}
+                    {renderAssignedOrdersContent()}
                     <button
                         className="tour-btn"
                         onClick={() => navigate("/restocker-my-orders")}

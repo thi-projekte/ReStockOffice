@@ -1,4 +1,4 @@
-import {type ReactElement, useEffect, useRef, useState} from "react";
+﻿import {type ReactElement, useEffect, useRef, useState} from "react";
 import {Navigate, useLocation, useOutletContext} from "react-router-dom";
 import {MdEdit, MdLogout, MdOutlineWarningAmber, MdReceiptLong, MdSave} from "react-icons/md";
 import {FaBell, FaMoon, FaSun} from "react-icons/fa";
@@ -404,9 +404,12 @@ export function AccountPage(): ReactElement {
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  return (
-    <div className="home-showcase account-page">
-      {showProfileProgress && (
+  function renderProfileProgress(): ReactElement | null {
+    if (!showProfileProgress) {
+      return null;
+    }
+
+    return (
         <section className="page-card subscription-profile-progress">
           <div className="subscription-profile-progress__copy">
             <div>
@@ -421,28 +424,23 @@ export function AccountPage(): ReactElement {
               {subscriptionProfileStatus?.completionPercentage ?? 0}%
             </span>
           </div>
-          <div
+          <progress
             className="subscription-profile-progress__bar"
-            role="progressbar"
             aria-label="Profilfortschritt"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={subscriptionProfileStatus?.completionPercentage ?? 0}
-          >
-            <div
-              className="subscription-profile-progress__fill"
-              style={{width: `${subscriptionProfileStatus?.completionPercentage ?? 0}%`}}
-            />
-          </div>
+            value={subscriptionProfileStatus?.completionPercentage ?? 0}
+            max={100}
+          />
           {subscriptionProfileStatus?.missingFields.length ? (
             <p className="subscription-profile-progress__missing">
               Fehlt noch: {subscriptionProfileStatus.missingFields.join(", ")}.
             </p>
           ) : null}
         </section>
-      )}
+    );
+  }
 
-      {/* ── Hero ── */}
+  function renderHeroSection(): ReactElement {
+    return (
       <section className="page-card section-space account-hero">
         <div className="account-hero__copy">
           <span className="eyebrow">Kontoübersicht</span>
@@ -460,8 +458,11 @@ export function AccountPage(): ReactElement {
             <span>Rolle</span><strong>{isRestocker ? "Restocker" : "Customer"}</strong></div>
         </div>
       </section>
+    );
+  }
 
-      {/* ── Profil ── */}
+  function renderProfileSection(): ReactElement {
+    return (
       <section id="profile" className="page-card section-space">
         <div className="section-head account-section-head">
           <div>
@@ -609,8 +610,8 @@ export function AccountPage(): ReactElement {
                   />
                   {showAddressSuggestions && addressAC.suggestions.length > 0 && isEditingProfile && (
                     <ul className="account-address-suggestions">
-                      {addressAC.suggestions.map((s, i) => (
-                        <li key={i}>
+                      {addressAC.suggestions.map((s) => (
+                        <li key={`${s.street}-${s.houseNumber}-${s.postalCode}-${s.city}`}>
                           <button
                             type="button"
                             className="account-address-suggestion-item"
@@ -765,8 +766,11 @@ export function AccountPage(): ReactElement {
           </div>
         </div>
       </section>
+    );
+  }
 
-      {/* ── Darstellung & Benachrichtigungen ── */}
+  function renderSettingsSection(): ReactElement {
+    return (
       <section id="appearence" className="page-card section-space">
         <div className="section-head account-section-head">
           <div>
@@ -838,8 +842,11 @@ export function AccountPage(): ReactElement {
           </div>
         </div>
       </section>
+    );
+  }
 
-      {/* ── Finanzen ── */}
+  function renderFinanceSection(): ReactElement {
+    return (
       <section id="finance" className="page-card section-space">
         <div className="section-head account-section-head">
           <div>
@@ -855,28 +862,29 @@ export function AccountPage(): ReactElement {
         {visibleInvoices.length > 0 && (
           <div className="account-settings-shell">
             <div className="account-settings-section">
-              <div className="account-invoice-list" role="list">
+              <ul className="account-invoice-list">
                 {visibleInvoices.map((invoice) => (
-                  <button
-                    key={invoice.invoiceId}
-                    className="account-invoice-item"
-                    type="button"
-                    onClick={() => {
-                      void handleInvoiceOpen(invoice);
-                    }}
-                    disabled={loadingInvoiceId === invoice.invoiceId}
-                  >
-                    <div className="account-invoice-item__copy">
-                      <span>{invoice.monthLabel}</span>
-                      <strong>{invoice.title}</strong>
-                    </div>
-                    <span className="account-invoice-pill">
-                      <MdReceiptLong/>
-                      {formatInvoiceAmount(invoice)}
-                    </span>
-                  </button>
+                  <li key={invoice.invoiceId}>
+                    <button
+                      className="account-invoice-item"
+                      type="button"
+                      onClick={() => {
+                        void handleInvoiceOpen(invoice);
+                      }}
+                      disabled={loadingInvoiceId === invoice.invoiceId}
+                    >
+                      <div className="account-invoice-item__copy">
+                        <span>{invoice.monthLabel}</span>
+                        <strong>{invoice.title}</strong>
+                      </div>
+                      <span className="account-invoice-pill">
+                        <MdReceiptLong/>
+                        {formatInvoiceAmount(invoice)}
+                      </span>
+                    </button>
+                  </li>
                 ))}
-              </div>
+              </ul>
               {hasMoreInvoices && (
                 <button
                   className="button button--ghost account-invoice-more"
@@ -890,8 +898,11 @@ export function AccountPage(): ReactElement {
           </div>
         )}
       </section>
+    );
+  }
 
-      {/* ── Sicherheit ── */}
+  function renderSecuritySection(): ReactElement {
+    return (
       <section id="security" className="page-card section-space">
         <div className="section-head account-section-head">
           <div>
@@ -924,6 +935,17 @@ export function AccountPage(): ReactElement {
           </div>
         </div>
       </section>
+    );
+  }
+
+  return (
+    <div className="home-showcase account-page">
+      {renderProfileProgress()}
+      {renderHeroSection()}
+      {renderProfileSection()}
+      {renderSettingsSection()}
+      {renderFinanceSection()}
+      {renderSecuritySection()}
     </div>
   );
 }
