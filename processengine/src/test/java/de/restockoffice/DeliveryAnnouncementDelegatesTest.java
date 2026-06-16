@@ -128,6 +128,18 @@ class DeliveryAnnouncementDelegatesTest {
                 .containsEntry("supplierName", "Noch nicht zugewiesen");
     }
 
+    @Test
+    void deliveryAnnouncementEnrichmentDoesNotUseTechnicalRestockerIdentifierAsFallback() {
+        Map<String, Object> variables = new java.util.HashMap<>();
+        variables.put("supplierName", "max.restocker");
+        MailDataEnrichmentService service = new MailDataEnrichmentService();
+
+        service.enrichDeliveryAnnouncement(execution(variables));
+
+        assertThat(variables)
+                .containsEntry("supplierName", "Noch nicht zugewiesen");
+    }
+
     private DelegateExecution execution(Map<String, Object> variables) {
         return (DelegateExecution) Proxy.newProxyInstance(
                 DelegateExecution.class.getClassLoader(),

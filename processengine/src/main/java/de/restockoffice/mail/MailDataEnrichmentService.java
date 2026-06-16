@@ -842,13 +842,12 @@ public class MailDataEnrichmentService {
                 loadRestockerDisplayName(currentSupplierName, stringVariable(execution, "authorizationHeader")),
                 loadRestockerDisplayName(deliveryRestockerName, stringVariable(execution, "authorizationHeader")),
                 looksLikeTechnicalIdentifier(currentSupplierName) ? null : currentSupplierName,
-                looksLikeTechnicalIdentifier(deliveryRestockerName) ? null : deliveryRestockerName,
-                deliveryRestockerName
+                looksLikeTechnicalIdentifier(deliveryRestockerName) ? null : deliveryRestockerName
         );
     }
 
     private String loadRestockerDisplayName(String identifier, String authorizationHeader) {
-        if (isBlank(identifier)) {
+        if (isBlank(identifier) || isBlank(usersServiceBaseUrl)) {
             return null;
         }
 
@@ -863,7 +862,7 @@ public class MailDataEnrichmentService {
             RestockerDisplayNameDto body = response.getBody();
             String displayName = body != null ? body.displayName : null;
             return looksLikeTechnicalIdentifier(displayName) ? null : displayName;
-        } catch (RestClientException exception) {
+        } catch (RestClientException | IllegalArgumentException exception) {
             log.warn("Could not enrich mail data with restocker display name for {}", identifier, exception);
             return null;
         }
