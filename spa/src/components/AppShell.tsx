@@ -616,7 +616,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
       toast.success(
         action === "updated"
           ? `${selectedProduct.name} wurde im Abo aktualisiert`
-          : `${selectedProduct.name} wurde zum Abo hinzugefÃ¼gt`,
+          : `${selectedProduct.name} wurde zum Abo hinzugefügt`,
       );
     } catch (error) {
       toast.error(
