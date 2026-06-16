@@ -19,11 +19,11 @@ public class InvoiceDataService {
             @Value("${deliveriesservice.base-url}") String deliveryUrl,
             @Value("${articlesservice.base-url}") String articleUrl,
             @Value("${usersservice.base-url}") String userUrl,
-            RestClient.Builder restClientBuilder) {
+            RestClient.Builder oauth2RestClientBuilder) {
 
-        this.deliveryClient = restClientBuilder.clone().baseUrl(deliveryUrl).build();
-        this.articleClient = restClientBuilder.clone().baseUrl(articleUrl).build();
-        this.userClient = restClientBuilder.clone().baseUrl(userUrl).build();
+        this.deliveryClient = oauth2RestClientBuilder.clone().baseUrl(deliveryUrl).build();
+        this.articleClient = oauth2RestClientBuilder.clone().baseUrl(articleUrl).build();
+        this.userClient = oauth2RestClientBuilder.clone().baseUrl(userUrl).build();
     }
 
     public Optional<InvoicePreparationData> prepareInvoiceData(String customerId) {

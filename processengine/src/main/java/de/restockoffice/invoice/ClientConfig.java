@@ -1,6 +1,5 @@
 package de.restockoffice.invoice;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
@@ -11,17 +10,14 @@ import org.springframework.web.client.RestClient;
 public class ClientConfig {
 
     @Bean
-    public RestClient invoiceClient(
-            @Value("${invoiceservice.base-url}") String invoiceUrl,
-            OAuth2AuthorizedClientManager authorizedClientManager,
-            RestClient.Builder builder) {
+    public RestClient.Builder oauth2RestClientBuilder(
+            OAuth2AuthorizedClientManager authorizedClientManager) {
 
-        return builder.clone()
-                .baseUrl(invoiceUrl)
+        return RestClient.builder()
                 .requestInterceptor((request, body, env) -> {
                     OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
                             .withClientRegistrationId("keycloak")
-                            .principal("CamundaTimerService")
+                            .principal("restockoffice-backend")
                             .build();
 
                     var authorizedClient = authorizedClientManager.authorize(authRequest);
@@ -29,7 +25,6 @@ public class ClientConfig {
                         request.getHeaders().setBearerAuth(authorizedClient.getAccessToken().getTokenValue());
                     }
                     return env.execute(request, body);
-                })
-                .build();
+                });
     }
 }
