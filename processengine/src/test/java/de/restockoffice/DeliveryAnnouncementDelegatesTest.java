@@ -111,8 +111,33 @@ class DeliveryAnnouncementDelegatesTest {
                 .containsEntry("recipientEmail", "customer@example.com")
                 .containsEntry("customerName", "ReStock GmbH")
                 .containsEntry("deliveryDate", "10.06.2026")
-                .containsEntry("orderNumber", "ORD-42");
+                .containsEntry("orderNumber", "ORD-42")
+                .containsEntry("supplierName", "ReStockOffice");
         assertThat(payload.get("deliveryItems")).asList().hasSize(1);
+    }
+
+    @Test
+    void deliveryAnnouncementEnrichmentUsesUnassignedFallbackWithoutRestocker() {
+        Map<String, Object> variables = new java.util.HashMap<>();
+        MailDataEnrichmentService service = new MailDataEnrichmentService();
+
+        service.enrichDeliveryAnnouncement(execution(variables));
+
+        assertThat(variables)
+                .containsEntry("deliveryInstructions", "Kein Lieferhinweis hinterlegt.")
+                .containsEntry("supplierName", "Noch nicht zugewiesen");
+    }
+
+    @Test
+    void deliveryAnnouncementEnrichmentDoesNotUseTechnicalRestockerIdentifierAsFallback() {
+        Map<String, Object> variables = new java.util.HashMap<>();
+        variables.put("supplierName", "max.restocker");
+        MailDataEnrichmentService service = new MailDataEnrichmentService();
+
+        service.enrichDeliveryAnnouncement(execution(variables));
+
+        assertThat(variables)
+                .containsEntry("supplierName", "Noch nicht zugewiesen");
     }
 
     private DelegateExecution execution(Map<String, Object> variables) {

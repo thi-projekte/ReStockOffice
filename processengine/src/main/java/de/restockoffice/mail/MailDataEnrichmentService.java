@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.restockoffice.delivery.DeliveryMonitoringItem;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,9 +46,15 @@ public class MailDataEnrichmentService {
     private static final String VARIABLE_ITEM_ARTICLE_NUMBER = "itemArticleNumber";
     private static final String VARIABLE_ITEM_NAME = "itemName";
     private static final String VARIABLE_ITEM_QUANTITY = "itemQuantity";
+    private static final String UNASSIGNED_RESTOCKER_LABEL = "Noch nicht zugewiesen";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private RestTemplate restTemplate = new RestTemplate();
+
+    @Autowired(required = false)
+    void setRestTemplate(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     @Value("${ordersservice.base-url:https://orders.restockoffice.de}")
     private String ordersServiceBaseUrl;
@@ -94,11 +101,18 @@ public class MailDataEnrichmentService {
         setDeliveryItemsVariable(execution, context.delivery());
 
         LocalDate deliveryDate = resolveDeliveryDate(context);
-        String deliveryHint = firstNonBlank(deliveryDeliveryHint(context.delivery()), userDeliveryHint(context.user()));
+        String deliveryHint = firstNonBlank(
+                deliveryDeliveryHint(context.delivery()),
+                userDeliveryHint(context.user()),
+                "Kein Lieferhinweis hinterlegt."
+        );
         setIfPresent(execution, "customerName", firstNonBlank(deliveryCompanyName(context.delivery()), userCompanyName(context.user())));
         setIfPresent(execution, "deliveryLocation", realDeliveryLocation(context.delivery(), context.user()));
-        setIfPresent(execution, "deliveryInstructions", deliveryHint);
-        setIfPresent(execution, "supplierName", resolveRestockerDisplayName(execution, context.delivery()));
+        execution.setVariable("deliveryInstructions", deliveryHint);
+        execution.setVariable("supplierName", firstNonBlank(
+                resolveRestockerDisplayName(execution, context.delivery()),
+                UNASSIGNED_RESTOCKER_LABEL
+        ));
         execution.setVariable("daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
         execution.setVariable("deliveryDay", formatDayName(deliveryDate));
         execution.setVariable("deliveryDate", formatDate(deliveryDate));
@@ -110,7 +124,13 @@ public class MailDataEnrichmentService {
         EnrichmentContext context = loadContext(execution);
         enrichCommonVariables(execution, context);
 
-        execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
+        LocalDate deliveredDate = resolveDeliveredDate(context);
+        execution.setVariable("deliveryDate", formatDate(deliveredDate));
+        execution.setVariable("deliveryDateLabel", formatDate(deliveredDate));
+        execution.setVariable("supplierName", firstNonBlank(
+                resolveRestockerDisplayName(execution, context.delivery()),
+                UNASSIGNED_RESTOCKER_LABEL
+        ));
         setDeliveryItemsVariable(execution, context.delivery());
         setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
@@ -428,6 +448,11 @@ public class MailDataEnrichmentService {
         }
 
         return firstDeliveryDate;
+    }
+
+    private LocalDate resolveDeliveredDate(EnrichmentContext context) {
+        LocalDate deliveredDate = parseDate(deliveryDeliveredAt(context.delivery()));
+        return deliveredDate != null ? deliveredDate : resolveDeliveryDate(context);
     }
 
     private DayOfWeek resolveDeliveryDay(UserDto user, OrderDto order, LocalDate anchorDate) {
@@ -808,6 +833,10 @@ public class MailDataEnrichmentService {
         return delivery != null ? delivery.deliveryDate : null;
     }
 
+    private String deliveryDeliveredAt(DeliveryDetailDto delivery) {
+        return delivery != null ? delivery.deliveredAt : null;
+    }
+
     private String deliveryDeliveryTime(DeliveryDetailDto delivery) {
         return delivery != null ? delivery.deliveryTime : null;
     }
@@ -825,10 +854,33 @@ public class MailDataEnrichmentService {
         String deliveryRestockerName = restockerDisplayName(delivery);
         return firstNonBlank(
                 authenticatedRestockerDisplayName(stringVariable(execution, "authorizationHeader")),
+                loadRestockerDisplayName(currentSupplierName, stringVariable(execution, "authorizationHeader")),
+                loadRestockerDisplayName(deliveryRestockerName, stringVariable(execution, "authorizationHeader")),
                 looksLikeTechnicalIdentifier(currentSupplierName) ? null : currentSupplierName,
-                looksLikeTechnicalIdentifier(deliveryRestockerName) ? null : deliveryRestockerName,
-                deliveryRestockerName
+                looksLikeTechnicalIdentifier(deliveryRestockerName) ? null : deliveryRestockerName
         );
+    }
+
+    private String loadRestockerDisplayName(String identifier, String authorizationHeader) {
+        if (isBlank(identifier) || isBlank(usersServiceBaseUrl)) {
+            return null;
+        }
+
+        try {
+            String url = trimTrailingSlash(usersServiceBaseUrl) + "/restocker/display-name?identifier=" + encode(identifier);
+            ResponseEntity<RestockerDisplayNameDto> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    httpEntity(authorizationHeader),
+                    RestockerDisplayNameDto.class
+            );
+            RestockerDisplayNameDto body = response.getBody();
+            String displayName = body != null ? body.displayName : null;
+            return looksLikeTechnicalIdentifier(displayName) ? null : displayName;
+        } catch (RestClientException | IllegalArgumentException exception) {
+            log.warn("Could not enrich mail data with restocker display name for {}", identifier, exception);
+            return null;
+        }
     }
 
     private String authenticatedRestockerDisplayName(String authorizationHeader) {
@@ -983,6 +1035,7 @@ public class MailDataEnrichmentService {
         String deliveryDay;
         String deliveryTime;
         String deliveryDate;
+        String deliveredAt;
         String restockerName;
         List<DeliveryItemDetailDto> items;
     }
@@ -994,5 +1047,11 @@ public class MailDataEnrichmentService {
         String name;
         Integer quantity;
         String unit;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+    public static class RestockerDisplayNameDto {
+        String displayName;
     }
 }

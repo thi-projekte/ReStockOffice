@@ -6,6 +6,7 @@ import de.restockoffice.domain.Customer;
 import de.restockoffice.domain.Restocker;
 import de.restockoffice.dto.CustomerProfileResponse;
 import de.restockoffice.dto.RestockerCustomerDTO;
+import de.restockoffice.dto.RestockerDisplayNameResponse;
 import de.restockoffice.dto.RestockerProfileResponse;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -24,6 +25,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestForm;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.IOException;
 import java.net.URI;
@@ -119,7 +121,7 @@ public class UserResource {
     @GET
     @Path("customerForRestocker")
     public RestockerCustomerDTO getCustomerAddressForRestocker(@QueryParam("userId") String userId){
-        if (!securityIdentity.hasRole(ROLE_RESTOCKER) && !securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole(ROLE_ADMIN)) {
+        if (!securityIdentity.hasRole(ROLE_RESTOCKER) && !securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole(ROLE_ADMIN) && !securityIdentity.hasRole(ROLE_PROCESS_ENGINE)) {
             throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.", 403);
         }
         if (userId == null || userId.isBlank()) {
@@ -141,6 +143,29 @@ public class UserResource {
             customerEmail = "E-Mail nicht verfügbar";
         }
         return new RestockerCustomerDTO(customer, customerEmail);
+    }
+
+    @GET
+    @Path("restocker/display-name")
+    public RestockerDisplayNameResponse getRestockerDisplayName(@QueryParam("identifier") String identifier) {
+        if (!securityIdentity.hasRole(ROLE_RESTOCKER) && !securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole(ROLE_ADMIN) && !securityIdentity.hasRole(ROLE_PROCESS_ENGINE)) {
+            throw new WebApplicationException("Zugriff verweigert: Nur berechtigte Services duerfen Restocker-Daten einsehen.", 403);
+        }
+        if (identifier == null || identifier.isBlank()) {
+            throw new WebApplicationException("Identifier darf nicht leer sein.", 400);
+        }
+
+        Restocker restocker = Restocker.findById(identifier);
+        UserRepresentation keycloakUser = findKeycloakUser(identifier);
+        if (restocker == null && keycloakUser != null) {
+            restocker = Restocker.findById(keycloakUser.getId());
+        }
+
+        return new RestockerDisplayNameResponse(firstNonBlank(
+                restocker != null ? restocker.accountHolder : null,
+                keycloakDisplayName(keycloakUser),
+                identifier
+        ));
     }
 
     // Any Restocker by ID (admin-role or own user needed)
@@ -339,6 +364,64 @@ public class UserResource {
             throw new WebApplicationException("Restocker-Profil nicht gefunden.", 404);
         }
         return user;
+    }
+
+    private UserRepresentation findKeycloakUser(String identifier) {
+        try {
+            List<UserRepresentation> byUsername = keycloak.realm(KEYCLOAK_REALM)
+                    .users()
+                    .searchByUsername(identifier, true);
+            if (byUsername != null && !byUsername.isEmpty()) {
+                return byUsername.get(0);
+            }
+
+            return keycloak.realm(KEYCLOAK_REALM)
+                    .users()
+                    .get(identifier)
+                    .toRepresentation();
+        } catch (Exception exception) {
+            LOG.warnf(exception, "Could not resolve Keycloak user for restocker identifier %s", identifier);
+            return null;
+        }
+    }
+
+    private String keycloakDisplayName(UserRepresentation user) {
+        if (user == null) {
+            return null;
+        }
+        return firstNonBlank(
+                joinWithSpace(user.getFirstName(), user.getLastName()),
+                user.getUsername()
+        );
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
+    private String joinWithSpace(String... values) {
+        StringBuilder builder = new StringBuilder();
+        if (values == null) {
+            return "";
+        }
+        for (String value : values) {
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            if (!builder.isEmpty()) {
+                builder.append(' ');
+            }
+            builder.append(value.trim());
+        }
+        return builder.toString();
     }
 
     private boolean applyCustomerChanges(Customer entity, Customer updated) {
