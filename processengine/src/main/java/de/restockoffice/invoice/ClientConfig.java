@@ -1,5 +1,6 @@
 package de.restockoffice.invoice;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
@@ -26,5 +27,13 @@ public class ClientConfig {
                     }
                     return env.execute(request, body);
                 });
+    }
+
+    @Bean
+    public RestClient invoiceClient(
+            @Value("${invoiceservice.base-url}") String invoiceUrl,
+            RestClient.Builder oauth2RestClientBuilder) {
+
+        return oauth2RestClientBuilder.clone().baseUrl(invoiceUrl).build();
     }
 }
