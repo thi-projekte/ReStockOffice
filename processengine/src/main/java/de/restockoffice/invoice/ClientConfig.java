@@ -11,21 +11,21 @@ import org.springframework.web.client.RestClient;
 public class ClientConfig {
 
     @Bean
-    public RestClient invoiceClient(
-            @Value("${invoiceservice.base-url}") String invoiceUrl,
+    public RestClient engineClient(
+            @Value("${processengine.base-url}") String engineUrl,
             OAuth2AuthorizedClientManager authorizedClientManager,
             RestClient.Builder builder) {
 
         return builder.clone()
-                .baseUrl(invoiceUrl)
+                .baseUrl(engineUrl)
                 .requestInterceptor((request, body, env) -> {
                     OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
                             .withClientRegistrationId("keycloak")
-                            .principal("CamundaTimerService")
+                            .principal("restockoffice-backend")
                             .build();
 
                     var authorizedClient = authorizedClientManager.authorize(authRequest);
-                    if (authorizedClient != null && authorizedClient.getAccessToken() != null) {
+                    if (authorizedClient != null) {
                         request.getHeaders().setBearerAuth(authorizedClient.getAccessToken().getTokenValue());
                     }
                     return env.execute(request, body);
