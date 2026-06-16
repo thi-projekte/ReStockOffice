@@ -16,9 +16,6 @@ services:
       ORDERS_SERVICE_URL: https://orders.restockoffice.de
       ARTICLES_SERVICE_URL: https://articles.restockoffice.de
       DELIVERIES_SERVICE_URL: https://restocker-deliveries.restockoffice.de
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: https://id.restockoffice.de/realms/restockoffice
-      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_ID: restockoffice-backend
-      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
     ports:
       - "8080:8080"
     networks:
