@@ -86,6 +86,14 @@ const NOTIFICATION_OPTIONS: {
   },
 ];
 
+function formatDeliveryTimeInput(hour: number | undefined): string {
+  if (hour === undefined || !Number.isFinite(hour) || hour <= 0) {
+    return "";
+  }
+
+  return `${String(Math.trunc(hour)).padStart(2, "0")}:00`;
+}
+
 // ─── Komponente ──────────────────────────────────────────────────────────────
 
 export function AccountPage(): ReactElement {
@@ -143,7 +151,7 @@ export function AccountPage(): ReactElement {
           role: !isRestocker && u.kind === "customer" ? (u.roleInCompany ?? "") : "",
           note: !isRestocker && u.kind === "customer" ? (u.deliveryHint ?? "") : "",
           deliveryDay: !isRestocker && u.kind === "customer" ? (u.deliveryDay ?? "") : "",
-          deliveryTime: !isRestocker && u.kind === "customer" ? String(u.deliveryTime || "") : "",
+          deliveryTime: !isRestocker && u.kind === "customer" ? formatDeliveryTimeInput(u.deliveryTime) : "",
           bic: isRestocker && u.kind === "restocker" ? (u.bic ?? "") : "",
           accountHolder: isRestocker && u.kind === "restocker" ? (u.accountHolder ?? "") : "",
         };
@@ -335,7 +343,7 @@ export function AccountPage(): ReactElement {
             deliveryHint: form.note || undefined,
             deliveryDay: form.deliveryDay || undefined,
             deliveryTime: Number(form.deliveryTime?.split(":")[0] || 0),
-            iban: form.iban || undefined,
+            iban: form.iban,
             existsInUserService: loadedUser.existsInUserService,
           },
           {token, kind: userKind},

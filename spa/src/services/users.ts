@@ -164,6 +164,20 @@ function optionalString(value: unknown): string | undefined {
   return stringValue || undefined;
 }
 
+function parseDeliveryTimeHour(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  const stringValue = stringifyUserValue(value, "").trim();
+  if (!stringValue) {
+    return 0;
+  }
+
+  const hour = Number(stringValue.split(":")[0]);
+  return Number.isFinite(hour) ? hour : 0;
+}
+
 function resolveProfileImageUrl(value: unknown): string | undefined {
   const imageUrl = optionalString(value);
 
@@ -256,7 +270,7 @@ function normalizeCustomer(rawUser: unknown): CustomerUser {
     birthDate: optionalString(source.birthDate),
     deliveryHint: optionalString(source.deliveryHint ?? source.deliveryNote),
     deliveryDay: optionalString(source.deliveryDay),
-    deliveryTime: Number(source.deliveryTime ?? 0),
+    deliveryTime: parseDeliveryTimeHour(source.deliveryTime),
     iban: optionalString(source.iban ?? source.IBAN),
     profilePictureUrl: resolveProfileImageUrl(source.profilePictureUrl ?? source.profileImageUrl),
     createdAt: stringifyUserValue(source.createdAt, new Date().toISOString()),
@@ -449,18 +463,18 @@ export async function getMyUser(context: UserRequestContext = {}): Promise<UserP
 
 function createUserData(user: SaveUserPayload, isCreateRequest: boolean): Record<string, unknown> {
   const userData = {...user} as Record<string, unknown>;
-  const iban = userData.iban;
-  const bic = userData.bic;
+  const iban = userData.iban ?? userData.IBAN;
+  const bic = userData.bic ?? userData.BIC;
 
   if (iban !== undefined) {
     userData.IBAN = iban;
-    delete userData.iban;
   }
+  delete userData.iban;
 
   if (bic !== undefined) {
     userData.BIC = bic;
-    delete userData.bic;
   }
+  delete userData.bic;
 
   delete userData.kind;
   delete userData.profilePictureFile;

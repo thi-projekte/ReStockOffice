@@ -352,8 +352,8 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
   }, []);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem("restockoffice-theme", theme);
+    document.documentElement.dataset.theme = theme;
+    globalThis.localStorage.setItem("restockoffice-theme", theme);
   }, [theme]);
 
   const onSearchPage = location.pathname === "/products";
