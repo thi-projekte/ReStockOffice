@@ -94,11 +94,18 @@ public class MailDataEnrichmentService {
         setDeliveryItemsVariable(execution, context.delivery());
 
         LocalDate deliveryDate = resolveDeliveryDate(context);
-        String deliveryHint = firstNonBlank(deliveryDeliveryHint(context.delivery()), userDeliveryHint(context.user()));
+        String deliveryHint = firstNonBlank(
+                deliveryDeliveryHint(context.delivery()),
+                userDeliveryHint(context.user()),
+                "Kein Lieferhinweis hinterlegt."
+        );
         setIfPresent(execution, "customerName", firstNonBlank(deliveryCompanyName(context.delivery()), userCompanyName(context.user())));
         setIfPresent(execution, "deliveryLocation", realDeliveryLocation(context.delivery(), context.user()));
-        setIfPresent(execution, "deliveryInstructions", deliveryHint);
-        setIfPresent(execution, "supplierName", resolveRestockerDisplayName(execution, context.delivery()));
+        execution.setVariable("deliveryInstructions", deliveryHint);
+        execution.setVariable("supplierName", firstNonBlank(
+                resolveRestockerDisplayName(execution, context.delivery()),
+                "ReStockOffice"
+        ));
         execution.setVariable("daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
         execution.setVariable("deliveryDay", formatDayName(deliveryDate));
         execution.setVariable("deliveryDate", formatDate(deliveryDate));
