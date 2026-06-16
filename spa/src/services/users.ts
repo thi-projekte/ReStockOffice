@@ -174,8 +174,8 @@ function parseDeliveryTimeHour(value: unknown): number {
   return Number.isFinite(hour) ? hour : 0;
 }
 
-function buildProfileImageUrl(userId: string): string | undefined {
-  const normalizedUserId = userId.trim();
+function buildProfileImageUrl(): string | undefined {
+  const normalizedUserId = stringifyUserValue(keycloak.tokenParsed?.sub, "").trim();
 
   if (!normalizedUserId) {
     return undefined;
@@ -265,7 +265,7 @@ function normalizeCustomer(rawUser: unknown): CustomerUser {
     deliveryDay: optionalString(source.deliveryDay),
     deliveryTime: parseDeliveryTimeHour(source.deliveryTime),
     iban: optionalString(source.iban ?? source.IBAN),
-    profilePictureUrl: buildProfileImageUrl(userId),
+    profilePictureUrl: buildProfileImageUrl(),
     createdAt: stringifyUserValue(source.createdAt, new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
     existsInUserService: source.existsInUserService !== false,
@@ -292,7 +292,7 @@ function normalizeRestocker(rawUser: unknown): RestockerUser {
     bic: stringifyUserValue(source.bic ?? source.BIC, ""),
     accountHolder: stringifyUserValue(source.accountHolder, ""),
     birthDate: optionalString(source.birthDate),
-    profilePictureUrl: buildProfileImageUrl(userId),
+    profilePictureUrl: buildProfileImageUrl(),
     createdAt: stringifyUserValue(source.createdAt, new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
     existsInUserService: source.existsInUserService !== false,
@@ -459,16 +459,20 @@ function createUserData(user: SaveUserPayload, isCreateRequest: boolean): Record
   const userData = {...user} as Record<string, unknown>;
   const iban = userData.iban ?? userData.IBAN;
   const bic = userData.bic ?? userData.BIC;
+  const hasIban = Object.prototype.hasOwnProperty.call(userData, "iban")
+    || Object.prototype.hasOwnProperty.call(userData, "IBAN");
+  const hasBic = Object.prototype.hasOwnProperty.call(userData, "bic")
+    || Object.prototype.hasOwnProperty.call(userData, "BIC");
 
-  if (iban !== undefined) {
-    userData.iban = iban;
-    userData.IBAN = iban;
+  if (hasIban) {
+    userData.iban = stringifyUserValue(iban, "");
   }
+  delete userData.IBAN;
 
-  if (bic !== undefined) {
-    userData.bic = bic;
-    userData.BIC = bic;
+  if (hasBic) {
+    userData.bic = stringifyUserValue(bic, "");
   }
+  delete userData.BIC;
 
   delete userData.kind;
   delete userData.profilePictureFile;
