@@ -55,8 +55,6 @@ const CUSTOMER_REQUIRED_FIELDS: (keyof ProfileFormState)[] = [
 ];
 
 const INVOICE_PAGE_SIZE = 3;
-const UNSAVED_PROFILE_CHANGES_MESSAGE =
-  "Du hast ungespeicherte Änderungen. Wenn du die Seite verlässt, gehen sie verloren.";
 
 const EMPTY_FORM: ProfileFormState = {
   phone: "", birthDate: "", role: "", company: "", street: "",
@@ -481,7 +479,11 @@ export function AccountPage(): ReactElement {
             }}
           >
             {isEditingProfile ? <MdSave/> : <MdEdit/>}
-            {isSavingProfile ? "Wird gespeichert" : isEditingProfile ? "Änderungen speichern" : "Profil bearbeiten"}
+            {
+              isSavingProfile
+                ? "Wird gespeichert"
+                : (isEditingProfile ? "Änderungen speichern" : "Profil bearbeiten")
+            }
           </button>
         </div>
 
