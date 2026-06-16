@@ -484,12 +484,16 @@ function createBaseUserData(user: SaveUserPayload, isCreateRequest: boolean): Re
   return userData;
 }
 
-function createUserData(user: SaveUserPayload, isCreateRequest: boolean): Record<string, unknown> {
+function createUserData(
+  user: SaveUserPayload,
+  kind: UserKind,
+  isCreateRequest: boolean,
+): Record<string, unknown> {
   const source = user as Record<string, unknown>;
   const iban = stringifyUserValue(source.iban ?? source.IBAN, "");
   const userData = createBaseUserData(user, isCreateRequest);
 
-  if (user.kind === "restocker") {
+  if (kind === "restocker") {
     const bic = stringifyUserValue(source.bic ?? source.BIC, "");
 
     return removeUndefinedValues({
@@ -514,11 +518,11 @@ function createUserData(user: SaveUserPayload, isCreateRequest: boolean): Record
   });
 }
 
-function createMultipartUserBody(user: SaveUserPayload): FormData {
+function createMultipartUserBody(user: SaveUserPayload, kind: UserKind): FormData {
   const formData = new FormData();
   formData.append(
     "userData",
-    new Blob([JSON.stringify(createUserData(user, false))], {
+    new Blob([JSON.stringify(createUserData(user, kind, false))], {
       type: "application/json",
     }),
   );
@@ -562,8 +566,8 @@ export async function saveMyUser(
       method: "POST",
       headers: isCreateRequest ? createJsonHeaders(resolvedToken) : createAuthHeaders(resolvedToken),
       body: isCreateRequest
-        ? JSON.stringify(createUserData(user, true))
-        : createMultipartUserBody(user),
+        ? JSON.stringify(createUserData(user, kind, true))
+        : createMultipartUserBody(user, kind),
     });
   } catch {
     throw new Error(buildUsersNetworkErrorMessage());
