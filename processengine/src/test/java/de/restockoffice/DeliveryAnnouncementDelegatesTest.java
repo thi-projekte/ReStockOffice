@@ -10,6 +10,7 @@ import de.restockoffice.delivery.SendDeliveryAnnouncementDelegate;
 import de.restockoffice.mail.MailDataEnrichmentService;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -87,6 +90,26 @@ class DeliveryAnnouncementDelegatesTest {
     }
 
     @Test
+    void fetchDeliveriesKeepsCollectedDeliveriesForConfirmationMonitoring() {
+        LocalDate targetDate = LocalDate.now().plusDays(1);
+        restTemplate.getResponse = new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse[]{
+                new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse("delivery-1", "order-1", "customer-1", targetDate.toString(), "COLLECTED"),
+                new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse("delivery-2", "order-2", "customer-2", targetDate.toString(), "DELIVERED")
+        };
+        ReflectionTestUtils.setField(fetchDeliveriesForAnnouncementDelegate, "deliveriesServiceBaseUrl", "http://deliveries.test/");
+        ReflectionTestUtils.setField(fetchDeliveriesForAnnouncementDelegate, "announcementLeadDays", 1);
+        Map<String, Object> variables = new java.util.HashMap<>();
+
+        fetchDeliveriesForAnnouncementDelegate.execute(execution(variables));
+
+        assertThat(restTemplate.getUrl).isEqualTo("http://deliveries.test/api/deliveries/admin/all-deliveries");
+        assertThat(variables.get("announcementTargetDate")).isEqualTo(targetDate.toString());
+        assertThat(variables.get("deliveries"))
+                .asList()
+                .containsExactly(new DeliveryMonitoringItem("delivery-1", "order-1", "customer-1", targetDate));
+    }
+
+    @Test
     void sendDeliveryAnnouncementPostsEnrichedMailPayload() throws IOException {
         ReflectionTestUtils.setField(sendDeliveryAnnouncementDelegate, "mailServiceBaseUrl", "http://mail.test");
         Map<String, Object> variables = new java.util.HashMap<>();
@@ -114,6 +137,36 @@ class DeliveryAnnouncementDelegatesTest {
                 .containsEntry("orderNumber", "ORD-42")
                 .containsEntry("supplierName", "ReStockOffice");
         assertThat(payload.get("deliveryItems")).asList().hasSize(1);
+    }
+
+    @Test
+    void deliveryAnnouncementEnrichmentUsesMonitoringDeliveryAndResolvedRestockerDisplayName() {
+        LocalDate deliveryDate = LocalDate.now().plusDays(2);
+        Map<String, Object> variables = new java.util.HashMap<>();
+        variables.put("delivery", new DeliveryMonitoringItem("delivery-42", "order-42", "customer-42", deliveryDate));
+        MailDataEnrichmentService service = new MailDataEnrichmentService();
+        ReflectionTestUtils.setField(service, "deliveriesServiceBaseUrl", "http://deliveries.test");
+        ReflectionTestUtils.setField(service, "usersServiceBaseUrl", "http://users.test");
+        ReflectionTestUtils.setField(service, "ordersServiceBaseUrl", "");
+        ReflectionTestUtils.setField(service, "articlesServiceBaseUrl", "http://articles.test");
+        ReflectionTestUtils.setField(service, "appBaseUrl", "https://app.test");
+        ReflectionTestUtils.setField(service, "restTemplate", new EnrichmentRestTemplate(deliveryDate));
+
+        service.enrichDeliveryAnnouncement(execution(variables));
+
+        assertThat(variables)
+                .containsEntry("recipientEmail", "office@example.com")
+                .containsEntry("customerName", "Buerobedarf GmbH")
+                .containsEntry("orderNumber", "RSO-order-42")
+                .containsEntry("deliveryDate", deliveryDate.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")))
+                .containsEntry("deliveryInstructions", "Bitte am Empfang abgeben.")
+                .containsEntry("supplierName", "Sabrina Keller")
+                .containsEntry("deliveryDetailsUrl", "https://app.test/restocker/deliveries");
+        assertThat(variables.get("deliveryItems")).asList().singleElement()
+                .satisfies(item -> assertThat(item).asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP)
+                        .containsEntry("name", "Kaffee")
+                        .containsEntry("articleNumber", "A-1")
+                        .containsEntry("quantity", "4 Pack"));
     }
 
     @Test
@@ -202,12 +255,14 @@ class DeliveryAnnouncementDelegatesTest {
     private static class CapturingRestTemplate extends RestTemplate {
 
         private Object getResponse;
+        private String getUrl;
         private String postUrl;
         private Object postBody;
 
         @Override
         public <T> T getForObject(String url, Class<T> responseType, Object... uriVariables) {
             // Feed the fetch delegate with prepared delivery data instead of using a real backend.
+            getUrl = url;
             return responseType.cast(getResponse);
         }
 
@@ -217,6 +272,75 @@ class DeliveryAnnouncementDelegatesTest {
             postUrl = url;
             postBody = request;
             return ResponseEntity.ok().build();
+        }
+    }
+
+    private static class EnrichmentRestTemplate extends RestTemplate {
+
+        private final LocalDate deliveryDate;
+
+        private EnrichmentRestTemplate(LocalDate deliveryDate) {
+            this.deliveryDate = deliveryDate;
+        }
+
+        @Override
+        public <T> ResponseEntity<T> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) {
+            if (url.contains("/api/deliveries/")) {
+                return ResponseEntity.ok(instance(responseType, Map.ofEntries(
+                        Map.entry("id", "delivery-42"),
+                        Map.entry("orderId", "order-42"),
+                        Map.entry("userId", "customer-42"),
+                        Map.entry("recipientEmail", "office@example.com"),
+                        Map.entry("companyName", "Buerobedarf GmbH"),
+                        Map.entry("street", "Hauptstrasse"),
+                        Map.entry("houseNumber", "1"),
+                        Map.entry("postalCode", "85049"),
+                        Map.entry("city", "Ingolstadt"),
+                        Map.entry("deliveryHint", "Bitte am Empfang abgeben."),
+                        Map.entry("deliveryTime", "09:30"),
+                        Map.entry("deliveryDate", deliveryDate.toString()),
+                        Map.entry("restockerName", "sabrina.keller"),
+                        Map.entry("items", List.of(instance(
+                                de.restockoffice.mail.MailDataEnrichmentService.DeliveryItemDetailDto.class,
+                                Map.of(
+                                        "articleNumber", "A-1",
+                                        "name", "Kaffee",
+                                        "quantity", 4,
+                                        "unit", "Pack"
+                                )
+                        )))
+                )));
+            }
+            if (url.contains("/restocker/display-name")) {
+                return ResponseEntity.ok(instance(responseType, Map.of("displayName", "Sabrina Keller")));
+            }
+            return ResponseEntity.ok().build();
+        }
+
+        @Override
+        public <T> T getForObject(String url, Class<T> responseType, Object... uriVariables) {
+            if (url.contains("/article")) {
+                return instance(responseType, Map.of(
+                        "productId", "A-1",
+                        "name", "Kaffee",
+                        "unit", "Pack"
+                ));
+            }
+            return null;
+        }
+
+        private static <T> T instance(Class<T> responseType, Map<String, Object> values) {
+            try {
+                T instance = responseType.getDeclaredConstructor().newInstance();
+                for (Map.Entry<String, Object> entry : values.entrySet()) {
+                    Field field = responseType.getDeclaredField(entry.getKey());
+                    field.setAccessible(true);
+                    field.set(instance, entry.getValue());
+                }
+                return instance;
+            } catch (ReflectiveOperationException exception) {
+                throw new IllegalStateException("Could not create test response for " + responseType.getName(), exception);
+            }
         }
     }
 }
