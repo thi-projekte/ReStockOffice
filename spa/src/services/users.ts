@@ -455,37 +455,63 @@ export async function getMyUser(context: UserRequestContext = {}): Promise<UserP
   }
 }
 
-function createUserData(user: SaveUserPayload, isCreateRequest: boolean): Record<string, unknown> {
-  const userData = {...user} as Record<string, unknown>;
-  const iban = userData.iban ?? userData.IBAN;
-  const bic = userData.bic ?? userData.BIC;
-  const hasIban = Object.prototype.hasOwnProperty.call(userData, "iban")
-    || Object.prototype.hasOwnProperty.call(userData, "IBAN");
-  const hasBic = Object.prototype.hasOwnProperty.call(userData, "bic")
-    || Object.prototype.hasOwnProperty.call(userData, "BIC");
+function removeUndefinedValues(userData: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(userData).filter(([, value]) => value !== undefined),
+  );
+}
 
-  if (hasIban) {
-    userData.iban = stringifyUserValue(iban, "");
-    userData.IBAN = stringifyUserValue(iban, "");
+function createBaseUserData(user: SaveUserPayload, isCreateRequest: boolean): Record<string, unknown> {
+  const userData: Record<string, unknown> = {
+    userId: user.userId,
+    postalCode: user.postalCode,
+    city: user.city,
+    street: user.street,
+    houseNumber: user.houseNumber,
+    country: user.country,
+    phoneNumber: user.phoneNumber,
+    birthDate: user.birthDate,
+  };
+
+  if (!isCreateRequest) {
+    userData.profilePictureUrl = user.profilePictureUrl;
   }
-
-  if (hasBic) {
-    userData.bic = stringifyUserValue(bic, "");
-    userData.BIC = stringifyUserValue(bic, "");
-  }
-
-  delete userData.kind;
-  delete userData.profilePictureFile;
-  delete userData.existsInUserService;
-  delete userData.createdAt;
-  delete userData.updatedAt;
 
   if (isCreateRequest) {
     delete userData.userId;
-    delete userData.profilePictureUrl;
   }
 
   return userData;
+}
+
+function createUserData(user: SaveUserPayload, isCreateRequest: boolean): Record<string, unknown> {
+  const source = user as Record<string, unknown>;
+  const iban = stringifyUserValue(source.iban ?? source.IBAN, "");
+  const userData = createBaseUserData(user, isCreateRequest);
+
+  if (user.kind === "restocker") {
+    const bic = stringifyUserValue(source.bic ?? source.BIC, "");
+
+    return removeUndefinedValues({
+      ...userData,
+      iban,
+      IBAN: iban,
+      bic,
+      BIC: bic,
+      accountHolder: stringifyUserValue(source.accountHolder, ""),
+    });
+  }
+
+  return removeUndefinedValues({
+    ...userData,
+    companyName: stringifyUserValue(source.companyName, ""),
+    roleInCompany: source.roleInCompany,
+    deliveryHint: source.deliveryHint,
+    deliveryDay: source.deliveryDay,
+    deliveryTime: source.deliveryTime,
+    iban,
+    IBAN: iban,
+  });
 }
 
 function createMultipartUserBody(user: SaveUserPayload): FormData {
