@@ -82,13 +82,9 @@ export interface UserRestockOrdersRequestContext extends UserRequestContext {
   userId: string;
 }
 
-const LEGACY_MOCK_IMAGE_PREFIX = "../assets/";
-const mockAssetModules = import.meta.glob("../assets/**/*.{png,jpg,jpeg,svg}", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
 const mockUsers = new Map<string, UserProfile>();
 const mockUserRestockOrders: Record<string, RestockOrder[]> = {};
+const PROFILE_IMAGE_BASE_URL = "https://hel1.your-objectstorage.com/restockoffice/users";
 
 function buildUsersNetworkErrorMessage(): string {
   return "Die Users-API konnte nicht erreicht werden.";
@@ -178,18 +174,14 @@ function parseDeliveryTimeHour(value: unknown): number {
   return Number.isFinite(hour) ? hour : 0;
 }
 
-function resolveProfileImageUrl(value: unknown): string | undefined {
-  const imageUrl = optionalString(value);
+function buildProfileImageUrl(userId: string): string | undefined {
+  const normalizedUserId = userId.trim();
 
-  if (!imageUrl) {
+  if (!normalizedUserId) {
     return undefined;
   }
 
-  if (imageUrl.startsWith(LEGACY_MOCK_IMAGE_PREFIX)) {
-    return mockAssetModules[imageUrl] ?? undefined;
-  }
-
-  return imageUrl;
+  return `${PROFILE_IMAGE_BASE_URL}/${encodeURIComponent(normalizedUserId)}.jpg`;
 }
 
 function collectKeycloakRoles(): string[] {
@@ -255,10 +247,11 @@ function normalizeCustomer(rawUser: unknown): CustomerUser {
   const source = (
     payload.customer && typeof payload.customer === "object" ? payload.customer : payload
   ) as Record<string, unknown>;
+  const userId = stringifyUserValue(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub, "");
 
   return {
     kind: "customer",
-    userId: stringifyUserValue(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub, ""),
+    userId,
     postalCode: stringifyUserValue(source.postalCode ?? source.zipCode, ""),
     city: stringifyUserValue(source.city, ""),
     street: stringifyUserValue(source.street, ""),
@@ -272,7 +265,7 @@ function normalizeCustomer(rawUser: unknown): CustomerUser {
     deliveryDay: optionalString(source.deliveryDay),
     deliveryTime: parseDeliveryTimeHour(source.deliveryTime),
     iban: optionalString(source.iban ?? source.IBAN),
-    profilePictureUrl: resolveProfileImageUrl(source.profilePictureUrl ?? source.profileImageUrl),
+    profilePictureUrl: buildProfileImageUrl(userId),
     createdAt: stringifyUserValue(source.createdAt, new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
     existsInUserService: source.existsInUserService !== false,
@@ -284,10 +277,11 @@ function normalizeRestocker(rawUser: unknown): RestockerUser {
   const source = (
     payload.restocker && typeof payload.restocker === "object" ? payload.restocker : payload
   ) as Record<string, unknown>;
+  const userId = stringifyUserValue(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub, "");
 
   return {
     kind: "restocker",
-    userId: stringifyUserValue(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub, ""),
+    userId,
     postalCode: stringifyUserValue(source.postalCode ?? source.zipCode, ""),
     city: stringifyUserValue(source.city, ""),
     street: stringifyUserValue(source.street, ""),
@@ -298,7 +292,7 @@ function normalizeRestocker(rawUser: unknown): RestockerUser {
     bic: stringifyUserValue(source.bic ?? source.BIC, ""),
     accountHolder: stringifyUserValue(source.accountHolder, ""),
     birthDate: optionalString(source.birthDate),
-    profilePictureUrl: resolveProfileImageUrl(source.profilePictureUrl ?? source.profileImageUrl),
+    profilePictureUrl: buildProfileImageUrl(userId),
     createdAt: stringifyUserValue(source.createdAt, new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
     existsInUserService: source.existsInUserService !== false,
@@ -467,14 +461,14 @@ function createUserData(user: SaveUserPayload, isCreateRequest: boolean): Record
   const bic = userData.bic ?? userData.BIC;
 
   if (iban !== undefined) {
+    userData.iban = iban;
     userData.IBAN = iban;
   }
-  delete userData.iban;
 
   if (bic !== undefined) {
+    userData.bic = bic;
     userData.BIC = bic;
   }
-  delete userData.bic;
 
   delete userData.kind;
   delete userData.profilePictureFile;
