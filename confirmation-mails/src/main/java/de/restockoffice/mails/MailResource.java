@@ -139,6 +139,7 @@ public class MailResource {
                 PREVIEW_CUSTOMER_NAME,
                 "RSO-DEMO-0042",
                 "04.05.2026",
+                "Montag",
                 "Montag, 11.05.2026 zwischen 08:00 und 12:00 Uhr",
                 "Buerostrasse 12, 85049 Ingolstadt",
                 "08.05.2026, 12:00 Uhr",

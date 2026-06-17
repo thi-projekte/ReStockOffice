@@ -31,6 +31,7 @@ class MailResourceTest {
                   "customerName": "Max Mustermann",
                   "orderNumber": "RSO-2026-004281",
                   "orderDate": "29.04.2026, 10:42 Uhr",
+                  "deliveryDay": "Montag",
                   "deliveryWindow": "08:30 bis 10:00 Uhr",
                   "deliveryLocation": "ReStockOffice GmbH\\n3. OG, Office West",
                   "changeDeadline": "02.05.2026, 12:00 Uhr",
@@ -55,6 +56,8 @@ class MailResourceTest {
                 .statusCode(200)
                 .contentType(containsString("text/html"))
                 .body(containsString("Max Mustermann"))
+                .body(containsString("Bevorzugter Liefertermin:</span> Montag"))
+                .body(not(containsString("Bevorzugter Liefertermin:</span> 08:30 bis 10:00 Uhr")))
                 .body(containsString("Kopierpapier A4 Premium"))
                 .body(containsString("4x"))
                 .body(not(containsString("4 Pack")))
@@ -110,6 +113,7 @@ class MailResourceTest {
                   "customerName": "Max Mustermann",
                   "orderNumber": "RSO-2026-004281",
                   "orderDate": "29.04.2026, 10:42 Uhr",
+                  "deliveryDay": "Montag",
                   "deliveryWindow": "08:30 bis 10:00 Uhr",
                   "deliveryLocation": "ReStockOffice GmbH\\n3. OG, Office West",
                   "changeDeadline": "02.05.2026, 12:00 Uhr",

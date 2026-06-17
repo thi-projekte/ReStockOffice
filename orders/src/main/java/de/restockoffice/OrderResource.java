@@ -343,6 +343,11 @@ public class OrderResource {
 
         putStringVariableIfPresent(
                 variables,
+                "deliveryDay",
+                customer.getDeliveryDay()
+        );
+        putStringVariableIfPresent(
+                variables,
                 "deliveryWindow",
                 formatDeliveryWindow(customer.getDeliveryTime())
         );
@@ -529,6 +534,7 @@ public class OrderResource {
         private String street;
         private String houseNumber;
         private String companyName;
+        private String deliveryDay;
         private Object deliveryTime;
 
         public String getPostalCode() {
@@ -569,6 +575,14 @@ public class OrderResource {
 
         public void setCompanyName(String companyName) {
             this.companyName = companyName;
+        }
+
+        public String getDeliveryDay() {
+            return deliveryDay;
+        }
+
+        public void setDeliveryDay(String deliveryDay) {
+            this.deliveryDay = deliveryDay;
         }
 
         public Object getDeliveryTime() {
