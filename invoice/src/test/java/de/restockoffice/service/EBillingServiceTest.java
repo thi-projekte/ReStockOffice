@@ -1,6 +1,7 @@
 package de.restockoffice.service;
 
 import de.restockoffice.api.InvoiceRequest;
+import de.restockoffice.exception.ZUGFeRDGenerationException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -26,10 +27,12 @@ class EBillingServiceTest {
 
         byte[] invalidPdfBytes = "Das ist definitiv kein PDF!".getBytes();
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        ZUGFeRDGenerationException exception = assertThrows(ZUGFeRDGenerationException.class, () -> {
             eBillingService.makeZUGFeRD(invalidPdfBytes, request);
         });
 
-        assertTrue(exception.getMessage().contains("ZUGFeRD-Generierung fehlgeschlagen"));
+        String message = exception.getMessage();
+        assertTrue(message.contains("ZUGFeRD-Generierung") && message.contains("fehlgeschlagen"),
+                "Fehlermeldung war: " + message);
     }
 }
