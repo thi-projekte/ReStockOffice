@@ -1,98 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
 <head>
     <title>Rechnung {invoice.invoiceNumber}</title>
     <style type="text/css">
-        @page {
-            size: A4;
-            margin: 20mm 15mm 45mm 15mm;
-            @bottom-center { content: element(footer); }
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            font-size: 10pt;
-            color: #1f2a2e;
-            line-height: 1.5;
-            margin: 0;
-            background-color: #ffffff;
-        }
-
+        @page { size: A4; margin: 20mm 15mm 45mm 15mm; @bottom-center { content: element(footer); } }
+        body { font-family: 'Arial', sans-serif; font-size: 10pt; color: #1f2a2e; line-height: 1.5; margin: 0; background-color: #ffffff; }
         .text-right { text-align: right; }
         .text-bold { font-weight: bold; }
-        .primary-color { color: #3b6b61; }
-
-        /* Kopfzeile: Logo links, Firmendaten rechts oben */
-        #header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20mm;
-        }
+        #header-table { width: 100%; border-collapse: collapse; margin-bottom: 20mm; }
         .logo { height: 50px; }
-        .header-company-data {
-            text-align: right;
-            font-size: 8pt;
-            color: #264037;
-            vertical-align: top;
-            line-height: 1.3;
-        }
-
-        /* Adressbereich nach DIN-Standard */
+        .header-company-data { text-align: right; font-size: 8pt; color: #264037; vertical-align: top; line-height: 1.3; }
         #address-block { width: 100%; border-collapse: collapse; margin-bottom: 25mm; }
-        .sender-line {
-            font-size: 7pt;
-            color: #3b6b61;
-            border-bottom: 0.5pt solid #66bda4;
-            margin-bottom: 8px;
-            width: 100%;
-        }
+        .sender-line { font-size: 7pt; color: #3b6b61; border-bottom: 0.5pt solid #66bda4; margin-bottom: 8px; width: 100%; }
         .recipient { vertical-align: top; width: 60%; }
         .invoice-meta { vertical-align: top; text-align: right; }
-        .invoice-title {
-            font-size: 22pt;
-            font-weight: bold;
-            color: #264037;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-
-        /* Artikeltabelle: Sehr dezent und professionell */
+        .invoice-title { font-size: 22pt; font-weight: bold; color: #264037; margin-bottom: 10px; text-transform: uppercase; }
+        .meta-table { float: right; border-collapse: collapse; }
         #items-table { width: 100%; border-collapse: collapse; margin-top: 5mm; }
-        #items-table th {
-            border-top: 1.5pt solid #3b6b61;
-            border-bottom: 1.5pt solid #3b6b61;
-            padding: 10px 5px;
-            text-align: left;
-            font-size: 8.5pt;
-            text-transform: uppercase;
-            color: #3b6b61;
-        }
+        #items-table th { border-top: 1.5pt solid #3b6b61; border-bottom: 1.5pt solid #3b6b61; padding: 10px 5px; text-align: left; font-size: 8.5pt; text-transform: uppercase; color: #3b6b61; }
         #items-table td { padding: 10px 5px; border-bottom: 0.5pt solid #e6e6e6; }
-
-        /* Summenblock */
         .totals-container { width: 100%; margin-top: 15px; }
         .totals-table { width: 35%; margin-left: 65%; border-collapse: collapse; }
-        .totals-table td { padding: 5px; }
-        .grand-total {
-            border-top: 1pt solid #264037;
-            font-weight: bold;
-            font-size: 11pt;
-            color: #1f2a2e;
-        }
-
-        /* Fußzeile: Fest am Seitenende fixiert */
-        div.footer {
-            display: block;
-            position: running(footer);
-            width: 100%;
-            border-top: 1pt solid #e6e6e6;
-            padding-top: 15px;
-            font-size: 8pt;
-            color: #264037;
-        }
+        .totals-table th, .totals-table td { padding: 5px; text-align: left; }
+        .grand-total { border-top: 1pt solid #264037; font-weight: bold; font-size: 11pt; color: #1f2a2e; }
+        div.footer { display: block; position: running(footer); width: 100%; border-top: 1pt solid #e6e6e6; padding-top: 15px; font-size: 8pt; color: #264037; }
         .footer-table { width: 100%; border-collapse: collapse; }
-        .footer-table td { width: 33.3%; vertical-align: top; }
+        .footer-table th, .footer-table td { width: 33.3%; vertical-align: top; text-align: left; font-weight: normal; }
         .footer-label { font-weight: bold; color: #3b6b61; margin-bottom: 2px; display: block; }
     </style>
 </head>
@@ -100,62 +34,40 @@
 
 <div class="footer">
     <table class="footer-table">
+        <thead><tr><th scope="col" style="display:none;">Sitz</th><th scope="col" style="display:none;">Kontakt</th><th scope="col" style="display:none;">Bank</th></tr></thead>
         <tr>
-            <td>
-                <span class="footer-label">Sitz der Gesellschaft</span>
-                {NAME}<br/>
-                {STREET}<br/>
-                {ZIP} {CITY}
-            </td>
-            <td>
-                <span class="footer-label">Kontakt</span>
-                E-Mail: {EMAIL}<br/>
-                Web: {WEB}
-            </td>
-            <td>
-                <span class="footer-label">Bankverbindung</span>
-                {BANK_NAME}<br/>
-                IBAN: {IBAN}<br/>
-                BIC: {BIC}
-            </td>
+            <td><span class="footer-label">Sitz der Gesellschaft</span>{NAME}<br/>{STREET}<br/>{ZIP} {CITY}</td>
+            <td><span class="footer-label">Kontakt</span>E-Mail: {EMAIL}<br/>Web: {WEB}</td>
+            <td><span class="footer-label">Bankverbindung</span>{BANK_NAME}<br/>IBAN: {IBAN}<br/>BIC: {BIC}</td>
         </tr>
     </table>
 </div>
 
 <table id="header-table">
+    <thead><tr><th scope="col" style="display:none;">Logo</th><th scope="col" style="display:none;">Daten</th></tr></thead>
     <tr>
-        <td>
-            <img src="{logoUrl}" class="logo" alt="Logo" />
-        </td>
-        <td class="header-company-data">
-            <strong>{NAME}</strong><br/>
-            {STREET} | {ZIP} {CITY}<br/>
-            Geschäftsführer: {CEO}<br/>
-            {HRB}
-        </td>
+        <td><img src="{logoUrl}" class="logo" alt="Logo" /></td>
+        <td class="header-company-data"><strong>{NAME}</strong><br/>{STREET} | {ZIP} {CITY}<br/>Geschäftsführer: {CEO}<br/>{HRB}</td>
     </tr>
 </table>
 
 <table id="address-block">
+    <thead><tr><th scope="col" style="display:none;">Empfänger</th><th scope="col" style="display:none;">Meta</th></tr></thead>
     <tr>
         <td class="recipient">
             <div class="sender-line">{FULL_ADDRESS_LINE}</div>
-            <div style="margin-top: 15px;">
-                <strong>{invoice.recipientName}</strong><br/>
-                {invoice.recipientStreet}<br/>
-                {invoice.recipientZip} {invoice.recipientCity}<br/>
-                Deutschland
-            </div>
+            <div style="margin-top: 15px;"><strong>{invoice.recipientName}</strong><br/>{invoice.recipientStreet}<br/>{invoice.recipientZip} {invoice.recipientCity}<br/>Deutschland</div>
         </td>
         <td class="invoice-meta">
             <div class="invoice-title">Rechnung</div>
-            <table align="right">
+            <table class="meta-table">
+                <thead><tr><th scope="col" style="display:none;">Label</th><th scope="col" style="display:none;">Wert</th></tr></thead>
                 <tr>
-                    <td class="text-bold" style="padding-right: 10px;">Rechnungs-Nr:</td>
+                    <th scope="row" class="text-bold" style="padding-right: 10px;">Rechnungs-Nr:</th>
                     <td>{invoice.invoiceNumber}</td>
                 </tr>
                 <tr>
-                    <td class="text-bold" style="padding-right: 10px;">Rechnungsdatum:</td>
+                    <th scope="row" class="text-bold" style="padding-right: 10px;">Rechnungsdatum:</th>
                     <td>{invoice.issueDate}</td>
                 </tr>
             </table>
@@ -166,11 +78,11 @@
 <table id="items-table">
     <thead>
     <tr>
-        <th style="width: 40px;">Pos</th>
-        <th>Beschreibung</th>
-        <th class="text-right" style="width: 60px;">Menge</th>
-        <th class="text-right" style="width: 100px;">Einzelpreis</th>
-        <th class="text-right" style="width: 100px;">Gesamtpreis</th>
+        <th scope="col" style="width: 40px;">Pos</th>
+        <th scope="col">Beschreibung</th>
+        <th scope="col" class="text-right" style="width: 60px;">Menge</th>
+        <th scope="col" class="text-right" style="width: 100px;">Einzelpreis</th>
+        <th scope="col" class="text-right" style="width: 100px;">Gesamtpreis</th>
     </tr>
     </thead>
     <tbody>
@@ -188,6 +100,7 @@
 
 <div class="totals-container">
     <table class="totals-table">
+        <thead><tr><th scope="col" style="display:none;">Posten</th><th scope="col" style="display:none;">Betrag</th></tr></thead>
         <tr>
             <td>Netto Gesamt:</td>
             <td class="text-right">{invoice.netAmount} €</td>

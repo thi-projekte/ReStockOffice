@@ -4,6 +4,7 @@ import de.restockoffice.api.InvoiceRequest;
 import de.restockoffice.domain.InvoiceEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 import org.slf4j.Logger;
@@ -18,6 +19,8 @@ public class InvoiceService {
 
     // Service für Generierung der PDF mittels OpenHTMLtoPDF und ZUGFeRD Konvertierung mittels MUSTANG
     @Inject
+    EntityManager em;
+    @Inject
     PDFGenerator pdfGenerator;
     @Inject
     EBillingService eBillingService;
@@ -27,7 +30,7 @@ public class InvoiceService {
     @Transactional
     public String createAndPersistInvoice(InvoiceRequest request) {
         int year = java.time.Year.now().getValue();
-        Long nextVal = (Long) InvoiceEntity.getEntityManager()
+        Long nextVal = (Long) em
                 .createNativeQuery("SELECT nextval('invoice_num_seq')")
                 .getSingleResult();
         String generatedInvoiceNumber = "RE-" + year + "-" + String.format("%05d", nextVal);

@@ -1,6 +1,7 @@
 package de.restockoffice.service;
 
 import de.restockoffice.api.InvoiceRequest;
+import de.restockoffice.exception.ZUGFeRDGenerationException;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.mustangproject.Item;
 import org.mustangproject.Product;
@@ -34,7 +35,8 @@ public class EBillingService {
             return out.toByteArray();
 
         } catch (Exception e) {
-            throw new RuntimeException("ZUGFeRD-Generierung fehlgeschlagen: " + e.getMessage(), e);
+            throw new ZUGFeRDGenerationException("ZUGFeRD-Generierung für Rechnung "
+                    + request.invoiceNumber() + " fehlgeschlagen: " + e.getMessage(), e);
         }
     }
 

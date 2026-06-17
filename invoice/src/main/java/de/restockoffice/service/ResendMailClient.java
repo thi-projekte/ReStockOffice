@@ -3,6 +3,9 @@ package de.restockoffice.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.restockoffice.api.InvoiceRequest;
 import de.restockoffice.domain.MailSettings;
+import de.restockoffice.exception.MailServiceException;
+import de.restockoffice.exception.ResendApiFailedException;
+import de.restockoffice.exception.ResendApiUnavailableException;
 import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -67,13 +70,13 @@ public class ResendMailClient {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new RuntimeException("Resend API Fehler: " + response.body());
+                throw new ResendApiFailedException("Resend API Fehler: " + response.body());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Resend-Aufruf unterbrochen", e);
+            throw new MailServiceException("Resend-Aufruf unterbrochen", e);
         } catch (IOException e) {
-            throw new RuntimeException("Resend nicht erreichbar: " + e.getMessage(), e);
+            throw new ResendApiUnavailableException("Resend nicht erreichbar: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("Fehler beim E-Mail Versand via Resend", e);
         }
