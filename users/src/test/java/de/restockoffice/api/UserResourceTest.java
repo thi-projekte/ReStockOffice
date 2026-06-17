@@ -66,7 +66,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "max", roles = {"customer"})
     void testGetMyCustomerData_Success() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("cust-123");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("cust-123");
         Mockito.when(MOCK_JWT.getClaim("email")).thenReturn("max@mustermann.de");
 
         PanacheMock.mock(Customer.class);
@@ -85,7 +85,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "max", roles = {"customer"})
     void testGetMyCustomerData_NotFound() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("unknown-id");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("unknown-id");
 
         PanacheMock.mock(Customer.class);
         Mockito.when(Customer.findById("unknown-id")).thenReturn(null);
@@ -111,7 +111,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "max", roles = {"customer"})
     void testGetCustomerById_AccessDenied() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("max-id");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("max-id");
         Mockito.when(securityIdentity.hasRole(anyString())).thenReturn(false);
 
         given()
@@ -124,7 +124,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void testGetCustomerById_AsAdminWithKeycloakMock() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("admin-id");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("admin-id");
         Mockito.when(securityIdentity.hasRole("admin")).thenReturn(true);
 
         PanacheMock.mock(Customer.class);
@@ -154,7 +154,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "new-user", roles = {"customer"})
     void testCreateCustomer_Success() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("new-user-id");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("new-user-id");
 
         PanacheMock.mock(Customer.class);
         Mockito.when(Customer.findById("new-user-id")).thenReturn(null);
@@ -176,7 +176,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "max", roles = {"customer"})
     void testCreateCustomer_Conflict() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("existing-id");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("existing-id");
 
         PanacheMock.mock(Customer.class);
         Mockito.when(Customer.findById("existing-id")).thenReturn(new Customer());
@@ -194,7 +194,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "max", roles = {"customer"})
     void testUpdateCustomer_WithMultipartAndS3() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("cust-123");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("cust-123");
 
         PanacheMock.mock(Customer.class);
         Customer existing = new Customer();
@@ -218,13 +218,13 @@ class UserResourceTest {
     }
 
     // ==========================================
-    // RESTOCKER TESTS (NEU HINZUGEFÜGT)
+    // RESTOCKER TESTS
     // ==========================================
 
     @Test
     @TestSecurity(user = "bob", roles = {"Restocker"})
     void testGetMyRestockerData_Success() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("restock-123");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("restock-123");
         Mockito.when(MOCK_JWT.getClaim("email")).thenReturn("bob@restocker.de");
 
         PanacheMock.mock(Restocker.class);
@@ -273,7 +273,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "bob", roles = {"Restocker"})
     void testGetRestockerById_OwnProfileSuccess() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("restock-123");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("restock-123");
 
         PanacheMock.mock(Restocker.class);
         Restocker restocker = new Restocker();
@@ -303,7 +303,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "new-restocker", roles = {"Restocker"})
     void testCreateRestocker_Success() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("new-restock-id");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("new-restock-id");
 
         PanacheMock.mock(Restocker.class);
         Mockito.when(Restocker.findById("new-restock-id")).thenReturn(null);
@@ -326,7 +326,7 @@ class UserResourceTest {
     @Test
     @TestSecurity(user = "bob", roles = {"Restocker"})
     void testUpdateRestocker_WithMultipartAndS3() {
-        Mockito.when(securityIdentity.getAttribute("sub")).thenReturn("restock-123");
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("restock-123");
 
         PanacheMock.mock(Restocker.class);
         Restocker existing = new Restocker();
