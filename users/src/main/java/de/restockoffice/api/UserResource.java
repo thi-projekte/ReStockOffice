@@ -76,7 +76,7 @@ public class UserResource {
     @GET
     @Path("customer/me")
     public CustomerProfileResponse getMyCustomerData() {
-        Customer customer =  findCustomerOrThrow(securityIdentity.getAttribute("sub"));
+        Customer customer =  findCustomerOrThrow(securityIdentity.getPrincipal().getName());
         String email = jwt.getClaim("email");
         return new CustomerProfileResponse(customer, email);
     }
@@ -85,7 +85,7 @@ public class UserResource {
     @GET
     @Path("restocker/me")
     public RestockerProfileResponse getMyRestockerData() {
-        Restocker restocker = findRestockerOrThrow(securityIdentity.getAttribute("sub"));
+        Restocker restocker = findRestockerOrThrow(securityIdentity.getPrincipal().getName());
         String email = jwt.getClaim("email");
         return new RestockerProfileResponse(restocker, email);
     }
@@ -94,7 +94,7 @@ public class UserResource {
     @GET
     @Path("customer")
     public CustomerProfileResponse getCustomerById(@QueryParam("userId") String userId){
-        String loggedInId = securityIdentity.getAttribute("sub");
+        String loggedInId = securityIdentity.getPrincipal().getName();
 
         if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN) && !securityIdentity.hasRole(ROLE_PROCESS_ENGINE)) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
@@ -147,7 +147,7 @@ public class UserResource {
     @GET
     @Path("restocker")
     public Restocker getRestockerById(@QueryParam("userId") String userId){
-        String loggedInId = securityIdentity.getAttribute("sub");
+        String loggedInId = securityIdentity.getPrincipal().getName();
 
         if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN)) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
@@ -176,7 +176,7 @@ public class UserResource {
     @Path("customer/create")
     @Transactional
     public Response createCustomer(Customer newCustomer){
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = securityIdentity.getPrincipal().getName();
         newCustomer.userId = userId;
 
         if (Customer.findById(userId) != null) {
@@ -194,7 +194,7 @@ public class UserResource {
     @Path("url")
     @Transactional
     public Response updateProfilePictureUrl() {
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = securityIdentity.getPrincipal().getName();
         String newImageUrl = "https://hel1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";
         boolean foundAndUpdated = false;
         Customer customer = Customer.findById(userId);
@@ -230,7 +230,7 @@ public class UserResource {
     @Path("restocker/create")
     @Transactional
     public Response createRestocker(Restocker newRestocker){
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = securityIdentity.getPrincipal().getName();
         newRestocker.userId = userId;
 
         if (Restocker.findById(userId) != null) {
@@ -255,7 +255,7 @@ public class UserResource {
             // File for Profile-Picture
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
     ){
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = securityIdentity.getPrincipal().getName();
         updatedData.userId = userId;
         Customer entity = findCustomerOrThrow(userId);
         boolean deliveryDayChanged = !Objects.equals(entity.deliveryDay, updatedData.deliveryDay);
@@ -297,7 +297,7 @@ public class UserResource {
             // File for Profile-Picture
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
     ){
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = securityIdentity.getPrincipal().getName();
         updatedData.userId = userId;
         Restocker entity = findRestockerOrThrow(userId);
         boolean hasChanged = applyRestockerChanges(entity, updatedData);
