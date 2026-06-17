@@ -46,6 +46,7 @@ public class MailDataEnrichmentService {
     private static final String VARIABLE_ITEM_QUANTITY = "itemQuantity";
     private static final String CLIENT_REGISTRATION_ID = "keycloak";
     private static final String SERVICE_PRINCIPAL = "CamundaTimerService";
+    private static final String UNASSIGNED_RESTOCKER_LABEL = "noch nicht zugeordnet";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -95,26 +96,28 @@ public class MailDataEnrichmentService {
 
     public void enrichDeliveryAnnouncement(DelegateExecution execution) {
         EnrichmentContext context = loadContext(execution);
-        enrichCommonVariables(execution, context);
+        setDeliveryMailVariables(execution, context);
         setDeliveryItemsVariable(execution, context.delivery());
 
         LocalDate deliveryDate = resolveDeliveryDate(context);
-        setIfBlank(execution, "daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
-        setIfBlank(execution, "deliveryDay", formatDayName(deliveryDate));
-        execution.setVariable("deliveryDateLabel", formatDate(deliveryDate));
-        setIfBlank(execution, "supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
-        setIfBlank(execution, "deliveryInstructions", firstNonBlank(userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
-        setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
+        execution.setVariable("daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
+        execution.setVariable("deliveryDay", formatDayName(deliveryDate));
+        execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), UNASSIGNED_RESTOCKER_LABEL));
+        execution.setVariable("deliveryInstructions", firstNonBlank(userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
+        execution.setVariable("deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
 
     public void enrichDeliveryConfirmation(DelegateExecution execution) {
         EnrichmentContext context = loadContext(execution);
-        enrichCommonVariables(execution, context);
+        setDeliveryMailVariables(execution, context);
 
-        execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
+        execution.setVariable("supplierName", firstNonBlank(
+                restockerDisplayName(context.delivery()),
+                stringVariable(execution, "supplierName"),
+                UNASSIGNED_RESTOCKER_LABEL
+        ));
         setDeliveryItemsVariable(execution, context.delivery());
-        execution.setVariable("deliveryDateLabel", formatDate(resolveDeliveryDate(context)));
-        setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
+        execution.setVariable("deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
 
     private void enrichCommonVariables(DelegateExecution execution, EnrichmentContext context) {
@@ -148,6 +151,39 @@ public class MailDataEnrichmentService {
         }
 
         setIfBlank(execution, VARIABLE_ITEM_QUANTITY, formatOrderItemQuantity(resolveQuantity(execution, order), article));
+    }
+
+    private void setDeliveryMailVariables(DelegateExecution execution, EnrichmentContext context) {
+        OrderDto order = context.order();
+        ArticleDto article = context.article();
+        UserDto user = context.user();
+        DeliveryDetailDto delivery = context.delivery();
+        LocalDate deliveryDate = resolveDeliveryDate(context);
+
+        execution.setVariable("recipientEmail", firstNonBlank(deliveryRecipientEmail(delivery), userEmail(user)));
+        execution.setVariable("customerName", firstNonBlank(deliveryCompanyName(delivery), userCompanyName(user), context.customerId()));
+        execution.setVariable("orderNumber", formatOrderNumber(firstNonBlank(deliveryOrderId(delivery), orderId(order), context.orderId())));
+        execution.setVariable("deliveryDate", deliveryDate.atTime(8, 0).toString());
+        execution.setVariable("deliveryDateLabel", formatDate(deliveryDate));
+        execution.setVariable("deliveryWindow", formatDeliveryWindow(firstNonBlank(deliveryDeliveryTime(delivery), userDeliveryTime(user))));
+        execution.setVariable("deliveryLocation", formatDeliveryLocation(delivery, user));
+
+        DeliveryItemDetailDto deliveryItem = firstDeliveryItem(delivery);
+        if (deliveryItem != null) {
+            execution.setVariable(VARIABLE_ITEM_NAME, firstNonBlank(deliveryItem.name, article != null ? article.name : null, articleLabel(context.productId())));
+            execution.setVariable(VARIABLE_ITEM_ARTICLE_NUMBER, firstNonBlank(deliveryItem.articleNumber, article != null ? article.productId : null, context.productId()));
+            execution.setVariable(VARIABLE_ITEM_QUANTITY, formatDeliveryItemQuantity(deliveryItem));
+            return;
+        }
+
+        if (article != null) {
+            execution.setVariable(VARIABLE_ITEM_NAME, firstNonBlank(article.name, articleLabel(context.productId())));
+            execution.setVariable(VARIABLE_ITEM_ARTICLE_NUMBER, firstNonBlank(article.productId, context.productId()));
+        } else {
+            execution.setVariable(VARIABLE_ITEM_NAME, articleLabel(context.productId()));
+            execution.setVariable(VARIABLE_ITEM_ARTICLE_NUMBER, context.productId());
+        }
+        execution.setVariable(VARIABLE_ITEM_QUANTITY, formatOrderItemQuantity(resolveQuantity(execution, order), article));
     }
 
     private EnrichmentContext loadContext(DelegateExecution execution) {
@@ -835,7 +871,7 @@ public class MailDataEnrichmentService {
 
     private String restockerDisplayName(DeliveryDetailDto delivery) {
         String restockerName = deliveryRestockerName(delivery);
-        if (isBlank(restockerName) || !restockerName.trim().contains(" ")) {
+        if (isBlank(restockerName)) {
             return null;
         }
 
