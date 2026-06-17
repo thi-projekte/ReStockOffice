@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import de.restockoffice.delivery.DeliveryMonitoringItem;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -41,8 +44,13 @@ public class MailDataEnrichmentService {
     private static final String VARIABLE_ITEM_ARTICLE_NUMBER = "itemArticleNumber";
     private static final String VARIABLE_ITEM_NAME = "itemName";
     private static final String VARIABLE_ITEM_QUANTITY = "itemQuantity";
+    private static final String CLIENT_REGISTRATION_ID = "keycloak";
+    private static final String SERVICE_PRINCIPAL = "CamundaTimerService";
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    @Autowired(required = false)
+    private OAuth2AuthorizedClientManager authorizedClientManager;
 
     @Value("${ordersservice.base-url:https://orders.restockoffice.de}")
     private String ordersServiceBaseUrl;
@@ -93,6 +101,7 @@ public class MailDataEnrichmentService {
         LocalDate deliveryDate = resolveDeliveryDate(context);
         setIfBlank(execution, "daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
         setIfBlank(execution, "deliveryDay", formatDayName(deliveryDate));
+        execution.setVariable("deliveryDateLabel", formatDate(deliveryDate));
         setIfBlank(execution, "supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
         setIfBlank(execution, "deliveryInstructions", firstNonBlank(userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
         setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
@@ -104,6 +113,7 @@ public class MailDataEnrichmentService {
 
         execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
         setDeliveryItemsVariable(execution, context.delivery());
+        execution.setVariable("deliveryDateLabel", formatDate(resolveDeliveryDate(context)));
         setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
 
@@ -145,7 +155,7 @@ public class MailDataEnrichmentService {
     }
 
     private EnrichmentContext loadContext(DelegateExecution execution, String requestedOrderId) {
-        String authorizationHeader = stringVariable(execution, "authorizationHeader");
+        String authorizationHeader = authorizationHeader(execution);
         DeliveryMonitoringItem monitoringDelivery = monitoringDelivery(execution);
         String orderId = firstNonBlank(
                 requestedOrderId,
@@ -399,6 +409,33 @@ public class MailDataEnrichmentService {
             headers.set(HttpHeaders.AUTHORIZATION, authorizationHeader);
         }
         return new HttpEntity<>(headers);
+    }
+
+    private String authorizationHeader(DelegateExecution execution) {
+        return firstNonBlank(stringVariable(execution, "authorizationHeader"), serviceAuthorizationHeader());
+    }
+
+    private String serviceAuthorizationHeader() {
+        if (authorizedClientManager == null) {
+            return null;
+        }
+
+        try {
+            OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
+                    .withClientRegistrationId(CLIENT_REGISTRATION_ID)
+                    .principal(SERVICE_PRINCIPAL)
+                    .build();
+
+            var authorizedClient = authorizedClientManager.authorize(authRequest);
+            if (authorizedClient == null || authorizedClient.getAccessToken() == null) {
+                return null;
+            }
+
+            return "Bearer " + authorizedClient.getAccessToken().getTokenValue();
+        } catch (RuntimeException exception) {
+            log.warn("Could not create service token for mail data enrichment", exception);
+            return null;
+        }
     }
 
     private LocalDate resolveDeliveryDate(EnrichmentContext context) {

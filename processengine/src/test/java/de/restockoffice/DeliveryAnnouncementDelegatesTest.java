@@ -23,6 +23,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
@@ -181,9 +183,15 @@ class DeliveryAnnouncementDelegatesTest {
         private Object postBody;
 
         @Override
-        public <T> T getForObject(String url, Class<T> responseType, Object... uriVariables) {
+        public <T> ResponseEntity<T> exchange(
+                String url,
+                HttpMethod method,
+                HttpEntity<?> requestEntity,
+                Class<T> responseType,
+                Object... uriVariables
+        ) {
             // Feed the fetch delegate with prepared delivery data instead of using a real backend.
-            return responseType.cast(getResponse);
+            return ResponseEntity.ok(responseType.cast(getResponse));
         }
 
         @Override
