@@ -455,4 +455,10 @@ public class UserResource {
         }
         return this.httpClient;
     }
+
+    @GET
+    @Path("test/whoami")
+    public String whoAmI() {
+        return "Mein sub ist: " + securityIdentity.getAttribute("sub");
+    }
 }
