@@ -105,6 +105,76 @@ class MailDataEnrichmentServiceTest {
         assertThat((java.util.List<?>) variables.get("deliveryItems")).hasSize(1);
     }
 
+    @Test
+    void enrichDeliveryAnnouncementShowsUnassignedWhenRestockerIsMissing() {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("deliveryId", "delivery-without-restocker");
+        variables.put("orderId", "42");
+        variables.put("customerId", "customer-1");
+        variables.put("authorizationHeader", "Bearer test-token");
+
+        service.enrichDeliveryAnnouncement(execution(variables));
+
+        assertThat(variables).containsEntry("supplierName", "noch nicht zugeordnet");
+    }
+
+    @Test
+    void enrichDeliveryAnnouncementUsesAssignedRestockerIdentifier() {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("deliveryId", "delivery-with-restocker-username");
+        variables.put("orderId", "42");
+        variables.put("customerId", "customer-1");
+        variables.put("authorizationHeader", "Bearer test-token");
+
+        service.enrichDeliveryAnnouncement(execution(variables));
+
+        assertThat(variables).containsEntry("supplierName", "restocker.julia");
+    }
+
+    @Test
+    void enrichDeliveryConfirmationKeepsProcessSupplierWhenDetailHasNoRestocker() {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("deliveryId", "delivery-without-restocker");
+        variables.put("orderId", "42");
+        variables.put("customerId", "customer-1");
+        variables.put("authorizationHeader", "Bearer test-token");
+        variables.put("supplierName", "restocker.julia");
+
+        service.enrichDeliveryConfirmation(execution(variables));
+
+        assertThat(variables).containsEntry("supplierName", "restocker.julia");
+    }
+
+    @Test
+    void enrichDeliveryAnnouncementOverwritesPreviousMultiInstanceMailData() {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("deliveryId", "delivery-1");
+        variables.put("orderId", "42");
+        variables.put("customerId", "customer-1");
+        variables.put("authorizationHeader", "Bearer test-token");
+
+        service.enrichDeliveryAnnouncement(execution(variables));
+
+        variables.put("deliveryId", "delivery-2");
+        variables.put("orderId", "43");
+        variables.put("customerId", "customer-2");
+
+        service.enrichDeliveryAnnouncement(execution(variables));
+
+        assertThat(variables)
+                .containsEntry("recipientEmail", "second@example.com")
+                .containsEntry("customerName", "Second GmbH")
+                .containsEntry("orderNumber", "RSO-43");
+        assertThat((java.util.List<?>) variables.get("deliveryItems"))
+                .singleElement()
+                .satisfies(item -> {
+                    Map<?, ?> deliveryItem = (Map<?, ?>) item;
+                    assertThat(deliveryItem.get("name")).isEqualTo("Haftnotizen");
+                    assertThat(deliveryItem.get("articleNumber")).isEqualTo("RS-2");
+                    assertThat(deliveryItem.get("quantity")).isEqualTo("5 Stück");
+                });
+    }
+
     private void handleRequest(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         String response = switch (path) {
@@ -115,6 +185,17 @@ class MailDataEnrichmentServiceTest {
                       "productId": "RS-1",
                       "status": "ACTIVE",
                       "quantity": 2,
+                      "interval": 1,
+                      "createdAt": "2026-06-10T10:00:00"
+                    }
+                    """;
+            case "/orders/delivery/43" -> """
+                    {
+                      "id": 43,
+                      "customerId": "customer-2",
+                      "productId": "RS-2",
+                      "status": "ACTIVE",
+                      "quantity": 5,
                       "interval": 1,
                       "createdAt": "2026-06-10T10:00:00"
                     }
@@ -153,6 +234,70 @@ class MailDataEnrichmentServiceTest {
                       "deliveryTime": "09:30",
                       "deliveryDate": "2026-06-17",
                       "restockerName": "Rita Restocker",
+                      "items": [
+                        {
+                          "articleNumber": "RS-1",
+                          "name": "Kopierpapier",
+                          "quantity": 2,
+                          "unit": "Pack"
+                        }
+                      ]
+                    }
+                    """;
+            case "/api/deliveries/delivery-2/detail" -> """
+                    {
+                      "id": "delivery-2",
+                      "orderId": "43",
+                      "userId": "customer-2",
+                      "recipientEmail": "second@example.com",
+                      "companyName": "Second GmbH",
+                      "street": "Nebenstrasse",
+                      "houseNumber": "3",
+                      "postalCode": "54321",
+                      "city": "Muenchen",
+                      "deliveryHint": "Seiteneingang nutzen.",
+                      "deliveryTime": "11:00",
+                      "deliveryDate": "2026-06-17",
+                      "restockerName": "Rita Restocker",
+                      "items": [
+                        {
+                          "articleNumber": "RS-2",
+                          "name": "Haftnotizen",
+                          "quantity": 5,
+                          "unit": "Stück"
+                        }
+                      ]
+                    }
+                    """;
+            case "/api/deliveries/delivery-without-restocker/detail" -> """
+                    {
+                      "id": "delivery-without-restocker",
+                      "orderId": "42",
+                      "userId": "customer-1",
+                      "recipientEmail": "customer@example.com",
+                      "companyName": "Test GmbH",
+                      "deliveryTime": "09:30",
+                      "deliveryDate": "2026-06-17",
+                      "items": [
+                        {
+                          "articleNumber": "RS-1",
+                          "name": "Kopierpapier",
+                          "quantity": 2,
+                          "unit": "Pack"
+                        }
+                      ]
+                    }
+                    """;
+            case "/api/deliveries/delivery-with-restocker-username/detail" -> """
+                    {
+                      "id": "delivery-with-restocker-username",
+                      "orderId": "42",
+                      "userId": "customer-1",
+                      "recipientEmail": "customer@example.com",
+                      "companyName": "Test GmbH",
+                      "deliveryTime": "09:30",
+                      "deliveryDate": "2026-06-17",
+                      "restockerName": "restocker.julia",
                       "items": [
                         {
                           "articleNumber": "RS-1",

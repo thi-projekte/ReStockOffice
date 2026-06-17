@@ -114,6 +114,41 @@ class MailResourceTest {
     }
 
     @Test
+    void previewDeliveryAnnouncementUsesTodayHeadlineForSameDayDelivery() {
+        String payload = """
+                {
+                  "recipientEmail": "max.mustermann@example.com",
+                  "customerName": "Max Mustermann",
+                  "daysUntilDelivery": "0",
+                  "deliveryDay": "Mittwoch",
+                  "deliveryDate": "17.06.2026",
+                  "deliveryWindow": "08:30 bis 10:00 Uhr",
+                  "orderNumber": "RSO-2026-004281",
+                  "supplierName": "noch nicht zugeordnet",
+                  "deliveryLocation": "ReStockOffice GmbH",
+                  "deliveryInstructions": "Bitte am Sideboard abstellen.",
+                  "deliveryItems": [
+                    {
+                      "name": "Kopierpapier A4 Premium",
+                      "articleNumber": "RS-10023",
+                      "quantity": "4 Pack"
+                    }
+                  ]
+                }
+                """;
+
+        given().contentType(ContentType.JSON)
+                .body(payload)
+                .when()
+                .post("/emails/delivery-announcement/preview")
+                .then()
+                .statusCode(200)
+                .contentType(containsString("text/html"))
+                .body(containsString("Deine Lieferung kommt heute an."))
+                .body(not(containsString("Deine Lieferung kommt in 0 Tagen.")));
+    }
+
+    @Test
     void sendAboConfirmationUsesInlineLogoCid() {
         String payload = """
                 {
