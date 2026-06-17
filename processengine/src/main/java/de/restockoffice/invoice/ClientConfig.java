@@ -11,13 +11,8 @@ import org.springframework.web.client.RestClient;
 public class ClientConfig {
 
     @Bean
-    public RestClient invoiceClient(
-            @Value("${invoiceservice.base-url}") String invoiceUrl,
-            OAuth2AuthorizedClientManager authorizedClientManager,
-            RestClient.Builder builder) {
-
-        return builder.clone()
-                .baseUrl(invoiceUrl)
+    public RestClient.Builder authenticatedBuilder(OAuth2AuthorizedClientManager authorizedClientManager) {
+        return RestClient.builder()
                 .requestInterceptor((request, body, env) -> {
                     OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
                             .withClientRegistrationId("keycloak")
@@ -29,7 +24,13 @@ public class ClientConfig {
                         request.getHeaders().setBearerAuth(authorizedClient.getAccessToken().getTokenValue());
                     }
                     return env.execute(request, body);
-                })
-                .build();
+                });
+    }
+
+    @Bean
+    public RestClient invoiceClient(
+            @Value("${invoiceservice.base-url}") String invoiceUrl,
+            RestClient.Builder authenticatedBuilder) {
+        return authenticatedBuilder.clone().baseUrl(invoiceUrl).build();
     }
 }
