@@ -1,6 +1,6 @@
-package de.restockoffice;
+package de.restockoffice.article;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
@@ -9,18 +9,21 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class ArticleRessource {
 
+    @Inject
+    ArticleRepository articleRepository;
+
     // Rückgabe aller Artikel mit /articles
     @GET
     @Path("articles")
     public List<Article> getArticles() {
-        return PanacheEntityBase.listAll();
+        return articleRepository.listAll();
     }
 
     // Rückgabe aller Artikel mit /article?itemId=xxxxx
     @GET
     @Path("article")
     public Article getArticleByItemId(@QueryParam("productId") String productId) {
-        Article article = PanacheEntityBase.find("productId", productId).firstResult();
+        Article article = articleRepository.find("productId", productId).firstResult();
 
         if (article == null) {
             throw new WebApplicationException("Artikel mit ID " + productId + " nicht gefunden");
@@ -32,7 +35,7 @@ public class ArticleRessource {
     @GET
     @Path("articleByCategory")
     public List<Article> getArticleByCategory(@QueryParam("category") String category) {
-        List<Article> articleList = PanacheEntityBase.find("LOWER(category) = LOWER(?1)", category.toLowerCase()).list();
+        List<Article> articleList = articleRepository.find("LOWER(category) = LOWER(?1)", category.toLowerCase()).list();
 
         if (articleList.isEmpty()) {
             throw new WebApplicationException("Keine Artikel für den Typ '" + category + "' gefunden", 404);

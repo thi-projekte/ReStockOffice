@@ -1,10 +1,11 @@
-package de.restockoffice;
+package de.restockoffice.article;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 @Entity
+@SuppressWarnings("java:S1104")
 public class Article extends PanacheEntityBase {
     @Id
     public String productId;
