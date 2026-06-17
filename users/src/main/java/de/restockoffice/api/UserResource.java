@@ -454,4 +454,32 @@ public class UserResource {
         }
         return this.httpClient;
     }
+
+    @GET
+    @Path("debug/security")
+    public Response debugSecurityContext() {
+        java.util.Map<String, Object> debugInfo = new java.util.HashMap<>();
+
+        // 1. Was liefert der Principal Name? (Deine gewünschte Variante)
+        if (securityIdentity != null && securityIdentity.getPrincipal() != null) {
+            debugInfo.put("principalName_sub", securityIdentity.getPrincipal().getName());
+        } else {
+            debugInfo.put("principalName_sub", "Principal oder SecurityIdentity ist NULL");
+        }
+
+        // 2. Was liefert das alte getAttribute("sub")?
+        if (securityIdentity != null) {
+            debugInfo.put("attribute_sub", securityIdentity.getAttribute("sub"));
+        } else {
+            debugInfo.put("attribute_sub", "SecurityIdentity ist NULL");
+        }
+
+        // 3. Zum Vergleich: Was steht direkt im injizierten JWT unter "sub"?
+        if (jwt != null) {
+            debugInfo.put("jwt_subject", jwt.getSubject());
+        }
+
+        return Response.ok(debugInfo).build();
+    }
+
 }
