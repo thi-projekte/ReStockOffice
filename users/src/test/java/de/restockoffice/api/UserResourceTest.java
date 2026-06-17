@@ -9,6 +9,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,13 +36,13 @@ class UserResourceTest {
     S3Client s3Client;
 
     @InjectMock
-    Keycloak keycloakClient;
-
-    @InjectMock
     SecurityIdentity securityIdentity;
 
     @InjectMock
     TransactionSynchronizationRegistry transactionSynchronizationRegistry;
+
+    @Inject
+    Keycloak keycloakMock;
 
     private static final JsonWebToken MOCK_JWT = Mockito.mock(JsonWebToken.class);
 
@@ -132,15 +133,16 @@ class UserResourceTest {
         customer.userId = "target-user-id";
         Mockito.when(Customer.findById("target-user-id")).thenReturn(customer);
 
-        RealmResource realmResource = Mockito.mock(RealmResource.class);
-        UsersResource usersResource = Mockito.mock(UsersResource.class);
-        UserResource userResource = Mockito.mock(UserResource.class);
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEmail("target@keycloak.de");
 
-        Mockito.when(keycloakClient.realm(anyString())).thenReturn(realmResource);
+        RealmResource realmResource = Mockito.mock(RealmResource.class);
+        UsersResource usersResource = Mockito.mock(UsersResource.class);
+        UserResource userResource = Mockito.mock(UserResource.class);
+
+        Mockito.when(keycloakMock.realm("restockoffice")).thenReturn(realmResource);
         Mockito.when(realmResource.users()).thenReturn(usersResource);
-        Mockito.when(usersResource.get(anyString())).thenReturn(userResource);
+        Mockito.when(usersResource.get("target-user-id")).thenReturn(userResource);
         Mockito.when(userResource.toRepresentation()).thenReturn(userRep);
 
         given()
@@ -256,7 +258,7 @@ class UserResourceTest {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEmail("cust-999@keycloak.de");
 
-        Mockito.when(keycloakClient.realm(anyString())).thenReturn(realmResource);
+        Mockito.when(keycloakMock.realm(anyString())).thenReturn(realmResource);
         Mockito.when(realmResource.users()).thenReturn(usersResource);
         Mockito.when(usersResource.get("cust-999")).thenReturn(userResource);
         Mockito.when(userResource.toRepresentation()).thenReturn(userRep);
