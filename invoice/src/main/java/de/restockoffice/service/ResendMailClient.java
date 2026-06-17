@@ -9,6 +9,8 @@ import de.restockoffice.exception.ResendApiUnavailableException;
 import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -33,6 +35,8 @@ public class ResendMailClient {
 
     @Inject
     Template invoiceMail;
+
+    private static final Logger LOG = LoggerFactory.getLogger(ResendMailClient.class);
 
     public void sendInvoiceMail(String recipientEmail, byte[] pdf, InvoiceRequest data) {
         try {
@@ -78,6 +82,7 @@ public class ResendMailClient {
         } catch (IOException e) {
             throw new ResendApiUnavailableException("Resend nicht erreichbar: " + e.getMessage());
         } catch (Exception e) {
+            LOG.error("Resend API Fehlerdetails: " + e.getMessage());
             throw new RuntimeException("Fehler beim E-Mail Versand via Resend", e);
         }
     }
