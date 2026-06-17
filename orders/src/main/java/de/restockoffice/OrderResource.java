@@ -343,6 +343,11 @@ public class OrderResource {
 
         putStringVariableIfPresent(
                 variables,
+                "deliveryDay",
+                customer.getDeliveryDay()
+        );
+        putStringVariableIfPresent(
+                variables,
                 "deliveryWindow",
                 formatDeliveryWindow(customer.getDeliveryTime())
         );
@@ -386,18 +391,37 @@ public class OrderResource {
         }
 
         try (Client client = ClientBuilder.newClient()) {
-            try (Response response = client.target(trimTrailingSlash(usersServiceBaseUrl)).path("customer").queryParam("userId", customerId).request(MediaType.APPLICATION_JSON).header(AUTHORIZATION_HEADER, authHeader).get()) {
-                if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
-                    String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
-                    LOG.warnf("Customer profile enrichment failed: HTTP %s body=%s", response.getStatus(), responseBody);
-                    return null;
-                }
-
-                return response.readEntity(CustomerMailProfile.class);
-            }
+            CustomerMailProfile customer = loadCustomerProfileFromPath(client, "customer", customerId, authHeader);
+            return customer != null ? customer : loadCustomerProfileFromPath(client, "customer/me", null, authHeader);
         } catch (ProcessingException exception) {
             LOG.warn("Customer profile enrichment request failed", exception);
             return null;
+        }
+    }
+
+    private CustomerMailProfile loadCustomerProfileFromPath(
+            Client client,
+            String path,
+            String customerId,
+            String authHeader
+    ) {
+        var request = client.target(trimTrailingSlash(usersServiceBaseUrl))
+                .path(path);
+        if (customerId != null && !customerId.isBlank()) {
+            request = request.queryParam("userId", customerId);
+        }
+
+        try (Response response = request
+                .request(MediaType.APPLICATION_JSON)
+                .header(AUTHORIZATION_HEADER, authHeader)
+                .get()) {
+            if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+                String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
+                LOG.warnf("Customer profile enrichment via %s failed: HTTP %s body=%s", path, response.getStatus(), responseBody);
+                return null;
+            }
+
+            return response.readEntity(CustomerMailProfile.class);
         }
     }
 
@@ -529,6 +553,7 @@ public class OrderResource {
         private String street;
         private String houseNumber;
         private String companyName;
+        private String deliveryDay;
         private Object deliveryTime;
 
         public String getPostalCode() {
@@ -569,6 +594,14 @@ public class OrderResource {
 
         public void setCompanyName(String companyName) {
             this.companyName = companyName;
+        }
+
+        public String getDeliveryDay() {
+            return deliveryDay;
+        }
+
+        public void setDeliveryDay(String deliveryDay) {
+            this.deliveryDay = deliveryDay;
         }
 
         public Object getDeliveryTime() {

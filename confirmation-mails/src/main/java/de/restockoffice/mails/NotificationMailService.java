@@ -61,6 +61,7 @@ public class NotificationMailService {
         values.put(CUSTOMER_NAME_KEY, escapeHtml(request.customerName()));
         values.put(ORDER_NUMBER_KEY, escapeHtml(request.orderNumber()));
         values.put("orderDate", escapeHtml(request.orderDate()));
+        values.put("deliveryDay", escapeHtml(defaultIfBlank(request.deliveryDay(), request.deliveryWindow())));
         values.put(DELIVERY_WINDOW_KEY, escapeHtml(request.deliveryWindow()));
         values.put(DELIVERY_LOCATION_KEY, escapeHtml(request.deliveryLocation()));
         values.put("changeDeadline", escapeHtml(request.changeDeadline()));

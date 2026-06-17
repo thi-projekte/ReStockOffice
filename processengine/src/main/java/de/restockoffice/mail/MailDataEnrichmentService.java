@@ -69,6 +69,8 @@ public class MailDataEnrichmentService {
         LocalDate deliveryDate = resolveDeliveryDate(context);
 
         setIfBlank(execution, "orderDate", formatDateTime(resolveOrderCreatedAt(order)));
+        setIfPresent(execution, "deliveryDay", formatDayName(deliveryDate));
+        setIfPresent(execution, "deliveryLocation", resolveDeliveryLocation(context.delivery(), context.user()));
         setIfBlank(execution, "changeDeadline", formatDateTime(deliveryDate.minusDays(3).atTime(12, 0)));
         setIfBlank(execution, "manageSubscriptionUrl", appBaseUrl + "/subscription");
         setIfBlank(execution, "itemIntervalDescription", formatInterval(resolveInterval(execution, order)));
@@ -588,6 +590,10 @@ public class MailDataEnrichmentService {
     }
 
     private String formatDeliveryLocation(DeliveryDetailDto delivery, UserDto user) {
+        return firstNonBlank(resolveDeliveryLocation(delivery, user), "Lieferadresse wird nachgereicht");
+    }
+
+    private String resolveDeliveryLocation(DeliveryDetailDto delivery, UserDto user) {
         String street = firstNonBlank(deliveryStreet(delivery), user != null ? user.street : null);
         String houseNumber = firstNonBlank(deliveryHouseNumber(delivery), user != null ? user.houseNumber : null);
         String postalCode = firstNonBlank(deliveryPostalCode(delivery), user != null ? user.postalCode : null);
@@ -595,7 +601,7 @@ public class MailDataEnrichmentService {
 
         String streetLine = joinWithSpace(street, houseNumber);
         String cityLine = joinWithSpace(postalCode, city);
-        return firstNonBlank(joinWithComma(streetLine, cityLine), userCompanyName(user), "Lieferadresse wird nachgereicht");
+        return firstNonBlank(joinWithComma(streetLine, cityLine), userCompanyName(user));
     }
 
     private String formatInterval(int intervalWeeks) {
@@ -678,6 +684,13 @@ public class MailDataEnrichmentService {
 
     private void setIfBlank(DelegateExecution execution, String variableName, String value) {
         if (!isBlank(stringVariable(execution, variableName)) || isBlank(value)) {
+            return;
+        }
+        execution.setVariable(variableName, value);
+    }
+
+    private void setIfPresent(DelegateExecution execution, String variableName, String value) {
+        if (isBlank(value)) {
             return;
         }
         execution.setVariable(variableName, value);
