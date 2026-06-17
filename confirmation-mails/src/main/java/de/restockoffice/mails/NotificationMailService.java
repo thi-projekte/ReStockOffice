@@ -298,7 +298,7 @@ public class NotificationMailService {
                     .append("<span class=\"qty-text\" ")
                     .append("style=\"display:inline-block;color:#264037;font-weight:700;")
                     .append("font-size:18px;line-height:1.3;white-space:nowrap;\">")
-                    .append(escapeHtml(item.quantity()))
+                    .append(escapeHtml(formatQuantityAsMultiplier(item.quantity())))
                     .append("</span>")
                     .append(TABLE_CELL_CLOSE)
                     .append("</tr>");

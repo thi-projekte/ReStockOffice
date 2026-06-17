@@ -145,7 +145,9 @@ class MailResourceTest {
                 .statusCode(200)
                 .contentType(containsString("text/html"))
                 .body(containsString("Deine Lieferung kommt heute an."))
-                .body(not(containsString("Deine Lieferung kommt in 0 Tagen.")));
+                .body(not(containsString("Deine Lieferung kommt in 0 Tagen.")))
+                .body(containsString("4x"))
+                .body(not(containsString("4 Pack")));
     }
 
     @Test
@@ -224,7 +226,9 @@ class MailResourceTest {
                 .statusCode(200)
                 .contentType(containsString("text/html"))
                 .body(containsString("Deine Lieferung ist angekommen."))
-                .body(containsString("Kopierpapier A4 Premium"));
+                .body(containsString("Kopierpapier A4 Premium"))
+                .body(containsString("4x"))
+                .body(not(containsString("4 Pack")));
     }
 
     @Test
