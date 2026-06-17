@@ -25,6 +25,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestForm;
+import org.keycloak.admin.client.Keycloak;
 
 import java.io.IOException;
 import java.net.URI;
@@ -63,27 +64,14 @@ public class UserResource {
     @Inject
     TransactionSynchronizationRegistry transactionSynchronizationRegistry;
 
+    @Inject
+    Keycloak keycloak;
+
     @ConfigProperty(name = "deliveriesservice.base-url", defaultValue = "https://restocker-deliveries.restockoffice.de")
     String deliveriesServiceBaseUrl;
 
     @Context
     HttpHeaders headers;
-
-    String secret = ConfigProvider.getConfig().getValue("keycloak.admin.client.secret", String.class);
-    private org.keycloak.admin.client.Keycloak keycloakInstance;
-
-    private synchronized org.keycloak.admin.client.Keycloak getKeycloakClient() {
-        if (keycloakInstance == null) {
-            keycloakInstance = org.keycloak.admin.client.KeycloakBuilder.builder()
-                    .serverUrl("https://id.restockoffice.de")
-                    .realm("restockoffice")
-                    .grantType("client_credentials")
-                    .clientId("restockoffice-backend")
-                    .clientSecret(secret)
-                    .build();
-        }
-        return keycloakInstance;
-    }
 
     // JWT Token wird verwendet, da sub nicht über securityIdentity ausgelesen werden kann
     private String getLoggedInUserId() {
@@ -124,7 +112,7 @@ public class UserResource {
 
         String customerEmail = null;
         try{
-            customerEmail = getKeycloakClient().realm(KEYCLOAK_REALM)
+            customerEmail = keycloak.realm(KEYCLOAK_REALM)
                     .users()
                     .get(userId)
                     .toRepresentation()
@@ -152,7 +140,7 @@ public class UserResource {
 
         // Get mail from Keycloak
         try {
-            customerEmail = getKeycloakClient().realm(KEYCLOAK_REALM)
+            customerEmail = keycloak.realm(KEYCLOAK_REALM)
                     .users()
                     .get(userId)
                     .toRepresentation()
