@@ -62,6 +62,49 @@ class MailDataEnrichmentServiceTest {
                 .containsEntry("deliveryLocation", "Hauptstrasse 7, 12345 Berlin");
     }
 
+    @Test
+    void enrichDeliveryAnnouncementFormatsDateAndUsesDeliveryDetailItems() {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("deliveryId", "delivery-1");
+        variables.put("orderId", "42");
+        variables.put("customerId", "customer-1");
+        variables.put("authorizationHeader", "Bearer test-token");
+        variables.put("deliveryDateLabel", "2026-06-17");
+
+        service.enrichDeliveryAnnouncement(execution(variables));
+
+        assertThat(variables)
+                .containsEntry("deliveryDateLabel", "17.06.2026")
+                .containsEntry("recipientEmail", "customer@example.com")
+                .containsEntry("customerName", "Test GmbH")
+                .containsEntry("supplierName", "Rita Restocker");
+        assertThat((java.util.List<?>) variables.get("deliveryItems"))
+                .singleElement()
+                .satisfies(item -> {
+                    Map<?, ?> deliveryItem = (Map<?, ?>) item;
+                    assertThat(deliveryItem.get("name")).isEqualTo("Kopierpapier");
+                    assertThat(deliveryItem.get("articleNumber")).isEqualTo("RS-1");
+                    assertThat(deliveryItem.get("quantity")).isEqualTo("2 Pack");
+                });
+    }
+
+    @Test
+    void enrichDeliveryConfirmationFormatsDateWithoutChangingAboFlow() {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("deliveryId", "delivery-1");
+        variables.put("orderId", "42");
+        variables.put("customerId", "customer-1");
+        variables.put("authorizationHeader", "Bearer test-token");
+        variables.put("deliveryDateLabel", "2026-06-17");
+
+        service.enrichDeliveryConfirmation(execution(variables));
+
+        assertThat(variables)
+                .containsEntry("deliveryDateLabel", "17.06.2026")
+                .containsEntry("supplierName", "Rita Restocker");
+        assertThat((java.util.List<?>) variables.get("deliveryItems")).hasSize(1);
+    }
+
     private void handleRequest(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         String response = switch (path) {
@@ -93,6 +136,31 @@ class MailDataEnrichmentServiceTest {
                       "productId": "RS-1",
                       "name": "Kopierpapier",
                       "unit": "Pack"
+                    }
+                    """;
+            case "/api/deliveries/delivery-1/detail" -> """
+                    {
+                      "id": "delivery-1",
+                      "orderId": "42",
+                      "userId": "customer-1",
+                      "recipientEmail": "customer@example.com",
+                      "companyName": "Test GmbH",
+                      "street": "Hauptstrasse",
+                      "houseNumber": "7",
+                      "postalCode": "12345",
+                      "city": "Berlin",
+                      "deliveryHint": "Bitte am Empfang abgeben.",
+                      "deliveryTime": "09:30",
+                      "deliveryDate": "2026-06-17",
+                      "restockerName": "Rita Restocker",
+                      "items": [
+                        {
+                          "articleNumber": "RS-1",
+                          "name": "Kopierpapier",
+                          "quantity": 2,
+                          "unit": "Pack"
+                        }
+                      ]
                     }
                     """;
             default -> "{}";
