@@ -64,6 +64,8 @@ public class ResendMailClient {
 
             String jsonBody = objectMapper.writeValueAsString(payload);
 
+            LOG.info("JSON Body: {}", jsonBody);
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(mailSettings.resendBaseUrl() + "/emails"))
                     .header("Authorization", "Bearer " + mailSettings.resendApiKey().orElseThrow())
@@ -82,7 +84,7 @@ public class ResendMailClient {
         } catch (IOException e) {
             throw new ResendApiUnavailableException("Resend nicht erreichbar: " + e.getMessage());
         } catch (Exception e) {
-            LOG.error("Resend API Fehlerdetails: " + e.getMessage());
+            LOG.error("Resend API Fehlerdetails: {}", e.getMessage());
             throw new RuntimeException("Fehler beim E-Mail Versand via Resend", e);
         }
     }
