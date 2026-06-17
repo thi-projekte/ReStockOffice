@@ -64,7 +64,7 @@ public class ResendMailClient {
 
             String jsonBody = objectMapper.writeValueAsString(payload);
 
-            LOG.info("JSON Body: {}", jsonBody);
+            LOG.info("Sende E-Mail an: {}", recipientEmail);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(mailSettings.resendBaseUrl() + "/emails"))
