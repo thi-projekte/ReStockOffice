@@ -72,11 +72,19 @@ public class UserResource {
     @Context
     HttpHeaders headers;
 
+    // JWT Token wird verwendet, da sub nicht über securityIdentity ausgelesen werden kann
+    private String getLoggedInUserId() {
+        if (jwt == null || jwt.getSubject() == null) {
+            throw new WebApplicationException("Nicht authentifiziert: Kein gültiges Sub-Claim im Token vorhanden.", 401);
+        }
+        return jwt.getSubject();
+    }
+
     // logged-in Customer
     @GET
     @Path("customer/me")
     public CustomerProfileResponse getMyCustomerData() {
-        Customer customer =  findCustomerOrThrow(securityIdentity.getAttribute("sub"));
+        Customer customer =  findCustomerOrThrow(getLoggedInUserId());
         String email = jwt.getClaim("email");
         return new CustomerProfileResponse(customer, email);
     }
@@ -85,7 +93,7 @@ public class UserResource {
     @GET
     @Path("restocker/me")
     public RestockerProfileResponse getMyRestockerData() {
-        Restocker restocker = findRestockerOrThrow(securityIdentity.getAttribute("sub"));
+        Restocker restocker = findRestockerOrThrow(getLoggedInUserId());
         String email = jwt.getClaim("email");
         return new RestockerProfileResponse(restocker, email);
     }
@@ -94,7 +102,7 @@ public class UserResource {
     @GET
     @Path("customer")
     public CustomerProfileResponse getCustomerById(@QueryParam("userId") String userId){
-        String loggedInId = securityIdentity.getAttribute("sub");
+        String loggedInId = getLoggedInUserId();
 
         if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN) && !securityIdentity.hasRole(ROLE_PROCESS_ENGINE)) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
@@ -147,7 +155,7 @@ public class UserResource {
     @GET
     @Path("restocker")
     public Restocker getRestockerById(@QueryParam("userId") String userId){
-        String loggedInId = securityIdentity.getAttribute("sub");
+        String loggedInId = getLoggedInUserId();
 
         if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN)) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
@@ -176,7 +184,7 @@ public class UserResource {
     @Path("customer/create")
     @Transactional
     public Response createCustomer(Customer newCustomer){
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = getLoggedInUserId();
         newCustomer.userId = userId;
 
         if (Customer.findById(userId) != null) {
@@ -194,7 +202,7 @@ public class UserResource {
     @Path("url")
     @Transactional
     public Response updateProfilePictureUrl() {
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = getLoggedInUserId();
         String newImageUrl = "https://hel1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";
         boolean foundAndUpdated = false;
         Customer customer = Customer.findById(userId);
@@ -230,7 +238,7 @@ public class UserResource {
     @Path("restocker/create")
     @Transactional
     public Response createRestocker(Restocker newRestocker){
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = getLoggedInUserId();
         newRestocker.userId = userId;
 
         if (Restocker.findById(userId) != null) {
@@ -255,7 +263,7 @@ public class UserResource {
             // File for Profile-Picture
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
     ){
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = getLoggedInUserId();
         updatedData.userId = userId;
         Customer entity = findCustomerOrThrow(userId);
         boolean deliveryDayChanged = !Objects.equals(entity.deliveryDay, updatedData.deliveryDay);
@@ -297,7 +305,7 @@ public class UserResource {
             // File for Profile-Picture
             @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
     ){
-        String userId = securityIdentity.getAttribute("sub");
+        String userId = getLoggedInUserId();
         updatedData.userId = userId;
         Restocker entity = findRestockerOrThrow(userId);
         boolean hasChanged = applyRestockerChanges(entity, updatedData);
@@ -453,33 +461,6 @@ public class UserResource {
                     .build();
         }
         return this.httpClient;
-    }
-
-    @GET
-    @Path("debug/security")
-    public Response debugSecurityContext() {
-        java.util.Map<String, Object> debugInfo = new java.util.HashMap<>();
-
-        // 1. Was liefert der Principal Name? (Deine gewünschte Variante)
-        if (securityIdentity != null && securityIdentity.getPrincipal() != null) {
-            debugInfo.put("principalName_sub", securityIdentity.getPrincipal().getName());
-        } else {
-            debugInfo.put("principalName_sub", "Principal oder SecurityIdentity ist NULL");
-        }
-
-        // 2. Was liefert das alte getAttribute("sub")?
-        if (securityIdentity != null) {
-            debugInfo.put("attribute_sub", securityIdentity.getAttribute("sub"));
-        } else {
-            debugInfo.put("attribute_sub", "SecurityIdentity ist NULL");
-        }
-
-        // 3. Zum Vergleich: Was steht direkt im injizierten JWT unter "sub"?
-        if (jwt != null) {
-            debugInfo.put("jwt_subject", jwt.getSubject());
-        }
-
-        return Response.ok(debugInfo).build();
     }
 
 }
