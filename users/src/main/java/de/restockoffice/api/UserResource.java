@@ -95,6 +95,7 @@ public class UserResource {
     @Path("customer")
     public CustomerProfileResponse getCustomerById(@QueryParam("userId") String userId){
         String loggedInId = securityIdentity.getAttribute("sub");
+        LOG.info(loggedInId);
 
         if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN) && !securityIdentity.hasRole(ROLE_PROCESS_ENGINE)) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
