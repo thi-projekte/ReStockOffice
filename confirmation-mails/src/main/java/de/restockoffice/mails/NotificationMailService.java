@@ -226,6 +226,9 @@ public class NotificationMailService {
         }
 
         String numericPrefix = normalizedQuantity.split("\\s+", 2)[0];
+        if (!numericPrefix.matches("\\d+")) {
+            return normalizedQuantity;
+        }
         return numericPrefix.endsWith("x") ? numericPrefix : numericPrefix + "x";
     }
 

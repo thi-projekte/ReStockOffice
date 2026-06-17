@@ -43,6 +43,12 @@ class MailResourceTest {
                       "quantity": "4 Pack",
                       "intervalDescription": "Montag alle 2 Wochen",
                       "nextDeliveryDate": "04.05.2026"
+                    },
+                    {
+                      "name": "Lineal 30cm Aluminium",
+                      "articleNumber": "RS-10019",
+                      "quantity": "Deabonniert",
+                      "statusLabel": "Deabonniert"
                     }
                   ]
                 }
@@ -61,6 +67,8 @@ class MailResourceTest {
                 .body(containsString("Kopierpapier A4 Premium"))
                 .body(containsString("4x"))
                 .body(not(containsString("4 Pack")))
+                .body(containsString("Deabonniert"))
+                .body(not(containsString("Deabonniertx")))
                 .body(containsString("<style>"));
     }
 
