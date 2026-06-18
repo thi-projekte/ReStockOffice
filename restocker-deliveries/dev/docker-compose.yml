@@ -1,0 +1,53 @@
+services:
+  restocker-deliveries:
+    image: ghcr.io/thi-projekte/restockoffice-restocker-deliveries:latest
+    container_name: restocker-deliveries-dev
+    ports:
+      - "8082:8080" # Service ist unter http://localhost:8082 erreichbar
+    environment:
+      # Datenbank-URL muss auf den internen Docker-Port zeigen (5432),
+      # aber der Container wird von außen auf 5435 gemappt.
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://restocker-deliveries-db:5432/deliveries_db
+      QUARKUS_DATASOURCE_USERNAME: reStockOffice
+      QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
+      QUARKUS_DATASOURCE_DB_KIND: postgresql
+      QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
+
+      # Keycloak lokal
+      QUARKUS_OIDC_ENABLED: "true"
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://host.docker.internal:8180/realms/restockoffice
+      QUARKUS_OIDC_CLIENT_ID: restock-deliveries
+      QUARKUS_OIDC_CREDENTIALS_SECRET: ${RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET:?Set RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET}
+      QUARKUS_OIDC_APPLICATION_TYPE: service
+
+      # Postman-Rettungsanker
+      QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8180/realms/restockoffice
+
+      # Interne Kommunikation (auf localhost umbiegen)
+      ORDERS_SERVICE_URL: http://host.docker.internal:8081
+      USERS_SERVICE_URL: http://host.docker.internal:8084
+      ARTICLES_SERVICE_URL: http://host.docker.internal:8083
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,https://app.restockoffice.de
+    depends_on:
+      restocker-deliveries-db:
+        condition: service_healthy
+
+  restocker-deliveries-db:
+    image: postgres:15
+    container_name: deliveries-db-dev
+    ports:
+      - "5435:5432" # Host-Port 5435 gemappt auf Container-Port 5432
+    environment:
+      POSTGRES_DB: deliveries_db
+      POSTGRES_USER: reStockOffice
+      POSTGRES_PASSWORD: reStockOffice123$
+    volumes:
+      - deliveries_dev_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reStockOffice"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  deliveries_dev_db_data:

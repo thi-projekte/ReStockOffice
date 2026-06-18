@@ -12,6 +12,7 @@ export interface Product {
 
 
 export interface RestockOrder {
+  id?: number;
   customerId: string;
   productId: string;
   status:  string;

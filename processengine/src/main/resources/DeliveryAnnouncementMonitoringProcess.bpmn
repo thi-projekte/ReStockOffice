@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_DeliveryAnnouncementMonitoring" targetNamespace="http://restockoffice.de/process/delivery/fourteen-days" exporter="Camunda Modeler" exporterVersion="5.46.1" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_DeliveryAnnouncementMonitoring" targetNamespace="http://restockoffice.de/process/delivery/fourteen-days" exporter="Camunda Modeler" exporterVersion="5.45.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:message id="Message_DeliveryPublished" name="DeliveryPublished" />
   <bpmn:message id="Message_DeliveryConfirmed" name="DeliveryConfirmed" />
   <bpmn:collaboration id="Collaboration_DeliveryAnnouncementMonitoring">
@@ -24,13 +24,13 @@
       </bpmn:dataInputAssociation>
       <bpmn:multiInstanceLoopCharacteristics camunda:collection="deliveries" camunda:elementVariable="delivery" />
     </bpmn:sendTask>
-    <bpmn:startEvent id="StartEvent_DailyAnnouncementTimer" name="Täglich 6 Uhr">
+    <bpmn:startEvent id="StartEvent_DailyAnnouncementTimer" name="Täglich 8 Uhr">
       <bpmn:outgoing>Flow_TimerToLoadDeliveries</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEvent_DailyAtSix">
         <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 0 6 * * ?</bpmn:timeCycle>
       </bpmn:timerEventDefinition>
     </bpmn:startEvent>
-    <bpmn:serviceTask id="Task_LoadDeliveriesForAnnouncement" name="Lieferungen in 2 Tagen ermitteln" camunda:delegateExpression="${fetchDeliveriesForAnnouncementDelegate}">
+    <bpmn:serviceTask id="Task_LoadDeliveriesForAnnouncement" name="Lieferungen für heutigen Tag ermitteln" camunda:delegateExpression="${fetchDeliveriesForAnnouncementDelegate}">
       <bpmn:incoming>Flow_TimerToLoadDeliveries</bpmn:incoming>
       <bpmn:outgoing>Flow_LoadDeliveriesToSendAnnouncement</bpmn:outgoing>
       <bpmn:property id="Property_SubscribedArticlesInput" name="__targetRef_placeholder" />
@@ -57,10 +57,17 @@
       </bpmn:dataInputAssociation>
       <bpmn:multiInstanceLoopCharacteristics camunda:collection="deliveries" camunda:elementVariable="delivery" />
       <bpmn:startEvent id="StartEvent_BeginDeliveryMonitoring">
-        <bpmn:outgoing>Flow_BeginMonitoringToWaitForConfirmation</bpmn:outgoing>
+        <bpmn:outgoing>Flow_BeginMonitoringToPrepareContext</bpmn:outgoing>
       </bpmn:startEvent>
+      <bpmn:serviceTask id="Task_PrepareDeliveryMonitoringContext" name="Monitoring-Kontext vorbereiten" camunda:delegateExpression="${prepareDeliveryMonitoringContextDelegate}">
+        <bpmn:incoming>Flow_BeginMonitoringToPrepareContext</bpmn:incoming>
+        <bpmn:outgoing>Flow_PrepareContextToWaitForConfirmation</bpmn:outgoing>
+      </bpmn:serviceTask>
       <bpmn:intermediateCatchEvent id="CatchEvent_DeliveryConfirmed" name="Auslieferung bestätigt">
-        <bpmn:incoming>Flow_BeginMonitoringToWaitForConfirmation</bpmn:incoming>
+        <bpmn:extensionElements>
+          <camunda:executionListener delegateExpression="${prepareDeliveryMonitoringContextDelegate}" event="start" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_PrepareContextToWaitForConfirmation</bpmn:incoming>
         <bpmn:outgoing>Flow_DeliveryConfirmedToSendConfirmation</bpmn:outgoing>
         <bpmn:messageEventDefinition id="MessageEvent_DeliveryConfirmed" messageRef="Message_DeliveryConfirmed" />
       </bpmn:intermediateCatchEvent>
@@ -69,7 +76,8 @@
         <bpmn:outgoing>Flow_SendConfirmationToMonitoringEnd</bpmn:outgoing>
       </bpmn:sendTask>
       <bpmn:sequenceFlow id="Flow_DeliveryConfirmedToSendConfirmation" sourceRef="CatchEvent_DeliveryConfirmed" targetRef="Task_SendDeliveryConfirmation" />
-      <bpmn:sequenceFlow id="Flow_BeginMonitoringToWaitForConfirmation" sourceRef="StartEvent_BeginDeliveryMonitoring" targetRef="CatchEvent_DeliveryConfirmed" />
+      <bpmn:sequenceFlow id="Flow_BeginMonitoringToPrepareContext" sourceRef="StartEvent_BeginDeliveryMonitoring" targetRef="Task_PrepareDeliveryMonitoringContext" />
+      <bpmn:sequenceFlow id="Flow_PrepareContextToWaitForConfirmation" sourceRef="Task_PrepareDeliveryMonitoringContext" targetRef="CatchEvent_DeliveryConfirmed" />
       <bpmn:endEvent id="EndEvent_DeliveryMonitoringCompleted">
         <bpmn:incoming>Flow_SendConfirmationToMonitoringEnd</bpmn:incoming>
       </bpmn:endEvent>
@@ -92,7 +100,7 @@
       <bpmndi:BPMNShape id="StartEvent_DailyAnnouncementTimer_di" bpmnElement="StartEvent_DailyAnnouncementTimer">
         <dc:Bounds x="190" y="187" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="176" y="223" width="66" height="14" />
+          <dc:Bounds x="176" y="223" width="67" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_LoadDeliveriesForAnnouncement_di" bpmnElement="Task_LoadDeliveriesForAnnouncement">
@@ -112,35 +120,42 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="SubProcess_MonitorDeliveryConfirmations_di" bpmnElement="SubProcess_MonitorDeliveryConfirmations" isExpanded="true">
-        <dc:Bounds x="760" y="105" width="480" height="200" />
+        <dc:Bounds x="760" y="105" width="530" height="225" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="StartEvent_BeginDeliveryMonitoring_di" bpmnElement="StartEvent_BeginDeliveryMonitoring">
         <dc:Bounds x="790" y="187" width="36" height="36" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_PrepareDeliveryMonitoringContext_di" bpmnElement="Task_PrepareDeliveryMonitoringContext">
+        <dc:Bounds x="855" y="175" width="110" height="60" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="CatchEvent_DeliveryConfirmed_di" bpmnElement="CatchEvent_DeliveryConfirmed">
-        <dc:Bounds x="885" y="187" width="36" height="36" />
+        <dc:Bounds x="982" y="187" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="872" y="149.5" width="61" height="27" />
+          <dc:Bounds x="969.5" y="149.5" width="61" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_SendDeliveryConfirmation_di" bpmnElement="Task_SendDeliveryConfirmation">
-        <dc:Bounds x="990" y="165" width="140" height="80" />
+        <dc:Bounds x="1050" y="165" width="140" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_DeliveryMonitoringCompleted_di" bpmnElement="EndEvent_DeliveryMonitoringCompleted">
-        <dc:Bounds x="1175" y="187" width="36" height="36" />
+        <dc:Bounds x="1222" y="187" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_DeliveryConfirmedToSendConfirmation_di" bpmnElement="Flow_DeliveryConfirmedToSendConfirmation">
-        <di:waypoint x="921" y="205" />
-        <di:waypoint x="990" y="205" />
+        <di:waypoint x="1018" y="205" />
+        <di:waypoint x="1050" y="205" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_BeginMonitoringToWaitForConfirmation_di" bpmnElement="Flow_BeginMonitoringToWaitForConfirmation">
+      <bpmndi:BPMNEdge id="Flow_BeginMonitoringToPrepareContext_di" bpmnElement="Flow_BeginMonitoringToPrepareContext">
         <di:waypoint x="826" y="205" />
-        <di:waypoint x="885" y="205" />
+        <di:waypoint x="855" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PrepareContextToWaitForConfirmation_di" bpmnElement="Flow_PrepareContextToWaitForConfirmation">
+        <di:waypoint x="965" y="205" />
+        <di:waypoint x="982" y="205" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_SendConfirmationToMonitoringEnd_di" bpmnElement="Flow_SendConfirmationToMonitoringEnd">
-        <di:waypoint x="1130" y="205" />
-        <di:waypoint x="1175" y="205" />
+        <di:waypoint x="1190" y="205" />
+        <di:waypoint x="1222" y="205" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_LoadDeliveriesToSendAnnouncement_di" bpmnElement="Flow_LoadDeliveriesToSendAnnouncement">
         <di:waypoint x="420" y="205" />
@@ -155,9 +170,15 @@
         <di:waypoint x="280" y="205" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_MonitoringToProcessEnd_di" bpmnElement="Flow_MonitoringToProcessEnd">
-        <di:waypoint x="1240" y="205" />
+        <di:waypoint x="1290" y="205" />
         <di:waypoint x="1348" y="205" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="DataStore_SubscribedArticles_di" bpmnElement="DataStore_SubscribedArticles">
+        <dc:Bounds x="305" y="420" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="287" y="477" width="87" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_Customer_di" bpmnElement="Participant_Customer" isHorizontal="true">
         <dc:Bounds x="440" y="420" width="300" height="60" />
         <bpmndi:BPMNLabel />
@@ -165,12 +186,6 @@
       <bpmndi:BPMNShape id="Participant_Restocker_di" bpmnElement="Participant_Restocker" isHorizontal="true">
         <dc:Bounds x="790" y="420" width="340" height="60" />
         <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="DataStore_SubscribedArticles_di" bpmnElement="DataStore_SubscribedArticles">
-        <dc:Bounds x="305" y="420" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="287" y="477" width="87" height="14" />
-        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="DataInput_DeliveriesToAnnouncement_di" bpmnElement="DataInput_DeliveriesToAnnouncement">
         <di:waypoint x="501" y="129" />
@@ -196,19 +211,19 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="MessageFlow_SendDeliveryConfirmationToCustomer_di" bpmnElement="MessageFlow_SendDeliveryConfirmationToCustomer">
-        <di:waypoint x="1060" y="245" />
-        <di:waypoint x="1060" y="330" />
-        <di:waypoint x="720" y="330" />
+        <di:waypoint x="1120" y="245" />
+        <di:waypoint x="1120" y="350" />
+        <di:waypoint x="720" y="350" />
         <di:waypoint x="720" y="420" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="777" y="336" width="85" height="14" />
+          <dc:Bounds x="795" y="356" width="85" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="MessageFlow_RestockerConfirmsDelivery_di" bpmnElement="MessageFlow_RestockerConfirmsDelivery">
-        <di:waypoint x="903" y="420" />
-        <di:waypoint x="903" y="223" />
+        <di:waypoint x="1000" y="420" />
+        <di:waypoint x="1000" y="223" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="907" y="346" width="85" height="27" />
+          <dc:Bounds x="1003" y="346" width="88" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>

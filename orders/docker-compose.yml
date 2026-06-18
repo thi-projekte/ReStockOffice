@@ -1,13 +1,18 @@
 services:
   orders:
-    image: ghcr.io/thi-projekte/restockoffice-orders:2.0.8
+    image: ghcr.io/thi-projekte/restockoffice-orders:latest
     container_name: orders
-    #ports:
-    #  - "8081:8081"
     networks:
       - nginx-proxy-manager
       - orders
     environment:
+      QUARKUS_HTTP_PORT: "8080"
+      QUARKUS_HTTP_CORS_ENABLED: "true"
+      QUARKUS_HTTP_CORS_ORIGINS: "https://app.restockoffice.de"
+      QUARKUS_HTTP_CORS_METHODS: "GET,POST,PUT,DELETE,OPTIONS,HEAD,PATCH"
+      QUARKUS_HTTP_CORS_HEADERS: "content-type,authorization,accept,origin,x-requested-with"
+      QUARKUS_HTTP_CORS_ACCESS_CONTROL_ALLOW_CREDENTIALS: "true"
+      PROCESSENGINE_ABO_CONFIRMATION_START_URL: http://restockoffice-processengine:8080/api/abo-confirmation-process/change
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://db-container:5432/orders_db
       QUARKUS_DATASOURCE_USERNAME: reStockOffice
       QUARKUS_DATASOURCE_PASSWORD: reStockOffice123$
@@ -20,7 +25,8 @@ services:
       QUARKUS_OIDC_CREDENTIALS_SECRET: "restock-secret"
       QUARKUS_OIDC_APPLICATION_TYPE: service
     depends_on:
-      - db-container
+      db-container:
+        condition: service_healthy
 
   db-container:
     image: postgres:15

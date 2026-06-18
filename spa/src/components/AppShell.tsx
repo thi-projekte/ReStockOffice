@@ -864,7 +864,12 @@ export function AppShell({ children }: AppShellProps) {
       </main>
 
       <footer className="site-footer">
-        <div className="container">© 2026 ReStockOffice</div>
+        <div className="container site-footer__inner">
+          <a href="https://restockoffice.de/kontakt">Kontakt</a>
+          <a href="https://restockoffice.de/impressum">Impressum</a>
+          <a href="https://restockoffice.de/agb-datenschutz">AGB & Datenschutz</a>
+          <span>ReStockOffice {'\u00A9'}2026</span>
+        </div>
 
         {isLoggedIn && isRestocker ? (
           <nav className="restocker-mobile-tabbar" aria-label="Restocker Navigation">

@@ -4,6 +4,8 @@ import { getCategorySlug, getProducts } from "../services/products";
 import type { Product } from "../types/shop";
 import {ProductCarousel} from "../components/ProductCarousel";
 import keycloak from "../auth/keycloak";
+import type { CustomerDeliveryOverview } from "../services/deliveries";
+import { loadCustomerDeliveryOverview } from "../services/deliveries";
 
 interface CategoryTile {
   id: string;
@@ -96,6 +98,28 @@ export function HomePage() {
     });
   }
 
+  const [overview, setOverview] = useState<CustomerDeliveryOverview | null>(null);
+  const token = keycloak.token;
+  const customerId = keycloak.tokenParsed?.sub;
+
+  useEffect(() => {
+    if (!customerId || !token) return;
+
+    loadCustomerDeliveryOverview({
+      customerId,
+      token,
+    }).then(setOverview);
+  }, [customerId, token]);
+
+  function formatDate(date?: string | null) {
+    if (!date) return "—";
+
+    return new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(date));
+  }
 
   return (
     <div className="home-showcase">
@@ -142,9 +166,19 @@ export function HomePage() {
             </a>
 
             <article className="dashboard-stat">
-              <span className="dashboard-stat__label">Nächste Lieferung</span>
-              <strong>24. April 2026</strong>
-              <small>Geplante Ankunft zwischen 09:00 und 12:00 Uhr</small>
+              <span className="dashboard-stat__label">Letzte Lieferung</span>
+
+              <strong>
+                {overview?.lastDelivery?.deliveryDate
+                    ? formatDate(overview.lastDelivery.deliveryDate)
+                    : "—"}
+              </strong>
+
+              <small>
+                {overview?.lastDelivery?.status === "DELIVERED"
+                    ? "Vollständig eingegangen und verbucht"
+                    : overview?.lastDelivery?.status ?? "Keine Daten"}
+              </small>
             </article>
 
             <article className="dashboard-stat">
@@ -156,9 +190,21 @@ export function HomePage() {
             </article>
 
             <article className="dashboard-stat">
-              <span className="dashboard-stat__label">Letzte Lieferung</span>
-              <strong>20. April 2026</strong>
-              <small>Vollständig eingegangen und verbucht</small>
+              <span className="dashboard-stat__label">Nächste Lieferung</span>
+
+              <strong>
+                <strong>
+                  {overview?.nextDelivery?.deliveryDate
+                      ? formatDate(overview.nextDelivery.deliveryDate)
+                      : "—"}
+                </strong>
+              </strong>
+
+              <small>
+                {overview?.nextDelivery?.status === "ACCEPTED"
+                    ? "Geplant und bestätigt"
+                    : overview?.nextDelivery?.status ?? "Keine Daten"}
+              </small>
             </article>
           </div>
         </div>

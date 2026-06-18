@@ -33,6 +33,8 @@ const RESTOCKER_ASSIGNMENTS_STORAGE_KEY = "restockoffice-restocker-order-assignm
 const RESTOCKER_LOOKAHEAD_DAYS = 28;
 const DEMO_OPEN_TODAY_CUSTOMER_ID = "104";
 const DEMO_COMPLETED_TODAY_CUSTOMER_ID = "105";
+const EMPTY_DELIVERY_NOTES_VALUE = "Keine zusätzlichen Hinweise";
+const MISSING_DELIVERY_TIME_VALUE = "Keine Angabe";
 
 interface OrdersRequestContext {
   customerId?: string;
@@ -60,11 +62,12 @@ interface UpsertOrderPayload extends OrdersRequestContext {
   productId: string;
   quantity: number;
   intervalCount: number;
-  existingItem?: Pick<RestockOrder, "createdAt" | "status">;
+  existingItem?: Pick<RestockOrder, "id" | "createdAt" | "status">;
 }
 
 interface DeleteOrderPayload extends OrdersRequestContext {
   productId: string;
+  existingItem?: Pick<RestockOrder, "id" | "quantity" | "interval">;
 }
 
 interface MarketplaceCustomerData {
@@ -199,22 +202,19 @@ function buildOrderNumber(customerId: string, deliveryDateKey: string) {
   return String(1000 + (hashValue % 9000));
 }
 
-function buildQuantityLabel(product: Product | undefined, quantity: number) {
-  if (!product) {
-    return `${quantity} Einheit${quantity === 1 ? "" : "en"}`;
-  }
-
-  const unitCount = Number(product.unitCount);
-
-  if (Number.isFinite(unitCount) && unitCount > 1) {
-    return `${quantity} Karton${quantity === 1 ? "" : "s"} a ${product.unitCount} ${product.unit}`;
-  }
-
-  return `${quantity} x ${product.unit}`;
+function buildQuantityLabel(_product: Product | undefined, quantity: number) {
+  return `${quantity}x`;
 }
 
 function normalizeMarketplaceText(value: string | null | undefined) {
   return value?.trim() || MISSING_MARKETPLACE_VALUE;
+}
+
+function normalizeDeliveryNotes(value: string | null | undefined) {
+  const normalizedValue = value?.trim();
+  return !normalizedValue || normalizedValue === MISSING_MARKETPLACE_VALUE
+    ? EMPTY_DELIVERY_NOTES_VALUE
+    : normalizedValue;
 }
 
 function buildStreetLine(detail?: DeliveryDetail) {
@@ -246,12 +246,19 @@ function formatMarketplaceDeliveryTime(
   deliveryTime: DeliveryDetail["deliveryTime"] | null | undefined,
 ) {
   if (deliveryTime == null) {
-    return MISSING_MARKETPLACE_VALUE;
+    return MISSING_DELIVERY_TIME_VALUE;
   }
 
   const normalizedValue = String(deliveryTime).trim();
-  if (!normalizedValue) {
-    return MISSING_MARKETPLACE_VALUE;
+  const normalizedTimeValue = normalizedValue.replace(/\s*uhr$/i, "").trim();
+
+  if (
+    !normalizedTimeValue ||
+    normalizedTimeValue === "0" ||
+    normalizedTimeValue === "00" ||
+    normalizedTimeValue === "00:00"
+  ) {
+    return MISSING_DELIVERY_TIME_VALUE;
   }
 
   if (
@@ -271,12 +278,20 @@ function formatMarketplaceDeliveryTime(
       return normalizedValue;
     }
 
+    if (hours === 0 && minutes === 0) {
+      return MISSING_DELIVERY_TIME_VALUE;
+    }
+
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} Uhr`;
   }
 
   const hours = Number(normalizedValue);
   if (!Number.isFinite(hours)) {
     return normalizedValue;
+  }
+
+  if (hours === 0) {
+    return MISSING_DELIVERY_TIME_VALUE;
   }
 
   return `${String(hours).padStart(2, "0")}:00 Uhr`;
@@ -376,12 +391,19 @@ function resolveMarketplaceCustomerData({
       postalCode: normalizeMarketplaceText(deliveryDetail.postalCode),
       city: normalizeMarketplaceText(deliveryDetail.city),
       deliveryTime: formatMarketplaceDeliveryTime(deliveryDetail.deliveryTime),
-      deliveryNotes: normalizeMarketplaceText(deliveryDetail.deliveryHint),
+      deliveryNotes: normalizeDeliveryNotes(deliveryDetail.deliveryHint),
     };
 
     return {
       ...customerData,
-      isPlaceholder: Object.values(customerData).includes(MISSING_MARKETPLACE_VALUE),
+      isPlaceholder: [
+        customerData.companyName,
+        customerData.street,
+        customerData.postalCode,
+        customerData.city,
+        customerData.deliveryTime,
+      ].includes(MISSING_MARKETPLACE_VALUE) ||
+        customerData.deliveryTime === MISSING_DELIVERY_TIME_VALUE,
     };
   }
 
@@ -403,8 +425,8 @@ function resolveMarketplaceCustomerData({
     street: MISSING_MARKETPLACE_VALUE,
     postalCode: MISSING_MARKETPLACE_VALUE,
     city: MISSING_MARKETPLACE_VALUE,
-    deliveryTime: MISSING_MARKETPLACE_VALUE,
-    deliveryNotes: MISSING_MARKETPLACE_VALUE,
+    deliveryTime: MISSING_DELIVERY_TIME_VALUE,
+    deliveryNotes: EMPTY_DELIVERY_NOTES_VALUE,
     isPlaceholder: true,
   };
 }
@@ -418,8 +440,8 @@ function hasMissingCustomerData(order: RestockMarketplaceOrder) {
       order.postalCode,
       order.city,
       order.deliveryTime,
-      order.deliveryNotes,
-    ].includes(MISSING_MARKETPLACE_VALUE)
+    ].includes(MISSING_MARKETPLACE_VALUE) ||
+    order.deliveryTime === MISSING_DELIVERY_TIME_VALUE
   );
 }
 
@@ -448,6 +470,7 @@ function applyCustomerProfile(
   const profileDeliveryTime = formatMarketplaceDeliveryTime(
     profile.deliveryTime ?? null,
   );
+  const profileDeliveryNotes = normalizeDeliveryNotes(profile.deliveryHint);
   const nextOrder = {
     ...order,
     companyName: profileValueOrCurrent(profile.companyName, order.companyName),
@@ -458,13 +481,12 @@ function applyCustomerProfile(
     postalCode: profileValueOrCurrent(profile.postalCode, order.postalCode),
     city: profileValueOrCurrent(profile.city, order.city),
     deliveryTime:
-      profileDeliveryTime === MISSING_MARKETPLACE_VALUE
+      profileDeliveryTime === MISSING_DELIVERY_TIME_VALUE
         ? order.deliveryTime
         : profileDeliveryTime,
-    deliveryNotes: profileValueOrCurrent(
-      profile.deliveryHint,
-      order.deliveryNotes,
-    ),
+    deliveryNotes: profileDeliveryNotes === EMPTY_DELIVERY_NOTES_VALUE
+      ? normalizeDeliveryNotes(order.deliveryNotes)
+      : profileDeliveryNotes,
   };
 
   return {
@@ -514,7 +536,7 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
     .filter((detail) => !isDeliveryDateInPast(detail.deliveryDate))
     .map((detail) => {
       const deliveryTime = formatMarketplaceDeliveryTime(detail.deliveryTime);
-      const deliveryNotes = normalizeMarketplaceText(detail.deliveryHint);
+      const deliveryNotes = normalizeDeliveryNotes(detail.deliveryHint);
       const assignment = detail.acceptedAt || detail.restockerName
         ? {
           restockerId: detail.restockerName ?? "",
@@ -528,7 +550,7 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
         productId: item.articleNumber,
         name: normalizeMarketplaceText(item.name),
         quantity: item.quantity,
-        quantityLabel: `${item.quantity} ${normalizeMarketplaceText(item.unit)}`,
+        quantityLabel: `${item.quantity}x`,
         interval: 1,
       }));
 
@@ -546,7 +568,7 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
         articleCount: detail.items.length,
         items,
         isPlaceholderCustomerData:
-          deliveryTime === MISSING_MARKETPLACE_VALUE ||
+          deliveryTime === MISSING_DELIVERY_TIME_VALUE ||
           [detail.companyName, detail.street, detail.postalCode, detail.city].some(
             (value) => !value?.trim(),
           ),
@@ -637,8 +659,10 @@ function getMockOrdersForCustomer(customerId: string) {
 
 function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   const source = rawOrder as Record<string, unknown>;
+  const id = Number(source.id);
 
   return {
+    ...(Number.isFinite(id) ? { id } : {}),
     customerId: String(source.customerId ?? ""),
     productId: String(source.productId ?? ""),
     status: String(source.status ?? "ACTIVE"),
@@ -661,7 +685,9 @@ function createSubscriptionFromOrders(
   orders: RestockOrder[],
   customerId: string,
 ): Subscription {
-  const customerOrders = orders.filter((order) => order.customerId === customerId);
+  const customerOrders = orders.filter(
+    (order) => order.customerId === customerId && order.status.toUpperCase() === "ACTIVE",
+  );
   const firstOrder = customerOrders[0];
   const today = formatDate(new Date());
 
@@ -993,7 +1019,7 @@ export async function upsertSubscriptionOrder({
   quantity,
   intervalCount,
   existingItem,
-}: UpsertOrderPayload): Promise<{ productId: string; status: string; quantity: number; interval: number }> {
+}: UpsertOrderPayload): Promise<Pick<RestockOrder, "id" | "productId" | "status" | "quantity" | "interval">> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
@@ -1033,9 +1059,13 @@ export async function upsertSubscriptionOrder({
 
   let response: Response;
 
+  const orderUrl = existingItem?.id
+    ? `${ORDERS_API_URL}/${existingItem.id}`
+    : ORDERS_API_URL;
+
   try {
-    response = await fetch(ORDERS_API_URL, {
-      method: "POST",
+    response = await fetch(orderUrl, {
+      method: existingItem?.id ? "PUT" : "POST",
       headers: createHeaders(resolvedToken),
       body: JSON.stringify(orderPayload),
     });
@@ -1064,6 +1094,7 @@ export async function deleteSubscriptionOrder({
   customerId,
   token,
   productId,
+  existingItem,
 }: DeleteOrderPayload): Promise<void> {
   if (!useAPIs) {
     if (!customerId) {
@@ -1085,15 +1116,19 @@ export async function deleteSubscriptionOrder({
 
   let response: Response;
 
+  const orderUrl = existingItem?.id
+    ? `${ORDERS_API_URL}/${existingItem.id}`
+    : ORDERS_API_URL;
+
   try {
-    response = await fetch(ORDERS_API_URL, {
-      method: "POST",
+    response = await fetch(orderUrl, {
+      method: existingItem?.id ? "PUT" : "POST",
       headers: createHeaders(resolvedToken),
       body: JSON.stringify({
         productId,
         status: "CANCELLED",
-        quantity: 0,
-        interval: 1,
+        quantity: existingItem?.quantity ?? 1,
+        interval: existingItem?.interval ?? 1,
       }),
     });
   } catch {

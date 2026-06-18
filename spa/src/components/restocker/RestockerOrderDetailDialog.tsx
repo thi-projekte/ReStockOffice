@@ -15,6 +15,16 @@ interface RestockerOrderDetailDialogProps {
   infoRows?: ReactNode;
 }
 
+const EMPTY_DELIVERY_NOTES_LABEL = "Keine zusätzlichen Hinweise";
+const MISSING_DELIVERY_NOTES_LABEL = "Fehlt noch";
+
+function formatDeliveryNotes(value: string) {
+  const normalizedValue = value.trim();
+  return !normalizedValue || normalizedValue === MISSING_DELIVERY_NOTES_LABEL
+    ? EMPTY_DELIVERY_NOTES_LABEL
+    : normalizedValue;
+}
+
 export function RestockerOrderDetailDialog({
   order,
   backLabel,
@@ -95,7 +105,9 @@ export function RestockerOrderDetailDialog({
 
             <div className="restocker-order-dialog__info-row restocker-order-dialog__info-row--notes">
               <span className="restocker-order-dialog__info-label">Hinweise</span>
-              <p className="restocker-order-dialog__notes-copy">{order.deliveryNotes}</p>
+              <p className="restocker-order-dialog__notes-copy">
+                {formatDeliveryNotes(order.deliveryNotes)}
+              </p>
             </div>
 
             {infoRows}

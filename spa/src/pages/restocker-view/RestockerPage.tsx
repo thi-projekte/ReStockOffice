@@ -21,6 +21,7 @@ import { RestockerOrderDetailDialog } from "../../components/restocker/Restocker
 import { formatDeliveryWindow } from "./restockerOrderUi";
 
 const RESTOCKER_TOUR_PROCESS_API_URL =
+    import.meta.env.VITE_RESTOCKER_TOUR_PROCESS_API_URL ??
     "https://pe.restockoffice.de/api/restocker-tour-process";
 
 // Interface, um zu prüfen, ob bereits ein Prozess läuft
@@ -151,6 +152,10 @@ export function RestockerPage() {
         (order) => order.assignment?.status === "completed"
     ).length;
     const openAssignedToday = assignedToday.filter(
+        (order) =>
+            Boolean(order.assignment && order.assignment.status !== "completed")
+    );
+    const openAssignedOrders = assignedOrdersResult.orders.filter(
         (order) =>
             Boolean(order.assignment && order.assignment.status !== "completed")
     );
@@ -418,14 +423,14 @@ export function RestockerPage() {
                             <p>Lade deine Aufträge...</p>
                         ) : assignedError ? (
                             <p style={{ color: "red" }}>{assignedError}</p>
-                        ) : assignedOrdersResult.orders.length === 0 ? (
-                            <p>Du hast aktuell keine zugeordneten Aufträge.</p>
+                        ) : openAssignedOrders.length === 0 ? (
+                            <p>Du hast aktuell keine offenen zugeordneten Aufträge.</p>
                         ) : (
                             <>
-                                <p>Du hast aktuell {assignedOrdersResult.orders.length} zugeordnete Aufträge.</p>
+                                <p>Du hast aktuell {openAssignedOrders.length} offene zugeordnete Aufträge.</p>
                                 <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
                                 <div className="open-orders-carousel">
-                                    {assignedOrdersResult.orders.slice(0, 6).map((order) => (
+                                    {openAssignedOrders.slice(0, 6).map((order) => (
                                         <RestockerOrderCard
                                             key={order.orderKey}
                                             order={order}

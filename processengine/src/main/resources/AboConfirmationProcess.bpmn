@@ -22,7 +22,7 @@
       <bpmn:incoming>Flow_0fdpeuc</bpmn:incoming>
       <bpmn:outgoing>Flow_1466l9b</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_1v0ajwc">
-        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT10M</bpmn:timeDuration>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">${aboConfirmationWindowDuration != null ? aboConfirmationWindowDuration : 'PT10M'}</bpmn:timeDuration>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
     <bpmn:endEvent id="EndEvent_AboConfirmationSent" name="Abobestätigung verschickt">
