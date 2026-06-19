@@ -2,9 +2,9 @@ import keycloak from "../auth/keycloak";
 import mockRestockOrderTemplates from "../mocks/restockOrders.json";
 import customerTemplate from "../mocks/customer.json";
 import restockerTemplate from "../mocks/restocker.json";
-import type { RestockOrder } from "../types/shop";
-import { useAPIs } from "./products";
-import { keycloakConfig } from "../auth/keycloakConfig";
+import type {RestockOrder} from "../types/shop";
+import {useAPIs} from "./products";
+import {keycloakConfig} from "../auth/keycloakConfig";
 
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL ?? "https://users.restockoffice.de";
 const CUSTOMER_ME_API_URL = `${USERS_API_URL}/customer/me`;
@@ -55,18 +55,18 @@ export type UserProfile = CustomerUser | RestockerUser;
 export type User = UserProfile;
 
 type CreatePayloadFor<T extends UserProfile> = Omit<T, "createdAt" | "updatedAt"> &
-    Partial<Pick<T, "createdAt" | "updatedAt">>;
+  Partial<Pick<T, "createdAt" | "updatedAt">>;
 
 type UpdatePayloadFor<T extends UserProfile> = Partial<Omit<T, "userId" | "kind">> &
-    Pick<T, "userId" | "kind">;
+  Pick<T, "userId" | "kind">;
 
 export type CreateUserPayload =
-    | CreatePayloadFor<CustomerUser>
-    | CreatePayloadFor<RestockerUser>;
+  | CreatePayloadFor<CustomerUser>
+  | CreatePayloadFor<RestockerUser>;
 
 export type UpdateUserPayload =
-    | UpdatePayloadFor<CustomerUser>
-    | UpdatePayloadFor<RestockerUser>;
+  | UpdatePayloadFor<CustomerUser>
+  | UpdatePayloadFor<RestockerUser>;
 
 export type SaveUserPayload = (CreateUserPayload | UpdateUserPayload) & {
   profilePictureFile?: File;
@@ -82,15 +82,11 @@ export interface UserRestockOrdersRequestContext extends UserRequestContext {
   userId: string;
 }
 
-const LEGACY_MOCK_IMAGE_PREFIX = "../assets/";
-const mockAssetModules = import.meta.glob("../assets/**/*.{png,jpg,jpeg,svg}", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
 const mockUsers = new Map<string, UserProfile>();
 const mockUserRestockOrders: Record<string, RestockOrder[]> = {};
+const PROFILE_IMAGE_BASE_URL = "https://hel1.your-objectstorage.com/restockoffice/users";
 
-function buildUsersNetworkErrorMessage(action: "geladen" | "gespeichert") {
+function buildUsersNetworkErrorMessage(): string {
   return "Die Users-API konnte nicht erreicht werden.";
 }
 
@@ -100,7 +96,7 @@ class UserProfileNotFoundError extends Error {
   }
 }
 
-async function resolveToken(token?: string) {
+async function resolveToken(token?: string): Promise<string> {
   if (!useAPIs) {
     return "";
   }
@@ -126,72 +122,117 @@ async function resolveToken(token?: string) {
   return keycloak.token;
 }
 
-function createJsonHeaders(token: string) {
+function createJsonHeaders(token: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   };
 }
 
-function createAuthHeaders(token: string) {
+function createAuthHeaders(token: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
   };
 }
 
-function optionalString(value: unknown) {
+function stringifyUserValue(value: unknown, fallback: string): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return value.toString();
+  }
+
+  return fallback;
+}
+
+function optionalString(value: unknown): string | undefined {
   if (value === undefined || value === null || value === "") {
     return undefined;
   }
 
-  return String(value);
+  const stringValue = stringifyUserValue(value, "");
+  return stringValue || undefined;
 }
 
-function resolveProfileImageUrl(value: unknown) {
-  const imageUrl = optionalString(value);
+function parseDeliveryTimeHour(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
 
-  if (!imageUrl) {
+  const stringValue = stringifyUserValue(value, "").trim();
+  if (!stringValue) {
+    return 0;
+  }
+
+  const hour = Number(stringValue.split(":")[0]);
+  return Number.isFinite(hour) ? hour : 0;
+}
+
+function buildProfileImageUrl(): string | undefined {
+  const normalizedUserId = stringifyUserValue(keycloak.tokenParsed?.sub, "").trim();
+
+  if (!normalizedUserId) {
     return undefined;
   }
 
-  if (imageUrl.startsWith(LEGACY_MOCK_IMAGE_PREFIX)) {
-    return mockAssetModules[imageUrl] ?? undefined;
-  }
-
-  return imageUrl;
+  return `${PROFILE_IMAGE_BASE_URL}/${encodeURIComponent(normalizedUserId)}.jpg`;
 }
 
 function collectKeycloakRoles(): string[] {
   const realmRoles = keycloak.tokenParsed?.realm_access?.roles ?? [];
   const clientRoles =
-      keycloak.tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
+    keycloak.tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
 
   return [...realmRoles, ...clientRoles];
 }
 
-function resolveUserKind(context: UserRequestContext = {}): UserKind {
+function resolveKeycloakUserKind(): UserKind | undefined {
+  const roles = collectKeycloakRoles();
+  const hasRestockerRole = roles.some(
+    (role) => role.trim().toLowerCase() === "restocker"
+  );
+
+  if (hasRestockerRole) {
+    return "restocker";
+  }
+
+  if (keycloak.authenticated || roles.length > 0) {
+    return "customer";
+  }
+
+  return undefined;
+}
+
+function resolveUserKind(
+  context: UserRequestContext = {},
+  fallbackKind?: UserKind,
+): UserKind {
   if (context.kind) {
     return context.kind;
   }
 
-  return collectKeycloakRoles().some(
-      (role) => role.trim().toLowerCase() === "restocker"
-  ) ? "restocker" : "customer";
+  return resolveKeycloakUserKind() ?? fallbackKind ?? "customer";
 }
 
-function getMeApiUrl(kind: UserKind) {
+function getMeApiUrl(kind: UserKind): string {
   return kind === "restocker" ? RESTOCKER_ME_API_URL : CUSTOMER_ME_API_URL;
 }
 
-function getCreateApiUrl(kind: UserKind) {
+function getCreateApiUrl(kind: UserKind): string {
   return kind === "restocker" ? RESTOCKER_CREATE_API_URL : CUSTOMER_CREATE_API_URL;
 }
 
-function getUpdateApiUrl(kind: UserKind) {
+function getUpdateApiUrl(kind: UserKind): string {
   return kind === "restocker" ? RESTOCKER_UPDATE_API_URL : CUSTOMER_UPDATE_API_URL;
 }
 
-export function getAdminUsersApiUrl(kind: UserKind, userId?: string) {
+export function getAdminUsersApiUrl(kind: UserKind, userId?: string): string {
   const baseUrl = kind === "restocker" ? RESTOCKERS_API_URL : CUSTOMERS_API_URL;
 
   if (!userId) {
@@ -204,27 +245,28 @@ export function getAdminUsersApiUrl(kind: UserKind, userId?: string) {
 function normalizeCustomer(rawUser: unknown): CustomerUser {
   const payload = rawUser as Record<string, unknown>;
   const source = (
-      payload.customer && typeof payload.customer === "object" ? payload.customer : payload
+    payload.customer && typeof payload.customer === "object" ? payload.customer : payload
   ) as Record<string, unknown>;
+  const userId = stringifyUserValue(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub, "");
 
   return {
     kind: "customer",
-    userId: String(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub ?? ""),
-    postalCode: String(source.postalCode ?? source.zipCode ?? ""),
-    city: String(source.city ?? ""),
-    street: String(source.street ?? ""),
-    houseNumber: String(source.houseNumber ?? ""),
-    country: String(source.country ?? ""),
-    companyName: String(source.companyName ?? source.company ?? ""),
-    phoneNumber: String(source.phoneNumber ?? source.phone ?? ""),
+    userId,
+    postalCode: stringifyUserValue(source.postalCode ?? source.zipCode, ""),
+    city: stringifyUserValue(source.city, ""),
+    street: stringifyUserValue(source.street, ""),
+    houseNumber: stringifyUserValue(source.houseNumber, ""),
+    country: stringifyUserValue(source.country, ""),
+    companyName: stringifyUserValue(source.companyName ?? source.company, ""),
+    phoneNumber: stringifyUserValue(source.phoneNumber ?? source.phone, ""),
     roleInCompany: optionalString(source.roleInCompany ?? source.role),
     birthDate: optionalString(source.birthDate),
     deliveryHint: optionalString(source.deliveryHint ?? source.deliveryNote),
     deliveryDay: optionalString(source.deliveryDay),
-    deliveryTime: Number(source.deliveryTime ?? 0),
+    deliveryTime: parseDeliveryTimeHour(source.deliveryTime),
     iban: optionalString(source.iban ?? source.IBAN),
-    profilePictureUrl: resolveProfileImageUrl(source.profilePictureUrl ?? source.profileImageUrl),
-    createdAt: String(source.createdAt ?? new Date().toISOString()),
+    profilePictureUrl: buildProfileImageUrl(),
+    createdAt: stringifyUserValue(source.createdAt, new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
     existsInUserService: source.existsInUserService !== false,
   };
@@ -233,24 +275,25 @@ function normalizeCustomer(rawUser: unknown): CustomerUser {
 function normalizeRestocker(rawUser: unknown): RestockerUser {
   const payload = rawUser as Record<string, unknown>;
   const source = (
-      payload.restocker && typeof payload.restocker === "object" ? payload.restocker : payload
+    payload.restocker && typeof payload.restocker === "object" ? payload.restocker : payload
   ) as Record<string, unknown>;
+  const userId = stringifyUserValue(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub, "");
 
   return {
     kind: "restocker",
-    userId: String(source.userId ?? source.id ?? source.keycloakId ?? keycloak.tokenParsed?.sub ?? ""),
-    postalCode: String(source.postalCode ?? source.zipCode ?? ""),
-    city: String(source.city ?? ""),
-    street: String(source.street ?? ""),
-    houseNumber: String(source.houseNumber ?? ""),
-    country: String(source.country ?? ""),
-    phoneNumber: String(source.phoneNumber ?? source.phone ?? ""),
-    iban: String(source.iban ?? source.IBAN ?? ""),
-    bic: String(source.bic ?? source.BIC ?? ""),
-    accountHolder: String(source.accountHolder ?? ""),
+    userId,
+    postalCode: stringifyUserValue(source.postalCode ?? source.zipCode, ""),
+    city: stringifyUserValue(source.city, ""),
+    street: stringifyUserValue(source.street, ""),
+    houseNumber: stringifyUserValue(source.houseNumber, ""),
+    country: stringifyUserValue(source.country, ""),
+    phoneNumber: stringifyUserValue(source.phoneNumber ?? source.phone, ""),
+    iban: stringifyUserValue(source.iban ?? source.IBAN, ""),
+    bic: stringifyUserValue(source.bic ?? source.BIC, ""),
+    accountHolder: stringifyUserValue(source.accountHolder, ""),
     birthDate: optionalString(source.birthDate),
-    profilePictureUrl: resolveProfileImageUrl(source.profilePictureUrl ?? source.profileImageUrl),
-    createdAt: String(source.createdAt ?? new Date().toISOString()),
+    profilePictureUrl: buildProfileImageUrl(),
+    createdAt: stringifyUserValue(source.createdAt, new Date().toISOString()),
     updatedAt: optionalString(source.updatedAt),
     existsInUserService: source.existsInUserService !== false,
   };
@@ -264,66 +307,68 @@ function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   const source = rawOrder as Record<string, unknown>;
 
   return {
-    customerId: String(source.customerId ?? source.userId ?? ""),
-    productId: String(source.productId ?? ""),
-    status: String(source.status ?? "ACTIVE"),
+    customerId: stringifyUserValue(source.customerId ?? source.userId, ""),
+    productId: stringifyUserValue(source.productId, ""),
+    status: stringifyUserValue(source.status, "ACTIVE"),
     quantity: Number(source.quantity ?? 1),
     interval: Number(source.interval ?? 1),
-    createdAt: String(source.createdAt ?? ""),
-    updatedAt: String(source.updatedAt ?? ""),
+    createdAt: stringifyUserValue(source.createdAt, ""),
+    updatedAt: stringifyUserValue(source.updatedAt, ""),
   };
 }
 
 function normalizeUserRestockOrders(payload: unknown): RestockOrder[] {
   const source = payload as Record<string, unknown>;
-  const rawOrders = Array.isArray(payload)
-      ? payload
-      : Array.isArray(source.restockOrders)
-          ? source.restockOrders
-          : Array.isArray(source.orders)
-              ? source.orders
-              : [];
+  let rawOrders: unknown[] = [];
+
+  if (Array.isArray(payload)) {
+    rawOrders = payload;
+  } else if (Array.isArray(source.restockOrders)) {
+    rawOrders = source.restockOrders;
+  } else if (Array.isArray(source.orders)) {
+    rawOrders = source.orders;
+  }
 
   return rawOrders.map(normalizeRestockOrder);
 }
 
 function createMockUser(userId: string, kind: UserKind): UserProfile {
   return normalizeUser(
-      {
-        ...(kind === "restocker" ? restockerTemplate : customerTemplate),
-        userId,
-      },
-      kind,
+    {
+      ...(kind === "restocker" ? restockerTemplate : customerTemplate),
+      userId,
+    },
+    kind,
   );
 }
 
 function createEmptyUserProfile(kind: UserKind): UserProfile {
   return normalizeUser(
-      {
-        userId: keycloak.tokenParsed?.sub ?? "",
-        postalCode: "",
-        city: "",
-        street: "",
-        houseNumber: "",
-        country: "",
-        companyName: "",
-        phoneNumber: "",
-        roleInCompany: "",
-        birthDate: "",
-        deliveryHint: "",
-        deliveryDay: "",
-        deliveryTime: 0,
-        iban: "",
-        bic: "",
-        accountHolder: "",
-        createdAt: "",
-        existsInUserService: false,
-      },
-      kind,
+    {
+      userId: keycloak.tokenParsed?.sub ?? "",
+      postalCode: "",
+      city: "",
+      street: "",
+      houseNumber: "",
+      country: "",
+      companyName: "",
+      phoneNumber: "",
+      roleInCompany: "",
+      birthDate: "",
+      deliveryHint: "",
+      deliveryDay: "",
+      deliveryTime: 0,
+      iban: "",
+      bic: "",
+      accountHolder: "",
+      createdAt: "",
+      existsInUserService: false,
+    },
+    kind,
   );
 }
 
-function getMockUser(userId: string, kind: UserKind) {
+function getMockUser(userId: string, kind: UserKind): UserProfile {
   const cacheKey = `${kind}:${userId}`;
   let mockUser = mockUsers.get(cacheKey);
 
@@ -342,11 +387,11 @@ function getMockUser(userId: string, kind: UserKind) {
   return mockUser;
 }
 
-async function readJsonResponse(response: Response) {
+async function readJsonResponse(response: Response): Promise<unknown> {
   return (await response.json().catch(() => null)) as unknown;
 }
 
-function assertSuccessfulResponse(response: Response, action: "geladen" | "gespeichert") {
+function assertSuccessfulResponse(response: Response, action: "geladen" | "gespeichert"): void {
   if (response.ok) {
     return;
   }
@@ -385,7 +430,7 @@ async function fetchCurrentUserPayload(context: UserRequestContext = {}): Promis
       headers: createAuthHeaders(resolvedToken),
     });
   } catch {
-    throw new Error(buildUsersNetworkErrorMessage("geladen"));
+    throw new Error(buildUsersNetworkErrorMessage());
   }
 
   assertSuccessfulResponse(response, "geladen");
@@ -396,12 +441,12 @@ async function fetchCurrentUserPayload(context: UserRequestContext = {}): Promis
     throw new Error("Die Users-API hat ein unerwartetes Antwortformat geliefert.");
   }
 
-  return { payload, kind };
+  return {payload, kind};
 }
 
 export async function getMyUser(context: UserRequestContext = {}): Promise<UserProfile> {
   try {
-    const { payload, kind } = await fetchCurrentUserPayload(context);
+    const {payload, kind} = await fetchCurrentUserPayload(context);
     return normalizeUser(payload, kind);
   } catch (error) {
     if (error instanceof UserProfileNotFoundError) {
@@ -412,29 +457,73 @@ export async function getMyUser(context: UserRequestContext = {}): Promise<UserP
   }
 }
 
-function createUserData(user: SaveUserPayload, isCreateRequest: boolean) {
-  const userData = { ...user } as Record<string, unknown>;
-  delete userData.kind;
-  delete userData.profilePictureFile;
-  delete userData.existsInUserService;
-  delete userData.createdAt;
-  delete userData.updatedAt;
+function removeUndefinedValues(userData: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(userData).filter(([, value]) => value !== undefined),
+  );
+}
+
+function createBaseUserData(user: SaveUserPayload, isCreateRequest: boolean): Record<string, unknown> {
+  const userData: Record<string, unknown> = {
+    userId: user.userId,
+    postalCode: user.postalCode,
+    city: user.city,
+    street: user.street,
+    houseNumber: user.houseNumber,
+    country: user.country,
+    phoneNumber: user.phoneNumber,
+    birthDate: user.birthDate,
+  };
+
+  if (!isCreateRequest) {
+    userData.profilePictureUrl = user.profilePictureUrl;
+  }
 
   if (isCreateRequest) {
     delete userData.userId;
-    delete userData.profilePictureUrl;
   }
 
   return userData;
 }
 
-function createMultipartUserBody(user: SaveUserPayload) {
+function createUserData(
+  user: SaveUserPayload,
+  kind: UserKind,
+  isCreateRequest: boolean,
+): Record<string, unknown> {
+  const source = user as Record<string, unknown>;
+  const iban = stringifyUserValue(source.iban ?? source.IBAN, "");
+  const userData = createBaseUserData(user, isCreateRequest);
+
+  if (kind === "restocker") {
+    const bic = stringifyUserValue(source.bic ?? source.BIC, "");
+
+    return removeUndefinedValues({
+      ...userData,
+      iban,
+      bic,
+      accountHolder: stringifyUserValue(source.accountHolder, ""),
+    });
+  }
+
+  return removeUndefinedValues({
+    ...userData,
+    companyName: stringifyUserValue(source.companyName, ""),
+    roleInCompany: source.roleInCompany,
+    deliveryHint: source.deliveryHint,
+    deliveryDay: source.deliveryDay,
+    deliveryTime: source.deliveryTime,
+    iban,
+  });
+}
+
+function createMultipartUserBody(user: SaveUserPayload, kind: UserKind): FormData {
   const formData = new FormData();
   formData.append(
-      "userData",
-      new Blob([JSON.stringify(createUserData(user, false))], {
-        type: "application/json",
-      }),
+    "userData",
+    new Blob([JSON.stringify(createUserData(user, kind, false))], {
+      type: "application/json",
+    }),
   );
 
   if (user.profilePictureFile) {
@@ -445,23 +534,23 @@ function createMultipartUserBody(user: SaveUserPayload) {
 }
 
 export async function saveMyUser(
-    user: SaveUserPayload,
-    context: UserRequestContext = {},
+  user: SaveUserPayload,
+  context: UserRequestContext = {},
 ): Promise<UserProfile> {
-  const kind = context.kind ?? user.kind ?? resolveUserKind(context);
+  const kind = resolveUserKind(context, user.kind);
   const isCreateRequest = user.existsInUserService === false;
 
   if (!useAPIs) {
     const currentUserId = user.userId ?? context.userId ?? keycloak.tokenParsed?.sub ?? "mock-user";
     const existingUser = getMockUser(currentUserId, kind);
     const updatedUser = normalizeUser(
-        {
-          ...existingUser,
-          ...user,
-          userId: currentUserId,
-          updatedAt: new Date().toISOString(),
-        },
-        kind,
+      {
+        ...existingUser,
+        ...user,
+        userId: currentUserId,
+        updatedAt: new Date().toISOString(),
+      },
+      kind,
     );
 
     mockUsers.set(`${kind}:${currentUserId}`, updatedUser);
@@ -476,22 +565,22 @@ export async function saveMyUser(
       method: "POST",
       headers: isCreateRequest ? createJsonHeaders(resolvedToken) : createAuthHeaders(resolvedToken),
       body: isCreateRequest
-          ? JSON.stringify(createUserData(user, true))
-          : createMultipartUserBody(user),
+        ? JSON.stringify(createUserData(user, kind, true))
+        : createMultipartUserBody(user, kind),
     });
   } catch {
-    throw new Error(buildUsersNetworkErrorMessage("gespeichert"));
+    throw new Error(buildUsersNetworkErrorMessage());
   }
 
   assertSuccessfulResponse(response, "gespeichert");
 
   const payload = await readJsonResponse(response);
-  return normalizeUser(payload ?? { ...user, existsInUserService: true }, kind);
+  return normalizeUser(payload ?? {...user, existsInUserService: true}, kind);
 }
 
 export async function getUserbyId(
-    userId: string,
-    context: UserRequestContext = {},
+  userId: string,
+  context: UserRequestContext = {},
 ): Promise<UserProfile> {
   if (useAPIs) {
     return getMyUser(context);
@@ -506,17 +595,17 @@ export const createUser = saveMyUser;
 export const updateUser = saveMyUser;
 
 export async function getUserRestockOrders({
-   userId,
-   token,
-   kind,
- }: UserRestockOrdersRequestContext): Promise<RestockOrder[]> {
+                                             userId,
+                                             token,
+                                             kind,
+                                           }: UserRestockOrdersRequestContext): Promise<RestockOrder[]> {
   if (!useAPIs) {
     getMockUser(userId, "customer");
     return mockUserRestockOrders[userId] ?? [];
   }
 
   const resolvedKind = kind ?? "customer";
-  const { payload } = await fetchCurrentUserPayload({ token, userId, kind: resolvedKind });
+  const {payload} = await fetchCurrentUserPayload({token, userId, kind: resolvedKind});
 
   return normalizeUserRestockOrders(payload);
 }
@@ -529,11 +618,11 @@ export async function loadCustomerProfile({
   userId: string;
 }): Promise<CustomerUser> {
   const response = await fetch(
-      `${USERS_API_URL}/customerForRestocker?userId=${userId}`,
-      {
-        method: "GET",
-        headers: createAuthHeaders(token),
-      },
+    `${USERS_API_URL}/customerForRestocker?userId=${userId}`,
+    {
+      method: "GET",
+      headers: createAuthHeaders(token),
+    },
   );
 
   if (!response.ok) {

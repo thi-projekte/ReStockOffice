@@ -444,6 +444,23 @@
   box-shadow: var(--shadow-soft);
 }
 
+.restocker-stats-card {
+  display: grid;
+  gap: 1.2rem;
+  padding: 1.2rem;
+  border: 1px solid rgba(38, 64, 55, 0.12);
+  border-radius: 1rem;
+  background:
+          linear-gradient(180deg, rgba(244, 247, 242, 0.96), rgba(230, 230, 230, 0.92)),
+          radial-gradient(circle at top right, rgba(102, 189, 164, 0.14), transparent 55%);
+  color: var(--color-text);
+  text-align: left;
+  transition:
+          transform 0.2s ease,
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+}
+
 .restocker-order-card__head,
 .restocker-order-card__footer {
   display: flex;

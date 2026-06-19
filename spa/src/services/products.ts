@@ -1,6 +1,6 @@
 import products from "../mocks/products.json";
 import logoColored from "../assets/logos/logo_colored.png";
-import type { Product } from "../types/shop";
+import type {Product} from "../types/shop";
 
 export const useAPIs = true;
 
@@ -17,11 +17,11 @@ const mockAssetModules = import.meta.glob("../assets/**/*.{png,jpg,jpeg,svg}", {
   import: "default",
 }) as Record<string, string>;
 
-function buildProductsNetworkErrorMessage(scope: "Produkte" | "Produkt" | "Kategorie") {
+function buildProductsNetworkErrorMessage(scope: "Produkte" | "Produkt" | "Kategorie"): string {
   return `${scope} konnten nicht geladen werden. Bitte prüfe Netzwerk, CORS oder Proxy-Konfiguration des Article-Service.`;
 }
 
-function resolveMockImageUrl(imageUrl: string) {
+function resolveMockImageUrl(imageUrl: string): string {
   if (!imageUrl) {
     return logoColored;
   }
@@ -31,6 +31,22 @@ function resolveMockImageUrl(imageUrl: string) {
   }
 
   return imageUrl;
+}
+
+function stringifyProductValue(value: unknown, fallback: string): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return value.toString();
+  }
+
+  return fallback;
 }
 
 function normalizeProduct(rawProduct: unknown): Product {
@@ -45,14 +61,14 @@ function normalizeProduct(rawProduct: unknown): Product {
 
   return {
     productId: Number(productIdValue),
-    name: String(source.name ?? source.articleName ?? source.title ?? ""),
-    description: String(descriptionValue),
+    name: stringifyProductValue(source.name ?? source.articleName ?? source.title, ""),
+    description: stringifyProductValue(descriptionValue, ""),
     price: Number(priceValue),
-    brand: String(source.brand ?? source.manufacturer ?? ""),
-    category: String(categoryValue),
-    unit: String(unitValue),
-    unitCount: String(unitCountValue),
-    imageUrl: String(imageUrlValue),
+    brand: stringifyProductValue(source.brand ?? source.manufacturer, ""),
+    category: stringifyProductValue(categoryValue, ""),
+    unit: stringifyProductValue(unitValue, "Einheit"),
+    unitCount: stringifyProductValue(unitCountValue, "1"),
+    imageUrl: stringifyProductValue(imageUrlValue, ""),
   };
 }
 
@@ -68,7 +84,7 @@ const productsCache = new Map<number, Product>();
 const categoryNameCache = new Map<string, string>();
 let allProductsCache: Product[] | null = null;
 
-function seedCaches(loadedProducts: Product[]) {
+function seedCaches(loadedProducts: Product[]): void {
   allProductsCache = loadedProducts;
 
   for (const product of loadedProducts) {
@@ -189,7 +205,7 @@ export async function getProductById(productId: number): Promise<Product | undef
   return productMocks.find((product) => product.productId === productId);
 }
 
-export function getCategorySlug(category: string) {
+export function getCategorySlug(category: string): string {
   return category.trim().toLowerCase().replace(/\s+/g, "-");
 }
 
@@ -241,6 +257,6 @@ export async function getCategoryNameBySlug(categorySlug: string): Promise<strin
   return matchingProduct?.category;
 }
 
-export function getProductsApiUrl() {
+export function getProductsApiUrl(): string {
   return PRODUCTS_API_URL;
 }

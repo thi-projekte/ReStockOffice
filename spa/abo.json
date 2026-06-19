@@ -1,9 +1,0 @@
-{
-  "customerId": "cust_67890",
-  "productId": "001",
-  "status": "ACTIVE",
-  "quantity": 2,
-  "interval": 1,
-  "createdAt": "2026-04-01",
-  "updatedAt": "2026-04-01"
-}

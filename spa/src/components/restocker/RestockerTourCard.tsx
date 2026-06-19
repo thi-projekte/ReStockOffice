@@ -47,7 +47,7 @@ export function RestockerTourCard({
 
     return (
         <article
-            className="restocker-order-card"
+            className="restocker-stats-card"
             role="button"
             tabIndex={0}
         >
