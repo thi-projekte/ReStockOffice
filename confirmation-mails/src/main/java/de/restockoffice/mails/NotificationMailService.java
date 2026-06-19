@@ -61,6 +61,7 @@ public class NotificationMailService {
         values.put(CUSTOMER_NAME_KEY, escapeHtml(request.customerName()));
         values.put(ORDER_NUMBER_KEY, escapeHtml(request.orderNumber()));
         values.put("orderDate", escapeHtml(request.orderDate()));
+        values.put("deliveryDay", escapeHtml(defaultIfBlank(request.deliveryDay(), request.deliveryWindow())));
         values.put(DELIVERY_WINDOW_KEY, escapeHtml(request.deliveryWindow()));
         values.put(DELIVERY_LOCATION_KEY, escapeHtml(request.deliveryLocation()));
         values.put("changeDeadline", escapeHtml(request.changeDeadline()));
@@ -90,6 +91,7 @@ public class NotificationMailService {
         values.put(LOGO_URL_KEY, escapeHtml(logoUrl));
         values.put(CUSTOMER_NAME_KEY, escapeHtml(request.customerName()));
         values.put("daysUntilDelivery", escapeHtml(request.daysUntilDelivery()));
+        values.put("deliveryHeadline", escapeHtml(deliveryHeadline(request.daysUntilDelivery())));
         values.put("deliveryDay", escapeHtml(request.deliveryDay()));
         values.put(DELIVERY_DATE_KEY, escapeHtml(request.deliveryDate()));
         values.put(DELIVERY_WINDOW_KEY, escapeHtml(request.deliveryWindow()));
@@ -209,13 +211,37 @@ public class NotificationMailService {
                     .append("<span class=\"qty-text\" ")
                     .append("style=\"display:inline-block;color:#264037;font-weight:700;")
                     .append("font-size:18px;line-height:1.3;white-space:nowrap;\">")
-                    .append(escapeHtml(item.quantity()))
+                    .append(escapeHtml(formatQuantityAsMultiplier(item.quantity())))
                     .append("</span>")
                     .append(TABLE_CELL_CLOSE)
                     .append("</tr>");
         }
 
         return html.toString();
+    }
+
+    private String formatQuantityAsMultiplier(String quantity) {
+        String normalizedQuantity = quantity == null ? "" : quantity.trim();
+        if (normalizedQuantity.isEmpty()) {
+            return "";
+        }
+
+        String numericPrefix = normalizedQuantity.split("\\s+", 2)[0];
+        if (!numericPrefix.matches("\\d+")) {
+            return normalizedQuantity;
+        }
+        return numericPrefix.endsWith("x") ? numericPrefix : numericPrefix + "x";
+    }
+
+    private String deliveryHeadline(String daysUntilDelivery) {
+        String normalizedDays = daysUntilDelivery == null ? "" : daysUntilDelivery.trim();
+        if ("0".equals(normalizedDays)) {
+            return "Deine Lieferung kommt heute an.";
+        }
+        if ("1".equals(normalizedDays)) {
+            return "Deine Lieferung kommt morgen an.";
+        }
+        return "Deine Lieferung kommt in " + normalizedDays + " Tagen.";
     }
 
 
@@ -272,7 +298,7 @@ public class NotificationMailService {
                     .append("<span class=\"qty-text\" ")
                     .append("style=\"display:inline-block;color:#264037;font-weight:700;")
                     .append("font-size:18px;line-height:1.3;white-space:nowrap;\">")
-                    .append(escapeHtml(item.quantity()))
+                    .append(escapeHtml(formatQuantityAsMultiplier(item.quantity())))
                     .append("</span>")
                     .append(TABLE_CELL_CLOSE)
                     .append("</tr>");

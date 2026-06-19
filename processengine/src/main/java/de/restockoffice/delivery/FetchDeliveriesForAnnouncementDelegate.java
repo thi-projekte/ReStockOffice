@@ -7,7 +7,14 @@ import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.cibseven.bpm.engine.delegate.JavaDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -15,8 +22,13 @@ import org.springframework.web.client.RestTemplate;
 public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
 
     private static final Logger log = LoggerFactory.getLogger(FetchDeliveriesForAnnouncementDelegate.class);
+    private static final String CLIENT_REGISTRATION_ID = "keycloak";
+    private static final String SERVICE_PRINCIPAL = "CamundaTimerService";
     //necessary for tests
     private RestTemplate restTemplate = new RestTemplate();
+
+    @Autowired(required = false)
+    private OAuth2AuthorizedClientManager authorizedClientManager;
 
     @Value("${deliveriesservice.base-url:https://restocker-deliveries.restockoffice.de}")
     private String deliveriesServiceBaseUrl;
@@ -29,11 +41,17 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         LocalDate announcementTargetDate = LocalDate.now().plusDays(announcementLeadDays);
         String url = trimTrailingSlash(deliveriesServiceBaseUrl) + "/api/deliveries/admin/all-deliveries";
 
-        DeliveryDetailResponse[] response = restTemplate.getForObject(url, DeliveryDetailResponse[].class);
+        ResponseEntity<DeliveryDetailResponse[]> responseEntity = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                httpEntity(serviceAuthorizationHeader()),
+                DeliveryDetailResponse[].class
+        );
+        DeliveryDetailResponse[] response = responseEntity.getBody();
         List<DeliveryMonitoringItem> deliveries =
                 Arrays.stream(response != null ? response : new DeliveryDetailResponse[0])
                         .filter(delivery -> announcementTargetDate.equals(parseDate(delivery.deliveryDate())))
-                        .filter(this::isOpenDelivery)
+                        .filter(this::isMonitorableDelivery)
                         .map(this::toMonitoringItem)
                         .toList();
 
@@ -55,8 +73,12 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         return value != null && !value.isBlank() ? LocalDate.parse(value) : null;
     }
 
-    private boolean isOpenDelivery(DeliveryDetailResponse delivery) {
-        return delivery.status() == null || delivery.status().isBlank() || "OPEN".equalsIgnoreCase(delivery.status());
+    private boolean isMonitorableDelivery(DeliveryDetailResponse delivery) {
+        return delivery.status() == null
+                || delivery.status().isBlank()
+                || "OPEN".equalsIgnoreCase(delivery.status())
+                || "ACCEPTED".equalsIgnoreCase(delivery.status())
+                || "COLLECTED".equalsIgnoreCase(delivery.status());
     }
 
     private String trimTrailingSlash(String value) {
@@ -64,6 +86,37 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
             return "";
         }
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
+    }
+
+    private HttpEntity<Void> httpEntity(String authorizationHeader) {
+        HttpHeaders headers = new HttpHeaders();
+        if (authorizationHeader != null && !authorizationHeader.isBlank()) {
+            headers.set(HttpHeaders.AUTHORIZATION, authorizationHeader);
+        }
+        return new HttpEntity<>(headers);
+    }
+
+    private String serviceAuthorizationHeader() {
+        if (authorizedClientManager == null) {
+            return null;
+        }
+
+        try {
+            OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
+                    .withClientRegistrationId(CLIENT_REGISTRATION_ID)
+                    .principal(SERVICE_PRINCIPAL)
+                    .build();
+
+            var authorizedClient = authorizedClientManager.authorize(authRequest);
+            if (authorizedClient == null || authorizedClient.getAccessToken() == null) {
+                return null;
+            }
+
+            return "Bearer " + authorizedClient.getAccessToken().getTokenValue();
+        } catch (RuntimeException exception) {
+            log.warn("Could not create service token for delivery announcement fetch", exception);
+            return null;
+        }
     }
 
     public record DeliveryDetailResponse(

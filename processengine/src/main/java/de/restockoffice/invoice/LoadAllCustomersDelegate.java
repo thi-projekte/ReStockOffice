@@ -5,6 +5,7 @@ import org.cibseven.bpm.engine.delegate.JavaDelegate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -47,5 +48,6 @@ public class LoadAllCustomersDelegate implements JavaDelegate {
         }
     }
 
-    private record DeliveryServiceResponse(String month, List<String> customerIds) {}
+    public record DeliveryServiceResponse(String month, List<String> customerIds) {
+    }
 }

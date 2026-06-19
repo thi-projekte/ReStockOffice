@@ -7,6 +7,7 @@ public record AboConfirmationRequest(
         String customerName,
         String orderNumber,
         String orderDate,
+        String deliveryDay,
         String deliveryWindow,
         String deliveryLocation,
         String changeDeadline,

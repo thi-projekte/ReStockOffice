@@ -23,6 +23,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
@@ -58,14 +60,16 @@ class DeliveryAnnouncementDelegatesTest {
     }
 
     @Test
-    void fetchDeliveriesFiltersOpenDeliveriesForAnnouncementDate() {
+    void fetchDeliveriesFiltersMonitorableDeliveriesForAnnouncementDate() {
         LocalDate today = LocalDate.now();
         restTemplate.getResponse = new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse[]{
                 new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse("delivery-1", "order-1", "customer-1", today.toString(), "OPEN"),
-                new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse("delivery-2", "order-2", "customer-2", today.toString(), "DONE"),
-                new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse("delivery-3", "order-3", "customer-3", today.plusDays(1).toString(), "OPEN")
+                new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse("delivery-2", "order-2", "customer-2", today.toString(), "ACCEPTED"),
+                new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse("delivery-3", "order-3", "customer-3", today.toString(), "COLLECTED"),
+                new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse("delivery-4", "order-4", "customer-4", today.toString(), "DELIVERED"),
+                new FetchDeliveriesForAnnouncementDelegate.DeliveryDetailResponse("delivery-5", "order-5", "customer-5", today.plusDays(1).toString(), "OPEN")
         };
-        // Only the open delivery for the announcement target date should remain.
+        // Deliveries already assigned to a restocker still need monitoring for the confirmation mail.
         ReflectionTestUtils.setField(fetchDeliveriesForAnnouncementDelegate, "deliveriesServiceBaseUrl", "http://deliveries.test");
         ReflectionTestUtils.setField(fetchDeliveriesForAnnouncementDelegate, "announcementLeadDays", 0);
         Map<String, Object> variables = new java.util.HashMap<>();
@@ -75,11 +79,13 @@ class DeliveryAnnouncementDelegatesTest {
         assertThat(variables.get("announcementTargetDate")).isEqualTo(today.toString());
         assertThat(variables.get("deliveries"))
                 .asList()
-                .singleElement()
-                .satisfies(item -> {
-                    assertThat(item).isInstanceOf(Serializable.class);
-                    assertThat(item).isEqualTo(new DeliveryMonitoringItem("delivery-1", "order-1", "customer-1", today));
-                });
+                .hasSize(3)
+                .allSatisfy(item -> assertThat(item).isInstanceOf(Serializable.class))
+                .containsExactly(
+                        new DeliveryMonitoringItem("delivery-1", "order-1", "customer-1", today),
+                        new DeliveryMonitoringItem("delivery-2", "order-2", "customer-2", today),
+                        new DeliveryMonitoringItem("delivery-3", "order-3", "customer-3", today)
+                );
     }
 
     @Test
@@ -177,9 +183,15 @@ class DeliveryAnnouncementDelegatesTest {
         private Object postBody;
 
         @Override
-        public <T> T getForObject(String url, Class<T> responseType, Object... uriVariables) {
+        public <T> ResponseEntity<T> exchange(
+                String url,
+                HttpMethod method,
+                HttpEntity<?> requestEntity,
+                Class<T> responseType,
+                Object... uriVariables
+        ) {
             // Feed the fetch delegate with prepared delivery data instead of using a real backend.
-            return responseType.cast(getResponse);
+            return ResponseEntity.ok(responseType.cast(getResponse));
         }
 
         @Override

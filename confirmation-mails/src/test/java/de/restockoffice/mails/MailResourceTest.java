@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @QuarkusTest
@@ -30,6 +31,7 @@ class MailResourceTest {
                   "customerName": "Max Mustermann",
                   "orderNumber": "RSO-2026-004281",
                   "orderDate": "29.04.2026, 10:42 Uhr",
+                  "deliveryDay": "Montag",
                   "deliveryWindow": "08:30 bis 10:00 Uhr",
                   "deliveryLocation": "ReStockOffice GmbH\\n3. OG, Office West",
                   "changeDeadline": "02.05.2026, 12:00 Uhr",
@@ -41,6 +43,12 @@ class MailResourceTest {
                       "quantity": "4 Pack",
                       "intervalDescription": "Montag alle 2 Wochen",
                       "nextDeliveryDate": "04.05.2026"
+                    },
+                    {
+                      "name": "Lineal 30cm Aluminium",
+                      "articleNumber": "RS-10019",
+                      "quantity": "Deabonniert",
+                      "statusLabel": "Deabonniert"
                     }
                   ]
                 }
@@ -54,7 +62,13 @@ class MailResourceTest {
                 .statusCode(200)
                 .contentType(containsString("text/html"))
                 .body(containsString("Max Mustermann"))
+                .body(containsString("Bevorzugter Liefertermin:</span> Montag"))
+                .body(not(containsString("Bevorzugter Liefertermin:</span> 08:30 bis 10:00 Uhr")))
                 .body(containsString("Kopierpapier A4 Premium"))
+                .body(containsString("4x"))
+                .body(not(containsString("4 Pack")))
+                .body(containsString("Deabonniert"))
+                .body(not(containsString("Deabonniertx")))
                 .body(containsString("<style>"));
     }
 
@@ -100,6 +114,43 @@ class MailResourceTest {
     }
 
     @Test
+    void previewDeliveryAnnouncementUsesTodayHeadlineForSameDayDelivery() {
+        String payload = """
+                {
+                  "recipientEmail": "max.mustermann@example.com",
+                  "customerName": "Max Mustermann",
+                  "daysUntilDelivery": "0",
+                  "deliveryDay": "Mittwoch",
+                  "deliveryDate": "17.06.2026",
+                  "deliveryWindow": "08:30 bis 10:00 Uhr",
+                  "orderNumber": "RSO-2026-004281",
+                  "supplierName": "noch nicht zugeordnet",
+                  "deliveryLocation": "ReStockOffice GmbH",
+                  "deliveryInstructions": "Bitte am Sideboard abstellen.",
+                  "deliveryItems": [
+                    {
+                      "name": "Kopierpapier A4 Premium",
+                      "articleNumber": "RS-10023",
+                      "quantity": "4 Pack"
+                    }
+                  ]
+                }
+                """;
+
+        given().contentType(ContentType.JSON)
+                .body(payload)
+                .when()
+                .post("/emails/delivery-announcement/preview")
+                .then()
+                .statusCode(200)
+                .contentType(containsString("text/html"))
+                .body(containsString("Deine Lieferung kommt heute an."))
+                .body(not(containsString("Deine Lieferung kommt in 0 Tagen.")))
+                .body(containsString("4x"))
+                .body(not(containsString("4 Pack")));
+    }
+
+    @Test
     void sendAboConfirmationUsesInlineLogoCid() {
         String payload = """
                 {
@@ -107,6 +158,7 @@ class MailResourceTest {
                   "customerName": "Max Mustermann",
                   "orderNumber": "RSO-2026-004281",
                   "orderDate": "29.04.2026, 10:42 Uhr",
+                  "deliveryDay": "Montag",
                   "deliveryWindow": "08:30 bis 10:00 Uhr",
                   "deliveryLocation": "ReStockOffice GmbH\\n3. OG, Office West",
                   "changeDeadline": "02.05.2026, 12:00 Uhr",
@@ -134,6 +186,14 @@ class MailResourceTest {
         Assertions.assertTrue(
                 testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
                 "abo confirmation mail should use an inline logo CID"
+        );
+        Assertions.assertTrue(
+                testResendMailClient.lastHtml().contains("4x"),
+                "abo confirmation mail should render quantities as multipliers"
+        );
+        Assertions.assertFalse(
+                testResendMailClient.lastHtml().contains("4 Pack"),
+                "abo confirmation mail should not render article units in quantities"
         );
     }
 
@@ -166,7 +226,9 @@ class MailResourceTest {
                 .statusCode(200)
                 .contentType(containsString("text/html"))
                 .body(containsString("Deine Lieferung ist angekommen."))
-                .body(containsString("Kopierpapier A4 Premium"));
+                .body(containsString("Kopierpapier A4 Premium"))
+                .body(containsString("4x"))
+                .body(not(containsString("4 Pack")));
     }
 
     @Test

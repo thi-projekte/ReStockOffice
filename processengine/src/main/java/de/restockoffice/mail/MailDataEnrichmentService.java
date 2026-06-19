@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import de.restockoffice.delivery.DeliveryMonitoringItem;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -41,8 +44,14 @@ public class MailDataEnrichmentService {
     private static final String VARIABLE_ITEM_ARTICLE_NUMBER = "itemArticleNumber";
     private static final String VARIABLE_ITEM_NAME = "itemName";
     private static final String VARIABLE_ITEM_QUANTITY = "itemQuantity";
+    private static final String CLIENT_REGISTRATION_ID = "keycloak";
+    private static final String SERVICE_PRINCIPAL = "CamundaTimerService";
+    private static final String UNASSIGNED_RESTOCKER_LABEL = "noch nicht zugeordnet";
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    @Autowired(required = false)
+    private OAuth2AuthorizedClientManager authorizedClientManager;
 
     @Value("${ordersservice.base-url:https://orders.restockoffice.de}")
     private String ordersServiceBaseUrl;
@@ -69,6 +78,8 @@ public class MailDataEnrichmentService {
         LocalDate deliveryDate = resolveDeliveryDate(context);
 
         setIfBlank(execution, "orderDate", formatDateTime(resolveOrderCreatedAt(order)));
+        setIfPresent(execution, "deliveryDay", formatDayName(deliveryDate));
+        setIfPresent(execution, "deliveryLocation", resolveDeliveryLocation(context.delivery(), context.user()));
         setIfBlank(execution, "changeDeadline", formatDateTime(deliveryDate.minusDays(3).atTime(12, 0)));
         setIfBlank(execution, "manageSubscriptionUrl", appBaseUrl + "/subscription");
         setIfBlank(execution, "itemIntervalDescription", formatInterval(resolveInterval(execution, order)));
@@ -85,24 +96,28 @@ public class MailDataEnrichmentService {
 
     public void enrichDeliveryAnnouncement(DelegateExecution execution) {
         EnrichmentContext context = loadContext(execution);
-        enrichCommonVariables(execution, context);
+        setDeliveryMailVariables(execution, context);
         setDeliveryItemsVariable(execution, context.delivery());
 
         LocalDate deliveryDate = resolveDeliveryDate(context);
-        setIfBlank(execution, "daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
-        setIfBlank(execution, "deliveryDay", formatDayName(deliveryDate));
-        setIfBlank(execution, "supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
-        setIfBlank(execution, "deliveryInstructions", firstNonBlank(userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
-        setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
+        execution.setVariable("daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
+        execution.setVariable("deliveryDay", formatDayName(deliveryDate));
+        execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), UNASSIGNED_RESTOCKER_LABEL));
+        execution.setVariable("deliveryInstructions", firstNonBlank(userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
+        execution.setVariable("deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
 
     public void enrichDeliveryConfirmation(DelegateExecution execution) {
         EnrichmentContext context = loadContext(execution);
-        enrichCommonVariables(execution, context);
+        setDeliveryMailVariables(execution, context);
 
-        execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), "ReStockOffice"));
+        execution.setVariable("supplierName", firstNonBlank(
+                restockerDisplayName(context.delivery()),
+                stringVariable(execution, "supplierName"),
+                UNASSIGNED_RESTOCKER_LABEL
+        ));
         setDeliveryItemsVariable(execution, context.delivery());
-        setIfBlank(execution, "deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
+        execution.setVariable("deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
 
     private void enrichCommonVariables(DelegateExecution execution, EnrichmentContext context) {
@@ -138,12 +153,45 @@ public class MailDataEnrichmentService {
         setIfBlank(execution, VARIABLE_ITEM_QUANTITY, formatOrderItemQuantity(resolveQuantity(execution, order), article));
     }
 
+    private void setDeliveryMailVariables(DelegateExecution execution, EnrichmentContext context) {
+        OrderDto order = context.order();
+        ArticleDto article = context.article();
+        UserDto user = context.user();
+        DeliveryDetailDto delivery = context.delivery();
+        LocalDate deliveryDate = resolveDeliveryDate(context);
+
+        execution.setVariable("recipientEmail", firstNonBlank(deliveryRecipientEmail(delivery), userEmail(user)));
+        execution.setVariable("customerName", firstNonBlank(deliveryCompanyName(delivery), userCompanyName(user), context.customerId()));
+        execution.setVariable("orderNumber", formatOrderNumber(firstNonBlank(deliveryOrderId(delivery), orderId(order), context.orderId())));
+        execution.setVariable("deliveryDate", deliveryDate.atTime(8, 0).toString());
+        execution.setVariable("deliveryDateLabel", formatDate(deliveryDate));
+        execution.setVariable("deliveryWindow", formatDeliveryWindow(firstNonBlank(deliveryDeliveryTime(delivery), userDeliveryTime(user))));
+        execution.setVariable("deliveryLocation", formatDeliveryLocation(delivery, user));
+
+        DeliveryItemDetailDto deliveryItem = firstDeliveryItem(delivery);
+        if (deliveryItem != null) {
+            execution.setVariable(VARIABLE_ITEM_NAME, firstNonBlank(deliveryItem.name, article != null ? article.name : null, articleLabel(context.productId())));
+            execution.setVariable(VARIABLE_ITEM_ARTICLE_NUMBER, firstNonBlank(deliveryItem.articleNumber, article != null ? article.productId : null, context.productId()));
+            execution.setVariable(VARIABLE_ITEM_QUANTITY, formatDeliveryItemQuantity(deliveryItem));
+            return;
+        }
+
+        if (article != null) {
+            execution.setVariable(VARIABLE_ITEM_NAME, firstNonBlank(article.name, articleLabel(context.productId())));
+            execution.setVariable(VARIABLE_ITEM_ARTICLE_NUMBER, firstNonBlank(article.productId, context.productId()));
+        } else {
+            execution.setVariable(VARIABLE_ITEM_NAME, articleLabel(context.productId()));
+            execution.setVariable(VARIABLE_ITEM_ARTICLE_NUMBER, context.productId());
+        }
+        execution.setVariable(VARIABLE_ITEM_QUANTITY, formatOrderItemQuantity(resolveQuantity(execution, order), article));
+    }
+
     private EnrichmentContext loadContext(DelegateExecution execution) {
         return loadContext(execution, null);
     }
 
     private EnrichmentContext loadContext(DelegateExecution execution, String requestedOrderId) {
-        String authorizationHeader = stringVariable(execution, "authorizationHeader");
+        String authorizationHeader = authorizationHeader(execution);
         DeliveryMonitoringItem monitoringDelivery = monitoringDelivery(execution);
         String orderId = firstNonBlank(
                 requestedOrderId,
@@ -399,6 +447,33 @@ public class MailDataEnrichmentService {
         return new HttpEntity<>(headers);
     }
 
+    private String authorizationHeader(DelegateExecution execution) {
+        return firstNonBlank(stringVariable(execution, "authorizationHeader"), serviceAuthorizationHeader());
+    }
+
+    private String serviceAuthorizationHeader() {
+        if (authorizedClientManager == null) {
+            return null;
+        }
+
+        try {
+            OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
+                    .withClientRegistrationId(CLIENT_REGISTRATION_ID)
+                    .principal(SERVICE_PRINCIPAL)
+                    .build();
+
+            var authorizedClient = authorizedClientManager.authorize(authRequest);
+            if (authorizedClient == null || authorizedClient.getAccessToken() == null) {
+                return null;
+            }
+
+            return "Bearer " + authorizedClient.getAccessToken().getTokenValue();
+        } catch (RuntimeException exception) {
+            log.warn("Could not create service token for mail data enrichment", exception);
+            return null;
+        }
+    }
+
     private LocalDate resolveDeliveryDate(EnrichmentContext context) {
         LocalDate deliveryDate = parseDate(deliveryDeliveryDate(context.delivery()));
         if (deliveryDate != null) {
@@ -588,6 +663,10 @@ public class MailDataEnrichmentService {
     }
 
     private String formatDeliveryLocation(DeliveryDetailDto delivery, UserDto user) {
+        return firstNonBlank(resolveDeliveryLocation(delivery, user), "Lieferadresse wird nachgereicht");
+    }
+
+    private String resolveDeliveryLocation(DeliveryDetailDto delivery, UserDto user) {
         String street = firstNonBlank(deliveryStreet(delivery), user != null ? user.street : null);
         String houseNumber = firstNonBlank(deliveryHouseNumber(delivery), user != null ? user.houseNumber : null);
         String postalCode = firstNonBlank(deliveryPostalCode(delivery), user != null ? user.postalCode : null);
@@ -595,7 +674,7 @@ public class MailDataEnrichmentService {
 
         String streetLine = joinWithSpace(street, houseNumber);
         String cityLine = joinWithSpace(postalCode, city);
-        return firstNonBlank(joinWithComma(streetLine, cityLine), userCompanyName(user), "Lieferadresse wird nachgereicht");
+        return firstNonBlank(joinWithComma(streetLine, cityLine), userCompanyName(user));
     }
 
     private String formatInterval(int intervalWeeks) {
@@ -678,6 +757,13 @@ public class MailDataEnrichmentService {
 
     private void setIfBlank(DelegateExecution execution, String variableName, String value) {
         if (!isBlank(stringVariable(execution, variableName)) || isBlank(value)) {
+            return;
+        }
+        execution.setVariable(variableName, value);
+    }
+
+    private void setIfPresent(DelegateExecution execution, String variableName, String value) {
+        if (isBlank(value)) {
             return;
         }
         execution.setVariable(variableName, value);
@@ -785,7 +871,7 @@ public class MailDataEnrichmentService {
 
     private String restockerDisplayName(DeliveryDetailDto delivery) {
         String restockerName = deliveryRestockerName(delivery);
-        if (isBlank(restockerName) || !restockerName.trim().contains(" ")) {
+        if (isBlank(restockerName)) {
             return null;
         }
 

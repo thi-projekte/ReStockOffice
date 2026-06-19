@@ -38,6 +38,7 @@ public class SendAboConfirmationDelegate implements JavaDelegate {
         request.put("customerName", execution.getVariable("customerName"));
         request.put("orderNumber", execution.getVariable("orderNumber"));
         request.put("orderDate", execution.getVariable("orderDate"));
+        request.put("deliveryDay", execution.getVariable("deliveryDay"));
         request.put("deliveryWindow", execution.getVariable("deliveryWindow"));
         request.put("deliveryLocation", execution.getVariable("deliveryLocation"));
         request.put("changeDeadline", execution.getVariable("changeDeadline"));

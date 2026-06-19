@@ -96,6 +96,7 @@ class ConfirmationDelegatesTest {
             execution.setVariable("customerName", "ReStock GmbH");
             execution.setVariable("orderNumber", "ABO-42");
             execution.setVariable("orderDate", "10.06.2026");
+            execution.setVariable("deliveryDay", "Mittwoch");
             execution.setVariable("deliveryWindow", "08:00 - 12:00 Uhr");
             execution.setVariable("deliveryLocation", "Hauptstrasse 1");
             execution.setVariable("changeDeadline", "07.06.2026, 12:00 Uhr");
@@ -118,6 +119,8 @@ class ConfirmationDelegatesTest {
         assertThat(payload)
                 .containsEntry("recipientEmail", "customer@example.com")
                 .containsEntry("orderNumber", "ABO-42")
+                .containsEntry("deliveryDay", "Mittwoch")
+                .containsEntry("deliveryLocation", "Hauptstrasse 1")
                 .containsEntry("manageSubscriptionUrl", "https://app.restockoffice.de/subscription");
         assertThat(payload.get("orderItems")).asList().hasSize(1);
     }
