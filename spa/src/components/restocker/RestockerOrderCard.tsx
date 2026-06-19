@@ -20,7 +20,7 @@ export function RestockerOrderCard({
   statusLabel,
   secondaryActionLabel,
   onSecondaryAction,
-}: RestockerOrderCardProps) {
+}: Readonly<RestockerOrderCardProps>) {
   return (
     <article
       className="restocker-order-card"

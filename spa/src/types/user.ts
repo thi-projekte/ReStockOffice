@@ -1,27 +1,27 @@
 export interface UserProfile {
-    userId: string;
+  userId: string;
 
-    postalCode: string;
-    city: string;
-    street: string;
-    houseNumber: string;
-    country: string;
+  postalCode: string;
+  city: string;
+  street: string;
+  houseNumber: string;
+  country: string;
 
-    companyName: string;
-    phoneNumber: string;
+  companyName: string;
+  phoneNumber: string;
 
-    roleInCompany?: string;
+  roleInCompany?: string;
 
-    birthDate?: string;
+  birthDate?: string;
 
-    deliveryHint?: string;
-    deliveryDay?: string;
-    deliveryTime?: number;
+  deliveryHint?: string;
+  deliveryDay?: string;
+  deliveryTime?: number;
 
-    IBAN?: string;
+  IBAN?: string;
 
-    profilePictureUrl?: string;
+  profilePictureUrl?: string;
 
-    createdAt?: string;
-    updatedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

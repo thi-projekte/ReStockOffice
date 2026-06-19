@@ -1,30 +1,30 @@
-import { useRef } from "react";
-import { Link } from "react-router-dom";
+import {type ReactElement, useRef} from "react";
+import {Link} from "react-router-dom";
 import logoColored from "../assets/logos/logo_colored.png";
-import type { Product } from "../types/shop";
+import type {Product} from "../types/shop";
 
 interface ProductCarouselProps {
-  anchorId: string;
-  eyebrow: string;
-  title: string;
-  description: string;
-  products: Product[];
-  isLoading?: boolean;
-  getBadge?: (product: Product, index: number) => string;
+  readonly anchorId: string;
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly description: string;
+  readonly products: readonly Product[];
+  readonly isLoading?: boolean;
+  readonly getBadge?: (product: Product, index: number) => string;
 }
 
 export function ProductCarousel({
-  anchorId,
-  eyebrow,
-  title,
-  description,
-  products,
-  isLoading = false,
-  getBadge,
-}: ProductCarouselProps) {
+                                  anchorId,
+                                  eyebrow,
+                                  title,
+                                  description,
+                                  products,
+                                  isLoading = false,
+                                  getBadge,
+                                }: Readonly<ProductCarouselProps>): ReactElement {
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  function scrollSection(direction: "left" | "right") {
+  function scrollSection(direction: "left" | "right"): void {
     const target = carouselRef.current;
 
     if (!target || target.children.length === 0) {
@@ -32,7 +32,7 @@ export function ProductCarousel({
     }
 
     const firstCard = target.children[0] as HTMLElement;
-    const styles = window.getComputedStyle(target);
+    const styles = globalThis.getComputedStyle(target);
     const gap = Number.parseFloat(styles.columnGap || styles.gap || "0");
     const scrollDistance = firstCard.offsetWidth + gap;
 

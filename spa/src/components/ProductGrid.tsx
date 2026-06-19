@@ -1,52 +1,41 @@
-import {KeyboardEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import type { Product } from "../types/shop";
+import {type ReactElement} from "react";
+import {Link} from "react-router-dom";
+import type {Product} from "../types/shop";
 
 interface ProductGridProps {
-  products: Product[];
+  readonly products: readonly Product[];
 }
 
-export function ProductGrid({ products }: ProductGridProps) {
+export function ProductGrid({products}: Readonly<ProductGridProps>): ReactElement {
   if (products.length === 0) {
-    return <p className="empty-state">Keine Artikel für die Suche gefunden.</p>;
+    return (
+      <p className="empty-state product-grid-empty">
+        Keine Artikel für die Suche gefunden.
+      </p>
+    );
   }
 
   return (
-    <div className="product-grid">
-      {products.map((product) => (
-        <ProductCard key={product.productId} product={product} />
-      ))}
+    <div className="product-grid-shell">
+      <div className="product-grid">
+        {products.map((product) => (
+          <ProductCard key={product.productId} product={product}/>
+        ))}
+      </div>
     </div>
   );
 }
 
 interface ProductCardProps {
-  product: Product;
+  readonly product: Product;
 }
 
-function ProductCard({ product }: ProductCardProps) {
-  const navigate = useNavigate();
-
-
-  function openDetails() {
-    navigate(`/products/${product.productId}`);
-    window.scrollTo(0, 0);
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openDetails();
-    }
-  }
-
+function ProductCard({product}: Readonly<ProductCardProps>): ReactElement {
   return (
-    <article
-      className="product-card product-card--interactive"
-      role="link"
-      tabIndex={0}
-      onClick={openDetails}
-      onKeyDown={handleKeyDown}
+    <Link
+      className="product-card product-card--link"
+      to={`/products/${product.productId}`}
+      onClick={() => window.scrollTo(0, 0)}
     >
       <img
         className="product-card__image"
@@ -78,6 +67,6 @@ function ProductCard({ product }: ProductCardProps) {
           </strong>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

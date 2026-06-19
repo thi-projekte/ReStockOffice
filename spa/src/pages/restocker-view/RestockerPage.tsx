@@ -205,15 +205,27 @@ export function RestockerPage() {
     }, [auth.user?.id]);
 
     //Anzeigen für den Button Tour starten -> Ändert sie je nach dem, ob der Prozess bereits gestartet wurde
-    const startTourButtonLabel = startingTour
-        ? "Tour startet..."
-        : assignedLoading
-            ? "Lieferungen werden geladen..."
-            : !hasOpenAssignedToday
-                ? "Keine offenen Lieferungen heute"
-                : tourProcessId
-                    ? "Zur laufenden Tour wechseln"
-                    : "Tour von heute beginnen";
+    function getStartTourButtonLabel() {
+        if (startingTour) {
+            return "Tour startet...";
+        }
+
+        if (assignedLoading) {
+            return "Lieferungen werden geladen...";
+        }
+
+        if (!hasOpenAssignedToday) {
+            return "Keine offenen Lieferungen heute";
+        }
+
+        if (tourProcessId) {
+            return "Zur laufenden Tour wechseln";
+        }
+
+        return "Tour von heute beginnen";
+    }
+
+    const startTourButtonLabel = getStartTourButtonLabel();
 
     async function handleStartTourProcess() {
         // Verhindert, dass ein Doppelklick zwei Prozess-Start-Requests sendet.
@@ -321,228 +333,244 @@ export function RestockerPage() {
         void handleAcceptOrder(selectedOrder);
     }
 
-    return (
-        <>
-            <div className="restocker-page">
-                <div className="restocker-inner">
+    function renderOpenOrdersContent() {
+        if (openLoading) {
+            return <p>Lade offene Aufträge...</p>;
+        }
 
-                    {/*Tour starten Button*/}
+        if (openError) {
+            return <p style={{color: "red"}}>{openError}</p>;
+        }
+
+        return (
+            <>
+                <p>Es gibt weitere Lieferungen in deiner Nähe. </p>
+                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+                {/*Karusell mit RestockOrderCard (sind in Components definiert)*/}
+                <div className="open-orders-carousel">
+                    {openOrders.slice(0, 6).map((order) => (
+                        <RestockerOrderCard
+                            key={order.orderKey}
+                            order={order}
+                            detailLabel="Auftrag ansehen"
+                            onClick={() => setSelectedOrder(order)}
+                            secondaryActionLabel="Fahrt annehmen"
+                            onSecondaryAction={() => openAcceptConfirmation(order)}
+                        />
+                    ))}
+                </div>
+            </>
+        );
+    }
+
+    function renderAssignedOrdersContent() {
+        if (assignedLoading) {
+            return <p>Lade deine Aufträge...</p>;
+        }
+
+        if (assignedError) {
+            return <p style={{color: "red"}}>{assignedError}</p>;
+        }
+
+        if (openAssignedOrders.length === 0) {
+            return <p>Du hast aktuell keine offenen zugeordneten Aufträge.</p>;
+        }
+
+        return (
+            <>
+                <p>Du hast aktuell {openAssignedOrders.length} offene zugeordnete Aufträge.</p>
+                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+                <div className="open-orders-carousel">
+                    {openAssignedOrders.slice(0, 6).map((order) => (
+                        <RestockerOrderCard
+                            key={order.orderKey}
+                            order={order}
+                            detailLabel="Auftrag ansehen"
+                            onClick={() => setSelectedOrder(order)}
+                        />
+                    ))}
+                </div>
+            </>
+        );
+    }
+
+    return (
+        <div className="restocker-page">
+            <div className="restocker-inner">
+
+                {/*Tour starten Button*/}
+                <button
+                    className="tour-btn"
+                    disabled={startingTour || assignedLoading || !hasOpenAssignedToday}
+                    onClick={() => void handleStartTourProcess()}
+                >
+                    {startTourButtonLabel}
+                </button>
+
+                {/* Anzeige Kennzahlen für heutigen Lieferungen */}
+                <div className="card">
+                    <div className="card-header">
+                        <div>
+                            <h4>Deine Lieferungen heute</h4>
+                            <h2>Übersicht – Heutige Lieferungen</h2>
+                            <p> Hallo, hier siehst du die wichtigsten Kennzahlen zu deinen heutigen Lieferungen.</p>
+                        </div>
+                    </div>
+
+                    <div className="metrics-row-desktop">
+
+                        <div className="metric-tile">
+                            <div className="metric-label">Abgeschlossen</div>
+                            <div className="metric-value">{completedToday}</div>
+                            <div className="metric-sub">von {totalToday} Lieferungen</div>
+                        </div>
+
+                        <div className="metric-tile">
+                            <div className="metric-label">Geplanter Verdienst</div>
+                            <div className="metric-value">{earningsToday} €</div>
+                            <div className="metric-sub">7€ pro Lieferung</div>
+                        </div>
+
+                    </div>
+
                     <button
                         className="tour-btn"
-                        disabled={startingTour || assignedLoading || !hasOpenAssignedToday}
-                        onClick={() => void handleStartTourProcess()}
+                        onClick={() => navigate("/restocker-my-orders")}
                     >
-                        {startTourButtonLabel}
+                        Alle heutigen Lieferungen anzeigen
                     </button>
-
-                    {/* Anzeige Kennzahlen für heutigen Lieferungen */}
-                    <div className="card">
-                        <div className="card-header">
-                            <div>
-                                <h4>Deine Lieferungen heute</h4>
-                                <h2>Übersicht – Heutige Lieferungen</h2>
-                                <p> Hallo, hier siehst du die wichtigsten Kennzahlen zu deinen heutigen Lieferungen.</p>
-                            </div>
-                        </div>
-
-                        <div className="metrics-row-desktop">
-
-                            <div className="metric-tile">
-                                <div className="metric-label">Abgeschlossen</div>
-                                <div className="metric-value">{completedToday}</div>
-                                <div className="metric-sub">von {totalToday} Lieferungen</div>
-                            </div>
-
-                            <div className="metric-tile">
-                                <div className="metric-label">Geplanter Verdienst</div>
-                                <div className="metric-value">{earningsToday} €</div>
-                                <div className="metric-sub">7€ pro Lieferung</div>
-                            </div>
-
-                        </div>
-
-                        <button
-                            className="tour-btn"
-                            onClick={() => navigate("/restocker-my-orders")}
-                        >
-                            Alle heutigen Lieferungen anzeigen
-                        </button>
-                    </div>
-
-                    {/* Anzeige offene Aufträge */}
-                    <div className="card">
-                        <div className="card-header">
-                            <div>
-                                <h4>Verfügbare Aufträge</h4>
-                                <h2>Offene Lieferungen in deiner Nähe</h2>
-                            </div>
-                        </div>
-
-                        {openLoading ? (
-                            <p>Lade offene Aufträge...</p>
-                        ) : openError ? (
-                            <p style={{ color: "red" }}>{openError}</p>
-                        ) : (
-                            <>
-                                <p>Es gibt weitere Lieferungen in deiner Nähe. </p>
-                                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
-                                {/*Karusell mit RestockOrderCard (sind in Components definiert)*/}
-                                <div className="open-orders-carousel">
-                                    {openOrders.slice(0, 6).map((order) => (
-                                        <RestockerOrderCard
-                                            key={order.orderKey}
-                                            order={order}
-                                            detailLabel="Auftrag ansehen"
-                                            onClick={() => setSelectedOrder(order)}
-                                            secondaryActionLabel="Fahrt annehmen"
-                                            onSecondaryAction={() => openAcceptConfirmation(order)}
-                                        />
-                                    ))}
-                                </div>
-                            </>
-                        )}
-
-                        <button
-                            className="tour-btn"
-                            onClick={() => navigate("/restocker-orders")}
-                        >
-                            Alle offenen Lieferungen anzeigen
-                        </button>
-                    </div>
-
-                    {/*Anzeige aller Aufträge, welcher dem Restocker zugeordnet sind */}
-                    <div className="card">
-                        <div className="card-header">
-                            <div>
-                                <h4>Deine Aufträge</h4>
-                                <h2>Deine Übersicht</h2>
-                            </div>
-                        </div>
-
-                        {assignedLoading ? (
-                            <p>Lade deine Aufträge...</p>
-                        ) : assignedError ? (
-                            <p style={{ color: "red" }}>{assignedError}</p>
-                        ) : openAssignedOrders.length === 0 ? (
-                            <p>Du hast aktuell keine offenen zugeordneten Aufträge.</p>
-                        ) : (
-                            <>
-                                <p>Du hast aktuell {openAssignedOrders.length} offene zugeordnete Aufträge.</p>
-                                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
-                                <div className="open-orders-carousel">
-                                    {openAssignedOrders.slice(0, 6).map((order) => (
-                                        <RestockerOrderCard
-                                            key={order.orderKey}
-                                            order={order}
-                                            detailLabel="Auftrag ansehen"
-                                            onClick={() => setSelectedOrder(order)}
-                                        />
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                        <button
-                            className="tour-btn"
-                            onClick={() => navigate("/restocker-my-orders")}
-                        >
-                            Alle dir zugeordneten Aufträge anzeigen
-                        </button>
-                    </div>
-
-                    {/*RestockStatisticsCard (sind in Components definiert, um es wieder verwenden zu können)*/}
-                    <RestockerStatisticsCard
-                        assignedLoading={assignedLoading}
-                        assignedError={assignedError}
-                        assignedOrdersResult={assignedOrdersResult}
-                    />
-
-                    {/*RestockerOrderDetailDialog (sind in Components definiert)*/}
-                    {selectedOrder && !isConfirmDialogOpen ? (
-                        <RestockerOrderDetailDialog
-                            order={selectedOrder}
-                            backLabel="Zurück zur Übersicht"
-                            onClose={handleCloseDetailDialog}
-                            actions={
-                                selectedOrder.assignment ? null : (
-                                    <button
-                                        className="button"
-                                        type="button"
-                                        onClick={() => setIsConfirmDialogOpen(true)}
-                                    >
-                                        Fahrt annehmen
-                                    </button>
-                                )
-                            }
-                        />
-                    ) : null}
-
-                    {selectedOrder && isConfirmDialogOpen ? (
-                        <>
-                            <button
-                                className="subscription-modal__overlay"
-                                type="button"
-                                aria-label="Bestätigungsdialog schließen"
-                                onClick={() => setIsConfirmDialogOpen(false)}
-                            />
-
-                            <section
-                                className="subscription-modal restocker-confirm-dialog"
-                                role="dialog"
-                                aria-modal="true"
-                                aria-labelledby="restocker-confirm-dialog-title"
-                            >
-                                <div className="subscription-modal__header">
-                                    <div>
-                                        <span className="eyebrow">Bereit für deinen nächsten Einsatz?</span>
-                                        <h2 id="restocker-confirm-dialog-title">Auftrag wirklich übernehmen?</h2>
-                                    </div>
-                                </div>
-
-                                <div className="subscription-modal__body restocker-confirm-dialog__body">
-                                    <p>
-                                        Du bist dabei, die Lieferung für <strong>{selectedOrder.companyName}</strong>{" "}
-                                        am <strong>{selectedOrder.deliveryDate}</strong> zu übernehmen.
-                                    </p>
-
-                                    <div className="restocker-confirm-dialog__facts">
-                                        <div>
-                                            <span>Ziel</span>
-                                            <strong>
-                                                {selectedOrder.addressLine1}, {selectedOrder.postalCode}{" "}
-                                                {selectedOrder.city}
-                                            </strong>
-                                        </div>
-                                        <div>
-                                            <span>Lieferfenster</span>
-                                            <strong>{formatDeliveryWindow(selectedOrder.deliveryTime)}</strong>
-                                        </div>
-                                        <div>
-                                            <span>Artikel</span>
-                                            <strong>{selectedOrder.articleCount}</strong>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="subscription-modal__actions">
-                                    <button
-                                        className="button button--ghost"
-                                        type="button"
-                                        onClick={() => setIsConfirmDialogOpen(false)}
-                                    >
-                                        Zurück zur Lieferung
-                                    </button>
-
-                                    <button className="button" type="button" onClick={handleAcceptSelectedOrder}>
-                                        Ja, Fahrt annehmen
-                                    </button>
-                                </div>
-                            </section>
-                        </>
-                    ) : null}
-
-
                 </div>
-            </div >
-        </>
+
+                {/* Anzeige offene Aufträge */}
+                <div className="card">
+                    <div className="card-header">
+                        <div>
+                            <h4>Verfügbare Aufträge</h4>
+                            <h2>Offene Lieferungen in deiner Nähe</h2>
+                        </div>
+                    </div>
+
+                    {renderOpenOrdersContent()}
+
+                    <button
+                        className="tour-btn"
+                        onClick={() => navigate("/restocker-orders")}
+                    >
+                        Alle offenen Lieferungen anzeigen
+                    </button>
+                </div>
+
+                {/*Anzeige aller Aufträge, welcher dem Restocker zugeordnet sind */}
+                <div className="card">
+                    <div className="card-header">
+                        <div>
+                            <h4>Deine Aufträge</h4>
+                            <h2>Deine Übersicht</h2>
+                        </div>
+                    </div>
+
+                    {renderAssignedOrdersContent()}
+                    <button
+                        className="tour-btn"
+                        onClick={() => navigate("/restocker-my-orders")}
+                    >
+                        Alle dir zugeordneten Aufträge anzeigen
+                    </button>
+                </div>
+
+                {/*RestockStatisticsCard (sind in Components definiert, um es wieder verwenden zu können)*/}
+                <RestockerStatisticsCard
+                    assignedLoading={assignedLoading}
+                    assignedError={assignedError}
+                    assignedOrdersResult={assignedOrdersResult}
+                />
+
+                {/*RestockerOrderDetailDialog (sind in Components definiert)*/}
+                {selectedOrder && !isConfirmDialogOpen ? (
+                    <RestockerOrderDetailDialog
+                        order={selectedOrder}
+                        backLabel="Zurück zur Übersicht"
+                        onClose={handleCloseDetailDialog}
+                        actions={
+                            selectedOrder.assignment ? null : (
+                                <button
+                                    className="button"
+                                    type="button"
+                                    onClick={() => setIsConfirmDialogOpen(true)}
+                                >
+                                    Fahrt annehmen
+                                </button>
+                            )
+                        }
+                    />
+                ) : null}
+
+                {selectedOrder && isConfirmDialogOpen ? (
+                    <>
+                        <button
+                            className="subscription-modal__overlay"
+                            type="button"
+                            aria-label="Bestätigungsdialog schließen"
+                            onClick={() => setIsConfirmDialogOpen(false)}
+                        />
+
+                        <section
+                            className="subscription-modal restocker-confirm-dialog"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="restocker-confirm-dialog-title"
+                        >
+                            <div className="subscription-modal__header">
+                                <div>
+                                    <span className="eyebrow">Bereit für deinen nächsten Einsatz?</span>
+                                    <h2 id="restocker-confirm-dialog-title">Auftrag wirklich übernehmen?</h2>
+                                </div>
+                            </div>
+
+                            <div className="subscription-modal__body restocker-confirm-dialog__body">
+                                <p>
+                                    Du bist dabei, die Lieferung für <strong>{selectedOrder.companyName}</strong>{" "}
+                                    am <strong>{selectedOrder.deliveryDate}</strong> zu übernehmen.
+                                </p>
+
+                                <div className="restocker-confirm-dialog__facts">
+                                    <div>
+                                        <span>Ziel</span>
+                                        <strong>
+                                            {selectedOrder.addressLine1}, {selectedOrder.postalCode}{" "}
+                                            {selectedOrder.city}
+                                        </strong>
+                                    </div>
+                                    <div>
+                                        <span>Lieferfenster</span>
+                                        <strong>{formatDeliveryWindow(selectedOrder.deliveryTime)}</strong>
+                                    </div>
+                                    <div>
+                                        <span>Artikel</span>
+                                        <strong>{selectedOrder.articleCount}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="subscription-modal__actions">
+                                <button
+                                    className="button button--ghost"
+                                    type="button"
+                                    onClick={() => setIsConfirmDialogOpen(false)}
+                                >
+                                    Zurück zur Lieferung
+                                </button>
+
+                                <button className="button" type="button" onClick={handleAcceptSelectedOrder}>
+                                    Ja, Fahrt annehmen
+                                </button>
+                            </div>
+                        </section>
+                    </>
+                ) : null}
+
+
+            </div>
+        </div>
     );
 }

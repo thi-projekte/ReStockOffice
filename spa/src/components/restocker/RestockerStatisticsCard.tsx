@@ -94,6 +94,94 @@ export function RestockerStatisticsCard({
             ? Math.round((totalCompletedDeliveries / totalMonthlyDeliveries) * 100)
             : 0;
 
+    function renderMonthlyTourContent() {
+        if (assignedLoading) {
+            return <p>Lade deine Aufträge...</p>;
+        }
+
+        if (assignedError) {
+            return <p style={{ color: "red" }}>{assignedError}</p>;
+        }
+
+        if (totalTours === 0) {
+            return (
+                <strong>
+                    Du hast in diesem Monat keine Touren abgeschlossen oder geplant.
+                </strong>
+            );
+        }
+
+        return (
+            <>
+                <strong className="statistics-tour-summary">
+                    In diesem Monat sind {totalCompletedDeliveries}{" "}
+                    {deliveryLabel(totalCompletedDeliveries)} abgeschlossen und{" "}
+                    {totalPlannedDeliveries} {deliveryLabel(totalPlannedDeliveries)} geplant.
+                </strong>
+
+                <div className="statistics-breakdown">
+                    <div className="statistics-breakdown__item statistics-breakdown__item--completed">
+                        <span>Abgeschlossen</span>
+                        <strong>{totalCompletedDeliveries}</strong>
+                        <small>{totalDeliveredItems} ausgelieferte Artikel</small>
+                    </div>
+
+                    <div className="statistics-breakdown__item statistics-breakdown__item--planned">
+                        <span>Geplant</span>
+                        <strong>{totalPlannedDeliveries}</strong>
+                        <small>{totalPlannedItems} geplante Artikel</small>
+                    </div>
+                </div>
+
+                <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
+
+                {completedTours.length > 0 ? (
+                    <section className="statistics-tour-section">
+                        <div className="statistics-tour-section__header">
+                            <h3>Abgeschlossene Lieferungen</h3>
+                            <span>
+                                {completedTours.length}{" "}
+                                {completedTours.length === 1 ? "Tourtag" : "Tourtage"}
+                            </span>
+                        </div>
+
+                        <div className="open-orders-carousel statistics-tour-grid">
+                            {completedTours.map((tourOrders) => (
+                                <RestockerTourCard
+                                    key={`completed-${tourOrders[0].deliveryDate}`}
+                                    orders={tourOrders}
+                                    statusLabel="Abgeschlossen"
+                                />
+                            ))}
+                        </div>
+                    </section>
+                ) : null}
+
+                {plannedTours.length > 0 ? (
+                    <section className="statistics-tour-section">
+                        <div className="statistics-tour-section__header">
+                            <h3>Geplante Lieferungen</h3>
+                            <span>
+                                {plannedTours.length}{" "}
+                                {plannedTours.length === 1 ? "Tourtag" : "Tourtage"}
+                            </span>
+                        </div>
+
+                        <div className="open-orders-carousel statistics-tour-grid">
+                            {plannedTours.map((tourOrders) => (
+                                <RestockerTourCard
+                                    key={`planned-${tourOrders[0].deliveryDate}`}
+                                    orders={tourOrders}
+                                    statusLabel="Geplant"
+                                />
+                            ))}
+                        </div>
+                    </section>
+                ) : null}
+            </>
+        );
+    }
+
     return (
         <div className="card">
             <div className="card-header">
@@ -143,83 +231,7 @@ export function RestockerStatisticsCard({
                 </div>
             </div>
 
-            {assignedLoading ? (
-                <p>Lade deine Aufträge...</p>
-            ) : assignedError ? (
-                <p style={{ color: "red" }}>{assignedError}</p>
-            ) : totalTours === 0 ? (
-                <strong>
-                    Du hast in diesem Monat keine Touren abgeschlossen oder geplant.
-                </strong>
-            ) : (
-                <>
-                    <strong className="statistics-tour-summary">
-                        In diesem Monat sind {totalCompletedDeliveries}{" "}
-                        {deliveryLabel(totalCompletedDeliveries)} abgeschlossen und{" "}
-                        {totalPlannedDeliveries} {deliveryLabel(totalPlannedDeliveries)} geplant.
-                    </strong>
-
-                    <div className="statistics-breakdown">
-                        <div className="statistics-breakdown__item statistics-breakdown__item--completed">
-                            <span>Abgeschlossen</span>
-                            <strong>{totalCompletedDeliveries}</strong>
-                            <small>{totalDeliveredItems} ausgelieferte Artikel</small>
-                        </div>
-
-                        <div className="statistics-breakdown__item statistics-breakdown__item--planned">
-                            <span>Geplant</span>
-                            <strong>{totalPlannedDeliveries}</strong>
-                            <small>{totalPlannedItems} geplante Artikel</small>
-                        </div>
-                    </div>
-
-                    <p className="mobile-swipe-hint">Swipe um mehr zu sehen:</p>
-
-                    {completedTours.length > 0 ? (
-                        <section className="statistics-tour-section">
-                            <div className="statistics-tour-section__header">
-                                <h3>Abgeschlossene Lieferungen</h3>
-                                <span>
-                                    {completedTours.length}{" "}
-                                    {completedTours.length === 1 ? "Tourtag" : "Tourtage"}
-                                </span>
-                            </div>
-
-                            <div className="open-orders-carousel statistics-tour-grid">
-                                {completedTours.map((tourOrders) => (
-                                    <RestockerTourCard
-                                        key={`completed-${tourOrders[0].deliveryDate}`}
-                                        orders={tourOrders}
-                                        statusLabel="Abgeschlossen"
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    ) : null}
-
-                    {plannedTours.length > 0 ? (
-                        <section className="statistics-tour-section">
-                            <div className="statistics-tour-section__header">
-                                <h3>Geplante Lieferungen</h3>
-                                <span>
-                                    {plannedTours.length}{" "}
-                                    {plannedTours.length === 1 ? "Tourtag" : "Tourtage"}
-                                </span>
-                            </div>
-
-                            <div className="open-orders-carousel statistics-tour-grid">
-                                {plannedTours.map((tourOrders) => (
-                                    <RestockerTourCard
-                                        key={`planned-${tourOrders[0].deliveryDate}`}
-                                        orders={tourOrders}
-                                        statusLabel="Geplant"
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    ) : null}
-                </>
-            )}
+            {renderMonthlyTourContent()}
         </div>
     );
 }
