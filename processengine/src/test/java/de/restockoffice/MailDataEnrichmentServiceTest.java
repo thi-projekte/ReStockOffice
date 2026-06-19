@@ -63,6 +63,19 @@ class MailDataEnrichmentServiceTest {
     }
 
     @Test
+    void enrichAboConfirmationKeepsExistingUserDeliveryDayWhenProfileCannotBeLoaded() {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("orderId", "44");
+        variables.put("customerId", "missing-customer");
+        variables.put("productId", "RS-1");
+        variables.put("deliveryDay", "Mittwoch");
+
+        service.enrichAboConfirmation(execution(variables));
+
+        assertThat(variables).containsEntry("deliveryDay", "Mittwoch");
+    }
+
+    @Test
     void enrichDeliveryAnnouncementFormatsDateAndUsesDeliveryDetailItems() {
         Map<String, Object> variables = new HashMap<>();
         variables.put("deliveryId", "delivery-1");
@@ -177,6 +190,12 @@ class MailDataEnrichmentServiceTest {
 
     private void handleRequest(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
+        String query = exchange.getRequestURI().getRawQuery();
+        if ("/customer".equals(path) && query != null && query.contains("missing-customer")) {
+            sendJson(exchange, 404, "{}");
+            return;
+        }
+
         String response = switch (path) {
             case "/orders/delivery/42" -> """
                     {
@@ -198,6 +217,17 @@ class MailDataEnrichmentServiceTest {
                       "quantity": 5,
                       "interval": 1,
                       "createdAt": "2026-06-10T10:00:00"
+                    }
+                    """;
+            case "/orders/delivery/44" -> """
+                    {
+                      "id": 44,
+                      "customerId": "missing-customer",
+                      "productId": "RS-1",
+                      "status": "ACTIVE",
+                      "quantity": 2,
+                      "interval": 1,
+                      "createdAt": "2026-06-19T14:40:00"
                     }
                     """;
             case "/customer" -> """
@@ -311,9 +341,13 @@ class MailDataEnrichmentServiceTest {
             default -> "{}";
         };
 
+        sendJson(exchange, 200, response);
+    }
+
+    private void sendJson(HttpExchange exchange, int statusCode, String response) throws IOException {
         byte[] body = response.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().add("Content-Type", "application/json");
-        exchange.sendResponseHeaders(200, body.length);
+        exchange.sendResponseHeaders(statusCode, body.length);
         exchange.getResponseBody().write(body);
         exchange.close();
     }

@@ -78,7 +78,7 @@ public class MailDataEnrichmentService {
         LocalDate deliveryDate = resolveDeliveryDate(context);
 
         setIfBlank(execution, "orderDate", formatDateTime(resolveOrderCreatedAt(order)));
-        setIfPresent(execution, "deliveryDay", formatDayName(deliveryDate));
+        setIfPresent(execution, "deliveryDay", resolveAboDeliveryDay(execution, context));
         setIfPresent(execution, "deliveryLocation", resolveDeliveryLocation(context.delivery(), context.user()));
         setIfBlank(execution, "changeDeadline", formatDateTime(deliveryDate.minusDays(3).atTime(12, 0)));
         setIfBlank(execution, "manageSubscriptionUrl", appBaseUrl + "/subscription");
@@ -644,6 +644,13 @@ public class MailDataEnrichmentService {
         return date.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, GERMAN);
     }
 
+    private String resolveAboDeliveryDay(DelegateExecution execution, EnrichmentContext context) {
+        return firstNonBlank(
+                userDeliveryDay(context.user()),
+                stringVariable(execution, "deliveryDay")
+        );
+    }
+
     private String formatDeliveryWindow(String deliveryTime) {
         if (isBlank(deliveryTime)) {
             return "nach Absprache";
@@ -843,6 +850,10 @@ public class MailDataEnrichmentService {
 
     private String userDeliveryHint(UserDto user) {
         return user != null ? user.deliveryHint : null;
+    }
+
+    private String userDeliveryDay(UserDto user) {
+        return user != null ? user.deliveryDay : null;
     }
 
     private String deliveryRecipientEmail(DeliveryDetailDto delivery) {
