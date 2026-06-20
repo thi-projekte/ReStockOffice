@@ -14,7 +14,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.ws.rs.client.Client;
@@ -179,7 +178,7 @@ public class OrderResource {
         order.status = input.status != null && !input.status.isBlank() ? input.status : order.status;
         order.quantity = input.quantity;
         order.interval = input.interval;
-        order.updatedAt = LocalDateTime.now();
+        order.updatedAt = Order.currentTimestamp();
 
         // Camunda Prozess mit Token starten
         String authHeader = headers.getHeaderString(AUTHORIZATION_HEADER);

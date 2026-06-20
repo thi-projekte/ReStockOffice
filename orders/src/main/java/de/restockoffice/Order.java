@@ -1,6 +1,8 @@
 package de.restockoffice;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -14,6 +16,7 @@ import org.jboss.logging.Logger;
 public class Order extends PanacheEntity {
 
     private static final Logger LOG = Logger.getLogger(Order.class);
+    private static final Clock BUSINESS_CLOCK = Clock.system(ZoneId.of("Europe/Berlin"));
 
     @NotNull
     public String customerId;
@@ -30,8 +33,12 @@ public class Order extends PanacheEntity {
     @NotNull
     public Integer interval;
 
-    public LocalDateTime createdAt = LocalDateTime.now();
+    public LocalDateTime createdAt = currentTimestamp();
     public LocalDateTime updatedAt;
+
+    static LocalDateTime currentTimestamp() {
+        return LocalDateTime.now(BUSINESS_CLOCK);
+    }
 
     public static Order order(String customerId, String productId, String status, int quantity, int interval) {
         LOG.info("STATIC bestellen() CALLED");
@@ -41,7 +48,7 @@ public class Order extends PanacheEntity {
         bestellung.status = status;
         bestellung.quantity = quantity;
         bestellung.interval = interval;
-        bestellung.createdAt = LocalDateTime.now();
+        bestellung.createdAt = currentTimestamp();
         return bestellung;
     }
 }
