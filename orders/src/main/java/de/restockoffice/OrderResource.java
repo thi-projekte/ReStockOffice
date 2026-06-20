@@ -106,7 +106,7 @@ public class OrderResource {
     @GET
     @Path("/delivery/{id}")
     public Order getByIdForDelivery(@PathParam("id") Long id) {
-        Order order = Order.findById(id);
+        Order order = findOrderById(id);
         if (order == null) {
             throw new NotFoundException("Order nicht gefunden: " + id);
         }
@@ -121,7 +121,7 @@ public class OrderResource {
         if (securityIdentity == null || securityIdentity.isAnonymous()) {
             throw new NotAuthorizedException("Nicht autorisiert");
         } else {
-            return Order.findById(id);
+            return findOrderById(id);
         }
     }
 
@@ -157,11 +157,15 @@ public class OrderResource {
         return entityManager.createQuery(query).getResultList();
     }
 
+    private Order findOrderById(Long id) {
+        return entityManager.find(Order.class, id);
+    }
+
     @DELETE
     @Path("/{id}")
     @Transactional
     public Map<String, Object> deleteOrder(@PathParam("id") Long id) {
-        Order order = entityManager.find(Order.class, id);
+        Order order = findOrderById(id);
         if (order == null) {
             throw new NotFoundException("Order nicht gefunden: " + id);
         }
@@ -205,7 +209,7 @@ public class OrderResource {
     @Path("/{id}")
     @Transactional
     public Order updateOrder(@PathParam("id") Long id, Order input) {
-        Order order = Order.findById(id);
+        Order order = findOrderById(id);
         if (order == null) {
             throw new NotFoundException("Order nicht gefunden: " + id);
         }
@@ -266,6 +270,7 @@ public class OrderResource {
         transactionSynchronizationRegistry.registerInterposedSynchronization(new Synchronization() {
             @Override
             public void beforeCompletion() {
+                // Replanning must only run after a successful commit, so there is nothing to do before completion.
             }
 
             @Override
