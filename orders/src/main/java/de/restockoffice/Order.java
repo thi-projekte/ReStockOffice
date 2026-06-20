@@ -33,8 +33,8 @@ public class Order extends PanacheEntity {
     @NotNull
     public Integer interval;
 
-    public LocalDateTime createdAt = currentTimestamp();
-    public LocalDateTime updatedAt;
+    private LocalDateTime createdAt = currentTimestamp();
+    private LocalDateTime updatedAt;
 
     static LocalDateTime currentTimestamp() {
         return LocalDateTime.now(BUSINESS_CLOCK);
@@ -50,5 +50,21 @@ public class Order extends PanacheEntity {
         bestellung.interval = interval;
         bestellung.createdAt = currentTimestamp();
         return bestellung;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

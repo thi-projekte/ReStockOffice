@@ -212,12 +212,12 @@ public class OrderResource {
         order.status = input.status != null && !input.status.isBlank() ? input.status : order.status;
         order.quantity = input.quantity;
         order.interval = input.interval;
-        order.updatedAt = Order.currentTimestamp();
+        order.setUpdatedAt(Order.currentTimestamp());
 
         // Camunda Prozess mit Token starten
         String authHeader = headers.getHeaderString(AUTHORIZATION_HEADER);
         Map<String, Object> variables = processVariables(order, authHeader);
-        variables.put("updatedAt", stringProcessVariable(order.updatedAt.toString()));
+        variables.put("updatedAt", stringProcessVariable(order.getUpdatedAt().toString()));
         variables.put("changeType", stringProcessVariable("CANCELLED".equalsIgnoreCase(order.status) ? "CANCELLED" : "UPDATED"));
 
         startAboConfirmationProcess(order, authHeader, variables);
