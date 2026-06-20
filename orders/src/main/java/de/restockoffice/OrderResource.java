@@ -50,14 +50,9 @@ public class OrderResource {
     private static final String PROCESS_VARIABLE_LONG = "Long";
     private static final String PROCESS_VARIABLE_INTEGER = "Integer";
 
-    @Inject
-    SecurityIdentity securityIdentity;
-
-    @Inject
-    JsonWebToken jwt;
-
-    @Inject
-    EntityManager entityManager;
+    private final SecurityIdentity securityIdentity;
+    private final JsonWebToken jwt;
+    private final EntityManager entityManager;
 
     @ConfigProperty(name = "processengine.abo-confirmation-start-url", defaultValue = "https://pe.restockoffice.de/api/abo-confirmation-process/change")
     String aboConfirmationProcessStartUrl;
@@ -71,11 +66,23 @@ public class OrderResource {
     @ConfigProperty(name = "deliveriesservice.base-url", defaultValue = "https://restocker-deliveries.restockoffice.de")
     String deliveriesServiceBaseUrl;
 
-    @Inject
-    TransactionSynchronizationRegistry transactionSynchronizationRegistry;
+    private final TransactionSynchronizationRegistry transactionSynchronizationRegistry;
 
     @Context
     HttpHeaders headers;
+
+    @Inject
+    public OrderResource(
+            SecurityIdentity securityIdentity,
+            JsonWebToken jwt,
+            EntityManager entityManager,
+            TransactionSynchronizationRegistry transactionSynchronizationRegistry
+    ) {
+        this.securityIdentity = securityIdentity;
+        this.jwt = jwt;
+        this.entityManager = entityManager;
+        this.transactionSynchronizationRegistry = transactionSynchronizationRegistry;
+    }
 
     @GET
     public List<Order> getAll() {
