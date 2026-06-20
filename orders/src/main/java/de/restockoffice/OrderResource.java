@@ -4,7 +4,9 @@ import io.quarkus.security.Authenticated;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.CriteriaUpdate;
+import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Status;
 import jakarta.transaction.Synchronization;
 import jakarta.transaction.Transactional;
@@ -49,6 +51,7 @@ public class OrderResource {
     private static final String PROCESS_VARIABLE_STRING = "String";
     private static final String PROCESS_VARIABLE_LONG = "Long";
     private static final String PROCESS_VARIABLE_INTEGER = "Integer";
+    private static final String ACTIVE_STATUS = "ACTIVE";
 
     private final SecurityIdentity securityIdentity;
     private final JsonWebToken jwt;
@@ -90,14 +93,14 @@ public class OrderResource {
             throw new NotAuthorizedException("Nicht autorisiert");
         } else {
             LOG.infof("GET /orders requested by: %s", securityIdentity.getPrincipal().getName());
-            return Order.listAll();
+            return findAllOrders();
         }
     }
 
     @GET
     @Path("/active")
     public List<Order> getActiveOrders() {
-        return Order.list("status", "ACTIVE");
+        return findOrdersByStatus(ACTIVE_STATUS);
     }
 
     @GET
@@ -127,7 +130,31 @@ public class OrderResource {
     @Path("/my")
     @Authenticated
     public List<Order> getMyOrders() {
-        return Order.list(CUSTOMER_ID, resolveCustomerId());
+        return findOrdersByCustomerId(resolveCustomerId());
+    }
+
+    private List<Order> findAllOrders() {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Order> query = builder.createQuery(Order.class);
+        Root<Order> root = query.from(Order.class);
+        query.select(root);
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    private List<Order> findOrdersByStatus(String status) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Order> query = builder.createQuery(Order.class);
+        Root<Order> root = query.from(Order.class);
+        query.select(root).where(builder.equal(root.get("status"), status));
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    private List<Order> findOrdersByCustomerId(String customerId) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Order> query = builder.createQuery(Order.class);
+        Root<Order> root = query.from(Order.class);
+        query.select(root).where(builder.equal(root.get(CUSTOMER_ID), customerId));
+        return entityManager.createQuery(query).getResultList();
     }
 
     @DELETE
