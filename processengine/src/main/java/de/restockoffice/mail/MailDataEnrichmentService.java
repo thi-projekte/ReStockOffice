@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 @Service
 public class MailDataEnrichmentService {
@@ -656,19 +657,23 @@ public class MailDataEnrichmentService {
         }
 
         String normalized = value.trim();
-        try {
-            return LocalDate.parse(normalized);
-        } catch (DateTimeParseException ignored) {
+        LocalDate parsedDate = tryParseDate(normalized, LocalDate::parse);
+        if (parsedDate != null) {
+            return parsedDate;
         }
 
-        try {
-            return LocalDateTime.parse(normalized).toLocalDate();
-        } catch (DateTimeParseException ignored) {
+        parsedDate = tryParseDate(normalized, dateTime -> LocalDateTime.parse(dateTime).toLocalDate());
+        if (parsedDate != null) {
+            return parsedDate;
         }
 
+        return tryParseDate(normalized, dateTime -> OffsetDateTime.parse(dateTime).toLocalDate());
+    }
+
+    private LocalDate tryParseDate(String value, Function<String, LocalDate> parser) {
         try {
-            return OffsetDateTime.parse(normalized).toLocalDate();
-        } catch (DateTimeParseException ignored) {
+            return parser.apply(value);
+        } catch (DateTimeParseException exception) {
             return null;
         }
     }
