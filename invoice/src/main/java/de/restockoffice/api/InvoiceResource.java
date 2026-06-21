@@ -1,6 +1,7 @@
 package de.restockoffice.api;
 
 import de.restockoffice.domain.InvoiceEntity;
+import de.restockoffice.repository.InvoiceRepository;
 import de.restockoffice.service.InvoiceService;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -30,6 +31,9 @@ public class InvoiceResource {
 
     @Inject
     JsonWebToken jwt;
+
+    @Inject
+    InvoiceRepository invoiceRepository;
 
     @POST
     @Path("invoices/create")
@@ -108,9 +112,8 @@ public class InvoiceResource {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
-        InvoiceEntity entity = InvoiceEntity
-                .find("userId = ?1 and invoiceNumber = ?2", userId, invoiceNumber)
-                .firstResult();
+        InvoiceEntity entity = invoiceRepository.findByUserIdAndInvoiceNumber(userId, invoiceNumber)
+                .orElse(null);
 
         if (entity == null || entity.getZugferdPdf() == null) {
             log.warn("No invoice found for user {} with invoice number {}", userId, invoiceNumber);
