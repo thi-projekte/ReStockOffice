@@ -40,6 +40,12 @@ public class DeliveryService {
             .withResolverStyle(ResolverStyle.STRICT);
 
     @Inject
+    DeliveryReportingService reportingService;
+
+    @Inject
+    DeliveryTourService tourService;
+
+    @Inject
     @RestClient
     UserClient userClient;
 
@@ -56,29 +62,21 @@ public class DeliveryService {
 
     @Transactional
     public Tour createTour(Tour tour) {
-        tour.persist();
-        return tour;
+        return tourService.createTour(tour);
     }
 
     @Transactional
     public Tour startTour(UUID tourId) {
-        Tour tour = findTourOrThrow(tourId);
-        if (!tour.allPackagesCollected()) {
-            throw new BadRequestException("Nicht alle Pakete wurden eingesammelt.");
-        }
-        tour.start();
-        return tour;
+        return tourService.startTour(tourId);
     }
 
     @Transactional
     public Tour endTour(UUID tourId, BigDecimal earnings) {
-        Tour tour = findTourOrThrow(tourId);
-        tour.end(earnings);
-        return tour;
+        return tourService.endTour(tourId, earnings);
     }
 
     public List<Tour> getTodayToursByRestocker(String restockerName) {
-        return Tour.findTodayByRestocker(restockerName);
+        return tourService.getTodayToursByRestocker(restockerName);
     }
 
     @Transactional
@@ -97,41 +95,17 @@ public class DeliveryService {
 
     @Transactional
     public List<DeliveredArticleSummaryDto> getDeliveredArticleSummaryForPreviousMonth(String customerId) {
-        if (isBlank(customerId)) {
-            throw new BadRequestException("customerId muss angegeben werden.");
-        }
-
-        LocalDate currentMonthStart = LocalDate.now().withDayOfMonth(1);
-        LocalDate previousMonthStart = currentMonthStart.minusMonths(1);
-        LocalDate previousMonthEnd = currentMonthStart.minusDays(1);
-        List<Delivery> deliveries = Delivery.findDeliveredByCustomerBetween(
-                customerId.trim(),
-                previousMonthStart,
-                previousMonthEnd
-        );
-
-        return summarizeDeliveredItemsForPeriod(deliveries, previousMonthStart, previousMonthEnd);
+        return reportingService.getDeliveredArticleSummaryForPreviousMonth(customerId);
     }
 
     @Transactional
     public CustomerDeliveryOverviewDto getCustomerDeliveryOverview(String customerId) {
-        if (isBlank(customerId)) {
-            throw new BadRequestException("customerId muss angegeben werden.");
-        }
-
-        List<Delivery> deliveries = Delivery.findByCustomer(customerId.trim());
-        return toCustomerDeliveryOverview(deliveries, LocalDate.now());
+        return reportingService.getCustomerDeliveryOverview(customerId);
     }
 
     @Transactional
     public MonthlyDeliveryCustomersDto getCustomersWithDeliveriesInMonth(String monthValue) {
-        String normalizedMonth = normalizeDeliveryMonth(monthValue);
-        YearMonth month = parseDeliveryMonth(normalizedMonth);
-        LocalDateTime monthStart = month.atDay(1).atStartOfDay();
-        LocalDateTime nextMonthStart = month.plusMonths(1).atDay(1).atStartOfDay();
-
-        List<String> customerIds = findCustomerIdsDeliveredBetween(monthStart, nextMonthStart);
-        return new MonthlyDeliveryCustomersDto(normalizedMonth, customerIds);
+        return reportingService.getCustomersWithDeliveriesInMonth(monthValue);
     }
 
     @Transactional
@@ -165,29 +139,7 @@ public class DeliveryService {
 
     @Transactional
     public DeliveryDetailDto acceptDelivery(UUID deliveryId, String restockerName, String authorizationHeader) {
-        validateRestockerName(restockerName);
-
-        Delivery delivery = findDeliveryOrThrow(deliveryId);
-        if (delivery.isDelivered()) {
-            throw new BadRequestException("Diese Lieferung wurde bereits ausgeliefert.");
-        }
-
-        if (delivery.tour != null) {
-            if (!restockerName.equals(delivery.tour.restockerName)) {
-                throw new BadRequestException("Diese Lieferung wurde bereits von einem anderen Restocker angenommen.");
-            }
-
-            return toDetailDtoWithFreshData(delivery, authorizationHeader);
-        }
-
-        LocalDate deliveryDate = requireDeliveryDate(delivery);
-
-        Tour tour = findOrCreateOpenTour(restockerName, deliveryDate);
-        delivery.stopOrder = nextStopOrder(tour);
-        delivery.markAccepted(tour);
-        tour.deliveries.add(delivery);
-
-        return toDetailDtoWithFreshData(delivery, authorizationHeader);
+        return toDetailDtoWithFreshData(tourService.acceptDelivery(deliveryId, restockerName), authorizationHeader);
     }
 
     @Transactional
@@ -199,32 +151,17 @@ public class DeliveryService {
 
     @Transactional
     public Delivery collectPackage(UUID deliveryId) {
-        Delivery delivery = findDeliveryOrThrow(deliveryId);
-        if (delivery.collected) {
-            return delivery;
-        }
-        delivery.markCollected();
-        return delivery;
+        return tourService.collectPackage(deliveryId);
     }
 
     @Transactional
     public DeliveryItem markItemDelivered(UUID itemId) {
-        DeliveryItem item = DeliveryItem.findById(itemId);
-        if (item == null) {
-            throw new NotFoundException("Artikel nicht gefunden: " + itemId);
-        }
-        item.markDelivered();
-        return item;
+        return tourService.markItemDelivered(itemId);
     }
 
     @Transactional
     public Delivery confirmDelivery(UUID deliveryId) {
-        Delivery delivery = findDeliveryOrThrow(deliveryId);
-        if (!delivery.allItemsDelivered()) {
-            throw new BadRequestException("Nicht alle Artikel wurden abgehakt.");
-        }
-        delivery.markDelivered();
-        return delivery;
+        return tourService.confirmDelivery(deliveryId);
     }
 
     @Transactional
