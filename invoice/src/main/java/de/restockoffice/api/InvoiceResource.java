@@ -3,13 +3,14 @@ package de.restockoffice.api;
 import de.restockoffice.domain.InvoiceEntity;
 import de.restockoffice.service.InvoiceService;
 import io.quarkus.security.Authenticated;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import io.quarkus.security.identity.SecurityIdentity;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,9 @@ public class InvoiceResource {
 
     @Inject
     SecurityIdentity identity;
+
+    @Inject
+    JsonWebToken jwt;
 
     @POST
     @Path("invoices/create")
@@ -68,9 +72,7 @@ public class InvoiceResource {
     @jakarta.transaction.Transactional
     @Authenticated
     public List<InvoiceEntity> getInvoices(@QueryParam("userId") String userID) {
-        String loggedInId = identity.getPrincipal().getName();
-        String secLo0ggedin = identity.getAttributes().toString();
-        log.info(secLo0ggedin);
+        String loggedInId = jwt.getSubject();
 
         boolean isAdmin = identity.hasRole("admin");
 
@@ -95,7 +97,7 @@ public class InvoiceResource {
             @QueryParam("userId") String userId,
             @QueryParam("invoiceNumber") String invoiceNumber) {
 
-        String loggedInId = identity.getPrincipal().getName();
+        String loggedInId = jwt.getSubject();
         boolean isAdmin = identity.hasRole("admin");
 
         if (!loggedInId.equals(userId) && !isAdmin) {
