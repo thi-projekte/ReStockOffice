@@ -69,6 +69,9 @@ public class InvoiceResource {
     @Authenticated
     public List<InvoiceEntity> getInvoices(@QueryParam("userId") String userID) {
         String loggedInId = identity.getPrincipal().getName();
+        String secLo0ggedin = identity.getAttributes().toString();
+        log.info(secLo0ggedin);
+
         boolean isAdmin = identity.hasRole("admin");
 
         if (!loggedInId.equals(userID) && !isAdmin) {
