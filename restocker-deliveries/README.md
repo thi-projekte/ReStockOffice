@@ -228,13 +228,11 @@ Alle Endpunkte liegen unter `/api/deliveries`.
 | `GET` | `/customers/{customerId}/delivery-overview` | Letzte und nächste Delivery eines Customers laden. |
 | `GET` | `/customers?month=MM.YYYY` | Customer-IDs mit ausgelieferten Deliveries im Monat laden. |
 
-### Admin und Testdaten
+### Alle Deliveries
 
 | Methode | Endpoint | Zweck |
 | ------- | -------- | ----- |
 | `GET` | `/admin/all-deliveries` | Alle gespeicherten Deliveries nach Datum absteigend laden. |
-| `DELETE` | `/admin/all` | Alle Deliveries, DeliveryItems und Touren löschen. |
-| `POST` | `/admin/test-data` | Test-Deliveries anlegen. Optionale Query-Parameter: `deliveryDate`, `firstCustomerId`, `secondCustomerId`, `recipientEmail`. |
 
 ## Authentifizierung und Darstellung
 

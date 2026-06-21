@@ -34,9 +34,6 @@ public class DeliveryService {
     private static final Logger LOG = Logger.getLogger(DeliveryService.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     static final int PLANNING_HORIZON_DAYS = 14;
-    private static final String TEST_ORDER_PREFIX = "test-delivery-";
-    private static final String DEFAULT_TEST_CUSTOMER_ONE = "3e6572a7-3852-42e3-81eb-17e7f9622kk8";
-    private static final String DEFAULT_TEST_CUSTOMER_TWO = "c831fce5-56a3-443e-a27f-cc769a1ed0d7";
     private static final String DEFAULT_UNIT = "Stück";
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter
             .ofPattern("MM.uuuu")
@@ -61,65 +58,6 @@ public class DeliveryService {
     public Tour createTour(Tour tour) {
         tour.persist();
         return tour;
-    }
-
-    @Transactional
-    public Map<String, Long> deleteAllDeliveries() {
-        long deletedItems = DeliveryItem.deleteAll();
-        long deletedDeliveries = Delivery.deleteAll();
-        long deletedTours = Tour.deleteAll();
-
-        return Map.of(
-                "deletedItems", deletedItems,
-                "deletedDeliveries", deletedDeliveries,
-                "deletedTours", deletedTours
-        );
-    }
-
-    @Transactional
-    public List<DeliveryDetailDto> createTestDeliveries(
-            String deliveryDateValue,
-            String firstCustomerId,
-            String secondCustomerId,
-            String recipientEmail,
-            String authorizationHeader
-    ) {
-        LocalDate deliveryDate = parseTestDeliveryDate(deliveryDateValue);
-        List<Delivery> existingTestDeliveries = Delivery.list(
-                "orderId like ?1",
-                TEST_ORDER_PREFIX + "%"
-        );
-
-        for (Delivery delivery : existingTestDeliveries) {
-            DeliveryItem.delete("delivery.id", delivery.id);
-        }
-        Delivery.delete("orderId like ?1", TEST_ORDER_PREFIX + "%");
-
-        Delivery firstDelivery = createOpenTestDelivery(
-                TEST_ORDER_PREFIX + "one",
-                normalizeOptionalCustomerId(firstCustomerId, DEFAULT_TEST_CUSTOMER_ONE),
-                normalizeOptionalRecipientEmail(recipientEmail),
-                deliveryDate,
-                List.of(
-                        createTestDeliveryItem("10086", "Kassenbuch A4", 1, DEFAULT_UNIT),
-                        createTestDeliveryItem("10003", "Textmarker-Set (4 Farben)", 1, DEFAULT_UNIT)
-                )
-        );
-        Delivery secondDelivery = createOpenTestDelivery(
-                TEST_ORDER_PREFIX + "two",
-                normalizeOptionalCustomerId(secondCustomerId, DEFAULT_TEST_CUSTOMER_TWO),
-                normalizeOptionalRecipientEmail(recipientEmail),
-                deliveryDate,
-                List.of(
-                        createTestDeliveryItem("10088", "Gummizugmappe A3", 1, DEFAULT_UNIT),
-                        createTestDeliveryItem("10007", "Klarsichthuellen A4 oben offen", 10, DEFAULT_UNIT)
-                )
-        );
-
-        firstDelivery.persist();
-        secondDelivery.persist();
-
-        return toDetailDtos(List.of(firstDelivery, secondDelivery), authorizationHeader);
     }
 
     @Transactional
@@ -1064,64 +1002,6 @@ public class DeliveryService {
         return item;
     }
 
-    private Delivery createOpenTestDelivery(
-            String orderId,
-            String customerId,
-            String recipientEmail,
-            LocalDate deliveryDate,
-            List<DeliveryItem> items
-    ) {
-        Delivery delivery = new Delivery();
-        delivery.orderId = orderId;
-        delivery.userId = customerId;
-        delivery.recipientEmail = recipientEmail;
-        delivery.deliveryDate = deliveryDate;
-        delivery.stopOrder = 0;
-        delivery.collected = false;
-        delivery.collectedAt = null;
-        delivery.acceptedAt = null;
-        delivery.deliveredAt = null;
-        delivery.tour = null;
-
-        for (DeliveryItem item : items) {
-            item.delivered = false;
-            delivery.addItem(item);
-        }
-
-        return delivery;
-    }
-
-    private String normalizeOptionalRecipientEmail(String recipientEmail) {
-        return recipientEmail != null && !recipientEmail.isBlank() ? recipientEmail.trim() : null;
-    }
-
-    private DeliveryItem createTestDeliveryItem(
-            String articleNumber,
-            String name,
-            int quantity,
-            String unit
-    ) {
-        DeliveryItem item = new DeliveryItem();
-        item.articleNumber = articleNumber;
-        item.name = name;
-        item.quantity = quantity;
-        item.unit = unit;
-        item.delivered = false;
-        return item;
-    }
-
-    private LocalDate parseTestDeliveryDate(String deliveryDateValue) {
-        if (deliveryDateValue == null || deliveryDateValue.isBlank()) {
-            return LocalDate.now();
-        }
-
-        try {
-            return LocalDate.parse(deliveryDateValue.trim());
-        } catch (RuntimeException exception) {
-            throw new BadRequestException("deliveryDate muss im Format YYYY-MM-DD angegeben werden.");
-        }
-    }
-
     YearMonth parseDeliveryMonth(String monthValue) {
         try {
             return YearMonth.parse(monthValue, MONTH_FORMATTER);
@@ -1136,12 +1016,6 @@ public class DeliveryService {
         }
 
         return monthValue.trim();
-    }
-
-    private String normalizeOptionalCustomerId(String customerId, String fallbackCustomerId) {
-        return customerId == null || customerId.isBlank()
-                ? fallbackCustomerId
-                : customerId.trim();
     }
 
     void appendNewOrdersToDelivery(Delivery delivery, List<OrderDto> orders) {

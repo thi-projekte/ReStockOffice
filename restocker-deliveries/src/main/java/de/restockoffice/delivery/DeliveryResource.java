@@ -2,7 +2,6 @@ package de.restockoffice.delivery;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -85,29 +84,6 @@ public class DeliveryResource {
     public Response createTour(Tour tour) {
         Tour created = deliveryService.createTour(tour);
         return Response.status(Response.Status.CREATED).entity(created).build();
-    }
-
-    @DELETE
-    @Path("/admin/all")
-    public Map<String, Long> deleteAllDeliveries() {
-        return deliveryService.deleteAllDeliveries();
-    }
-
-    @POST
-    @Path("/admin/test-data")
-    public List<DeliveryDetailDto> createTestDeliveries(
-            @QueryParam("deliveryDate") String deliveryDate,
-            @QueryParam("firstCustomerId") String firstCustomerId,
-            @QueryParam("secondCustomerId") String secondCustomerId,
-            @QueryParam("recipientEmail") String recipientEmail
-    ) {
-        return deliveryService.createTestDeliveries(
-                deliveryDate,
-                firstCustomerId,
-                secondCustomerId,
-                recipientEmail,
-                authorizationHeader()
-        );
     }
 
     @POST
