@@ -16,7 +16,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @ApplicationScoped
 public class DeliveryDetailAssembler {
@@ -25,16 +25,21 @@ public class DeliveryDetailAssembler {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String DEFAULT_UNIT = "Stück";
 
-    @Inject
-    @RestClient
-    UserClient userClient;
+    private final UserClient userClient;
+
+    private final ArticleClient articleClient;
 
     @Inject
-    @RestClient
-    ArticleClient articleClient;
+    public DeliveryDetailAssembler(
+            @RestClient UserClient userClient,
+            @RestClient ArticleClient articleClient
+    ) {
+        this.userClient = userClient;
+        this.articleClient = articleClient;
+    }
 
     public List<DeliveryDetailDto> toDetailDtos(List<Delivery> deliveries, String authorizationHeader) {
-        Map<String, UserDto> userCache = new HashMap<>();
+        Map<String, Optional<UserDto>> userCache = new HashMap<>();
         Map<String, ArticleDto> articleCache = new HashMap<>();
         AuthenticatedRestocker authenticatedRestocker = authenticatedRestocker(authorizationHeader);
 
@@ -45,7 +50,7 @@ public class DeliveryDetailAssembler {
                         articleCache,
                         authenticatedRestocker
                 ))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public DeliveryDetailDto toDetailDtoWithFreshData(Delivery delivery, String authorizationHeader) {
@@ -97,7 +102,7 @@ public class DeliveryDetailAssembler {
     ) {
         return delivery.items.stream()
                 .map(item -> toDetailItem(item, articleCache))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private DeliveryDetailDto.DeliveryItemDetailDto toDetailItem(
@@ -115,11 +120,15 @@ public class DeliveryDetailAssembler {
         return detailItem;
     }
 
-    private UserDto loadCachedUser(String userId, Map<String, UserDto> userCache, String authorizationHeader) {
-        if (!userCache.containsKey(userId)) {
-            userCache.put(userId, tryLoadUser(userId, authorizationHeader));
-        }
-        return userCache.get(userId);
+    private UserDto loadCachedUser(
+            String userId,
+            Map<String, Optional<UserDto>> userCache,
+            String authorizationHeader
+    ) {
+        return userCache.computeIfAbsent(
+                userId,
+                ignored -> Optional.ofNullable(tryLoadUser(userId, authorizationHeader))
+        ).orElse(null);
     }
 
     private UserDto tryLoadUser(String userId, String authorizationHeader) {

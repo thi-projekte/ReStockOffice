@@ -30,14 +30,11 @@ public class DeliveryService {
     static final int PLANNING_HORIZON_DAYS = 14;
     private static final String DEFAULT_UNIT = "Stück";
 
-    @Inject
-    DeliveryReportingService reportingService;
+    private final DeliveryReportingService reportingService;
 
-    @Inject
-    DeliveryTourService tourService;
+    private final DeliveryTourService tourService;
 
-    @Inject
-    DeliveryDetailAssembler detailAssembler;
+    private final DeliveryDetailAssembler detailAssembler;
 
     @Inject
     @RestClient
@@ -47,12 +44,24 @@ public class DeliveryService {
     @RestClient
     OrderClient orderClient;
 
-    @Inject
-    @RestClient
-    ArticleClient articleClient;
+    private final ArticleClient articleClient;
+
+    private final EntityManager entityManager;
 
     @Inject
-    EntityManager entityManager;
+    public DeliveryService(
+            DeliveryReportingService reportingService,
+            DeliveryTourService tourService,
+            DeliveryDetailAssembler detailAssembler,
+            @RestClient ArticleClient articleClient,
+            EntityManager entityManager
+    ) {
+        this.reportingService = reportingService;
+        this.tourService = tourService;
+        this.detailAssembler = detailAssembler;
+        this.articleClient = articleClient;
+        this.entityManager = entityManager;
+    }
 
     @Transactional
     public Tour createTour(Tour tour) {
@@ -84,7 +93,12 @@ public class DeliveryService {
 
     @Transactional
     public List<DeliveryDetailDto> getAllDeliveries(String authorizationHeader) {
-        return detailAssembler.toDetailDtos(Delivery.list("order by deliveryDate desc, userId asc"), authorizationHeader);
+        return detailAssembler.toDetailDtos(
+                entityManager
+                        .createQuery("select d from Delivery d order by d.deliveryDate desc, d.userId asc", Delivery.class)
+                        .getResultList(),
+                authorizationHeader
+        );
     }
 
     @Transactional
@@ -228,7 +242,7 @@ public class DeliveryService {
         return activeOrders.stream()
                 .filter(this::isPlannableOrder)
                 .filter(order -> customerId.equals(order.getCustomerId()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void deleteFutureFreeDeliveries(String customerId, LocalDate today, LocalDate horizonEnd) {
@@ -266,7 +280,7 @@ public class DeliveryService {
         if (delivery == null) {
             List<OrderDto> orders = plannedOrders.stream()
                     .map(PlannedOrder::order)
-                    .collect(Collectors.toList());
+                    .toList();
             delivery = new Delivery();
             delivery.orderId = joinedOrderIds(orders);
             delivery.userId = groupKey.customerId();
@@ -284,7 +298,7 @@ public class DeliveryService {
         List<OrderDto> newOrders = plannedOrders.stream()
                 .filter(PlannedOrder::newArticle)
                 .map(PlannedOrder::order)
-                .collect(Collectors.toList());
+                .toList();
         if (newOrders.isEmpty()) {
             return;
         }
@@ -312,7 +326,7 @@ public class DeliveryService {
             List<LocalDate> existingCustomerDeliveryDates
     ) {
         List<LocalDate> dueDates = new ArrayList<>();
-        DayOfWeek deliveryDay = resolveDeliveryDay(user, order);
+        DayOfWeek deliveryDay = resolveDeliveryDay(user);
         int intervalWeeks = order.getInterval() != null && order.getInterval() > 0 ? order.getInterval() : 1;
         if (deliveryDay == null) {
             LOG.errorf(
@@ -380,7 +394,7 @@ public class DeliveryService {
                 .filter(date -> !date.isBefore(firstEligibleDate))
                 .filter(date -> !date.isAfter(endDate))
                 .filter(date -> weeksBetween(firstEligibleDate, date) % intervalWeeks == 0)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private long weeksBetween(LocalDate startDate, LocalDate endDate) {
@@ -413,13 +427,8 @@ public class DeliveryService {
         return date.plusDays(dayDifference);
     }
 
-    private DayOfWeek resolveDeliveryDay(UserDto user, OrderDto order) {
-        DayOfWeek configuredDeliveryDay = parseDeliveryDay(user != null ? user.getDeliveryDay() : null);
-        if (configuredDeliveryDay != null) {
-            return configuredDeliveryDay;
-        }
-
-        return null;
+    private DayOfWeek resolveDeliveryDay(UserDto user) {
+        return parseDeliveryDay(user != null ? user.getDeliveryDay() : null);
     }
 
     private DayOfWeek parseDeliveryDay(String deliveryDay) {
@@ -491,7 +500,7 @@ public class DeliveryService {
                 .map(delivery -> delivery.deliveryDate)
                 .filter(Objects::nonNull)
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<LocalDate> existingCustomerDeliveryDates(
@@ -506,7 +515,7 @@ public class DeliveryService {
                 .filter(date -> !date.isAfter(endDate))
                 .distinct()
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private LocalDate latestDate(List<LocalDate> dates) {
@@ -673,10 +682,6 @@ public class DeliveryService {
         } catch (RuntimeException exception) {
             return null;
         }
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
     }
 
     private String valueOrFallback(String value, String fallback) {
