@@ -12,7 +12,6 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -50,7 +49,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void testCreateAndPersistInvoice() throws IOException {
+    void testCreateAndPersistInvoice() {
         InvoiceRequest request = new InvoiceRequest(
                 "user123", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
                 null, "2026-06-15", "2026-06-30", new java.math.BigDecimal("100.00"), List.of()
@@ -68,7 +67,7 @@ class InvoiceServiceTest {
 
     @Test
     @Transactional
-    void testSendInvoiceViaEmail_Success() throws IOException {
+    void testSendInvoiceViaEmail_Success() {
         String testInvoiceNumber = "RE-MAIL-123";
         InvoiceEntity entity = new InvoiceEntity();
         entity.setInvoiceNumber(testInvoiceNumber);
@@ -100,7 +99,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void testProcessInvoice() throws IOException {
+    void testProcessInvoice() {
         String testInvoiceNumber = "RE-PROC-001";
         InvoiceRequest request = new InvoiceRequest(
                 "user-proc", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",

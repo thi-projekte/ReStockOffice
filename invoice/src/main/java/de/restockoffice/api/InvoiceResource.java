@@ -14,7 +14,6 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 
 @Path("/")
@@ -36,7 +35,7 @@ public class InvoiceResource {
     @Path("invoices/create")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("process-engine")
-    public Response createInvoice(InvoiceRequest request) throws IOException {
+    public Response createInvoice(InvoiceRequest request) {
         log.info("Process Engine triggers: Creating invoice {} for user {}", request.invoiceNumber(), request.recipientEmail());
         String generatedNumber = invoiceService.createAndPersistInvoice(request);
         String jsonResponse = String.format("{\"invoiceNumber\":\"%s\"}", generatedNumber);
@@ -49,7 +48,7 @@ public class InvoiceResource {
     @Produces(MediaType.APPLICATION_JSON)
     @jakarta.transaction.Transactional
     @RolesAllowed("process-engine")
-    public Response sendInvoiceMail(InvoiceRequest request) throws IOException {
+    public Response sendInvoiceMail(InvoiceRequest request) {
         invoiceService.sendInvoiceViaEmail(request);
 
         return Response.accepted().build();
@@ -59,7 +58,7 @@ public class InvoiceResource {
     @Path("emails/invoice")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("process-engine")
-    public Response sendInvoice(InvoiceRequest request) throws IOException {
+    public Response sendInvoice(InvoiceRequest request) {
         log.info("Sending invoice-mail to {}", request.recipientEmail());
         invoiceService.processInvoice(request);
 
