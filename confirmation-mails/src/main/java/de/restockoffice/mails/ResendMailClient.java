@@ -70,6 +70,7 @@ public class ResendMailClient {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                log.error("Resend rejected mail for recipient {} with HTTP {}", recipientEmail, response.statusCode());
                 throw new MailValidationException("Resend returned " + response.statusCode() + ": " + response.body());
             }
 
@@ -77,8 +78,10 @@ public class ResendMailClient {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            log.error("Resend request interrupted for recipient {}", recipientEmail, e);
             throw new MailValidationException("Fehler beim Resend-Aufruf: " + e.getMessage());
         } catch (IOException e) {
+            log.error("Resend request failed for recipient {}", recipientEmail, e);
             throw new MailValidationException("Fehler beim Resend-Aufruf: " + e.getMessage());
         }
     }

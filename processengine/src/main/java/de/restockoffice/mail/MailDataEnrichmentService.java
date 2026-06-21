@@ -383,7 +383,11 @@ public class MailDataEnrichmentService {
             return customer;
         }
 
-        return loadUserFromPath("customerForRestocker", customerId, authorizationHeader);
+        customer = loadUserFromPath("customerForRestocker", customerId, authorizationHeader);
+        if (customer == null) {
+            log.error("Could not enrich mail data with customer {}", customerId);
+        }
+        return customer;
     }
 
     private UserDto loadUserFromPath(String path, String customerId, String authorizationHeader) {
@@ -400,7 +404,6 @@ public class MailDataEnrichmentService {
             );
             return response.getBody();
         } catch (RestClientException exception) {
-            log.warn("Could not enrich mail data with customer {} via {}", customerId, path, exception);
             return null;
         }
     }

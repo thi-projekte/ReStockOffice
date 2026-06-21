@@ -446,7 +446,7 @@ public class DeliveryService {
         DayOfWeek deliveryDay = resolveDeliveryDay(user, order);
         int intervalWeeks = order.getInterval() != null && order.getInterval() > 0 ? order.getInterval() : 1;
         if (deliveryDay == null) {
-            LOG.warnf(
+            LOG.errorf(
                     "Überspringe Lieferplanung für Order %s / Kunde %s, da kein gültiger Liefertag verfügbar ist.",
                     order.getId(),
                     order.getCustomerId()
@@ -1038,7 +1038,7 @@ public class DeliveryService {
             try {
                 return userClient.getCustomerProfile(userId, authorizationHeader);
             } catch (RuntimeException fallbackException) {
-                LOG.warnf(
+                LOG.errorf(
                         fallbackException,
                         "Could not load customer profile for delivery planning: %s",
                         userId

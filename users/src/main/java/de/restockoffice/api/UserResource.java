@@ -406,13 +406,13 @@ public class UserResource {
                     HttpResponse.BodyHandlers.ofString()
             );
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                LOG.warnf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.statusCode(), response.body());
+                LOG.errorf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.statusCode(), response.body());
             }
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            LOG.warnf(exception, "Delivery replan request interrupted for customer %s", customerId);
+            LOG.errorf(exception, "Delivery replan request interrupted for customer %s", customerId);
         } catch (IOException | RuntimeException exception) {
-            LOG.warnf(exception, "Delivery replan request failed for customer %s", customerId);
+            LOG.errorf(exception, "Delivery replan request failed for customer %s", customerId);
         }
     }
 
