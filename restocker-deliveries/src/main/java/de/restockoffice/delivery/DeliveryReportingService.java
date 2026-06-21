@@ -12,11 +12,11 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class DeliveryReportingService {
@@ -25,8 +25,12 @@ public class DeliveryReportingService {
             .ofPattern("MM.uuuu")
             .withResolverStyle(ResolverStyle.STRICT);
 
+    private final EntityManager entityManager;
+
     @Inject
-    EntityManager entityManager;
+    public DeliveryReportingService(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
 
     @Transactional
     public List<DeliveredArticleSummaryDto> getDeliveredArticleSummaryForPreviousMonth(String customerId) {
@@ -88,7 +92,7 @@ public class DeliveryReportingService {
 
         return quantitiesByArticle.entrySet().stream()
                 .map(entry -> new DeliveredArticleSummaryDto(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     static CustomerDeliveryOverviewDto toCustomerDeliveryOverview(List<Delivery> deliveries, LocalDate today) {
@@ -98,8 +102,8 @@ public class DeliveryReportingService {
         if (deliveries != null) {
             List<Delivery> sortedDeliveries = deliveries.stream()
                     .filter(delivery -> delivery != null && delivery.deliveryDate != null)
-                    .sorted((left, right) -> left.deliveryDate.compareTo(right.deliveryDate))
-                    .collect(Collectors.toList());
+                    .sorted(Comparator.comparing(delivery -> delivery.deliveryDate))
+                    .toList();
 
             for (Delivery delivery : sortedDeliveries) {
                 if (delivery.deliveryDate.isBefore(today)) {
@@ -135,7 +139,7 @@ public class DeliveryReportingService {
                 .map(delivery -> delivery.userId)
                 .distinct()
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<String> findCustomerIdsDeliveredBetween(LocalDateTime periodStart, LocalDateTime periodEndExclusive) {
