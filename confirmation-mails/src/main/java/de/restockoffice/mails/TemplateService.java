@@ -25,7 +25,7 @@ public class TemplateService {
                 throw new MailValidationException("Template resource not found: " + resourcePath);
             }
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException exception) {
+        } catch (IOException _) {
             throw new MailValidationException("Template resource could not be read: " + resourcePath);
         }
     }
