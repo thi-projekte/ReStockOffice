@@ -433,7 +433,20 @@
     box-shadow 0.2s ease;
 }
 
-.restocker-order-card:focus-visible {
+.restocker-order-card__main-action {
+  display: grid;
+  gap: 1.2rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.restocker-order-card__main-action:focus-visible {
   outline: 2px solid rgba(59, 107, 97, 0.4);
   outline-offset: 3px;
 }
