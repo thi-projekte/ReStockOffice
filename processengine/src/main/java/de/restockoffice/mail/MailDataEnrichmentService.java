@@ -659,13 +659,11 @@ public class MailDataEnrichmentService {
         try {
             return LocalDate.parse(normalized);
         } catch (DateTimeParseException ignored) {
-            // Try date-time formats below.
         }
 
         try {
             return LocalDateTime.parse(normalized).toLocalDate();
         } catch (DateTimeParseException ignored) {
-            // Try offset date-time below.
         }
 
         try {
