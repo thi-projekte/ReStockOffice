@@ -8,7 +8,9 @@ import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -36,9 +38,19 @@ class InvoiceServiceTest {
     @InjectMock
     ResendMailClient mailClient;
 
+    private static final JsonWebToken MOCK_JWT = Mockito.mock(JsonWebToken.class);
+
+    @jakarta.enterprise.context.Dependent
+    public static class TestJwtProducer {
+        @jakarta.enterprise.inject.Produces
+        @io.quarkus.test.Mock
+        public JsonWebToken mockJwt() {
+            return MOCK_JWT;
+        }
+    }
+
     @Test
     void testCreateAndPersistInvoice() throws IOException {
-
         InvoiceRequest request = new InvoiceRequest(
                 "user123", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
                 null, "2026-06-15", "2026-06-30", new java.math.BigDecimal("100.00"), List.of()
@@ -112,6 +124,9 @@ class InvoiceServiceTest {
     @Test
     @Transactional
     void testGetInvoicesForAccount() {
+        // Hier simulieren wir nun das JWT Sub, falls der Service darauf zugreift
+        Mockito.when(MOCK_JWT.getSubject()).thenReturn("user-get-test");
+
         String targetUserId = "user-get-test";
 
         InvoiceEntity e1 = new InvoiceEntity();
