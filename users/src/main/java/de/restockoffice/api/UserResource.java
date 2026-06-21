@@ -7,6 +7,8 @@ import de.restockoffice.domain.Restocker;
 import de.restockoffice.dto.CustomerProfileResponse;
 import de.restockoffice.dto.RestockerCustomerDTO;
 import de.restockoffice.dto.RestockerProfileResponse;
+import de.restockoffice.repository.CustomerRepository;
+import de.restockoffice.repository.RestockerRepository;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
@@ -59,6 +61,12 @@ public class UserResource {
     // Identity and Roles
     @Inject
     SecurityIdentity securityIdentity;
+
+    @Inject
+    CustomerRepository customerRepository;
+
+    @Inject
+    RestockerRepository restockerRepository;
 
     @Inject
     TransactionSynchronizationRegistry transactionSynchronizationRegistry;
@@ -168,7 +176,7 @@ public class UserResource {
     @Path("customers")
     @RolesAllowed("admin")
     public List<Customer> getAllCustomers(){
-        return Customer.listAll();
+        return customerRepository.listAll();
     }
 
     // All Restockers (Admin Only)
@@ -176,7 +184,7 @@ public class UserResource {
     @Path("restockers")
     @RolesAllowed("admin")
     public List<Restocker> getAllRestockers(){
-        return Restocker.listAll();
+        return restockerRepository.listAll();
     }
 
     // Create a new Customer
@@ -187,7 +195,7 @@ public class UserResource {
         String userId = getLoggedInUserId();
         newCustomer.userId = userId;
 
-        if (Customer.findById(userId) != null) {
+        if (customerRepository.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
@@ -205,7 +213,7 @@ public class UserResource {
         String userId = getLoggedInUserId();
         String newImageUrl = "https://hel1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";
         boolean foundAndUpdated = false;
-        Customer customer = Customer.findById(userId);
+        Customer customer = customerRepository.findById(userId);
 
         if (customer != null) {
             customer.profilePictureUrl = newImageUrl;
@@ -215,7 +223,7 @@ public class UserResource {
         }
 
         if (!foundAndUpdated) {
-            Restocker restocker = Restocker.findById(userId);
+            Restocker restocker = restockerRepository.findById(userId);
             if (restocker != null) {
                 restocker.profilePictureUrl = newImageUrl;
                 restocker.updatedAt = LocalDateTime.now();
@@ -241,7 +249,7 @@ public class UserResource {
         String userId = getLoggedInUserId();
         newRestocker.userId = userId;
 
-        if (Restocker.findById(userId) != null) {
+        if (restockerRepository.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
@@ -332,7 +340,7 @@ public class UserResource {
     }
 
     private Customer findCustomerOrThrow(String userId) {
-        Customer user = Customer.findById(userId);
+        Customer user = customerRepository.findById(userId);
 
         if (user == null) {
             throw new WebApplicationException("Customer-Profil nicht gefunden.", 404);
@@ -341,7 +349,7 @@ public class UserResource {
     }
 
     private Restocker findRestockerOrThrow(String userId) {
-        Restocker user = Restocker.findById(userId);
+        Restocker user = restockerRepository.findById(userId);
 
         if (user == null) {
             throw new WebApplicationException("Restocker-Profil nicht gefunden.", 404);
