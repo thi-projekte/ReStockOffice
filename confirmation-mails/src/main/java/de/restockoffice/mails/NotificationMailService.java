@@ -165,59 +165,32 @@ public class NotificationMailService {
         }
 
         StringBuilder html = new StringBuilder();
-
         for (int index = 0; index < items.size(); index++) {
             OrderItem item = Objects.requireNonNull(items.get(index), "orderItems contains null");
-            boolean isLast = index == items.size() - 1;
-
-            html.append("<tr class=\"item-row\">")
-                    .append("<td class=\"item-main\" style=\"padding:14px 0;vertical-align:top;");
-
-            if (!isLast) {
-                html.append(ITEM_BORDER_STYLE);
-            }
-
-            html.append("\">")
-                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">")
-                    .append(escapeHtml(item.name()))
-                    .append(DIV_CLOSE)
-                    .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;")
-                    .append(MUTED_ITEM_TEXT_STYLE)
-                    .append("Artikel-Nr. ")
-                    .append(escapeHtml(item.articleNumber()))
-                    .append(DIV_CLOSE);
-
-            if (!isBlank(item.statusLabel())) {
-                html.append("<div style=\"font-size:14px;line-height:1.55;")
-                        .append(MUTED_ITEM_TEXT_STYLE)
-                        .append("Status: ")
-                        .append(escapeHtml(item.statusLabel()))
-                        .append(DIV_CLOSE);
-            } else {
-                appendOptionalOrderItemLine(html, "Intervall", item.intervalDescription());
-                appendOptionalOrderItemLine(html, "Nächste Lieferung", item.nextDeliveryDate());
-            }
-
-            html.append(TABLE_CELL_CLOSE)
-                    .append("<td align=\"right\" class=\"qty-cell\" ")
-                    .append("style=\"width:98px;padding:14px 0 14px 16px;")
-                    .append("vertical-align:top;text-align:right;");
-
-            if (!isLast) {
-                html.append(ITEM_BORDER_STYLE);
-            }
-
-            html.append("\">")
-                    .append("<span class=\"qty-text\" ")
-                    .append("style=\"display:inline-block;color:#264037;font-weight:700;")
-                    .append("font-size:18px;line-height:1.3;white-space:nowrap;\">")
-                    .append(escapeHtml(formatQuantityAsMultiplier(item.quantity())))
-                    .append("</span>")
-                    .append(TABLE_CELL_CLOSE)
-                    .append("</tr>");
+            appendOrderItemRow(html, item, index == items.size() - 1);
         }
 
         return html.toString();
+    }
+
+    private void appendOrderItemRow(StringBuilder html, OrderItem item, boolean isLast) {
+        appendItemDescriptionCell(html, isLast, item.name(), item.articleNumber());
+        appendOrderItemDetails(html, item);
+        appendItemQuantityCell(html, isLast, item.quantity());
+    }
+
+    private void appendOrderItemDetails(StringBuilder html, OrderItem item) {
+        if (!isBlank(item.statusLabel())) {
+            html.append("<div style=\"font-size:14px;line-height:1.55;")
+                    .append(MUTED_ITEM_TEXT_STYLE)
+                    .append("Status: ")
+                    .append(escapeHtml(item.statusLabel()))
+                    .append(DIV_CLOSE);
+            return;
+        }
+
+        appendOptionalOrderItemLine(html, "Intervall", item.intervalDescription());
+        appendOptionalOrderItemLine(html, "Nächste Lieferung", item.nextDeliveryDate());
     }
 
     private String formatQuantityAsMultiplier(String quantity) {
@@ -264,47 +237,55 @@ public class NotificationMailService {
         }
 
         StringBuilder html = new StringBuilder();
-
         for (int index = 0; index < items.size(); index++) {
             DeliveryItem item = Objects.requireNonNull(items.get(index), "deliveryItems contains null");
-            boolean isLast = index == items.size() - 1;
-
-            html.append("<tr class=\"item-row\">")
-                    .append("<td class=\"item-main\" style=\"padding:14px 0;vertical-align:top;");
-
-            if (!isLast) {
-                html.append(ITEM_BORDER_STYLE);
-            }
-
-            html.append("\">")
-                    .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">")
-                    .append(escapeHtml(item.name()))
-                    .append(DIV_CLOSE)
-                    .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;")
-                    .append(MUTED_ITEM_TEXT_STYLE)
-                    .append("Artikel-Nr. ")
-                    .append(escapeHtml(item.articleNumber()))
-                    .append(DIV_CLOSE)
-                    .append(TABLE_CELL_CLOSE)
-                    .append("<td align=\"right\" class=\"qty-cell\" ")
-                    .append("style=\"width:98px;padding:14px 0 14px 16px;")
-                    .append("vertical-align:top;text-align:right;");
-
-            if (!isLast) {
-                html.append(ITEM_BORDER_STYLE);
-            }
-
-            html.append("\">")
-                    .append("<span class=\"qty-text\" ")
-                    .append("style=\"display:inline-block;color:#264037;font-weight:700;")
-                    .append("font-size:18px;line-height:1.3;white-space:nowrap;\">")
-                    .append(escapeHtml(formatQuantityAsMultiplier(item.quantity())))
-                    .append("</span>")
-                    .append(TABLE_CELL_CLOSE)
-                    .append("</tr>");
+            appendItemDescriptionCell(html, index == items.size() - 1, item.name(), item.articleNumber());
+            appendItemQuantityCell(html, index == items.size() - 1, item.quantity());
         }
 
         return html.toString();
+    }
+
+    private void appendItemDescriptionCell(
+            StringBuilder html,
+            boolean isLast,
+            String itemName,
+            String articleNumber
+    ) {
+        html.append("<tr class=\"item-row\">")
+                .append("<td class=\"item-main\" style=\"padding:14px 0;vertical-align:top;");
+        appendItemBorderStyle(html, isLast);
+        html.append("\">")
+                .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">")
+                .append(escapeHtml(itemName))
+                .append(DIV_CLOSE)
+                .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;")
+                .append(MUTED_ITEM_TEXT_STYLE)
+                .append("Artikel-Nr. ")
+                .append(escapeHtml(articleNumber))
+                .append(DIV_CLOSE);
+    }
+
+    private void appendItemQuantityCell(StringBuilder html, boolean isLast, String quantity) {
+        html.append(TABLE_CELL_CLOSE)
+                .append("<td align=\"right\" class=\"qty-cell\" ")
+                .append("style=\"width:98px;padding:14px 0 14px 16px;")
+                .append("vertical-align:top;text-align:right;");
+        appendItemBorderStyle(html, isLast);
+        html.append("\">")
+                .append("<span class=\"qty-text\" ")
+                .append("style=\"display:inline-block;color:#264037;font-weight:700;")
+                .append("font-size:18px;line-height:1.3;white-space:nowrap;\">")
+                .append(escapeHtml(formatQuantityAsMultiplier(quantity)))
+                .append("</span>")
+                .append(TABLE_CELL_CLOSE)
+                .append("</tr>");
+    }
+
+    private void appendItemBorderStyle(StringBuilder html, boolean isLast) {
+        if (!isLast) {
+            html.append(ITEM_BORDER_STYLE);
+        }
     }
 
 

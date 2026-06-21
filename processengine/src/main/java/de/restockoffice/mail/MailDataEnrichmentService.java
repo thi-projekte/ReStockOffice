@@ -193,6 +193,34 @@ public class MailDataEnrichmentService {
     private EnrichmentContext loadContext(DelegateExecution execution, String requestedOrderId) {
         String authorizationHeader = authorizationHeader(execution);
         DeliveryMonitoringItem monitoringDelivery = monitoringDelivery(execution);
+        ContextLookup lookup = resolveContextLookup(execution, requestedOrderId, monitoringDelivery);
+
+        OrderDto order = loadOrder(lookup.orderId(), authorizationHeader);
+        lookup = mergeOrderValues(lookup, order);
+
+        DeliveryDetailDto delivery = loadDelivery(lookup.deliveryId(), authorizationHeader);
+        lookup = mergeDeliveryValues(lookup, delivery);
+
+        UserDto user = loadUser(lookup.customerId(), authorizationHeader);
+        ArticleDto article = loadArticle(lookup.productId());
+
+        return new EnrichmentContext(
+                lookup.orderId(),
+                lookup.customerId(),
+                lookup.productId(),
+                lookup.orderSnapshot(),
+                order,
+                user,
+                article,
+                delivery
+        );
+    }
+
+    private ContextLookup resolveContextLookup(
+            DelegateExecution execution,
+            String requestedOrderId,
+            DeliveryMonitoringItem monitoringDelivery
+    ) {
         String orderId = firstNonBlank(
                 requestedOrderId,
                 stringVariable(execution, "orderId"),
@@ -212,25 +240,40 @@ public class MailDataEnrichmentService {
                 monitoringDelivery != null ? monitoringDelivery.deliveryId() : null
         );
 
-        OrderDto order = loadOrder(orderId, authorizationHeader);
-        if (order != null) {
-            customerId = firstNonBlank(order.customerId, customerId);
-            productId = firstNonBlank(order.productId, productId);
+        return new ContextLookup(orderId, customerId, productId, deliveryId, orderSnapshot);
+    }
+
+    private ContextLookup mergeOrderValues(ContextLookup lookup, OrderDto order) {
+        if (order == null) {
+            return lookup;
         }
 
-        DeliveryDetailDto delivery = loadDelivery(deliveryId, authorizationHeader);
-        if (delivery != null) {
-            customerId = firstNonBlank(delivery.userId, customerId);
-            orderId = firstNonBlank(delivery.orderId, orderId);
-            if (delivery.items != null && !delivery.items.isEmpty()) {
-                productId = firstNonBlank(delivery.items.get(0).articleNumber, productId);
-            }
+        return new ContextLookup(
+                lookup.orderId(),
+                firstNonBlank(order.customerId, lookup.customerId()),
+                firstNonBlank(order.productId, lookup.productId()),
+                lookup.deliveryId(),
+                lookup.orderSnapshot()
+        );
+    }
+
+    private ContextLookup mergeDeliveryValues(ContextLookup lookup, DeliveryDetailDto delivery) {
+        if (delivery == null) {
+            return lookup;
         }
 
-        UserDto user = loadUser(customerId, authorizationHeader);
-        ArticleDto article = loadArticle(productId);
+        String productId = lookup.productId();
+        if (delivery.items != null && !delivery.items.isEmpty()) {
+            productId = firstNonBlank(delivery.items.get(0).articleNumber, productId);
+        }
 
-        return new EnrichmentContext(orderId, customerId, productId, orderSnapshot, order, user, article, delivery);
+        return new ContextLookup(
+                firstNonBlank(delivery.orderId, lookup.orderId()),
+                firstNonBlank(delivery.userId, lookup.customerId()),
+                productId,
+                lookup.deliveryId(),
+                lookup.orderSnapshot()
+        );
     }
 
     private DeliveryMonitoringItem monitoringDelivery(DelegateExecution execution) {
@@ -917,6 +960,15 @@ public class MailDataEnrichmentService {
             UserDto user,
             ArticleDto article,
             DeliveryDetailDto delivery
+    ) {
+    }
+
+    private record ContextLookup(
+            String orderId,
+            String customerId,
+            String productId,
+            String deliveryId,
+            OrderSnapshot orderSnapshot
     ) {
     }
 
