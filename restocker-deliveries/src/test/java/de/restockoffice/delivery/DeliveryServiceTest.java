@@ -2,21 +2,16 @@ package de.restockoffice.delivery;
 
 import de.restockoffice.order.OrderDto;
 import de.restockoffice.user.UserDto;
+import jakarta.ws.rs.BadRequestException;
 import org.junit.jupiter.api.Test;
 
-import jakarta.ws.rs.BadRequestException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class DeliveryServiceTest {
 
@@ -365,7 +360,7 @@ class DeliveryServiceTest {
         DeliveryItem item = new DeliveryItem();
         item.articleNumber = ARTICLE_NUMBER_10001;
         item.name = "Existing item";
-        item.unit = "Stueck";
+        item.unit = "Stück";
         item.quantity = 1;
         delivery.addItem(item);
 
@@ -405,7 +400,7 @@ class DeliveryServiceTest {
         DeliveryItem item = new DeliveryItem();
         item.articleNumber = articleNumber;
         item.name = "Test article " + articleNumber;
-        item.unit = "Stueck";
+        item.unit = "Stück";
         item.quantity = quantity;
         return item;
     }

@@ -1,17 +1,10 @@
 package de.restockoffice;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.restockoffice.abo.SendAboConfirmationDelegate;
 import de.restockoffice.delivery.SendDeliveryConfirmationDelegate;
 import de.restockoffice.mail.MailDataEnrichmentService;
-import java.io.IOException;
-import java.lang.reflect.Proxy;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +16,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+import java.lang.reflect.Proxy;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = {
         SendDeliveryConfirmationDelegate.class,
@@ -98,7 +99,7 @@ class ConfirmationDelegatesTest {
             execution.setVariable("orderDate", "10.06.2026");
             execution.setVariable("deliveryDay", "Mittwoch");
             execution.setVariable("deliveryWindow", "08:00 - 12:00 Uhr");
-            execution.setVariable("deliveryLocation", "Hauptstrasse 1");
+            execution.setVariable("deliveryLocation", "Hauptstraße 1");
             execution.setVariable("changeDeadline", "07.06.2026, 12:00 Uhr");
             execution.setVariable("manageSubscriptionUrl", "https://app.restockoffice.de/subscription");
             execution.setVariable("orderItems", List.of(Map.of(
@@ -120,7 +121,7 @@ class ConfirmationDelegatesTest {
                 .containsEntry("recipientEmail", "customer@example.com")
                 .containsEntry("orderNumber", "ABO-42")
                 .containsEntry("deliveryDay", "Mittwoch")
-                .containsEntry("deliveryLocation", "Hauptstrasse 1")
+                .containsEntry("deliveryLocation", "Hauptstraße 1")
                 .containsEntry("manageSubscriptionUrl", "https://app.restockoffice.de/subscription");
         assertThat(payload.get("orderItems")).asList().hasSize(1);
     }

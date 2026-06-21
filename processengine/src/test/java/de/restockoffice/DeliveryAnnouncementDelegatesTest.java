@@ -1,20 +1,11 @@
 package de.restockoffice;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.restockoffice.delivery.DeliveryMonitoringItem;
 import de.restockoffice.delivery.FetchDeliveriesForAnnouncementDelegate;
 import de.restockoffice.delivery.SendDeliveryAnnouncementDelegate;
 import de.restockoffice.mail.MailDataEnrichmentService;
-import java.io.IOException;
-import java.io.Serializable;
-import java.lang.reflect.Proxy;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,12 +13,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.lang.reflect.Proxy;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = {
         FetchDeliveriesForAnnouncementDelegate.class,
@@ -99,7 +100,7 @@ class DeliveryAnnouncementDelegatesTest {
             execution.setVariable("deliveryWindow", "08:00 - 12:00 Uhr");
             execution.setVariable("orderNumber", "ORD-42");
             execution.setVariable("supplierName", "ReStockOffice");
-            execution.setVariable("deliveryLocation", "Hauptstrasse 1");
+            execution.setVariable("deliveryLocation", "Hauptstraße 1");
             execution.setVariable("deliveryItems", List.of(Map.of("name", "Kaffee", "articleNumber", "A-1", "quantity", "2")));
         };
 
