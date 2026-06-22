@@ -5,20 +5,16 @@
 // - Anzeige Restocker zugeordnete Lieferungen
 // - Anzeige der monatlichen Kennzahlen des Restockers (geplant / erledigte Lieferungen, Verdienst, Artikel etc.)
 
-import "../../styles/restocker-home.css";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { acceptRestockOrder, loadOpenRestockOrders } from "../../services/orders";
+import { acceptRestockOrder, loadOpenRestockOrders, RestockMarketplaceLoadResult } from "../../services/orders";
 import { useAuth } from "../../auth/AuthProvider";
-import type { RestockMarketplaceOrder } from "../../types/shop";
-import { loadAssignedRestockOrders } from "../../services/orders";
-import type { RestockMarketplaceLoadResult } from "../../types/shop";
-import { getDaysUntilDelivery } from "./restockerOrderUi";
+import type { RestockMarketplaceOrder, RestockMarketplaceLoadResult } from "../../types/shop";
+import { getDaysUntilDelivery, formatDeliveryWindow } from "./restockerOrderUi";
 import { useNavigate } from "react-router-dom";
 import { RestockerOrderCard } from "../../components/restocker/RestockerOrderCardDashboard";
 import { RestockerStatisticsCard } from "../../components/restocker/RestockerStatisticsCard";
 import { RestockerOrderDetailDialog } from "../../components/restocker/RestockerOrderDetailDialog";
-import { formatDeliveryWindow } from "./restockerOrderUi";
 
 const RESTOCKER_TOUR_PROCESS_API_URL =
     import.meta.env.VITE_RESTOCKER_TOUR_PROCESS_API_URL ??
@@ -57,6 +53,33 @@ function storeTourProcessId(restockerId: string, processInstanceId: string) {
         currentTourProcessStorageKey(restockerId),
         processInstanceId,
     );
+}
+
+// Startet den BPMN-Tourprozess über die Process-Engine-API-Wrapper -> siehe Button Tour starten
+async function startTourProcess(
+    restockerId: string,
+    todayDeliveryCount: number,
+) {
+    const res = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/start`, {
+        method: "POST",
+        body: new URLSearchParams({
+            restockerId,
+            todayDeliveryCount: String(todayDeliveryCount),
+        }),
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Tour-Prozess konnte nicht gestartet werden: ${res.status}`);
+    }
+
+    const processInstance = (await res.json()) as RestockerTourProcessResponse;
+
+    if (!processInstance.id) {
+        throw new Error("Die Process-Engine hat keine Prozessinstanz-ID geliefert.");
+    }
+
+    return processInstance.id;
 }
 
 export function RestockerPage() {
@@ -165,33 +188,6 @@ export function RestockerPage() {
 
     const earningsPerDelivery = 7;
     const earningsToday = totalToday * earningsPerDelivery;
-
-    // Startet den BPMN-Tourprozess über die Process-Engine-API-Wrapper -> siehe Button Tour starten
-    async function startTourProcess(
-        restockerId: string,
-        todayDeliveryCount: number,
-    ) {
-        const res = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/start`, {
-            method: "POST",
-            body: new URLSearchParams({
-                restockerId,
-                todayDeliveryCount: String(todayDeliveryCount),
-            }),
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text || `Tour-Prozess konnte nicht gestartet werden: ${res.status}`);
-        }
-
-        const processInstance = (await res.json()) as RestockerTourProcessResponse;
-
-        if (!processInstance.id) {
-            throw new Error("Die Process-Engine hat keine Prozessinstanz-ID geliefert.");
-        }
-
-        return processInstance.id;
-    }
 
     const startTourRequestInFlight = useRef(false);
     const [startingTour, setStartingTour] = useState(false);
@@ -339,7 +335,7 @@ export function RestockerPage() {
         }
 
         if (openError) {
-            return <p style={{color: "red"}}>{openError}</p>;
+            return <p style={{ color: "red" }}>{openError}</p>;
         }
 
         return (
@@ -369,7 +365,7 @@ export function RestockerPage() {
         }
 
         if (assignedError) {
-            return <p style={{color: "red"}}>{assignedError}</p>;
+            return <p style={{ color: "red" }}>{assignedError}</p>;
         }
 
         if (openAssignedOrders.length === 0) {

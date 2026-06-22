@@ -21,11 +21,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MailDataEnrichmentServiceTest {
 
     private HttpServer server;
-    private String baseUrl;
     private MailDataEnrichmentService service;
 
     @BeforeEach
     void setUp() throws IOException {
+        String baseUrl;
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", this::handleRequest);
         server.start();
