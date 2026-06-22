@@ -2,11 +2,11 @@
 // abgeschlossene/geplante Lieferungen und zeigt die Touren nach Tagen gruppiert an.
 // Wiederverwendbare Komponente (aktuell nur in RestockerPage verwendet)
 
+import "../../styles/restocker-home.css";
 import { useState } from "react";
 import { RestockerTourCard } from "../../components/restocker/RestockerTourCard";
 import { parseDisplayDate } from "../../pages/restocker-view/restockerOrderUi";
 import type { RestockMarketplaceLoadResult, RestockMarketplaceOrder } from "../../types/shop";
-import "../../styles/restocker-home.css";
 
 type Props = {
     assignedLoading: boolean;

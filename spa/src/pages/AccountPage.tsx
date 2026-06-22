@@ -92,6 +92,18 @@ function formatDeliveryTimeInput(hour: number | undefined): string {
   return `${String(Math.trunc(hour)).padStart(2, "0")}:00`;
 }
 
+function getProfileActionLabel(isSavingProfile: boolean, isEditingProfile: boolean): string {
+  if (isSavingProfile) {
+    return "Wird gespeichert";
+  }
+
+  if (isEditingProfile) {
+    return "Änderungen speichern";
+  }
+
+  return "Profil bearbeiten";
+}
+
 // ─── Komponente ──────────────────────────────────────────────────────────────
 
 export function AccountPage(): ReactElement {
@@ -160,7 +172,11 @@ export function AccountPage(): ReactElement {
   }, [isLoggedIn, isRestocker, token, user, userKind]);
 
   useEffect(() => {
-    if (!isLoggedIn || !user) return;
+    if (!isLoggedIn || !user || isRestocker) {
+      setInvoices([]);
+      return;
+    }
+
     getInvoices({token, kind: userKind})
       .then((loaded) => {
         setInvoices(loaded);
@@ -399,6 +415,7 @@ export function AccountPage(): ReactElement {
   const visibleInvoices = invoices.slice(0, visibleInvoiceCount);
   const hasMoreInvoices = visibleInvoiceCount < invoices.length;
   const showProfileProgress = subscriptionProfileStatus?.isComplete === false;
+  const profileActionLabel = getProfileActionLabel(isSavingProfile, isEditingProfile);
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -459,313 +476,349 @@ export function AccountPage(): ReactElement {
     );
   }
 
+  function renderProfileSectionHead(): ReactElement {
+    return (
+      <div className="section-head account-section-head">
+        <div>
+          <span className="eyebrow">Benutzerdaten</span>
+          <h2>Profilinformationen</h2>
+          <p className="section-copy">
+            Deine Kontaktdaten und Organisationsinformationen für Kommunikation und Auftragsabwicklung.
+          </p>
+        </div>
+        <button
+          className={`button ${isEditingProfile ? "" : "button--ghost"}`.trim()}
+          type="button"
+          disabled={isSavingProfile}
+          onClick={() => {
+            void handleProfileAction();
+          }}
+        >
+          {isEditingProfile ? <MdSave/> : <MdEdit/>}
+          {profileActionLabel}
+        </button>
+      </div>
+    );
+  }
+
+  function renderPersonalDataPanel(): ReactElement {
+    const roleField = isRestocker ? "accountHolder" : "role";
+    const roleLabel = isRestocker ? "Kontoinhaber" : "Position";
+    const roleValue = isRestocker ? profileForm.accountHolder : profileForm.role;
+    const roleClassName = isRestocker && isFieldInvalid("accountHolder") ? "input--invalid" : "";
+
+    return (
+      <div className="account-panel">
+        <div className="account-panel__head">
+          <h3 style={{paddingBottom: "1rem"}}>Persönliche Daten</h3>
+        </div>
+        <div className="account-form-grid">
+          <label className="account-field">
+            <span>Benutzername</span>
+            <input value={username} disabled/>
+          </label>
+          <label className="account-field">
+            <span>E-Mail</span>
+            <input value={email} disabled/>
+          </label>
+          <label className="account-field">
+            <span>Vorname</span>
+            <input value={firstName} disabled/>
+          </label>
+          <label className="account-field">
+            <span>Nachname</span>
+            <input value={lastName} disabled/>
+          </label>
+          <label className="account-field">
+            <span>Geburtsdatum</span>
+            <input
+              type="date"
+              value={profileForm.birthDate}
+              disabled={!isEditingProfile}
+              onChange={(e) => updateField("birthDate", e.target.value)}
+            />
+          </label>
+          <label className="account-field">
+            <span>{getFieldLabel("phone", "Telefon")}</span>
+            <input
+              value={profileForm.phone}
+              disabled={!isEditingProfile}
+              inputMode="tel"
+              placeholder="+49 151 12345678"
+              className={isFieldInvalid("phone") ? "input--invalid" : ""}
+              onChange={(e) => updateField("phone", e.target.value)}
+              onBlur={() => touchField("phone")}
+            />
+            {getFieldError("phone") && (
+              <span className="account-field__error">{getFieldError("phone")}</span>
+            )}
+          </label>
+          <label className="account-field account-field--full">
+            <span>{getFieldLabel(roleField, roleLabel)}</span>
+            <input
+              value={roleValue}
+              disabled={!isEditingProfile}
+              maxLength={80}
+              className={roleClassName}
+              onChange={(e) => updateField(roleField, e.target.value)}
+            />
+          </label>
+        </div>
+      </div>
+    );
+  }
+
+  function renderCustomerCompanyField(): ReactElement | null {
+    if (isRestocker) {
+      return null;
+    }
+
+    return (
+      <label className="account-field">
+        <span>{getFieldLabel("company", "Unternehmen")}</span>
+        <input
+          value={profileForm.company}
+          disabled={!isEditingProfile}
+          maxLength={120}
+          className={isFieldInvalid("company") ? "input--invalid" : ""}
+          onChange={(e) => updateField("company", e.target.value)}
+        />
+      </label>
+    );
+  }
+
+  function renderAddressSuggestions(): ReactElement | null {
+    if (!showAddressSuggestions || addressAC.suggestions.length === 0 || !isEditingProfile) {
+      return null;
+    }
+
+    return (
+      <ul className="account-address-suggestions">
+        {addressAC.suggestions.map((s) => (
+          <li key={`${s.street}-${s.houseNumber}-${s.postalCode}-${s.city}`}>
+            <button
+              type="button"
+              className="account-address-suggestion-item"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleAddressSelect(s);
+              }}
+            >
+              <strong>{s.street} {s.houseNumber}</strong>
+              <span>{s.postalCode} {s.city}, {s.country}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  function renderStreetFields(): ReactElement {
+    const streetValue = isEditingProfile ? addressAC.query || profileForm.street : profileForm.street;
+
+    return (
+      <div className="account-field account-field--full account-street-row">
+        <div className="account-field" ref={addressContainerRef} style={{position: "relative"}}>
+          <span>{getFieldLabel("street", "Straße")}</span>
+          <input
+            value={streetValue}
+            disabled={!isEditingProfile}
+            placeholder="Straße eingeben und aus Vorschlägen wählen…"
+            autoComplete="off"
+            className={isFieldInvalid("street") ? "input--invalid" : ""}
+            onChange={(e) => handleAddressSearchChange(e.target.value)}
+            onFocus={() => setShowAddressSuggestions(true)}
+            onBlur={() => touchField("street")}
+          />
+          {renderAddressSuggestions()}
+          {addressAC.isLoading && isEditingProfile && (
+            <span className="account-field__hint">Suche Adressen…</span>
+          )}
+        </div>
+        <label className="account-field account-field--hnr">
+          <span>{getFieldLabel("houseNumber", "Hausnr.")}</span>
+          <input
+            value={profileForm.houseNumber}
+            disabled={!isEditingProfile}
+            inputMode="numeric"
+            maxLength={6}
+            className={isFieldInvalid("houseNumber") ? "input--invalid" : ""}
+            onChange={(e) => updateField("houseNumber", e.target.value)}
+          />
+        </label>
+      </div>
+    );
+  }
+
+  function renderDeliveryPreferenceFields(): ReactElement | null {
+    if (isRestocker) {
+      return null;
+    }
+
+    return (
+      <>
+        <label className="account-field">
+          <span>Bevorzugter Liefertag</span>
+          <select
+            value={profileForm.deliveryDay}
+            disabled={!isEditingProfile}
+            className="account-field__select"
+            onChange={(e) => updateField("deliveryDay", e.target.value)}
+          >
+            {DELIVERY_DAYS.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </label>
+        <label className="account-field">
+          <span>Bevorzugte Uhrzeit</span>
+          <input
+            type="time"
+            value={profileForm.deliveryTime}
+            disabled={!isEditingProfile}
+            min="07:00"
+            max="18:00"
+            className={isFieldInvalid("deliveryTime") ? "input--invalid" : ""}
+            onChange={(e) => updateField("deliveryTime", e.target.value)}
+            onBlur={() => touchField("deliveryTime")}
+          />
+          {getFieldError("deliveryTime") && (
+            <span className="account-field__error">{getFieldError("deliveryTime")}</span>
+          )}
+        </label>
+      </>
+    );
+  }
+
+  function renderBicField(): ReactElement | null {
+    if (!isRestocker) {
+      return null;
+    }
+
+    return (
+      <label className="account-field account-field--full">
+        <span>{getFieldLabel("bic", "BIC")}</span>
+        <input
+          value={profileForm.bic}
+          disabled={!isEditingProfile}
+          autoCapitalize="characters"
+          placeholder="COBADEFFXXX"
+          maxLength={11}
+          className={isFieldInvalid("bic") ? "input--invalid" : ""}
+          onChange={(e) => updateField("bic", e.target.value)}
+          onBlur={() => touchField("bic")}
+        />
+        {getFieldError("bic") && (
+          <span className="account-field__error">{getFieldError("bic")}</span>
+        )}
+      </label>
+    );
+  }
+
+  function renderDeliveryHintField(): ReactElement | null {
+    if (isRestocker) {
+      return null;
+    }
+
+    return (
+      <div className="account-field account-field--full">
+        <div className="account-field__head-row">
+          <span>Lieferhinweis</span>
+          <span className="account-field__counter">{profileForm.note.length}/300</span>
+        </div>
+        <textarea
+          rows={4}
+          value={profileForm.note}
+          disabled={!isEditingProfile}
+          maxLength={300}
+          className={profileForm.note.length >= 300 ? "input--invalid" : ""}
+          onChange={(e) => updateField("note", e.target.value)}
+        />
+      </div>
+    );
+  }
+
+  function renderAddressBillingPanel(): ReactElement {
+    return (
+      <div className="account-panel account-panel--accent">
+        <div className="account-panel__head">
+          <h3 style={{paddingBottom: "1rem"}}>
+            {isRestocker ? "Abrechnungs- und Adressdaten" : "Lieferadresse"}
+          </h3>
+        </div>
+        <div className="account-form-grid">
+          {renderCustomerCompanyField()}
+          <label className="account-field">
+            <span>{getFieldLabel("country", "Land")}</span>
+            <select
+              value={profileForm.country}
+              disabled={!isEditingProfile}
+              className={`account-field__select${isFieldInvalid("country") ? " input--invalid" : ""}`}
+              onChange={(e) => updateField("country", e.target.value)}
+            >
+              <option value="">Bitte wählen</option>
+              {ALLOWED_COUNTRIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          {renderStreetFields()}
+          <label className="account-field">
+            <span>{getFieldLabel("postalCode", "PLZ")}</span>
+            <input
+              value={profileForm.postalCode}
+              disabled={!isEditingProfile}
+              inputMode="numeric"
+              maxLength={5}
+              className={isFieldInvalid("postalCode") ? "input--invalid" : ""}
+              onChange={(e) => updateField("postalCode", e.target.value)}
+              onBlur={() => touchField("postalCode")}
+            />
+            {getFieldError("postalCode") && (
+              <span className="account-field__error">{getFieldError("postalCode")}</span>
+            )}
+          </label>
+          <label className="account-field">
+            <span>{getFieldLabel("city", "Ort")}</span>
+            <input
+              value={profileForm.city}
+              disabled={!isEditingProfile}
+              maxLength={80}
+              className={isFieldInvalid("city") ? "input--invalid" : ""}
+              onChange={(e) => updateField("city", e.target.value)}
+            />
+          </label>
+          {renderDeliveryPreferenceFields()}
+          <label className="account-field account-field--full">
+            <span>{getFieldLabel("iban", "IBAN")}</span>
+            <input
+              value={profileForm.iban}
+              disabled={!isEditingProfile}
+              autoCapitalize="characters"
+              placeholder="DE89 3704 0044 0532 0130 00"
+              maxLength={34}
+              className={isFieldInvalid("iban") ? "input--invalid" : ""}
+              onChange={(e) => updateField("iban", e.target.value)}
+              onBlur={() => touchField("iban")}
+            />
+            {getFieldError("iban") && (
+              <span className="account-field__error">{getFieldError("iban")}</span>
+            )}
+          </label>
+          {renderBicField()}
+          {renderDeliveryHintField()}
+        </div>
+      </div>
+    );
+  }
+
   function renderProfileSection(): ReactElement {
     return (
       <section id="profile" className="page-card section-space">
-        <div className="section-head account-section-head">
-          <div>
-            <span className="eyebrow">Benutzerdaten</span>
-            <h2>Profilinformationen</h2>
-            <p className="section-copy">
-              Deine Kontaktdaten und Organisationsinformationen für Kommunikation und Auftragsabwicklung.
-            </p>
-          </div>
-          <button
-            className={`button ${isEditingProfile ? "" : "button--ghost"}`.trim()}
-            type="button"
-            disabled={isSavingProfile}
-            onClick={() => {
-              void handleProfileAction();
-            }}
-          >
-            {isEditingProfile ? <MdSave/> : <MdEdit/>}
-            {
-              isSavingProfile
-                ? "Wird gespeichert"
-                : (isEditingProfile ? "Änderungen speichern" : "Profil bearbeiten")
-            }
-          </button>
-        </div>
-
+        {renderProfileSectionHead()}
         <div className="account-profile-grid">
-          {/* ── Persönliche Daten ── */}
-          <div className="account-panel">
-            <div className="account-panel__head">
-              <h3 style={{paddingBottom: "1rem"}}>Persönliche Daten</h3>
-            </div>
-            <div className="account-form-grid">
-              <label className="account-field">
-                <span>Benutzername</span>
-                <input value={username} disabled/>
-              </label>
-              <label className="account-field">
-                <span>E-Mail</span>
-                <input value={email} disabled/>
-              </label>
-              <label className="account-field">
-                <span>Vorname</span>
-                <input value={firstName} disabled/>
-              </label>
-              <label className="account-field">
-                <span>Nachname</span>
-                <input value={lastName} disabled/>
-              </label>
-
-              {/* Geburtsdatum */}
-              <label className="account-field">
-                <span>Geburtsdatum</span>
-                <input
-                  type="date"
-                  value={profileForm.birthDate}
-                  disabled={!isEditingProfile}
-                  onChange={(e) => updateField("birthDate", e.target.value)}
-                />
-              </label>
-
-              {/* Telefon */}
-              <label className="account-field">
-                <span>{getFieldLabel("phone", "Telefon")}</span>
-                <input
-                  value={profileForm.phone}
-                  disabled={!isEditingProfile}
-                  inputMode="tel"
-                  placeholder="+49 151 12345678"
-                  className={isFieldInvalid("phone") ? "input--invalid" : ""}
-                  onChange={(e) => updateField("phone", e.target.value)}
-                  onBlur={() => touchField("phone")}
-                />
-                {getFieldError("phone") && (
-                  <span className="account-field__error">{getFieldError("phone")}</span>
-                )}
-              </label>
-
-              {/* Kontoinhaber / Position */}
-              <label className="account-field account-field--full">
-                <span>
-                  {isRestocker
-                    ? getFieldLabel("accountHolder", "Kontoinhaber")
-                    : getFieldLabel("role", "Position")}
-                </span>
-                <input
-                  value={isRestocker ? profileForm.accountHolder : profileForm.role}
-                  disabled={!isEditingProfile}
-                  maxLength={80}
-                  className={isRestocker && isFieldInvalid("accountHolder") ? "input--invalid" : ""}
-                  onChange={(e) => updateField(isRestocker ? "accountHolder" : "role", e.target.value)}
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* ── Adresse / Abrechnung ── */}
-          <div className="account-panel account-panel--accent">
-            <div className="account-panel__head">
-              <h3 style={{paddingBottom: "1rem"}}>
-                {isRestocker ? "Abrechnungs- und Adressdaten" : "Lieferadresse"}
-              </h3>
-            </div>
-            <div className="account-form-grid">
-
-              {/* Unternehmen (nur Customer) */}
-              {!isRestocker && (
-                <label className="account-field">
-                  <span>{getFieldLabel("company", "Unternehmen")}</span>
-                  <input
-                    value={profileForm.company}
-                    disabled={!isEditingProfile}
-                    maxLength={120}
-                    className={isFieldInvalid("company") ? "input--invalid" : ""}
-                    onChange={(e) => updateField("company", e.target.value)}
-                  />
-                </label>
-              )}
-
-              {/* Land */}
-              <label className="account-field">
-                <span>{getFieldLabel("country", "Land")}</span>
-                <select
-                  value={profileForm.country}
-                  disabled={!isEditingProfile}
-                  className={`account-field__select${isFieldInvalid("country") ? " input--invalid" : ""}`}
-                  onChange={(e) => updateField("country", e.target.value)}
-                >
-                  <option value="">Bitte wählen</option>
-                  {ALLOWED_COUNTRIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </label>
-
-              {/* Straße + Hausnummer */}
-              <div className="account-field account-field--full account-street-row">
-                <div className="account-field" ref={addressContainerRef} style={{position: "relative"}}>
-                  <span>{getFieldLabel("street", "Straße")}</span>
-                  <input
-                    value={isEditingProfile ? addressAC.query || profileForm.street : profileForm.street}
-                    disabled={!isEditingProfile}
-                    placeholder="Straße eingeben und aus Vorschlägen wählen…"
-                    autoComplete="off"
-                    className={isFieldInvalid("street") ? "input--invalid" : ""}
-                    onChange={(e) => handleAddressSearchChange(e.target.value)}
-                    onFocus={() => setShowAddressSuggestions(true)}
-                    onBlur={() => touchField("street")}
-                  />
-                  {showAddressSuggestions && addressAC.suggestions.length > 0 && isEditingProfile && (
-                    <ul className="account-address-suggestions">
-                      {addressAC.suggestions.map((s) => (
-                        <li key={`${s.street}-${s.houseNumber}-${s.postalCode}-${s.city}`}>
-                          <button
-                            type="button"
-                            className="account-address-suggestion-item"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              handleAddressSelect(s);
-                            }}
-                          >
-                            <strong>{s.street} {s.houseNumber}</strong>
-                            <span>{s.postalCode} {s.city}, {s.country}</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {addressAC.isLoading && isEditingProfile && (
-                    <span className="account-field__hint">Suche Adressen…</span>
-                  )}
-                </div>
-                <label className="account-field account-field--hnr">
-                  <span>{getFieldLabel("houseNumber", "Hausnr.")}</span>
-                  <input
-                    value={profileForm.houseNumber}
-                    disabled={!isEditingProfile}
-                    inputMode="numeric"
-                    maxLength={6}
-                    className={isFieldInvalid("houseNumber") ? "input--invalid" : ""}
-                    onChange={(e) => updateField("houseNumber", e.target.value)}
-                  />
-                </label>
-              </div>
-
-              {/* PLZ + Ort */}
-              <label className="account-field">
-                <span>{getFieldLabel("postalCode", "PLZ")}</span>
-                <input
-                  value={profileForm.postalCode}
-                  disabled={!isEditingProfile}
-                  inputMode="numeric"
-                  maxLength={5}
-                  className={isFieldInvalid("postalCode") ? "input--invalid" : ""}
-                  onChange={(e) => updateField("postalCode", e.target.value)}
-                  onBlur={() => touchField("postalCode")}
-                />
-                {getFieldError("postalCode") && (
-                  <span className="account-field__error">{getFieldError("postalCode")}</span>
-                )}
-              </label>
-              <label className="account-field">
-                <span>{getFieldLabel("city", "Ort")}</span>
-                <input
-                  value={profileForm.city}
-                  disabled={!isEditingProfile}
-                  maxLength={80}
-                  className={isFieldInvalid("city") ? "input--invalid" : ""}
-                  onChange={(e) => updateField("city", e.target.value)}
-                />
-              </label>
-
-              {/* Liefertag + Uhrzeit (nur Customer) */}
-              {!isRestocker && (
-                <label className="account-field">
-                  <span>Bevorzugter Liefertag</span>
-                  <select
-                    value={profileForm.deliveryDay}
-                    disabled={!isEditingProfile}
-                    className="account-field__select"
-                    onChange={(e) => updateField("deliveryDay", e.target.value)}
-                  >
-                    {DELIVERY_DAYS.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {!isRestocker && (
-                <label className="account-field">
-                  <span>Bevorzugte Uhrzeit</span>
-                  <input
-                    type="time"
-                    value={profileForm.deliveryTime}
-                    disabled={!isEditingProfile}
-                    min="07:00"
-                    max="18:00"
-                    className={isFieldInvalid("deliveryTime") ? "input--invalid" : ""}
-                    onChange={(e) => updateField("deliveryTime", e.target.value)}
-                    onBlur={() => touchField("deliveryTime")}
-                  />
-                  {getFieldError("deliveryTime") && (
-                    <span className="account-field__error">{getFieldError("deliveryTime")}</span>
-                  )}
-                </label>
-              )}
-
-              {/* IBAN */}
-              <label className="account-field account-field--full">
-                <span>{getFieldLabel("iban", "IBAN")}</span>
-                <input
-                  value={profileForm.iban}
-                  disabled={!isEditingProfile}
-                  autoCapitalize="characters"
-                  placeholder="DE89 3704 0044 0532 0130 00"
-                  maxLength={34}
-                  className={isFieldInvalid("iban") ? "input--invalid" : ""}
-                  onChange={(e) => updateField("iban", e.target.value)}
-                  onBlur={() => touchField("iban")}
-                />
-                {getFieldError("iban") && (
-                  <span className="account-field__error">{getFieldError("iban")}</span>
-                )}
-              </label>
-
-              {/* BIC (nur Restocker) */}
-              {isRestocker && (
-                <label className="account-field account-field--full">
-                  <span>{getFieldLabel("bic", "BIC")}</span>
-                  <input
-                    value={profileForm.bic}
-                    disabled={!isEditingProfile}
-                    autoCapitalize="characters"
-                    placeholder="COBADEFFXXX"
-                    maxLength={11}
-                    className={isFieldInvalid("bic") ? "input--invalid" : ""}
-                    onChange={(e) => updateField("bic", e.target.value)}
-                    onBlur={() => touchField("bic")}
-                  />
-                  {getFieldError("bic") && (
-                    <span className="account-field__error">{getFieldError("bic")}</span>
-                  )}
-                </label>
-              )}
-
-              {/* Lieferhinweis (nur Customer) */}
-              {!isRestocker && (
-                <div className="account-field account-field--full">
-                  <div className="account-field__head-row">
-                    <span>Lieferhinweis</span>
-                    <span className="account-field__counter">{profileForm.note.length}/300</span>
-                  </div>
-                  <textarea
-                    rows={4}
-                    value={profileForm.note}
-                    disabled={!isEditingProfile}
-                    maxLength={300}
-                    className={profileForm.note.length >= 300 ? "input--invalid" : ""}
-                    onChange={(e) => updateField("note", e.target.value)}
-                  />
-                </div>
-              )}
-
-            </div>
-          </div>
+          {renderPersonalDataPanel()}
+          {renderAddressBillingPanel()}
         </div>
       </section>
     );
@@ -946,7 +999,7 @@ export function AccountPage(): ReactElement {
       {renderHeroSection()}
       {renderProfileSection()}
       {renderSettingsSection()}
-      {renderFinanceSection()}
+      {!isRestocker && renderFinanceSection()}
       {renderSecuritySection()}
     </div>
   );

@@ -190,7 +190,6 @@ public class NotificationMailService {
         }
 
         appendOptionalOrderItemLine(html, "Intervall", item.intervalDescription());
-        appendOptionalOrderItemLine(html, "Nächste Lieferung", item.nextDeliveryDate());
     }
 
     private String formatQuantityAsMultiplier(String quantity) {

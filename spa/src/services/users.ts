@@ -52,7 +52,6 @@ export interface RestockerUser extends BaseUser {
 }
 
 export type UserProfile = CustomerUser | RestockerUser;
-export type User = UserProfile;
 
 type CreatePayloadFor<T extends UserProfile> = Omit<T, "createdAt" | "updatedAt"> &
   Partial<Pick<T, "createdAt" | "updatedAt">>;

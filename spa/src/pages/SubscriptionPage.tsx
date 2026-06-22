@@ -157,9 +157,9 @@ export function SubscriptionPage(): ReactElement {
             disabled={isRemovingItem}
           />
 
-          <section
+          <dialog
             className="subscription-modal subscription-remove-dialog"
-            role="dialog"
+            open
             aria-modal="true"
             aria-labelledby="subscription-remove-dialog-title"
           >
@@ -190,7 +190,7 @@ export function SubscriptionPage(): ReactElement {
                 Bestätigen
               </button>
             </div>
-          </section>
+          </dialog>
         </>
       ) : null}
     </div>

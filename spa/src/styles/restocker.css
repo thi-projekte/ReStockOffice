@@ -451,7 +451,8 @@
   outline-offset: 3px;
 }
 
-.restocker-order-card:hover {
+.restocker-order-card:hover,
+.restocker-stats-card:hover {
   transform: translateY(-2px);
   border-color: rgba(59, 107, 97, 0.24);
   box-shadow: var(--shadow-soft);
@@ -977,6 +978,7 @@
 :root[data-theme="dark"] .restocker-priority-filter,
 :root[data-theme="dark"] .restocker-earnings-note,
 :root[data-theme="dark"] .restocker-order-card,
+:root[data-theme="dark"] .restocker-stats-card,
 :root[data-theme="dark"] .restocker-order-card__delivery,
 :root[data-theme="dark"] .restocker-order-dialog__info-card,
 :root[data-theme="dark"] .restocker-order-dialog__table-shell,
@@ -1001,7 +1003,8 @@
   background: rgba(102, 189, 164, 0.14);
 }
 
-:root[data-theme="dark"] .restocker-order-card__articles {
+:root[data-theme="dark"] .restocker-order-card__articles,
+:root[data-theme="dark"] .restocker-tour-card_money {
   background: rgba(102, 189, 164, 0.12);
   color: var(--color-text);
 }
@@ -1090,8 +1093,8 @@
 
 .restocker-tour-card_money {
   margin-left: auto;
-  background-color: var(--color-secondary);
-  color: var(--color-grey-100);
+  background: rgba(38, 64, 55, 0.08);
+  color: var(--color-secondary);
 
   border-radius: 999px;
   padding: 4px 10px;

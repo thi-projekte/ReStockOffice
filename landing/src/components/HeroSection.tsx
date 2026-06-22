@@ -75,7 +75,7 @@ export default function HeroSection() {
         <div className={styles.content}>
           <h1 className={styles.headline}>
             Die moderne Lösung für<br />
-            Officesupplies,<br />
+            office supplies,<br />
             <span className={styles.accent}>Bleibe mit uns smart in stock!</span>
           </h1>
 
