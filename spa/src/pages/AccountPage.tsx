@@ -160,7 +160,11 @@ export function AccountPage(): ReactElement {
   }, [isLoggedIn, isRestocker, token, user, userKind]);
 
   useEffect(() => {
-    if (!isLoggedIn || !user) return;
+    if (!isLoggedIn || !user || isRestocker) {
+      setInvoices([]);
+      return;
+    }
+
     getInvoices({token, kind: userKind})
       .then((loaded) => {
         setInvoices(loaded);
@@ -946,7 +950,7 @@ export function AccountPage(): ReactElement {
       {renderHeroSection()}
       {renderProfileSection()}
       {renderSettingsSection()}
-      {renderFinanceSection()}
+      {!isRestocker && renderFinanceSection()}
       {renderSecuritySection()}
     </div>
   );

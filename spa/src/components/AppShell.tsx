@@ -680,14 +680,16 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
               <span>Darstellung</span>
             </Link>
 
-            <Link
-              className="header-profile-popover__link"
-              to="/account#finance"
-              onClick={closeProfileMenu}
-            >
-              <FaFileInvoiceDollar/>
-              <span>Finanzen</span>
-            </Link>
+            {!isRestocker && (
+              <Link
+                className="header-profile-popover__link"
+                to="/account#finance"
+                onClick={closeProfileMenu}
+              >
+                <FaFileInvoiceDollar/>
+                <span>Finanzen</span>
+              </Link>
+            )}
 
             <Link
               className="header-profile-popover__link"
