@@ -6,7 +6,6 @@ import { useState } from "react";
 import { RestockerTourCard } from "../../components/restocker/RestockerTourCard";
 import { parseDisplayDate } from "../../pages/restocker-view/restockerOrderUi";
 import type { RestockMarketplaceLoadResult, RestockMarketplaceOrder } from "../../types/shop";
-import "../../styles/restocker-home.css";
 
 type Props = {
     assignedLoading: boolean;

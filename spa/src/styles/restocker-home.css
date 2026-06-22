@@ -279,7 +279,8 @@
         display: none;
     }
 
-    .open-orders-carousel .restocker-order-card {
+    .open-orders-carousel .restocker-order-card,
+    .open-orders-carousel .restocker-stats-card {
         min-width: 200px;
         flex: 0 0 auto;
         scroll-snap-align: start;
