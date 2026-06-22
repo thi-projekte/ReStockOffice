@@ -228,13 +228,11 @@ Alle Endpunkte liegen unter `/api/deliveries`.
 | `GET` | `/customers/{customerId}/delivery-overview` | Letzte und nächste Delivery eines Customers laden. |
 | `GET` | `/customers?month=MM.YYYY` | Customer-IDs mit ausgelieferten Deliveries im Monat laden. |
 
-### Admin und Testdaten
+### Alle Deliveries
 
 | Methode | Endpoint | Zweck |
 | ------- | -------- | ----- |
 | `GET` | `/admin/all-deliveries` | Alle gespeicherten Deliveries nach Datum absteigend laden. |
-| `DELETE` | `/admin/all` | Alle Deliveries, DeliveryItems und Touren löschen. |
-| `POST` | `/admin/test-data` | Test-Deliveries anlegen. Optionale Query-Parameter: `deliveryDate`, `firstCustomerId`, `secondCustomerId`, `recipientEmail`. |
 
 ## Authentifizierung und Darstellung
 
@@ -355,4 +353,6 @@ Ohne lokale GraalVM-Installation:
 
 Für lokale Container-Tests gibt es `dev/docker-compose.yml`. Der Service wird dort auf `http://localhost:8082` veröffentlicht und die Datenbank auf Host-Port `5435`. Lege dafuer lokal eine `.env` auf Basis von `.env.example` an.
 
-Für Deployment-nahe Setups gibt es `docker-compose.yml` im Projektroot. Dort muessen `DELIVERIES_DB_PASSWORD` und `RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET` ebenfalls gesetzt sein. Secrets und produktive Werte sollten ueber die jeweilige Deployment-Umgebung verwaltet werden.
+Für Deployment-nahe Setups gibt es `docker-compose.yml` im Projektroot. Dort müssen `DELIVERIES_DB_PASSWORD` und
+`RESTOCK_DELIVERIES_OIDC_CLIENT_SECRET` ebenfalls gesetzt sein. Secrets und produktive Werte sollten über die jeweilige
+Deployment-Umgebung verwaltet werden.

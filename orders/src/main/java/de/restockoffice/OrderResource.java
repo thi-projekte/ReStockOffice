@@ -91,10 +91,9 @@ public class OrderResource {
     public List<Order> getAll() {
         if (securityIdentity == null || securityIdentity.isAnonymous()) {
             throw new NotAuthorizedException("Nicht autorisiert");
-        } else {
-            LOG.infof("GET /orders requested by: %s", securityIdentity.getPrincipal().getName());
-            return findAllOrders();
         }
+
+        return findAllOrders();
     }
 
     @GET
@@ -233,14 +232,8 @@ public class OrderResource {
     @POST
     @Transactional
     public Order order(Order input) {
-        LOG.info("POST /orders entered resource");
-        try {
-            LOG.infof("customerId: %s", securityIdentity.getPrincipal().getName());
-        } catch (Exception e) {
-            LOG.warn("No security identity available while creating order", e);
-        }
         String customerId = resolveCustomerId();
-        LOG.debugf("Resolved customerId: %s", customerId);
+        LOG.infof("Creating order for customer %s", customerId);
 
         Order order = Order.order(
                 customerId,
@@ -296,11 +289,11 @@ public class OrderResource {
             try (Response response = request.post(Entity.json(Map.of()))) {
                 if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
                     String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
-                    LOG.warnf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.getStatus(), responseBody);
+                    LOG.errorf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.getStatus(), responseBody);
                 }
             }
         } catch (RuntimeException exception) {
-            LOG.warnf(exception, "Delivery replan request failed for customer %s", customerId);
+            LOG.errorf(exception, "Delivery replan request failed for customer %s", customerId);
         }
     }
 
@@ -318,12 +311,12 @@ public class OrderResource {
             try (Response response = request.post(Entity.json(body))) {
                 if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
                     String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
-                    LOG.warnf("AboConfirmationProcess failed: HTTP %s from %s body=%s", response.getStatus(), aboConfirmationProcessStartUrl, responseBody);
+                    LOG.errorf("AboConfirmationProcess failed: HTTP %s from %s body=%s", response.getStatus(), aboConfirmationProcessStartUrl, responseBody);
                     throw new WebApplicationException("AboConfirmationProcess konnte nicht gestartet werden (HTTP " + response.getStatus() + ").", Response.Status.BAD_GATEWAY);
                 }
             }
         } catch (ProcessingException exception) {
-            LOG.warnf(exception, "AboConfirmationProcess request failed at %s", aboConfirmationProcessStartUrl);
+            LOG.errorf(exception, "AboConfirmationProcess request failed at %s", aboConfirmationProcessStartUrl);
             throw new WebApplicationException("AboConfirmationProcess konnte nicht erreicht werden.", exception, Response.Status.BAD_GATEWAY);
         }
     }
@@ -430,9 +423,15 @@ public class OrderResource {
 
         try (Client client = ClientBuilder.newClient()) {
             CustomerMailProfile customer = loadCustomerProfileFromPath(client, "customer", customerId, authHeader);
-            return customer != null ? customer : loadCustomerProfileFromPath(client, "customer/me", null, authHeader);
+            if (customer == null) {
+                customer = loadCustomerProfileFromPath(client, "customer/me", null, authHeader);
+            }
+            if (customer == null) {
+                LOG.errorf("Customer profile enrichment failed for customer %s", customerId);
+            }
+            return customer;
         } catch (ProcessingException exception) {
-            LOG.warn("Customer profile enrichment request failed", exception);
+            LOG.error("Customer profile enrichment request failed", exception);
             return null;
         }
     }
@@ -454,8 +453,6 @@ public class OrderResource {
                 .header(AUTHORIZATION_HEADER, authHeader)
                 .get()) {
             if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
-                String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
-                LOG.warnf("Customer profile enrichment via %s failed: HTTP %s body=%s", path, response.getStatus(), responseBody);
                 return null;
             }
 

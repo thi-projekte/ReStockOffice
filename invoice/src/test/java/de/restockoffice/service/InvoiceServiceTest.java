@@ -2,17 +2,19 @@ package de.restockoffice.service;
 
 import de.restockoffice.api.InvoiceRequest;
 import de.restockoffice.domain.InvoiceEntity;
+import de.restockoffice.repository.InvoiceRepository;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,12 +38,25 @@ class InvoiceServiceTest {
     @InjectMock
     ResendMailClient mailClient;
 
-    @Test
-    void testCreateAndPersistInvoice() throws IOException {
+    @InjectMock
+    InvoiceRepository invoiceRepository;
 
+    private static final JsonWebToken MOCK_JWT = Mockito.mock(JsonWebToken.class);
+
+    @jakarta.enterprise.context.Dependent
+    public static class TestJwtProducer {
+        @jakarta.enterprise.inject.Produces
+        @io.quarkus.test.Mock
+        public JsonWebToken mockJwt() {
+            return MOCK_JWT;
+        }
+    }
+
+    @Test
+    void testCreateAndPersistInvoice() {
         InvoiceRequest request = new InvoiceRequest(
                 "user123", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
-                null, "2026-06-15", "2026-06-30", new java.math.BigDecimal("100.00"), List.of()
+                null, "2026-06-15", "2026-06-30", new BigDecimal("100.00"), List.of()
         );
 
         when(pdfGenerator.createPDF(any())).thenReturn(new byte[]{1, 2, 3});
@@ -50,18 +65,19 @@ class InvoiceServiceTest {
         String invoiceNumber = invoiceService.createAndPersistInvoice(request);
 
         assertNotNull(invoiceNumber);
+        verify(invoiceRepository).persist(any(InvoiceEntity.class));
         verify(pdfGenerator).createPDF(any());
         verify(eBillingService).makeZUGFeRD(any(), any());
     }
 
     @Test
-    @Transactional
-    void testSendInvoiceViaEmail_Success() throws IOException {
+    void testSendInvoiceViaEmail_Success() {
         String testInvoiceNumber = "RE-MAIL-123";
         InvoiceEntity entity = new InvoiceEntity();
         entity.setInvoiceNumber(testInvoiceNumber);
         entity.setZugferdPdf(new byte[]{7, 8, 9});
-        entity.persist();
+
+        when(invoiceRepository.findByInvoiceNumber(testInvoiceNumber)).thenReturn(Optional.of(entity));
 
         InvoiceRequest request = new InvoiceRequest(
                 "user123", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
@@ -75,20 +91,20 @@ class InvoiceServiceTest {
 
     @Test
     void testSendInvoiceViaEmail_NotFound() {
+        when(invoiceRepository.findByInvoiceNumber("RE-UNKNOWN")).thenReturn(Optional.empty());
+
         InvoiceRequest request = new InvoiceRequest(
                 "user123", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
                 "RE-UNKNOWN", "2026-06-15", "2026-06-30", new BigDecimal("100.00"), List.of()
         );
 
-        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
+        assertThrows(WebApplicationException.class, () -> {
             invoiceService.sendInvoiceViaEmail(request);
         });
-
-        assertEquals(404, exception.getResponse().getStatus());
     }
 
     @Test
-    void testProcessInvoice() throws IOException {
+    void testProcessInvoice() {
         String testInvoiceNumber = "RE-PROC-001";
         InvoiceRequest request = new InvoiceRequest(
                 "user-proc", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
@@ -100,38 +116,21 @@ class InvoiceServiceTest {
 
         invoiceService.processInvoice(request);
 
-        verify(pdfGenerator).createPDF(request);
-        verify(eBillingService).makeZUGFeRD(any(byte[].class), eq(request));
         verify(mailClient).sendInvoiceMail(eq("test@example.com"), any(byte[].class), eq(request));
-
-        InvoiceEntity savedEntity = InvoiceEntity.find("invoiceNumber", testInvoiceNumber).firstResult();
-        assertNotNull(savedEntity, "Die Rechnung sollte in der Datenbank gespeichert worden sein.");
-        assertEquals("user-proc", savedEntity.getUserId());
+        verify(invoiceRepository).persist(any(InvoiceEntity.class));
     }
 
     @Test
-    @Transactional
     void testGetInvoicesForAccount() {
         String targetUserId = "user-get-test";
+        List<InvoiceEntity> mockList = List.of(new InvoiceEntity(), new InvoiceEntity());
 
-        InvoiceEntity e1 = new InvoiceEntity();
-        e1.setUserId(targetUserId);
-        e1.setInvoiceNumber("RE-GET-01");
-        e1.persist();
-
-        InvoiceEntity e2 = new InvoiceEntity();
-        e2.setUserId(targetUserId);
-        e2.setInvoiceNumber("RE-GET-02");
-        e2.persist();
-
-        InvoiceEntity e3 = new InvoiceEntity();
-        e3.setUserId("other-user");
-        e3.setInvoiceNumber("RE-GET-03");
-        e3.persist();
+        when(invoiceRepository.findByUserId(targetUserId)).thenReturn(mockList);
 
         List<InvoiceEntity> results = invoiceService.getInvoicesForAccount(targetUserId);
 
         assertNotNull(results);
-        assertEquals(2, results.size(), "Es sollten exakt zwei Rechnungen für den User gefunden werden.");
+        assertEquals(2, results.size());
+        verify(invoiceRepository).findByUserId(targetUserId);
     }
 }

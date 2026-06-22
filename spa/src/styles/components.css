@@ -1151,6 +1151,9 @@
 
 .search-quick-table {
     display: grid;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
     border: 1px solid rgba(38, 64, 55, 0.12);
     border-radius: 0.9rem;
     overflow: hidden;

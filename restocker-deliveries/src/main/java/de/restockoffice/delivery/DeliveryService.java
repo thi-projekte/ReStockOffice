@@ -1,7 +1,5 @@
 package de.restockoffice.delivery;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.restockoffice.article.ArticleClient;
 import de.restockoffice.article.ArticleDto;
 import de.restockoffice.order.OrderClient;
@@ -22,9 +20,6 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,15 +27,14 @@ import java.util.stream.Collectors;
 public class DeliveryService {
 
     private static final Logger LOG = Logger.getLogger(DeliveryService.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     static final int PLANNING_HORIZON_DAYS = 14;
-    private static final String TEST_ORDER_PREFIX = "test-delivery-";
-    private static final String DEFAULT_TEST_CUSTOMER_ONE = "3e6572a7-3852-42e3-81eb-17e7f9622kk8";
-    private static final String DEFAULT_TEST_CUSTOMER_TWO = "c831fce5-56a3-443e-a27f-cc769a1ed0d7";
     private static final String DEFAULT_UNIT = "Stück";
-    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter
-            .ofPattern("MM.uuuu")
-            .withResolverStyle(ResolverStyle.STRICT);
+
+    private final DeliveryReportingService reportingService;
+
+    private final DeliveryTourService tourService;
+
+    private final DeliveryDetailAssembler detailAssembler;
 
     @Inject
     @RestClient
@@ -50,97 +44,42 @@ public class DeliveryService {
     @RestClient
     OrderClient orderClient;
 
-    @Inject
-    @RestClient
-    ArticleClient articleClient;
+    private final ArticleClient articleClient;
+
+    private final EntityManager entityManager;
 
     @Inject
-    EntityManager entityManager;
+    public DeliveryService(
+            DeliveryReportingService reportingService,
+            DeliveryTourService tourService,
+            DeliveryDetailAssembler detailAssembler,
+            @RestClient ArticleClient articleClient,
+            EntityManager entityManager
+    ) {
+        this.reportingService = reportingService;
+        this.tourService = tourService;
+        this.detailAssembler = detailAssembler;
+        this.articleClient = articleClient;
+        this.entityManager = entityManager;
+    }
 
     @Transactional
     public Tour createTour(Tour tour) {
-        tour.persist();
-        return tour;
-    }
-
-    @Transactional
-    public Map<String, Long> deleteAllDeliveries() {
-        long deletedItems = DeliveryItem.deleteAll();
-        long deletedDeliveries = Delivery.deleteAll();
-        long deletedTours = Tour.deleteAll();
-
-        return Map.of(
-                "deletedItems", deletedItems,
-                "deletedDeliveries", deletedDeliveries,
-                "deletedTours", deletedTours
-        );
-    }
-
-    @Transactional
-    public List<DeliveryDetailDto> createTestDeliveries(
-            String deliveryDateValue,
-            String firstCustomerId,
-            String secondCustomerId,
-            String recipientEmail,
-            String authorizationHeader
-    ) {
-        LocalDate deliveryDate = parseTestDeliveryDate(deliveryDateValue);
-        List<Delivery> existingTestDeliveries = Delivery.list(
-                "orderId like ?1",
-                TEST_ORDER_PREFIX + "%"
-        );
-
-        for (Delivery delivery : existingTestDeliveries) {
-            DeliveryItem.delete("delivery.id", delivery.id);
-        }
-        Delivery.delete("orderId like ?1", TEST_ORDER_PREFIX + "%");
-
-        Delivery firstDelivery = createOpenTestDelivery(
-                TEST_ORDER_PREFIX + "one",
-                normalizeOptionalCustomerId(firstCustomerId, DEFAULT_TEST_CUSTOMER_ONE),
-                normalizeOptionalRecipientEmail(recipientEmail),
-                deliveryDate,
-                List.of(
-                        createTestDeliveryItem("10086", "Kassenbuch A4", 1, DEFAULT_UNIT),
-                        createTestDeliveryItem("10003", "Textmarker-Set (4 Farben)", 1, DEFAULT_UNIT)
-                )
-        );
-        Delivery secondDelivery = createOpenTestDelivery(
-                TEST_ORDER_PREFIX + "two",
-                normalizeOptionalCustomerId(secondCustomerId, DEFAULT_TEST_CUSTOMER_TWO),
-                normalizeOptionalRecipientEmail(recipientEmail),
-                deliveryDate,
-                List.of(
-                        createTestDeliveryItem("10088", "Gummizugmappe A3", 1, DEFAULT_UNIT),
-                        createTestDeliveryItem("10007", "Klarsichthuellen A4 oben offen", 10, DEFAULT_UNIT)
-                )
-        );
-
-        firstDelivery.persist();
-        secondDelivery.persist();
-
-        return toDetailDtos(List.of(firstDelivery, secondDelivery), authorizationHeader);
+        return tourService.createTour(tour);
     }
 
     @Transactional
     public Tour startTour(UUID tourId) {
-        Tour tour = findTourOrThrow(tourId);
-        if (!tour.allPackagesCollected()) {
-            throw new BadRequestException("Nicht alle Pakete wurden eingesammelt.");
-        }
-        tour.start();
-        return tour;
+        return tourService.startTour(tourId);
     }
 
     @Transactional
     public Tour endTour(UUID tourId, BigDecimal earnings) {
-        Tour tour = findTourOrThrow(tourId);
-        tour.end(earnings);
-        return tour;
+        return tourService.endTour(tourId, earnings);
     }
 
     public List<Tour> getTodayToursByRestocker(String restockerName) {
-        return Tour.findTodayByRestocker(restockerName);
+        return tourService.getTodayToursByRestocker(restockerName);
     }
 
     @Transactional
@@ -149,51 +88,32 @@ public class DeliveryService {
 
         LocalDate today = LocalDate.now();
         LocalDate horizonEnd = today.plusDays(PLANNING_HORIZON_DAYS);
-        return toDetailDtos(Delivery.findOpenBetween(today, horizonEnd), authorizationHeader);
+        return detailAssembler.toDetailDtos(Delivery.findOpenBetween(today, horizonEnd), authorizationHeader);
     }
 
     @Transactional
     public List<DeliveryDetailDto> getAllDeliveries(String authorizationHeader) {
-        return toDetailDtos(Delivery.list("order by deliveryDate desc, userId asc"), authorizationHeader);
+        return detailAssembler.toDetailDtos(
+                entityManager
+                        .createQuery("select d from Delivery d order by d.deliveryDate desc, d.userId asc", Delivery.class)
+                        .getResultList(),
+                authorizationHeader
+        );
     }
 
     @Transactional
     public List<DeliveredArticleSummaryDto> getDeliveredArticleSummaryForPreviousMonth(String customerId) {
-        if (isBlank(customerId)) {
-            throw new BadRequestException("customerId muss angegeben werden.");
-        }
-
-        LocalDate currentMonthStart = LocalDate.now().withDayOfMonth(1);
-        LocalDate previousMonthStart = currentMonthStart.minusMonths(1);
-        LocalDate previousMonthEnd = currentMonthStart.minusDays(1);
-        List<Delivery> deliveries = Delivery.findDeliveredByCustomerBetween(
-                customerId.trim(),
-                previousMonthStart,
-                previousMonthEnd
-        );
-
-        return summarizeDeliveredItemsForPeriod(deliveries, previousMonthStart, previousMonthEnd);
+        return reportingService.getDeliveredArticleSummaryForPreviousMonth(customerId);
     }
 
     @Transactional
     public CustomerDeliveryOverviewDto getCustomerDeliveryOverview(String customerId) {
-        if (isBlank(customerId)) {
-            throw new BadRequestException("customerId muss angegeben werden.");
-        }
-
-        List<Delivery> deliveries = Delivery.findByCustomer(customerId.trim());
-        return toCustomerDeliveryOverview(deliveries, LocalDate.now());
+        return reportingService.getCustomerDeliveryOverview(customerId);
     }
 
     @Transactional
     public MonthlyDeliveryCustomersDto getCustomersWithDeliveriesInMonth(String monthValue) {
-        String normalizedMonth = normalizeDeliveryMonth(monthValue);
-        YearMonth month = parseDeliveryMonth(normalizedMonth);
-        LocalDateTime monthStart = month.atDay(1).atStartOfDay();
-        LocalDateTime nextMonthStart = month.plusMonths(1).atDay(1).atStartOfDay();
-
-        List<String> customerIds = findCustomerIdsDeliveredBetween(monthStart, nextMonthStart);
-        return new MonthlyDeliveryCustomersDto(normalizedMonth, customerIds);
+        return reportingService.getCustomersWithDeliveriesInMonth(monthValue);
     }
 
     @Transactional
@@ -201,7 +121,7 @@ public class DeliveryService {
         validateRestockerName(restockerName);
         ensurePlanningHorizon(authorizationHeader);
 
-        return toDetailDtos(
+        return detailAssembler.toDetailDtos(
                 Delivery.findAssignedToRestockerFrom(restockerName, LocalDate.now()),
                 authorizationHeader
         );
@@ -222,34 +142,12 @@ public class DeliveryService {
         );
         planDeliveries(customerOrders, today, horizonEnd, authorizationHeader);
 
-        return toDetailDtos(Delivery.findByCustomer(normalizedCustomerId), authorizationHeader);
+        return detailAssembler.toDetailDtos(Delivery.findByCustomer(normalizedCustomerId), authorizationHeader);
     }
 
     @Transactional
     public DeliveryDetailDto acceptDelivery(UUID deliveryId, String restockerName, String authorizationHeader) {
-        validateRestockerName(restockerName);
-
-        Delivery delivery = findDeliveryOrThrow(deliveryId);
-        if (delivery.isDelivered()) {
-            throw new BadRequestException("Diese Lieferung wurde bereits ausgeliefert.");
-        }
-
-        if (delivery.tour != null) {
-            if (!restockerName.equals(delivery.tour.restockerName)) {
-                throw new BadRequestException("Diese Lieferung wurde bereits von einem anderen Restocker angenommen.");
-            }
-
-            return toDetailDtoWithFreshData(delivery, authorizationHeader);
-        }
-
-        LocalDate deliveryDate = requireDeliveryDate(delivery);
-
-        Tour tour = findOrCreateOpenTour(restockerName, deliveryDate);
-        delivery.stopOrder = nextStopOrder(tour);
-        delivery.markAccepted(tour);
-        tour.deliveries.add(delivery);
-
-        return toDetailDtoWithFreshData(delivery, authorizationHeader);
+        return detailAssembler.toDetailDtoWithFreshData(tourService.acceptDelivery(deliveryId, restockerName), authorizationHeader);
     }
 
     @Transactional
@@ -261,43 +159,28 @@ public class DeliveryService {
 
     @Transactional
     public Delivery collectPackage(UUID deliveryId) {
-        Delivery delivery = findDeliveryOrThrow(deliveryId);
-        if (delivery.collected) {
-            return delivery;
-        }
-        delivery.markCollected();
-        return delivery;
+        return tourService.collectPackage(deliveryId);
     }
 
     @Transactional
     public DeliveryItem markItemDelivered(UUID itemId) {
-        DeliveryItem item = DeliveryItem.findById(itemId);
-        if (item == null) {
-            throw new NotFoundException("Artikel nicht gefunden: " + itemId);
-        }
-        item.markDelivered();
-        return item;
+        return tourService.markItemDelivered(itemId);
     }
 
     @Transactional
     public Delivery confirmDelivery(UUID deliveryId) {
-        Delivery delivery = findDeliveryOrThrow(deliveryId);
-        if (!delivery.allItemsDelivered()) {
-            throw new BadRequestException("Nicht alle Artikel wurden abgehakt.");
-        }
-        delivery.markDelivered();
-        return delivery;
+        return tourService.confirmDelivery(deliveryId);
     }
 
     @Transactional
     public DeliveryDetailDto getDeliveryDetail(UUID deliveryId, String authorizationHeader) {
         Delivery delivery = findDeliveryOrThrow(deliveryId);
-        return toDetailDtoWithFreshData(delivery, authorizationHeader);
+        return detailAssembler.toDetailDtoWithFreshData(delivery, authorizationHeader);
     }
 
     @Transactional
     public List<DeliveryDetailDto> getTourDeliveryDetails(UUID tourId, String authorizationHeader) {
-        return toDetailDtos(Delivery.findByTour(tourId), authorizationHeader);
+        return detailAssembler.toDetailDtos(Delivery.findByTour(tourId), authorizationHeader);
     }
 
     private void ensurePlanningHorizon(String authorizationHeader) {
@@ -359,7 +242,7 @@ public class DeliveryService {
         return activeOrders.stream()
                 .filter(this::isPlannableOrder)
                 .filter(order -> customerId.equals(order.getCustomerId()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void deleteFutureFreeDeliveries(String customerId, LocalDate today, LocalDate horizonEnd) {
@@ -397,7 +280,7 @@ public class DeliveryService {
         if (delivery == null) {
             List<OrderDto> orders = plannedOrders.stream()
                     .map(PlannedOrder::order)
-                    .collect(Collectors.toList());
+                    .toList();
             delivery = new Delivery();
             delivery.orderId = joinedOrderIds(orders);
             delivery.userId = groupKey.customerId();
@@ -415,7 +298,7 @@ public class DeliveryService {
         List<OrderDto> newOrders = plannedOrders.stream()
                 .filter(PlannedOrder::newArticle)
                 .map(PlannedOrder::order)
-                .collect(Collectors.toList());
+                .toList();
         if (newOrders.isEmpty()) {
             return;
         }
@@ -443,10 +326,10 @@ public class DeliveryService {
             List<LocalDate> existingCustomerDeliveryDates
     ) {
         List<LocalDate> dueDates = new ArrayList<>();
-        DayOfWeek deliveryDay = resolveDeliveryDay(user, order);
+        DayOfWeek deliveryDay = resolveDeliveryDay(user);
         int intervalWeeks = order.getInterval() != null && order.getInterval() > 0 ? order.getInterval() : 1;
         if (deliveryDay == null) {
-            LOG.warnf(
+            LOG.errorf(
                     "Überspringe Lieferplanung für Order %s / Kunde %s, da kein gültiger Liefertag verfügbar ist.",
                     order.getId(),
                     order.getCustomerId()
@@ -511,7 +394,7 @@ public class DeliveryService {
                 .filter(date -> !date.isBefore(firstEligibleDate))
                 .filter(date -> !date.isAfter(endDate))
                 .filter(date -> weeksBetween(firstEligibleDate, date) % intervalWeeks == 0)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private long weeksBetween(LocalDate startDate, LocalDate endDate) {
@@ -544,13 +427,8 @@ public class DeliveryService {
         return date.plusDays(dayDifference);
     }
 
-    private DayOfWeek resolveDeliveryDay(UserDto user, OrderDto order) {
-        DayOfWeek configuredDeliveryDay = parseDeliveryDay(user != null ? user.getDeliveryDay() : null);
-        if (configuredDeliveryDay != null) {
-            return configuredDeliveryDay;
-        }
-
-        return null;
+    private DayOfWeek resolveDeliveryDay(UserDto user) {
+        return parseDeliveryDay(user != null ? user.getDeliveryDay() : null);
     }
 
     private DayOfWeek parseDeliveryDay(String deliveryDay) {
@@ -622,7 +500,7 @@ public class DeliveryService {
                 .map(delivery -> delivery.deliveryDate)
                 .filter(Objects::nonNull)
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<LocalDate> existingCustomerDeliveryDates(
@@ -637,7 +515,7 @@ public class DeliveryService {
                 .filter(date -> !date.isAfter(endDate))
                 .distinct()
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private LocalDate latestDate(List<LocalDate> dates) {
@@ -653,56 +531,11 @@ public class DeliveryService {
             LocalDate periodStart,
             LocalDate periodEnd
     ) {
-        if (deliveries == null || deliveries.isEmpty()) {
-            return List.of();
-        }
-
-        Map<String, Integer> quantitiesByArticle = new LinkedHashMap<>();
-        for (Delivery delivery : deliveries) {
-            if (!isDeliveredInPeriod(delivery, periodStart, periodEnd) || delivery.items == null) {
-                continue;
-            }
-
-            for (DeliveryItem item : delivery.items) {
-                if (item == null || isBlank(item.articleNumber)) {
-                    continue;
-                }
-
-                quantitiesByArticle.merge(item.articleNumber, item.quantity, Integer::sum);
-            }
-        }
-
-        return quantitiesByArticle.entrySet().stream()
-                .map(entry -> new DeliveredArticleSummaryDto(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+        return DeliveryReportingService.summarizeDeliveredItemsForPeriod(deliveries, periodStart, periodEnd);
     }
 
     CustomerDeliveryOverviewDto toCustomerDeliveryOverview(List<Delivery> deliveries, LocalDate today) {
-        Delivery lastDelivery = null;
-        Delivery nextDelivery = null;
-
-        if (deliveries != null) {
-            List<Delivery> sortedDeliveries = deliveries.stream()
-                    .filter(delivery -> delivery != null && delivery.deliveryDate != null)
-                    .sorted((left, right) -> left.deliveryDate.compareTo(right.deliveryDate))
-                    .collect(Collectors.toList());
-
-            for (Delivery delivery : sortedDeliveries) {
-                if (delivery.deliveryDate.isBefore(today)) {
-                    lastDelivery = delivery;
-                    continue;
-                }
-
-                if (nextDelivery == null) {
-                    nextDelivery = delivery;
-                }
-            }
-        }
-
-        return new CustomerDeliveryOverviewDto(
-                toDeliverySummary(lastDelivery),
-                toDeliverySummary(nextDelivery)
-        );
+        return DeliveryReportingService.toCustomerDeliveryOverview(deliveries, today);
     }
 
     List<String> customerIdsWithDeliveredAtInPeriod(
@@ -710,233 +543,11 @@ public class DeliveryService {
             LocalDateTime periodStart,
             LocalDateTime periodEndExclusive
     ) {
-        if (deliveries == null || deliveries.isEmpty()) {
-            return List.of();
-        }
-
-        return deliveries.stream()
-                .filter(Objects::nonNull)
-                .filter(delivery -> !isBlank(delivery.userId))
-                .filter(delivery -> isDeliveredAtInPeriod(delivery, periodStart, periodEndExclusive))
-                .map(delivery -> delivery.userId)
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
-    }
-
-    private DeliverySummaryDto toDeliverySummary(Delivery delivery) {
-        if (delivery == null) {
-            return null;
-        }
-
-        return new DeliverySummaryDto(
-                delivery.id,
-                requireDeliveryDate(delivery).toString(),
-                deliveryStatus(delivery)
+        return DeliveryReportingService.customerIdsWithDeliveredAtInPeriod(
+                deliveries,
+                periodStart,
+                periodEndExclusive
         );
-    }
-
-    private boolean isDeliveredInPeriod(Delivery delivery, LocalDate periodStart, LocalDate periodEnd) {
-        if (delivery == null || !delivery.isDelivered()) {
-            return false;
-        }
-
-        LocalDate deliveryDate = delivery.deliveryDate;
-        return deliveryDate != null
-                && !deliveryDate.isBefore(periodStart)
-                && !deliveryDate.isAfter(periodEnd);
-    }
-
-    private boolean isDeliveredAtInPeriod(
-            Delivery delivery,
-            LocalDateTime periodStart,
-            LocalDateTime periodEndExclusive
-    ) {
-        LocalDateTime deliveredAt = delivery.deliveredAt;
-        return deliveredAt != null
-                && !deliveredAt.isBefore(periodStart)
-                && deliveredAt.isBefore(periodEndExclusive);
-    }
-
-    private List<String> findCustomerIdsDeliveredBetween(LocalDateTime periodStart, LocalDateTime periodEndExclusive) {
-        return entityManager
-                .createQuery(
-                        "select distinct d.userId from Delivery d " +
-                                "where d.userId is not null and d.userId <> '' " +
-                                "and d.deliveredAt >= :periodStart and d.deliveredAt < :periodEnd " +
-                                "order by d.userId asc",
-                        String.class
-                )
-                .setParameter("periodStart", periodStart)
-                .setParameter("periodEnd", periodEndExclusive)
-                .getResultList();
-
-    }
-
-    private List<DeliveryDetailDto> toDetailDtos(List<Delivery> deliveries, String authorizationHeader) {
-        Map<String, UserDto> userCache = new HashMap<>();
-        Map<String, ArticleDto> articleCache = new HashMap<>();
-        AuthenticatedRestocker authenticatedRestocker = authenticatedRestocker(authorizationHeader);
-
-        return deliveries.stream()
-                .map(delivery -> {
-                    UserDto user = loadCachedUser(delivery.userId, userCache, authorizationHeader);
-                    return toDetailDto(delivery, user, articleCache, authenticatedRestocker);
-                })
-                .collect(Collectors.toList());
-    }
-
-    private DeliveryDetailDto toDetailDtoWithFreshData(Delivery delivery, String authorizationHeader) {
-        UserDto user = tryLoadUser(delivery.userId, authorizationHeader);
-        return toDetailDto(delivery, user, new HashMap<>(), authenticatedRestocker(authorizationHeader));
-    }
-
-    private DeliveryDetailDto toDetailDto(
-            Delivery delivery,
-            UserDto user,
-            Map<String, ArticleDto> articleCache,
-            AuthenticatedRestocker authenticatedRestocker
-    ) {
-        DeliveryDetailDto dto = new DeliveryDetailDto();
-        dto.setId(delivery.id);
-        dto.setOrderId(delivery.orderId);
-        dto.setUserId(delivery.userId);
-        dto.setStopOrder(delivery.stopOrder);
-        dto.setCollected(delivery.collected);
-        dto.setCollectedAt(delivery.collectedAt);
-        dto.setAcceptedAt(delivery.acceptedAt);
-        dto.setDeliveredAt(delivery.deliveredAt);
-        dto.setRestockerName(restockerDisplayName(delivery, authenticatedRestocker));
-        dto.setStatus(deliveryStatus(delivery));
-
-        dto.setRecipientEmail(valueOrEmpty(valueOrFallback(delivery.recipientEmail, user != null ? user.getEmail() : null)));
-        dto.setCompanyName(valueOrEmpty(user != null ? user.getCompanyName() : null));
-        dto.setStreet(valueOrEmpty(user != null ? user.getStreet() : null));
-        dto.setHouseNumber(valueOrEmpty(user != null ? user.getHouseNumber() : null));
-        dto.setPostalCode(valueOrEmpty(user != null ? user.getPostalCode() : null));
-        dto.setCity(valueOrEmpty(user != null ? user.getCity() : null));
-        dto.setCountry(valueOrEmpty(user != null ? user.getCountry() : null));
-        dto.setPhoneNumber(valueOrEmpty(user != null ? user.getPhoneNumber() : null));
-        dto.setContactPerson(valueOrEmpty(user != null ? user.getRoleInCompany() : null));
-        dto.setDeliveryHint(valueOrEmpty(user != null ? user.getDeliveryHint() : null));
-        dto.setDeliveryDay(valueOrEmpty(user != null ? user.getDeliveryDay() : null));
-        dto.setDeliveryTime(valueOrEmpty(user != null ? user.getDeliveryTime() : null));
-        dto.setDeliveryDate(requireDeliveryDate(delivery).toString());
-        dto.setItems(toDetailItems(delivery, articleCache));
-
-        return dto;
-    }
-
-    private List<DeliveryDetailDto.DeliveryItemDetailDto> toDetailItems(
-            Delivery delivery,
-            Map<String, ArticleDto> articleCache
-    ) {
-        return delivery.items.stream()
-                .map(item -> toDetailItem(item, articleCache))
-                .collect(Collectors.toList());
-    }
-
-    private DeliveryDetailDto.DeliveryItemDetailDto toDetailItem(
-            DeliveryItem item,
-            Map<String, ArticleDto> articleCache
-    ) {
-        DeliveryDetailDto.DeliveryItemDetailDto detailItem = new DeliveryDetailDto.DeliveryItemDetailDto();
-        ArticleDto article = loadArticle(item.articleNumber, articleCache);
-        detailItem.setId(item.id);
-        detailItem.setArticleNumber(item.articleNumber);
-        detailItem.setDelivered(item.delivered);
-        detailItem.setName(valueOrFallback(
-                item.name,
-                article != null ? article.getName() : fallbackArticleName(item.articleNumber)
-        ));
-        detailItem.setQuantity(item.quantity);
-        detailItem.setUnit(valueOrFallback(
-                item.unit,
-                article != null ? article.getUnit() : DEFAULT_UNIT
-        ));
-        return detailItem;
-    }
-
-    private String deliveryStatus(Delivery delivery) {
-        if (delivery.deliveredAt != null) {
-            return "DELIVERED";
-        }
-
-        if (delivery.collected) {
-            return "COLLECTED";
-        }
-
-        if (delivery.tour != null || delivery.acceptedAt != null) {
-            return "ACCEPTED";
-        }
-
-        return "OPEN";
-    }
-
-    private String restockerDisplayName(Delivery delivery, AuthenticatedRestocker authenticatedRestocker) {
-        if (delivery.tour == null || isBlank(delivery.tour.restockerName)) {
-            return null;
-        }
-
-        if (authenticatedRestocker != null
-                && delivery.tour.restockerName.equals(authenticatedRestocker.username())
-                && !isBlank(authenticatedRestocker.displayName())) {
-            return authenticatedRestocker.displayName();
-        }
-
-        return delivery.tour.restockerName;
-    }
-
-    private AuthenticatedRestocker authenticatedRestocker(String authorizationHeader) {
-        String token = bearerToken(authorizationHeader);
-        if (isBlank(token)) {
-            return null;
-        }
-
-        String[] parts = token.split("\\.");
-        if (parts.length < 2) {
-            return null;
-        }
-
-        try {
-            String payload = new String(Base64.getUrlDecoder().decode(parts[1]), java.nio.charset.StandardCharsets.UTF_8);
-            JsonNode claims = OBJECT_MAPPER.readTree(payload);
-            String username = firstNonBlank(textClaim(claims, "preferred_username"), textClaim(claims, "sub"));
-            String displayName = firstNonBlank(
-                    joinName(textClaim(claims, "given_name"), textClaim(claims, "family_name")),
-                    textClaim(claims, "name")
-            );
-            return new AuthenticatedRestocker(username, displayName);
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
-
-    private String bearerToken(String authorizationHeader) {
-        if (isBlank(authorizationHeader) || !authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
-            return null;
-        }
-        return authorizationHeader.substring(7).trim();
-    }
-
-    private String textClaim(JsonNode claims, String claimName) {
-        JsonNode claim = claims != null ? claims.get(claimName) : null;
-        return claim != null && claim.isTextual() ? claim.asText() : null;
-    }
-
-    private String joinName(String firstName, String lastName) {
-        return firstNonBlank(
-                (valueOrEmpty(firstName) + " " + valueOrEmpty(lastName)).trim(),
-                null
-        );
-    }
-
-    private Tour findTourOrThrow(UUID tourId) {
-        Tour tour = Tour.findById(tourId);
-        if (tour == null) {
-            throw new NotFoundException("Tour nicht gefunden: " + tourId);
-        }
-        return tour;
     }
 
     private Delivery findDeliveryOrThrow(UUID deliveryId) {
@@ -953,43 +564,6 @@ public class DeliveryService {
                 restockerName,
                 LocalDate.now()
         ).firstResult();
-    }
-
-    private Tour findOrCreateOpenTour(String restockerName, LocalDate deliveryDate) {
-        Tour tour = Tour.find(
-                "restockerName = ?1 and tourDate = ?2 and endTime is null",
-                restockerName,
-                deliveryDate
-        ).firstResult();
-
-        if (tour != null) {
-            return tour;
-        }
-
-        tour = new Tour();
-        tour.restockerName = restockerName;
-        tour.tourDate = deliveryDate;
-        tour.persist();
-        return tour;
-    }
-
-    private LocalDate requireDeliveryDate(Delivery delivery) {
-        if (delivery.deliveryDate != null) {
-            return delivery.deliveryDate;
-        }
-
-        throw new IllegalStateException("Delivery hat kein deliveryDate: " + delivery.id);
-    }
-
-    private int nextStopOrder(Tour tour) {
-        if (tour == null || tour.id == null) {
-            return 1;
-        }
-
-        return Delivery.findByTour(tour.id).stream()
-                .mapToInt(delivery -> delivery.stopOrder)
-                .max()
-                .orElse(0) + 1;
     }
 
     private boolean isPlannableOrder(OrderDto order) {
@@ -1038,7 +612,7 @@ public class DeliveryService {
             try {
                 return userClient.getCustomerProfile(userId, authorizationHeader);
             } catch (RuntimeException fallbackException) {
-                LOG.warnf(
+                LOG.errorf(
                         fallbackException,
                         "Could not load customer profile for delivery planning: %s",
                         userId
@@ -1064,84 +638,8 @@ public class DeliveryService {
         return item;
     }
 
-    private Delivery createOpenTestDelivery(
-            String orderId,
-            String customerId,
-            String recipientEmail,
-            LocalDate deliveryDate,
-            List<DeliveryItem> items
-    ) {
-        Delivery delivery = new Delivery();
-        delivery.orderId = orderId;
-        delivery.userId = customerId;
-        delivery.recipientEmail = recipientEmail;
-        delivery.deliveryDate = deliveryDate;
-        delivery.stopOrder = 0;
-        delivery.collected = false;
-        delivery.collectedAt = null;
-        delivery.acceptedAt = null;
-        delivery.deliveredAt = null;
-        delivery.tour = null;
-
-        for (DeliveryItem item : items) {
-            item.delivered = false;
-            delivery.addItem(item);
-        }
-
-        return delivery;
-    }
-
-    private String normalizeOptionalRecipientEmail(String recipientEmail) {
-        return recipientEmail != null && !recipientEmail.isBlank() ? recipientEmail.trim() : null;
-    }
-
-    private DeliveryItem createTestDeliveryItem(
-            String articleNumber,
-            String name,
-            int quantity,
-            String unit
-    ) {
-        DeliveryItem item = new DeliveryItem();
-        item.articleNumber = articleNumber;
-        item.name = name;
-        item.quantity = quantity;
-        item.unit = unit;
-        item.delivered = false;
-        return item;
-    }
-
-    private LocalDate parseTestDeliveryDate(String deliveryDateValue) {
-        if (deliveryDateValue == null || deliveryDateValue.isBlank()) {
-            return LocalDate.now();
-        }
-
-        try {
-            return LocalDate.parse(deliveryDateValue.trim());
-        } catch (RuntimeException exception) {
-            throw new BadRequestException("deliveryDate muss im Format YYYY-MM-DD angegeben werden.");
-        }
-    }
-
     YearMonth parseDeliveryMonth(String monthValue) {
-        try {
-            return YearMonth.parse(monthValue, MONTH_FORMATTER);
-        } catch (DateTimeParseException exception) {
-            throw new BadRequestException("month muss im Format MM.YYYY angegeben werden, z. B. 06.2026.");
-        }
-    }
-
-    private String normalizeDeliveryMonth(String monthValue) {
-        if (isBlank(monthValue)) {
-            throw new BadRequestException("month muss angegeben werden.");
-        }
-
-        return monthValue.trim();
-    }
-
-    private String normalizeOptionalCustomerId(String customerId, String fallbackCustomerId) {
-        return customerId == null || customerId.isBlank()
-                ? fallbackCustomerId
-                : customerId.trim();
+        return DeliveryReportingService.parseDeliveryMonth(monthValue);
     }
 
     void appendNewOrdersToDelivery(Delivery delivery, List<OrderDto> orders) {
@@ -1178,48 +676,12 @@ public class DeliveryService {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    private ArticleDto loadArticle(String articleNumber, Map<String, ArticleDto> articleCache) {
-        if (articleNumber == null || articleNumber.isBlank()) {
-            return null;
-        }
-
-        if (articleCache.containsKey(articleNumber)) {
-            return articleCache.get(articleNumber);
-        }
-
-        ArticleDto article = tryLoadArticle(articleNumber);
-        articleCache.put(articleNumber, article);
-        return article;
-    }
-
     private ArticleDto tryLoadArticle(String articleNumber) {
         try {
             return articleClient.getArticleByProductId(articleNumber);
         } catch (RuntimeException exception) {
             return null;
         }
-    }
-
-    private String valueOrEmpty(String value) {
-        return value == null ? "" : value;
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
-    }
-
-    private String firstNonBlank(String... values) {
-        if (values == null) {
-            return null;
-        }
-
-        for (String value : values) {
-            if (!isBlank(value)) {
-                return value;
-            }
-        }
-
-        return null;
     }
 
     private String valueOrFallback(String value, String fallback) {
@@ -1234,9 +696,6 @@ public class DeliveryService {
     }
 
     private record PlannedOrder(OrderDto order, boolean newArticle) {
-    }
-
-    private record AuthenticatedRestocker(String username, String displayName) {
     }
 
     private static class DeliveryGroup {

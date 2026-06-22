@@ -98,7 +98,7 @@ const deliveryNoteFallbacks = [
 ];
 
 function hashString(value: string) {
-  return value.split("").reduce((hash, char) => hash + char.charCodeAt(0), 0);
+  return value.split("").reduce((hash, char) => hash + (char.codePointAt(0) ?? 0), 0);
 }
 
 export function getRestockerCustomerProfile(customerId: string): RestockerCustomerProfile {

@@ -32,7 +32,7 @@ export function RestockerOrderDetailDialog({
   actions,
   children,
   infoRows,
-}: RestockerOrderDetailDialogProps) {
+}: Readonly<RestockerOrderDetailDialogProps>) {
   return (
     <>
       <button
@@ -42,10 +42,9 @@ export function RestockerOrderDetailDialog({
         onClick={onClose}
       />
 
-      <section
+      <dialog
+        open
         className="subscription-modal restocker-order-dialog"
-        role="dialog"
-        aria-modal="true"
         aria-labelledby="restocker-order-dialog-title"
       >
         <div className="restocker-order-dialog__nav">
@@ -142,7 +141,7 @@ export function RestockerOrderDetailDialog({
         </div>
 
         {actions ? <div className="subscription-modal__actions">{actions}</div> : null}
-      </section>
+      </dialog>
     </>
   );
 }

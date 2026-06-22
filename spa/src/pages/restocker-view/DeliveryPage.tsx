@@ -132,6 +132,30 @@ function formatDeliveryTime(value: DeliveryDetail["deliveryTime"]) {
   return `${String(hours).padStart(2, "0")}:00 Uhr`;
 }
 
+async function loadOptionalUserTask(processInstanceId: string, taskDefinitionKey: string) {
+  const response = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/task/find`, {
+    method: "POST",
+    body: new URLSearchParams({
+      processInstanceId,
+      taskDefinitionKey,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Task konnte nicht geladen werden: ${response.status}`,
+    );
+  }
+
+  const task = (await response.json()) as ProcessTaskLookupResponse;
+
+  if (task.count > 1) {
+    throw new Error("Die Camunda-Task wurde nicht eindeutig gefunden.");
+  }
+
+  return task.id ? { id: task.id } : null;
+}
+
 export function DeliveryPage() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -308,30 +332,6 @@ export function DeliveryPage() {
     }
 
     return { id: task.id };
-  }
-
-  async function loadOptionalUserTask(processInstanceId: string, taskDefinitionKey: string) {
-    const response = await fetch(`${RESTOCKER_TOUR_PROCESS_API_URL}/task/find`, {
-      method: "POST",
-      body: new URLSearchParams({
-        processInstanceId,
-        taskDefinitionKey,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Task konnte nicht geladen werden: ${response.status}`,
-      );
-    }
-
-    const task = (await response.json()) as ProcessTaskLookupResponse;
-
-    if (task.count > 1) {
-      throw new Error("Die Camunda-Task wurde nicht eindeutig gefunden.");
-    }
-
-    return task.id ? { id: task.id } : null;
   }
 
   async function completeUserTask(

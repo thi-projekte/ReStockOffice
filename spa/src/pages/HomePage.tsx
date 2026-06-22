@@ -30,6 +30,37 @@ function createCategoryTiles(products: Product[]): CategoryTile[] {
   }));
 }
 
+function scrollToPageSection(sectionId: string): void {
+  const section = document.getElementById(sectionId);
+
+  if (!section) {
+    return;
+  }
+
+  const headerOffset = 96;
+  const top = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+  window.scrollTo({
+    top,
+    behavior: "smooth",
+  });
+}
+
+function handleSectionJump(event: MouseEvent<HTMLAnchorElement>, sectionId: string): void {
+  event.preventDefault();
+  globalThis.history.replaceState(null, "", `#${sectionId}`);
+  scrollToPageSection(sectionId);
+}
+
+function formatDate(date?: string | null): string {
+  if (!date) return "—";
+
+  return new Intl.DateTimeFormat("de-DE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(date));
+}
+
 export function HomePage(): ReactElement {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,22 +82,11 @@ export function HomePage(): ReactElement {
     }
 
     const sectionId = location.hash.slice(1);
-    const scrollToSection = (): void => {
-      const section = document.getElementById(sectionId);
-
-      if (!section) {
-        return;
-      }
-
-      const headerOffset = 96;
-      const top = section.getBoundingClientRect().top + window.scrollY - headerOffset;
-      window.scrollTo({
-        top,
-        behavior: "smooth",
-      });
+    const scrollToCurrentHashSection = (): void => {
+      scrollToPageSection(sectionId);
     };
 
-    globalThis.requestAnimationFrame(scrollToSection);
+    globalThis.requestAnimationFrame(scrollToCurrentHashSection);
   }, [location.hash, products.length]);
 
   const topCategories = createCategoryTiles(products);
@@ -81,24 +101,6 @@ export function HomePage(): ReactElement {
   const reorderProducts = getRandomProducts(products, 12);
   const officeProducts = getRandomProducts(products, 12);
 
-  function handleSectionJump(event: MouseEvent<HTMLAnchorElement>, sectionId: string): void {
-    event.preventDefault();
-    globalThis.history.replaceState(null, "", `#${sectionId}`);
-
-    const section = document.getElementById(sectionId);
-
-    if (!section) {
-      return;
-    }
-
-    const headerOffset = 96;
-    const top = section.getBoundingClientRect().top + window.scrollY - headerOffset;
-    window.scrollTo({
-      top,
-      behavior: "smooth",
-    });
-  }
-
   const [overview, setOverview] = useState<CustomerDeliveryOverview | null>(null);
   const token = keycloak.token;
   const customerId = keycloak.tokenParsed?.sub;
@@ -111,16 +113,6 @@ export function HomePage(): ReactElement {
       token,
     }).then(setOverview);
   }, [customerId, token]);
-
-  function formatDate(date?: string | null): string {
-    if (!date) return "—";
-
-    return new Intl.DateTimeFormat("de-DE", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(date));
-  }
 
   return (
     <div className="home-showcase">

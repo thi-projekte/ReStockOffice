@@ -7,6 +7,8 @@ import de.restockoffice.domain.Restocker;
 import de.restockoffice.dto.CustomerProfileResponse;
 import de.restockoffice.dto.RestockerCustomerDTO;
 import de.restockoffice.dto.RestockerProfileResponse;
+import de.restockoffice.repository.CustomerRepository;
+import de.restockoffice.repository.RestockerRepository;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
@@ -20,7 +22,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
@@ -60,6 +61,12 @@ public class UserResource {
     // Identity and Roles
     @Inject
     SecurityIdentity securityIdentity;
+
+    @Inject
+    CustomerRepository customerRepository;
+
+    @Inject
+    RestockerRepository restockerRepository;
 
     @Inject
     TransactionSynchronizationRegistry transactionSynchronizationRegistry;
@@ -169,7 +176,7 @@ public class UserResource {
     @Path("customers")
     @RolesAllowed("admin")
     public List<Customer> getAllCustomers(){
-        return Customer.listAll();
+        return customerRepository.listAll();
     }
 
     // All Restockers (Admin Only)
@@ -177,7 +184,7 @@ public class UserResource {
     @Path("restockers")
     @RolesAllowed("admin")
     public List<Restocker> getAllRestockers(){
-        return Restocker.listAll();
+        return restockerRepository.listAll();
     }
 
     // Create a new Customer
@@ -188,7 +195,7 @@ public class UserResource {
         String userId = getLoggedInUserId();
         newCustomer.userId = userId;
 
-        if (Customer.findById(userId) != null) {
+        if (customerRepository.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
@@ -206,7 +213,7 @@ public class UserResource {
         String userId = getLoggedInUserId();
         String newImageUrl = "https://hel1.your-objectstorage.com/restockoffice/users/" + userId + ".jpg";
         boolean foundAndUpdated = false;
-        Customer customer = Customer.findById(userId);
+        Customer customer = customerRepository.findById(userId);
 
         if (customer != null) {
             customer.profilePictureUrl = newImageUrl;
@@ -216,7 +223,7 @@ public class UserResource {
         }
 
         if (!foundAndUpdated) {
-            Restocker restocker = Restocker.findById(userId);
+            Restocker restocker = restockerRepository.findById(userId);
             if (restocker != null) {
                 restocker.profilePictureUrl = newImageUrl;
                 restocker.updatedAt = LocalDateTime.now();
@@ -242,7 +249,7 @@ public class UserResource {
         String userId = getLoggedInUserId();
         newRestocker.userId = userId;
 
-        if (Restocker.findById(userId) != null) {
+        if (restockerRepository.findById(userId) != null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Profil existiert bereits.").build();
         }
@@ -333,7 +340,7 @@ public class UserResource {
     }
 
     private Customer findCustomerOrThrow(String userId) {
-        Customer user = Customer.findById(userId);
+        Customer user = customerRepository.findById(userId);
 
         if (user == null) {
             throw new WebApplicationException("Customer-Profil nicht gefunden.", 404);
@@ -342,7 +349,7 @@ public class UserResource {
     }
 
     private Restocker findRestockerOrThrow(String userId) {
-        Restocker user = Restocker.findById(userId);
+        Restocker user = restockerRepository.findById(userId);
 
         if (user == null) {
             throw new WebApplicationException("Restocker-Profil nicht gefunden.", 404);
@@ -406,13 +413,13 @@ public class UserResource {
                     HttpResponse.BodyHandlers.ofString()
             );
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                LOG.warnf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.statusCode(), response.body());
+                LOG.errorf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.statusCode(), response.body());
             }
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            LOG.warnf(exception, "Delivery replan request interrupted for customer %s", customerId);
+            LOG.errorf(exception, "Delivery replan request interrupted for customer %s", customerId);
         } catch (IOException | RuntimeException exception) {
-            LOG.warnf(exception, "Delivery replan request failed for customer %s", customerId);
+            LOG.errorf(exception, "Delivery replan request failed for customer %s", customerId);
         }
     }
 

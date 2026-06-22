@@ -22,48 +22,39 @@ export function RestockerOrderCard({
   onSecondaryAction,
 }: Readonly<RestockerOrderCardProps>) {
   return (
-    <article
-      className="restocker-order-card"
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onClick();
-        }
-      }}
-    >
-      <div className="restocker-order-card__head">
-        <span className="restocker-order-card__id">#{order.orderId}</span>
-        <span className="restocker-order-card__articles">{order.articleCount} Artikel</span>
-      </div>
+    <article className="restocker-order-card">
+      <button className="restocker-order-card__main-action" type="button" onClick={onClick}>
+        <div className="restocker-order-card__head">
+          <span className="restocker-order-card__id">#{order.orderId}</span>
+          <span className="restocker-order-card__articles">{order.articleCount} Artikel</span>
+        </div>
 
-      <div className="restocker-order-card__body">
-        <strong className="restocker-order-card__company-name">{order.companyName}</strong>
-        <span>{order.addressLine1}</span>
-        <span>
-          {order.postalCode} {order.city}
-        </span>
-      </div>
+        <div className="restocker-order-card__body">
+          <strong className="restocker-order-card__company-name">{order.companyName}</strong>
+          <span>{order.addressLine1}</span>
+          <span>
+            {order.postalCode} {order.city}
+          </span>
+        </div>
 
-      <div className="restocker-order-card__delivery">
-        <div className="restocker-order-card__delivery-date">
-          <span className="restocker-order-card__delivery-label">Auslieferung</span>
+        <div className="restocker-order-card__delivery">
+          <div className="restocker-order-card__delivery-date">
+            <span className="restocker-order-card__delivery-label">Auslieferung</span>
 
-          <div className="restocker-order-card__delivery-main">
-            <strong>{order.deliveryDate}</strong>
-            <span className="restocker-order-card__delivery-relative">
-              {formatRelativeDelivery(order.deliveryDate)}
-            </span>
+            <div className="restocker-order-card__delivery-main">
+              <strong>{order.deliveryDate}</strong>
+              <span className="restocker-order-card__delivery-relative">
+                {formatRelativeDelivery(order.deliveryDate)}
+              </span>
+            </div>
+          </div>
+
+          <div className="restocker-order-card__delivery-window">
+            <span>Lieferfenster</span>
+            <strong>{formatDeliveryWindow(order.deliveryTime)}</strong>
           </div>
         </div>
-
-        <div className="restocker-order-card__delivery-window">
-          <span>Lieferfenster</span>
-          <strong>{formatDeliveryWindow(order.deliveryTime)}</strong>
-        </div>
-      </div>
+      </button>
 
       <div className="restocker-order-card__footer">
         {statusLabel ? (

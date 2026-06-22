@@ -2,6 +2,7 @@ package de.restockoffice.service;
 
 import de.restockoffice.api.InvoiceRequest;
 import de.restockoffice.domain.InvoiceEntity;
+import de.restockoffice.repository.InvoiceRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -20,12 +21,18 @@ public class InvoiceService {
     // Service für Generierung der PDF mittels OpenHTMLtoPDF und ZUGFeRD Konvertierung mittels MUSTANG
     @Inject
     EntityManager em;
+
     @Inject
     PDFGenerator pdfGenerator;
+
     @Inject
     EBillingService eBillingService;
+
     @Inject
     ResendMailClient mailClient;
+
+    @Inject
+    InvoiceRepository invoiceRepository;
 
     @Transactional
     public String createAndPersistInvoice(InvoiceRequest request) {
@@ -61,7 +68,7 @@ public class InvoiceService {
 
         InvoiceEntity entity = getInvoiceEntity(request, generatedInvoiceNumber, eBillingPdf);
 
-        entity.persist();
+        invoiceRepository.persist(entity);
         log.info("Invoice {} successfully persisted to database.", generatedInvoiceNumber);
 
         return generatedInvoiceNumber;
@@ -86,13 +93,12 @@ public class InvoiceService {
     public void sendInvoiceViaEmail(InvoiceRequest request) {
         log.info("Fetching invoice {} from DB to send email to {}", request.invoiceNumber(), request.recipientEmail());
 
-        InvoiceEntity entity = InvoiceEntity
-                .find("invoiceNumber", request.invoiceNumber())
-                .firstResult();
+        InvoiceEntity entity = invoiceRepository.findByInvoiceNumber(request.invoiceNumber())
+                .orElseThrow(() -> new WebApplicationException("Rechnung nicht gefunden.", 404));
 
-        if (entity == null || entity.getZugferdPdf() == null) {
-            log.error("Cannot send email: Invoice {} not found in database!", request.invoiceNumber());
-            throw new WebApplicationException("Rechnung für den Mailversand nicht in der Datenbank gefunden.", 404);
+        if (entity.getZugferdPdf() == null) {
+            log.error("PDF Daten fehlen für: {}", request.invoiceNumber());
+            throw new WebApplicationException("PDF Daten fehlen.", 404);
         }
 
         // Versenden der Mail mit dem PDF aus der Datenbank
@@ -112,11 +118,11 @@ public class InvoiceService {
         mailClient.sendInvoiceMail(request.recipientEmail(), eBillingPdf, request);
 
         InvoiceEntity entity = getInvoiceEntity(request, request.invoiceNumber(), eBillingPdf);
-        entity.persist();
+        invoiceRepository.persist(entity);
     }
 
     @jakarta.transaction.Transactional
     public List<InvoiceEntity> getInvoicesForAccount(String userId) {
-        return InvoiceEntity.list("userId", userId);
+        return invoiceRepository.findByUserId(userId);
     }
 }

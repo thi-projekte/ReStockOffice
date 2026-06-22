@@ -621,13 +621,8 @@ function isCompletedMarketplaceOrder(order: RestockMarketplaceOrder) {
   return order.assignment?.status === "completed";
 }
 
-function filterCompletedMarketplaceOrders(
-  orders: RestockMarketplaceOrder[],
-  includeCompletedDeliveries: boolean,
-) {
-  return includeCompletedDeliveries
-    ? orders
-    : orders.filter((order) => !isCompletedMarketplaceOrder(order));
+function excludeCompletedMarketplaceOrders(orders: RestockMarketplaceOrder[]) {
+  return orders.filter((order) => !isCompletedMarketplaceOrder(order));
 }
 
 function mergeDeliveryDetailsById(deliveryDetails: DeliveryDetail[]) {
@@ -1310,13 +1305,13 @@ export async function loadAssignedRestockOrders({
       ...todayTourDeliveryDetails,
       ...completedDeliveryDetails,
     ]);
-    const marketplaceOrders = filterCompletedMarketplaceOrders(
-      await enrichMarketplaceOrdersWithCustomerProfiles(
-        deriveMarketplaceOrdersFromDeliveryDetails(deliveryDetails),
-        resolvedToken,
-      ),
-      includeCompletedDeliveries,
+    const enrichedMarketplaceOrders = await enrichMarketplaceOrdersWithCustomerProfiles(
+      deriveMarketplaceOrdersFromDeliveryDetails(deliveryDetails),
+      resolvedToken,
     );
+    const marketplaceOrders = includeCompletedDeliveries
+      ? enrichedMarketplaceOrders
+      : excludeCompletedMarketplaceOrders(enrichedMarketplaceOrders);
 
     return {
       orders: marketplaceOrders,
@@ -1335,16 +1330,16 @@ export async function loadAssignedRestockOrders({
       restockerName,
     );
     const orders = await fetchAllOrders(resolvedToken);
-    const marketplaceOrders = filterCompletedMarketplaceOrders(
-      deriveMarketplaceOrders(
-        orders,
-        productsById,
-        deliveryDetailsByCustomerId,
-        false,
-        assignmentsByOrderKey,
-      ).filter((order) => assignmentsByOrderKey.has(order.orderKey)),
-      includeCompletedDeliveries,
-    );
+    const derivedMarketplaceOrders = deriveMarketplaceOrders(
+      orders,
+      productsById,
+      deliveryDetailsByCustomerId,
+      false,
+      assignmentsByOrderKey,
+    ).filter((order) => assignmentsByOrderKey.has(order.orderKey));
+    const marketplaceOrders = includeCompletedDeliveries
+      ? derivedMarketplaceOrders
+      : excludeCompletedMarketplaceOrders(derivedMarketplaceOrders);
 
     return {
       orders: marketplaceOrders,
@@ -1354,12 +1349,12 @@ export async function loadAssignedRestockOrders({
       ),
     };
   } catch {
-    const deliveryBackedOrders = filterCompletedMarketplaceOrders(
-      deriveMarketplaceOrdersFromDeliveryDetails(
-        await loadDeliveryDetailsForRestocker(resolvedToken, restockerName),
-      ),
-      includeCompletedDeliveries,
+    const derivedDeliveryBackedOrders = deriveMarketplaceOrdersFromDeliveryDetails(
+      await loadDeliveryDetailsForRestocker(resolvedToken, restockerName),
     );
+    const deliveryBackedOrders = includeCompletedDeliveries
+      ? derivedDeliveryBackedOrders
+      : excludeCompletedMarketplaceOrders(derivedDeliveryBackedOrders);
 
     if (deliveryBackedOrders.length > 0) {
       return {
@@ -1369,16 +1364,16 @@ export async function loadAssignedRestockOrders({
       };
     }
 
-    const demoOrders = filterCompletedMarketplaceOrders(
-      deriveMarketplaceOrders(
-        createDemoRestockOrders(),
-        productsById,
-        undefined,
-        true,
-        assignmentsByOrderKey,
-      ).filter((order) => assignmentsByOrderKey.has(order.orderKey)),
-      includeCompletedDeliveries,
-    );
+    const derivedDemoOrders = deriveMarketplaceOrders(
+      createDemoRestockOrders(),
+      productsById,
+      undefined,
+      true,
+      assignmentsByOrderKey,
+    ).filter((order) => assignmentsByOrderKey.has(order.orderKey));
+    const demoOrders = includeCompletedDeliveries
+      ? derivedDemoOrders
+      : excludeCompletedMarketplaceOrders(derivedDemoOrders);
 
     return {
       orders: demoOrders,

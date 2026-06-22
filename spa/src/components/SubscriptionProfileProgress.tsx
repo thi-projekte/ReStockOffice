@@ -27,19 +27,12 @@ export function SubscriptionProfileProgress({
             </span>
         </div>
 
-        <div
+        <progress
           className="subscription-profile-progress__bar"
-          role="progressbar"
           aria-label="Profilfortschritt"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={status.completionPercentage}
-        >
-          <div
-            className="subscription-profile-progress__fill"
-            style={{width: `${status.completionPercentage}%`}}
-          />
-        </div>
+          value={status.completionPercentage}
+          max={100}
+        />
 
         {status.missingFields.length > 0 ? (
           <p className="subscription-profile-progress__missing">

@@ -1,21 +1,22 @@
 package de.restockoffice;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import de.restockoffice.mail.MailDataEnrichmentService;
+import org.cibseven.bpm.engine.delegate.DelegateExecution;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import org.cibseven.bpm.engine.delegate.DelegateExecution;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class MailDataEnrichmentServiceTest {
 
@@ -59,7 +60,7 @@ class MailDataEnrichmentServiceTest {
 
         assertThat(variables)
                 .containsEntry("deliveryDay", "Montag")
-                .containsEntry("deliveryLocation", "Hauptstrasse 7, 12345 Berlin");
+                .containsEntry("deliveryLocation", "Hauptstraße 7, 12345 Berlin");
     }
 
     @Test
@@ -234,7 +235,7 @@ class MailDataEnrichmentServiceTest {
                     {
                       "email": "customer@example.com",
                       "companyName": "Test GmbH",
-                      "street": "Hauptstrasse",
+                      "street": "Hauptstraße",
                       "houseNumber": "7",
                       "postalCode": "12345",
                       "city": "Berlin",
@@ -256,7 +257,7 @@ class MailDataEnrichmentServiceTest {
                       "userId": "customer-1",
                       "recipientEmail": "customer@example.com",
                       "companyName": "Test GmbH",
-                      "street": "Hauptstrasse",
+                      "street": "Hauptstraße",
                       "houseNumber": "7",
                       "postalCode": "12345",
                       "city": "Berlin",
