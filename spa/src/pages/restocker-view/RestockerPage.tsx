@@ -5,6 +5,7 @@
 // - Anzeige Restocker zugeordnete Lieferungen
 // - Anzeige der monatlichen Kennzahlen des Restockers (geplant / erledigte Lieferungen, Verdienst, Artikel etc.)
 
+import "../../styles/restocker-home.css";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { acceptRestockOrder, loadAssignedRestockOrders, loadOpenRestockOrders } from "../../services/orders";
