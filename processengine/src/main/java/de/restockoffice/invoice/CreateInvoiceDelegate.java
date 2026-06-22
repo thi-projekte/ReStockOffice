@@ -6,6 +6,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component("createInvoiceDelegate")
@@ -50,6 +51,8 @@ public class CreateInvoiceDelegate implements JavaDelegate {
     }
 
     private Map<String, Object> buildRequest(InvoicePreparationData data) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
         Map<String, Object> req = new HashMap<>();
         req.put("userId", data.userId());
         req.put("recipientEmail", data.email());
@@ -57,8 +60,8 @@ public class CreateInvoiceDelegate implements JavaDelegate {
         req.put("recipientStreet", data.street());
         req.put("recipientZip", data.postalCode());
         req.put("recipientCity", data.city());
-        req.put("issueDate", LocalDate.now().toString());
-        req.put("dueDate", LocalDate.now().plusDays(14).toString());
+        req.put("issueDate", LocalDate.now().format(formatter));
+        req.put("dueDate", LocalDate.now().plusDays(14).format(formatter));
         req.put("netAmount", data.totalNet());
         req.put("orderItems", data.orderItems());
         return req;
