@@ -17,10 +17,20 @@ function formatInterval(intervalCount: number): string {
   return `Alle ${intervalCount} Woche${intervalCount === 1 ? "" : "n"}`;
 }
 
+function getSubscriptionTargetElement(): HTMLElement | null {
+  const isMobile = globalThis.matchMedia("(max-width: 720px)").matches;
+
+  if (isMobile) {
+    return document.querySelector(".hamburger-btn") as HTMLElement | null;
+  }
+
+  return document.querySelector('a[href="/subscription"]') as HTMLElement | null;
+}
+
 export function SubscriptionDialog({
-                                     product,
-                                     selectedItem,
-                                     open,
+                                      product,
+                                      selectedItem,
+                                      open,
                                      isProfileComplete,
                                      onClose,
                                      onConfirm,
@@ -48,16 +58,6 @@ export function SubscriptionDialog({
   const hasInvalidQuantity = quantity < 1 || Number.isNaN(quantity);
   const isProfileIncomplete = !isProfileComplete;
   const canConfirmChanges = !isProfileIncomplete && !hasInvalidQuantity;
-
-  function getSubscriptionTargetElement(): HTMLElement | null {
-    const isMobile = globalThis.matchMedia("(max-width: 720px)").matches;
-
-    if (isMobile) {
-      return document.querySelector(".hamburger-btn") as HTMLElement | null;
-    }
-
-    return document.querySelector('a[href="/subscription"]') as HTMLElement | null;
-  }
 
   async function animateDialogIntoHeader(): Promise<void> {
     const modalElement = modalRef.current;

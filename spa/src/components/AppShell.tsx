@@ -442,9 +442,8 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
     showBrandColumn: boolean,
   ): ReactElement {
     return (
-      <div
+      <fieldset
         className={`search-quick-table ${isHeader ? "search-quick-table--floating" : ""} ${showBrandColumn ? "search-quick-table--two-cols" : "search-quick-table--single-col"}`}
-        role="group"
         aria-label="Schnellauswahl"
       >
         <div className="search-quick-column">
@@ -480,7 +479,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             ))}
           </div>
         ) : null}
-      </div>
+      </fieldset>
     );
   }
 
