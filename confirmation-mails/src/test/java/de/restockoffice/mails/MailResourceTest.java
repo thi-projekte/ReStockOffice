@@ -69,6 +69,8 @@ class MailResourceTest {
                 .body(not(containsString("4 Pack")))
                 .body(containsString("Deabonniert"))
                 .body(not(containsString("Deabonniertx")))
+                .body(not(containsString("Nächste Lieferung")))
+                .body(not(containsString("04.05.2026")))
                 .body(containsString("<style>"));
     }
 
