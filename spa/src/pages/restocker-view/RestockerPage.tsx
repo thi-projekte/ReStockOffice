@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { acceptRestockOrder, loadOpenRestockOrders, RestockMarketplaceLoadResult } from "../../services/orders";
+import { acceptRestockOrder, loadAssignedRestockOrders, loadOpenRestockOrders } from "../../services/orders";
 import { useAuth } from "../../auth/AuthProvider";
 import type { RestockMarketplaceOrder, RestockMarketplaceLoadResult } from "../../types/shop";
 import { getDaysUntilDelivery, formatDeliveryWindow } from "./restockerOrderUi";
