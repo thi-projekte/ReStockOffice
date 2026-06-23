@@ -47,6 +47,7 @@ import java.util.Objects;
 public class UserResource {
     private static final Logger LOG = Logger.getLogger(UserResource.class);
     private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String ZEITZONE = "Europe/Berlin";
 
     private HttpClient httpClient;
 
@@ -200,7 +201,7 @@ public class UserResource {
                     .entity("Profil existiert bereits.").build();
         }
 
-        newCustomer.createdAt = LocalDateTime.now();
+        newCustomer.createdAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
         newCustomer.persist();
 
         return Response.created(URI.create("customer/me")).entity(newCustomer).build();
@@ -217,7 +218,7 @@ public class UserResource {
 
         if (customer != null) {
             customer.profilePictureUrl = newImageUrl;
-            customer.updatedAt = LocalDateTime.now();
+            customer.updatedAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
             customer.persist();
             foundAndUpdated = true;
         }
@@ -226,7 +227,7 @@ public class UserResource {
             Restocker restocker = restockerRepository.findById(userId);
             if (restocker != null) {
                 restocker.profilePictureUrl = newImageUrl;
-                restocker.updatedAt = LocalDateTime.now();
+                restocker.updatedAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
                 restocker.persist();
                 foundAndUpdated = true;
             }
@@ -254,7 +255,7 @@ public class UserResource {
                     .entity("Profil existiert bereits.").build();
         }
 
-        newRestocker.createdAt = LocalDateTime.now();
+        newRestocker.createdAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
         newRestocker.persist();
 
         return Response.created(URI.create("restocker/me")).entity(newRestocker).build();
@@ -292,7 +293,7 @@ public class UserResource {
         }
 
         if (hasChanged) {
-            entity.updatedAt = LocalDateTime.now();
+            entity.updatedAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
         }
 
         if (deliveryDayChanged) {
@@ -333,7 +334,7 @@ public class UserResource {
         }
 
         if (hasChanged) {
-            entity.updatedAt = LocalDateTime.now();
+            entity.updatedAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
         }
 
         return Response.ok(entity).build();

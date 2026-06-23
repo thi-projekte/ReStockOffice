@@ -29,6 +29,7 @@ public class DeliveryService {
     private static final Logger LOG = Logger.getLogger(DeliveryService.class);
     static final int PLANNING_HORIZON_DAYS = 14;
     private static final String DEFAULT_UNIT = "Stück";
+    private static final String ZEITZONE = "Europe/Berlin";
 
     private final DeliveryReportingService reportingService;
 
@@ -86,7 +87,7 @@ public class DeliveryService {
     public List<DeliveryDetailDto> getOpenDeliveries(String authorizationHeader) {
         ensurePlanningHorizon(authorizationHeader);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of(ZEITZONE));
         LocalDate horizonEnd = today.plusDays(PLANNING_HORIZON_DAYS);
         return detailAssembler.toDetailDtos(Delivery.findOpenBetween(today, horizonEnd), authorizationHeader);
     }
@@ -122,7 +123,7 @@ public class DeliveryService {
         ensurePlanningHorizon(authorizationHeader);
 
         return detailAssembler.toDetailDtos(
-                Delivery.findAssignedToRestockerFrom(restockerName, LocalDate.now()),
+                Delivery.findAssignedToRestockerFrom(restockerName, LocalDate.now(ZoneId.of(ZEITZONE))),
                 authorizationHeader
         );
     }
@@ -132,7 +133,7 @@ public class DeliveryService {
         String normalizedCustomerId = normalizeRequiredCustomerId(customerId);
         lockPlanningHorizon();
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of(ZEITZONE));
         LocalDate horizonEnd = today.plusDays(PLANNING_HORIZON_DAYS);
         deleteFutureFreeDeliveries(normalizedCustomerId, today, horizonEnd);
 
@@ -186,7 +187,7 @@ public class DeliveryService {
     private void ensurePlanningHorizon(String authorizationHeader) {
         lockPlanningHorizon();
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of(ZEITZONE));
         LocalDate horizonEnd = today.plusDays(PLANNING_HORIZON_DAYS);
         List<OrderDto> activeOrders = orderClient.getActiveOrders(authorizationHeader);
         if (activeOrders == null || activeOrders.isEmpty()) {
@@ -562,7 +563,7 @@ public class DeliveryService {
         return Tour.find(
                 "restockerName = ?1 and tourDate = ?2 and endTime is null",
                 restockerName,
-                LocalDate.now()
+                LocalDate.now(ZoneId.of(ZEITZONE))
         ).firstResult();
     }
 

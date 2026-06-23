@@ -49,6 +49,8 @@ public class Delivery extends PanacheEntityBase {
     @Column(name = "accepted_at")
     public LocalDateTime acceptedAt;
 
+    private static final String ZEITZONE = "Europe/Berlin";
+
     @ManyToOne
     @JoinColumn(name = "tour_id")
     @JsonIgnore
@@ -71,16 +73,16 @@ public class Delivery extends PanacheEntityBase {
 
     public void markCollected() {
         this.collected = true;
-        this.collectedAt = LocalDateTime.now();
+        this.collectedAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
     }
 
     public void markAccepted(Tour tour) {
         this.tour = tour;
-        this.acceptedAt = LocalDateTime.now();
+        this.acceptedAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
     }
 
     public void markDelivered() {
-        this.deliveredAt = LocalDateTime.now();
+        this.deliveredAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
     }
 
     public boolean isDelivered() {

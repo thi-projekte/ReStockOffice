@@ -69,6 +69,9 @@ public class MailDataEnrichmentService {
     @Value("${restockoffice.app-base-url:https://app.restockoffice.de}")
     private String appBaseUrl;
 
+    private String deliveryday ="deliveryDay";
+    private String suppliername = "supplierName";
+
     public void enrichAboConfirmation(DelegateExecution execution) {
         List<EnrichmentContext> contexts = loadAboConfirmationContexts(execution);
         EnrichmentContext context = contexts.isEmpty() ? loadContext(execution) : contexts.get(0);
@@ -79,8 +82,8 @@ public class MailDataEnrichmentService {
         LocalDate deliveryDate = resolveDeliveryDate(context);
 
         setIfBlank(execution, "orderDate", formatDateTime(resolveOrderCreatedAt(order)));
-        setIfPresent(execution, "deliveryDay", resolveAboDeliveryDay(execution, context));
-        setIfPresent(execution, "deliveryLocation", resolveDeliveryLocation(context.delivery(), context.user()));
+        setIfPresent(execution, deliveryday, resolveAboDeliveryDay(execution, context));
+        setIfPresent(execution, deliveryday, resolveDeliveryLocation(context.delivery(), context.user()));
         setIfBlank(execution, "changeDeadline", formatDateTime(deliveryDate.minusDays(3).atTime(12, 0)));
         setIfBlank(execution, "manageSubscriptionUrl", appBaseUrl + "/subscription");
         setIfBlank(execution, "itemIntervalDescription", formatInterval(resolveInterval(execution, order)));
@@ -101,9 +104,9 @@ public class MailDataEnrichmentService {
         setDeliveryItemsVariable(execution, context.delivery());
 
         LocalDate deliveryDate = resolveDeliveryDate(context);
-        execution.setVariable("daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), deliveryDate))));
-        execution.setVariable("deliveryDay", formatDayName(deliveryDate));
-        execution.setVariable("supplierName", firstNonBlank(restockerDisplayName(context.delivery()), UNASSIGNED_RESTOCKER_LABEL));
+        execution.setVariable("daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(ZoneId.of(BERLIN)), deliveryDate))));
+        execution.setVariable(deliveryday, formatDayName(deliveryDate));
+        execution.setVariable(suppliername, firstNonBlank(restockerDisplayName(context.delivery()), UNASSIGNED_RESTOCKER_LABEL));
         execution.setVariable("deliveryInstructions", firstNonBlank(userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
         execution.setVariable("deliveryDetailsUrl", appBaseUrl + "/restocker/deliveries");
     }
@@ -112,9 +115,9 @@ public class MailDataEnrichmentService {
         EnrichmentContext context = loadContext(execution);
         setDeliveryMailVariables(execution, context);
 
-        execution.setVariable("supplierName", firstNonBlank(
+        execution.setVariable(suppliername, firstNonBlank(
                 restockerDisplayName(context.delivery()),
-                stringVariable(execution, "supplierName"),
+                stringVariable(execution, suppliername),
                 UNASSIGNED_RESTOCKER_LABEL
         ));
         setDeliveryItemsVariable(execution, context.delivery());
@@ -534,7 +537,7 @@ public class MailDataEnrichmentService {
         LocalDate firstDeliveryDate = firstDateWithMinimumLeadTime(anchorDate, deliveryDay);
         int intervalWeeks = order != null && order.interval != null && order.interval > 0 ? order.interval : 1;
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of(BERLIN));
         while (firstDeliveryDate.isBefore(today)) {
             firstDeliveryDate = firstDeliveryDate.plusWeeks(intervalWeeks);
         }
@@ -598,7 +601,7 @@ public class MailDataEnrichmentService {
     }
 
     private LocalDateTime resolveOrderCreatedAt(OrderDto order) {
-        return order != null && order.createdAt != null ? order.createdAt : LocalDateTime.now();
+        return order != null && order.createdAt != null ? order.createdAt : LocalDateTime.now(ZoneId.of(BERLIN));
     }
 
     private int resolveQuantity(DelegateExecution execution, OrderDto order) {
