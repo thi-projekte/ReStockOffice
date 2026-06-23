@@ -2,6 +2,8 @@ name: CI build restocker-deliveries
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "restocker-deliveries-v*"
 

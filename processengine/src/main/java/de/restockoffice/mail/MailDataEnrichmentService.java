@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import de.restockoffice.delivery.DeliveryMonitoringItem;
 import org.cibseven.bpm.engine.delegate.DelegateExecution;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -104,7 +104,8 @@ public class MailDataEnrichmentService {
         setDeliveryItemsVariable(execution, context.delivery());
 
         LocalDate deliveryDate = resolveDeliveryDate(context);
-        execution.setVariable("daysUntilDelivery", String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(ZoneId.of(BERLIN)), deliveryDate))));
+        execution.setVariable("daysUntilDelivery",
+                String.valueOf(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(BERLIN), deliveryDate))));
         execution.setVariable(deliveryday, formatDayName(deliveryDate));
         execution.setVariable(suppliername, firstNonBlank(restockerDisplayName(context.delivery()), UNASSIGNED_RESTOCKER_LABEL));
         execution.setVariable("deliveryInstructions", firstNonBlank(userDeliveryHint(context.user()), "Bitte vor Ort nach Absprache abstellen."));
@@ -537,7 +538,7 @@ public class MailDataEnrichmentService {
         LocalDate firstDeliveryDate = firstDateWithMinimumLeadTime(anchorDate, deliveryDay);
         int intervalWeeks = order != null && order.interval != null && order.interval > 0 ? order.interval : 1;
 
-        LocalDate today = LocalDate.now(ZoneId.of(BERLIN));
+        LocalDate today = LocalDate.now(BERLIN);
         while (firstDeliveryDate.isBefore(today)) {
             firstDeliveryDate = firstDeliveryDate.plusWeeks(intervalWeeks);
         }
@@ -601,7 +602,7 @@ public class MailDataEnrichmentService {
     }
 
     private LocalDateTime resolveOrderCreatedAt(OrderDto order) {
-        return order != null && order.createdAt != null ? order.createdAt : LocalDateTime.now(ZoneId.of(BERLIN));
+        return order != null && order.createdAt != null ? order.createdAt : LocalDateTime.now(BERLIN);
     }
 
     private int resolveQuantity(DelegateExecution execution, OrderDto order) {
