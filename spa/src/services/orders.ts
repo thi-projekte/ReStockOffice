@@ -531,9 +531,13 @@ async function enrichMarketplaceOrdersWithCustomerProfiles(
 
 function deriveMarketplaceOrdersFromDeliveryDetails(
   deliveryDetails: DeliveryDetail[],
+  options: { includePastDeliveries?: boolean } = {},
 ): RestockMarketplaceOrder[] {
   return deliveryDetails
-    .filter((detail) => !isDeliveryDateInPast(detail.deliveryDate))
+    .filter(
+      (detail) =>
+        options.includePastDeliveries || !isDeliveryDateInPast(detail.deliveryDate),
+    )
     .map((detail) => {
       const deliveryTime = formatMarketplaceDeliveryTime(detail.deliveryTime);
       const deliveryNotes = normalizeDeliveryNotes(detail.deliveryHint);
@@ -623,6 +627,15 @@ function isCompletedMarketplaceOrder(order: RestockMarketplaceOrder) {
 
 function excludeCompletedMarketplaceOrders(orders: RestockMarketplaceOrder[]) {
   return orders.filter((order) => !isCompletedMarketplaceOrder(order));
+}
+
+function mergeMarketplaceOrdersByKey(orders: RestockMarketplaceOrder[]) {
+  return Array.from(
+    orders.reduce((lookup, order) => {
+      lookup.set(order.orderKey, order);
+      return lookup;
+    }, new Map<string, RestockMarketplaceOrder>()).values(),
+  );
 }
 
 function mergeDeliveryDetailsById(deliveryDetails: DeliveryDetail[]) {
@@ -1300,13 +1313,24 @@ export async function loadAssignedRestockOrders({
         isCompletedDeliveryForRestocker(detail, restockerIdentifierCandidates),
       )
       : [];
-    const deliveryDetails = mergeDeliveryDetailsById([
+    const currentDeliveryDetails = mergeDeliveryDetailsById([
       ...assignedDeliveryDetails,
       ...todayTourDeliveryDetails,
-      ...completedDeliveryDetails,
+    ]);
+    const currentMarketplaceOrders = deriveMarketplaceOrdersFromDeliveryDetails(
+      currentDeliveryDetails,
+    );
+    const completedMarketplaceOrders = includeCompletedDeliveries
+      ? deriveMarketplaceOrdersFromDeliveryDetails(completedDeliveryDetails, {
+        includePastDeliveries: true,
+      })
+      : [];
+    const derivedMarketplaceOrders = mergeMarketplaceOrdersByKey([
+      ...currentMarketplaceOrders,
+      ...completedMarketplaceOrders,
     ]);
     const enrichedMarketplaceOrders = await enrichMarketplaceOrdersWithCustomerProfiles(
-      deriveMarketplaceOrdersFromDeliveryDetails(deliveryDetails),
+      derivedMarketplaceOrders,
       resolvedToken,
     );
     const marketplaceOrders = includeCompletedDeliveries
