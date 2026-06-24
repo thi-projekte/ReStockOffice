@@ -1,11 +1,11 @@
-import {type ReactElement, useEffect, useState} from "react";
-import {Link, Navigate, useOutletContext, useParams} from "react-router-dom";
-import {ProductGrid} from "../components/ProductGrid";
+import { type ReactElement, useEffect, useState } from "react";
+import { Link, Navigate, useOutletContext, useParams } from "react-router-dom";
+import { ProductGrid } from "../components/ProductGrid";
 import {
   getCategoryNameBySlug,
   getProductsByCategorySlug,
 } from "../services/products";
-import type {Product, RestockOrderWithProduct} from "../types/shop";
+import type { Product, RestockOrderWithProduct } from "../types/shop";
 
 interface OutletContext {
   isLoggedIn: boolean;
@@ -20,8 +20,8 @@ interface OutletContext {
 }
 
 export function CategoryPage(): ReactElement {
-  const {isLoggedIn} = useOutletContext<OutletContext>();
-  const {categorySlug} = useParams();
+  const { isLoggedIn } = useOutletContext<OutletContext>();
+  const { categorySlug } = useParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryName, setCategoryName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -47,11 +47,11 @@ export function CategoryPage(): ReactElement {
   }, [categorySlug]);
 
   if (!isLoggedIn) {
-    return <Navigate to="/login" replace/>;
+    return <Navigate to="/login" replace />;
   }
 
   if (!categorySlug) {
-    return <Navigate to="/" replace/>;
+    return <Navigate to="/" replace />;
   }
 
   if (isLoading) {
@@ -81,7 +81,10 @@ export function CategoryPage(): ReactElement {
             <span className="eyebrow">Kategorie</span>
             <h1>{categoryName}</h1>
             <p className="section-copy">
-              Hier findest du alle Produkte aus der Kategorie {categoryName}.
+              Hier findest du alle Produkte aus der Kategorie
+              {" "}
+              {categoryName}
+              .
             </p>
           </div>
 
@@ -90,7 +93,7 @@ export function CategoryPage(): ReactElement {
           </Link>
         </div>
 
-        <ProductGrid products={products}/>
+        <ProductGrid products={products} />
       </section>
     </div>
   );

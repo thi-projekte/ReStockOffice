@@ -40,7 +40,8 @@ public class InvoiceResource {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("process-engine")
     public Response createInvoice(InvoiceRequest request) {
-        log.info("Process Engine triggers: Creating invoice {} for user {}", request.invoiceNumber(), request.recipientEmail());
+        log.info("Process Engine triggers: Creating invoice {} for user {}", request.invoiceNumber(),
+                request.recipientEmail());
         String generatedNumber = invoiceService.createAndPersistInvoice(request);
         String jsonResponse = String.format("{\"invoiceNumber\":\"%s\"}", generatedNumber);
 
@@ -80,7 +81,8 @@ public class InvoiceResource {
         boolean isAdmin = identity.hasRole("admin");
 
         if (!loggedInId.equals(userID) && !isAdmin) {
-            throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Rechnungen einsehen.", 403);
+            throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Rechnungen einsehen.",
+                    403);
         }
 
         log.info("SPA fetches invoices for user: {}", userID);
@@ -96,8 +98,7 @@ public class InvoiceResource {
     @Produces("application/pdf")
     @jakarta.transaction.Transactional
     @Authenticated
-    public Response downloadInvoicePdf(
-            @QueryParam("userId") String userId,
+    public Response downloadInvoicePdf(@QueryParam("userId") String userId,
             @QueryParam("invoiceNumber") String invoiceNumber) {
 
         String loggedInId = jwt.getSubject();
@@ -112,16 +113,14 @@ public class InvoiceResource {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
-        InvoiceEntity entity = invoiceRepository.findByUserIdAndInvoiceNumber(userId, invoiceNumber)
-                .orElse(null);
+        InvoiceEntity entity = invoiceRepository.findByUserIdAndInvoiceNumber(userId, invoiceNumber).orElse(null);
 
         if (entity == null || entity.getZugferdPdf() == null) {
             log.warn("No invoice found for user {} with invoice number {}", userId, invoiceNumber);
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        return Response.ok(entity.getZugferdPdf())
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"rechnung_" + entity.getInvoiceNumber() + ".pdf\"")
-                .build();
+        return Response.ok(entity.getZugferdPdf()).header(HttpHeaders.CONTENT_DISPOSITION,
+                "inline; filename=\"rechnung_" + entity.getInvoiceNumber() + ".pdf\"").build();
     }
 }

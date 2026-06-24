@@ -10,9 +10,7 @@ public class MailValidationExceptionMapper implements ExceptionMapper<MailValida
 
     @Override
     public Response toResponse(MailValidationException exception) {
-        return Response.status(Response.Status.BAD_REQUEST)
-                .type(MediaType.APPLICATION_JSON)
-                .entity(new ValidationErrorResponse(exception.getMessage()))
-                .build();
+        return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+                .entity(new ValidationErrorResponse(exception.getMessage())).build();
     }
 }

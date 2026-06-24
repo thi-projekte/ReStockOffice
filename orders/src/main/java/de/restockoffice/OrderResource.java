@@ -35,7 +35,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
 
-
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -75,12 +74,8 @@ public class OrderResource {
     HttpHeaders headers;
 
     @Inject
-    public OrderResource(
-            SecurityIdentity securityIdentity,
-            JsonWebToken jwt,
-            EntityManager entityManager,
-            TransactionSynchronizationRegistry transactionSynchronizationRegistry
-    ) {
+    public OrderResource(SecurityIdentity securityIdentity, JsonWebToken jwt, EntityManager entityManager,
+            TransactionSynchronizationRegistry transactionSynchronizationRegistry) {
         this.securityIdentity = securityIdentity;
         this.jwt = jwt;
         this.entityManager = entityManager;
@@ -113,7 +108,7 @@ public class OrderResource {
         return order;
     }
 
-    //==== Get a certain order ==== //
+    // ==== Get a certain order ==== //
     @GET
     @Path("/{id}")
     public Order getById(@PathParam("id") Long id) {
@@ -124,7 +119,7 @@ public class OrderResource {
         }
     }
 
-    //==== Get all orders from certain customer ==== //
+    // ==== Get all orders from certain customer ==== //
     @GET
     @Path("/my")
     @Authenticated
@@ -202,8 +197,7 @@ public class OrderResource {
         return Map.of(OLD_CUSTOMER_ID, oldCustomerId, NEW_CUSTOMER_ID, newCustomerId, "updated", updated);
     }
 
-
-    //==== Update-Endpoint ==== //
+    // ==== Update-Endpoint ==== //
     @PUT
     @Path("/{id}")
     @Transactional
@@ -221,7 +215,8 @@ public class OrderResource {
         String authHeader = headers.getHeaderString(AUTHORIZATION_HEADER);
         Map<String, Object> variables = processVariables(order, authHeader);
         variables.put("updatedAt", stringProcessVariable(order.getUpdatedAt().toString()));
-        variables.put("changeType", stringProcessVariable("CANCELLED".equalsIgnoreCase(order.status) ? "CANCELLED" : "UPDATED"));
+        variables.put("changeType",
+                stringProcessVariable("CANCELLED".equalsIgnoreCase(order.status) ? "CANCELLED" : "UPDATED"));
 
         startAboConfirmationProcess(order, authHeader, variables);
         scheduleCustomerDeliveryReplanAfterCommit(order.customerId, authHeader);
@@ -235,13 +230,7 @@ public class OrderResource {
         String customerId = resolveCustomerId();
         LOG.infof("Creating order for customer %s", customerId);
 
-        Order order = Order.order(
-                customerId,
-                input.productId,
-                input.status,
-                input.quantity,
-                input.interval
-        );
+        Order order = Order.order(customerId, input.productId, input.status, input.quantity, input.interval);
         order.persist();
         LOG.infof("Order persisted: id=%s", order.id);
 
@@ -277,8 +266,7 @@ public class OrderResource {
 
     private void triggerCustomerDeliveryReplan(String customerId, String authHeader) {
         try (Client client = ClientBuilder.newClient()) {
-            String url = trimTrailingSlash(deliveriesServiceBaseUrl)
-                    + "/api/deliveries/customers/"
+            String url = trimTrailingSlash(deliveriesServiceBaseUrl) + "/api/deliveries/customers/"
                     + java.net.URLEncoder.encode(customerId.trim(), java.nio.charset.StandardCharsets.UTF_8)
                     + "/replan";
             var request = client.target(url).request(MediaType.APPLICATION_JSON);
@@ -289,7 +277,8 @@ public class OrderResource {
             try (Response response = request.post(Entity.json(Map.of()))) {
                 if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
                     String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
-                    LOG.errorf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.getStatus(), responseBody);
+                    LOG.errorf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId,
+                            response.getStatus(), responseBody);
                 }
             }
         } catch (RuntimeException exception) {
@@ -311,13 +300,17 @@ public class OrderResource {
             try (Response response = request.post(Entity.json(body))) {
                 if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
                     String responseBody = response.hasEntity() ? response.readEntity(String.class) : "";
-                    LOG.errorf("AboConfirmationProcess failed: HTTP %s from %s body=%s", response.getStatus(), aboConfirmationProcessStartUrl, responseBody);
-                    throw new WebApplicationException("AboConfirmationProcess konnte nicht gestartet werden (HTTP " + response.getStatus() + ").", Response.Status.BAD_GATEWAY);
+                    LOG.errorf("AboConfirmationProcess failed: HTTP %s from %s body=%s", response.getStatus(),
+                            aboConfirmationProcessStartUrl, responseBody);
+                    throw new WebApplicationException(
+                            "AboConfirmationProcess konnte nicht gestartet werden (HTTP " + response.getStatus() + ").",
+                            Response.Status.BAD_GATEWAY);
                 }
             }
         } catch (ProcessingException exception) {
             LOG.errorf(exception, "AboConfirmationProcess request failed at %s", aboConfirmationProcessStartUrl);
-            throw new WebApplicationException("AboConfirmationProcess konnte nicht erreicht werden.", exception, Response.Status.BAD_GATEWAY);
+            throw new WebApplicationException("AboConfirmationProcess konnte nicht erreicht werden.", exception,
+                    Response.Status.BAD_GATEWAY);
         }
     }
 
@@ -362,47 +355,24 @@ public class OrderResource {
         }
     }
 
-    private void addCustomerProfileVariables(
-            Map<String, Object> variables,
-            String customerId,
-            String authHeader
-    ) {
+    private void addCustomerProfileVariables(Map<String, Object> variables, String customerId, String authHeader) {
         CustomerMailProfile customer = loadCustomerProfile(customerId, authHeader);
         if (customer == null) {
             return;
         }
 
-        putStringVariableIfPresent(
-                variables,
-                "deliveryDay",
-                customer.getDeliveryDay()
-        );
-        putStringVariableIfPresent(
-                variables,
-                "deliveryWindow",
-                formatDeliveryWindow(customer.getDeliveryTime())
-        );
-        putStringVariableIfPresent(
-                variables,
-                "deliveryLocation",
-                formatDeliveryLocation(customer)
-        );
+        putStringVariableIfPresent(variables, "deliveryDay", customer.getDeliveryDay());
+        putStringVariableIfPresent(variables, "deliveryWindow", formatDeliveryWindow(customer.getDeliveryTime()));
+        putStringVariableIfPresent(variables, "deliveryLocation", formatDeliveryLocation(customer));
     }
 
     private void addTokenProfileVariables(Map<String, Object> variables, Order order) {
         putStringVariableIfPresent(variables, "recipientEmail", tokenClaim("email"));
-        putStringVariableIfPresent(
-                variables,
-                "customerName",
-                firstNonBlank(tokenClaim("name"), tokenClaim("preferred_username"), order.customerId)
-        );
+        putStringVariableIfPresent(variables, "customerName",
+                firstNonBlank(tokenClaim("name"), tokenClaim("preferred_username"), order.customerId));
     }
 
-    private void putStringVariableIfPresent(
-            Map<String, Object> variables,
-            String name,
-            String value
-    ) {
+    private void putStringVariableIfPresent(Map<String, Object> variables, String name, String value) {
         if (value != null) {
             variables.put(name, stringProcessVariable(value));
         }
@@ -436,21 +406,14 @@ public class OrderResource {
         }
     }
 
-    private CustomerMailProfile loadCustomerProfileFromPath(
-            Client client,
-            String path,
-            String customerId,
-            String authHeader
-    ) {
-        var request = client.target(trimTrailingSlash(usersServiceBaseUrl))
-                .path(path);
+    private CustomerMailProfile loadCustomerProfileFromPath(Client client, String path, String customerId,
+            String authHeader) {
+        var request = client.target(trimTrailingSlash(usersServiceBaseUrl)).path(path);
         if (customerId != null && !customerId.isBlank()) {
             request = request.queryParam("userId", customerId);
         }
 
-        try (Response response = request
-                .request(MediaType.APPLICATION_JSON)
-                .header(AUTHORIZATION_HEADER, authHeader)
+        try (Response response = request.request(MediaType.APPLICATION_JSON).header(AUTHORIZATION_HEADER, authHeader)
                 .get()) {
             if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
                 return null;
@@ -466,7 +429,8 @@ public class OrderResource {
         }
 
         String normalized = String.valueOf(deliveryTime).trim();
-        if (normalized.toLowerCase().contains("uhr") || normalized.contains("-") || normalized.toLowerCase().contains("bis")) {
+        if (normalized.toLowerCase().contains("uhr") || normalized.contains("-")
+                || normalized.toLowerCase().contains("bis")) {
             return normalized;
         }
 

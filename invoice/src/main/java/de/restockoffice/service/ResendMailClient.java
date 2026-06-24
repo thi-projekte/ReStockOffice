@@ -43,34 +43,20 @@ public class ResendMailClient {
             String pdfBase64 = Base64.getEncoder().encodeToString(pdf);
             String logoUrl = mailSettings.logoUrl();
 
-            String renderedHtml = invoiceMail
-                    .data("invoice", data)
-                    .data("logoUrl", logoUrl)
-                    .render();
+            String renderedHtml = invoiceMail.data("invoice", data).data("logoUrl", logoUrl).render();
 
-            Map<String, Object> payload = Map.of(
-                    "from", mailSettings.sender(),
-                    "to", List.of(recipientEmail),
-                    "subject", "Ihre Rechnung von ReStockOffice",
-                    "html", renderedHtml,
-                    "attachments", List.of(
-                            Map.of(
-                                    "filename", "rechnung.pdf",
-                                    "content", pdfBase64
-                            )
-                    ),
-                    "reply_to", mailSettings.replyTo()
-            );
+            Map<String, Object> payload = Map.of("from", mailSettings.sender(), "to", List.of(recipientEmail),
+                    "subject", "Ihre Rechnung von ReStockOffice", "html", renderedHtml, "attachments",
+                    List.of(Map.of("filename", "rechnung.pdf", "content", pdfBase64)), "reply_to",
+                    mailSettings.replyTo());
 
             String jsonBody = objectMapper.writeValueAsString(payload);
 
             LOG.info("Sende E-Mail an: {}", recipientEmail);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(mailSettings.resendBaseUrl() + "/emails"))
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(mailSettings.resendBaseUrl() + "/emails"))
                     .header("Authorization", "Bearer " + mailSettings.resendApiKey().orElseThrow())
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());

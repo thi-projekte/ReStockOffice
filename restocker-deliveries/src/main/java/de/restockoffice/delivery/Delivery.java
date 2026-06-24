@@ -12,13 +12,8 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(
-        name = "deliveries",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_deliveries_user_delivery_date",
-                columnNames = {"user_id", "delivery_date"}
-        )
-)
+@Table(name = "deliveries", uniqueConstraints = @UniqueConstraint(name = "uk_deliveries_user_delivery_date", columnNames = {
+        "user_id", "delivery_date" }))
 public class Delivery extends PanacheEntityBase {
 
     @Id
@@ -95,61 +90,34 @@ public class Delivery extends PanacheEntityBase {
     }
 
     public static Delivery findByCustomerAndDate(String customerId, LocalDate deliveryDate) {
-        return find("userId = ?1 and deliveryDate = ?2", customerId, deliveryDate)
-                .firstResult();
+        return find("userId = ?1 and deliveryDate = ?2", customerId, deliveryDate).firstResult();
     }
 
     public static List<Delivery> findByCustomer(String customerId) {
-        return list(
-                "userId = ?1 order by deliveryDate asc",
-                customerId
-        );
+        return list("userId = ?1 order by deliveryDate asc", customerId);
     }
 
-    public static List<Delivery> findFutureUnassignedByCustomerBetween(
-            String customerId,
-            LocalDate startDate,
-            LocalDate endDate
-    ) {
+    public static List<Delivery> findFutureUnassignedByCustomerBetween(String customerId, LocalDate startDate,
+            LocalDate endDate) {
         return list(
-                "userId = ?1 and tour is null and acceptedAt is null and deliveredAt is null " +
-                        "and deliveryDate > ?2 and deliveryDate <= ?3 " +
-                        "order by deliveryDate asc",
-                customerId,
-                startDate,
-                endDate
-        );
+                "userId = ?1 and tour is null and acceptedAt is null and deliveredAt is null "
+                        + "and deliveryDate > ?2 and deliveryDate <= ?3 " + "order by deliveryDate asc",
+                customerId, startDate, endDate);
     }
 
-    public static List<Delivery> findDeliveredByCustomerBetween(
-            String customerId,
-            LocalDate startDate,
-            LocalDate endDate
-    ) {
-        return list(
-                "userId = ?1 and deliveredAt is not null " +
-                        "and deliveryDate >= ?2 and deliveryDate <= ?3 " +
-                        "order by deliveryDate asc",
-                customerId,
-                startDate,
-                endDate
-        );
+    public static List<Delivery> findDeliveredByCustomerBetween(String customerId, LocalDate startDate,
+            LocalDate endDate) {
+        return list("userId = ?1 and deliveredAt is not null " + "and deliveryDate >= ?2 and deliveryDate <= ?3 "
+                + "order by deliveryDate asc", customerId, startDate, endDate);
     }
 
     public static List<Delivery> findOpenBetween(LocalDate startDate, LocalDate endDate) {
-        return list(
-                "tour is null and deliveredAt is null and deliveryDate >= ?1 and deliveryDate <= ?2 " +
-                        "order by deliveryDate asc, userId asc",
-                startDate,
-                endDate
-        );
+        return list("tour is null and deliveredAt is null and deliveryDate >= ?1 and deliveryDate <= ?2 "
+                + "order by deliveryDate asc, userId asc", startDate, endDate);
     }
 
     public static List<Delivery> findAssignedToRestockerFrom(String restockerName, LocalDate startDate) {
-        return list(
-                "tour.restockerName = ?1 and deliveryDate >= ?2 order by deliveryDate asc, stopOrder asc",
-                restockerName,
-                startDate
-        );
+        return list("tour.restockerName = ?1 and deliveryDate >= ?2 order by deliveryDate asc, stopOrder asc",
+                restockerName, startDate);
     }
 }

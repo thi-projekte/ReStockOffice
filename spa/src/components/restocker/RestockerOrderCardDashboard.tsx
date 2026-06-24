@@ -17,8 +17,6 @@ interface RestockerOrderCardProps {
   onSecondaryAction?: () => void;
 }
 
-
-
 export function RestockerOrderCard({
   order,
   statusLabel,
@@ -57,9 +55,14 @@ export function RestockerOrderCard({
       }}
     >
       <div className="restocker-order-card__head">
-        <span className="restocker-order-card__id">#{order.orderId}</span>
+        <span className="restocker-order-card__id">
+          #
+          {order.orderId}
+        </span>
         <span className="restocker-order-card__articles">
-          {order.articleCount} Artikel
+          {order.articleCount}
+          {" "}
+          Artikel
         </span>
       </div>
 
@@ -90,47 +93,55 @@ export function RestockerOrderCard({
       </div>
 
       <div className="restocker-order-card__footer">
-        {statusLabel ? (
-          <span className="restocker-order-card__status">{statusLabel}</span>
-        ) : (
-          <span
-            className="restocker-order-card__status-spacer"
-            aria-hidden="true"
-          />
-        )}
+        {statusLabel
+          ? (
+              <span className="restocker-order-card__status">{statusLabel}</span>
+            )
+          : (
+              <span
+                className="restocker-order-card__status-spacer"
+                aria-hidden="true"
+              />
+            )}
 
-        {(detailLabel && onClick) || (secondaryActionLabel && onSecondaryAction) ? (
-          <div
-            className={`restocker-order-card__actions ${statusLabel ? "restocker-order-card__actions--with-status" : ""
-              }`.trim()}
-          >
-            {detailLabel && onClick ? (
-              <button
-                className="restocker-order-card__detail-link"
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onClick();
-                }}
+        {(detailLabel && onClick) || (secondaryActionLabel && onSecondaryAction)
+          ? (
+              <div
+                className={`restocker-order-card__actions ${statusLabel ? "restocker-order-card__actions--with-status" : ""
+                }`.trim()}
               >
-                {detailLabel}
-              </button>
-            ) : null}
+                {detailLabel && onClick
+                  ? (
+                      <button
+                        className="restocker-order-card__detail-link"
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onClick();
+                        }}
+                      >
+                        {detailLabel}
+                      </button>
+                    )
+                  : null}
 
-            {secondaryActionLabel && onSecondaryAction ? (
-              <button
-                className="restocker-order-card__secondary-action"
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onSecondaryAction();
-                }}
-              >
-                {secondaryActionLabel}
-              </button>
-            ) : null}
-          </div>
-        ) : null}
+                {secondaryActionLabel && onSecondaryAction
+                  ? (
+                      <button
+                        className="restocker-order-card__secondary-action"
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSecondaryAction();
+                        }}
+                      >
+                        {secondaryActionLabel}
+                      </button>
+                    )
+                  : null}
+              </div>
+            )
+          : null}
 
       </div>
     </article>

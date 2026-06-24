@@ -15,34 +15,27 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 public class ProcessEngineCorsConfiguration {
 
-  @Bean
-  public FilterRegistrationBean<CorsFilter> processEngineCorsFilter(
-      @Value("${restockoffice.cors.allowed-origins}") String allowedOrigins) {
-    CorsConfiguration corsConfiguration = new CorsConfiguration();
-    corsConfiguration.setAllowedOrigins(parseOrigins(allowedOrigins));
-    corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
-    corsConfiguration.setAllowedHeaders(Arrays.asList(
-        "Authorization",
-        "Content-Type",
-        "Accept",
-        "Origin",
-        "X-Requested-With"));
-    corsConfiguration.setAllowCredentials(true);
-    corsConfiguration.setMaxAge(3600L);
+    @Bean
+    public FilterRegistrationBean<CorsFilter> processEngineCorsFilter(
+            @Value("${restockoffice.cors.allowed-origins}") String allowedOrigins) {
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        corsConfiguration.setAllowedOrigins(parseOrigins(allowedOrigins));
+        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+        corsConfiguration.setAllowedHeaders(
+                Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+        corsConfiguration.setAllowCredentials(true);
+        corsConfiguration.setMaxAge(3600L);
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", corsConfiguration);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfiguration);
 
-    FilterRegistrationBean<CorsFilter> registration = new FilterRegistrationBean<>(new CorsFilter(source));
-    registration.addUrlPatterns("/*");
-    registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
-    return registration;
-  }
+        FilterRegistrationBean<CorsFilter> registration = new FilterRegistrationBean<>(new CorsFilter(source));
+        registration.addUrlPatterns("/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
 
-  private List<String> parseOrigins(String allowedOrigins) {
-    return Arrays.stream(allowedOrigins.split(","))
-        .map(String::trim)
-        .filter(origin -> !origin.isEmpty())
-        .toList();
-  }
+    private List<String> parseOrigins(String allowedOrigins) {
+        return Arrays.stream(allowedOrigins.split(",")).map(String::trim).filter(origin -> !origin.isEmpty()).toList();
+    }
 }

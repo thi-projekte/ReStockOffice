@@ -10,7 +10,6 @@ export interface Product {
   imageUrl: string;
 }
 
-
 export interface RestockOrder {
   id?: number;
   customerId: string;
@@ -47,10 +46,10 @@ export interface RestockMarketplaceOrderItem {
   interval: number;
 }
 
-export type RestockOrderAssignmentStatus =
-  | "accepted"
-  | "in_delivery"
-  | "completed";
+export type RestockOrderAssignmentStatus
+  = | "accepted"
+    | "in_delivery"
+    | "completed";
 
 export interface RestockMarketplaceAssignment {
   restockerId: string;
@@ -90,5 +89,3 @@ export interface RestockerCustomerProfile {
   deliveryNotes: string;
   isPlaceholder: boolean;
 }
-
-

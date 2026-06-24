@@ -1,9 +1,9 @@
-import {type ReactElement, useState} from "react";
-import {Navigate, useOutletContext} from "react-router-dom";
-import {MdDeleteOutline, MdEdit, MdSave} from "react-icons/md";
-import {SubscriptionProfileProgress} from "../components/SubscriptionProfileProgress";
-import type {Product, RestockOrderWithProduct} from "../types/shop";
-import type {SubscriptionProfileStatus} from "../utils/subscriptionProfile";
+import { type ReactElement, useState } from "react";
+import { Navigate, useOutletContext } from "react-router-dom";
+import { MdDeleteOutline, MdEdit, MdSave } from "react-icons/md";
+import { SubscriptionProfileProgress } from "../components/SubscriptionProfileProgress";
+import type { Product, RestockOrderWithProduct } from "../types/shop";
+import type { SubscriptionProfileStatus } from "../utils/subscriptionProfile";
 
 interface OutletContext {
   isLoggedIn: boolean;
@@ -55,7 +55,7 @@ export function SubscriptionPage(): ReactElement {
   }
 
   if (!isLoggedIn) {
-    return <Navigate to="/login" replace/>;
+    return <Navigate to="/login" replace />;
   }
 
   return (
@@ -82,17 +82,18 @@ export function SubscriptionPage(): ReactElement {
                 return;
               }
 
-              setIsEditMode((value) => !value);
+              setIsEditMode(value => !value);
             }}
             disabled={!canModifySubscription}
           >
-            {isEditMode ? <MdSave/> : <MdEdit/>}
-            {isEditMode ? (
-              "Bearbeitung beenden"
-            ) : (
-              "Abo bearbeiten"
-            )
-            }
+            {isEditMode ? <MdSave /> : <MdEdit />}
+            {isEditMode
+              ? (
+                  "Bearbeitung beenden"
+                )
+              : (
+                  "Abo bearbeiten"
+                )}
           </button>
         </div>
 
@@ -103,96 +104,103 @@ export function SubscriptionPage(): ReactElement {
 
         <div className="section-space">
           <div className="product-specs__grid">
-            {subscriptionItems.length === 0 ? (
-              <p className="empty-state">Du hast aktuell noch keine Artikel in deinem Abo.</p>
-            ) : (
-              <div className="subscription-account-list">
-                {subscriptionItems.map((item) => (
-                  <article
-                    key={`${item.customerId}-${item.productId}-${item.createdAt}`}
-                    className={`subscription-account-item ${
-                      canEditSubscription ? "" : "subscription-account-item--disabled"
-                    }`.trim()}
-                  >
-                    <div>
-                      <strong>{item.product.name}</strong>
-                      <div className="muted-text">Menge: {item.quantity}</div>
-                    </div>
-                    <span>{formatInterval(item.interval)}</span>
-                    <div className="subscription-account-item__actions">
-                      <button
-                        className="button button--ghost"
-                        type="button"
-                        disabled={!canEditSubscription}
-                        onClick={() => onEditSubscriptionItem(item)}
+            {subscriptionItems.length === 0
+              ? (
+                  <p className="empty-state">Du hast aktuell noch keine Artikel in deinem Abo.</p>
+                )
+              : (
+                  <div className="subscription-account-list">
+                    {subscriptionItems.map(item => (
+                      <article
+                        key={`${item.customerId}-${item.productId}-${item.createdAt}`}
+                        className={`subscription-account-item ${
+                          canEditSubscription ? "" : "subscription-account-item--disabled"
+                        }`.trim()}
                       >
-                        <MdEdit/>
-                        Bearbeiten
-                      </button>
-                      <button
-                        className="button button--ghost subscription-account-item__delete"
-                        type="button"
-                        disabled={!canEditSubscription}
-                        onClick={() => setItemPendingRemoval(item)}
-                      >
-                        <MdDeleteOutline/>
-                        Entfernen
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
+                        <div>
+                          <strong>{item.product.name}</strong>
+                          <div className="muted-text">
+                            Menge:
+                            {item.quantity}
+                          </div>
+                        </div>
+                        <span>{formatInterval(item.interval)}</span>
+                        <div className="subscription-account-item__actions">
+                          <button
+                            className="button button--ghost"
+                            type="button"
+                            disabled={!canEditSubscription}
+                            onClick={() => onEditSubscriptionItem(item)}
+                          >
+                            <MdEdit />
+                            Bearbeiten
+                          </button>
+                          <button
+                            className="button button--ghost subscription-account-item__delete"
+                            type="button"
+                            disabled={!canEditSubscription}
+                            onClick={() => setItemPendingRemoval(item)}
+                          >
+                            <MdDeleteOutline />
+                            Entfernen
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
           </div>
         </div>
       </section>
 
-      {itemPendingRemoval ? (
-        <>
-          <button
-            className="subscription-modal__overlay"
-            type="button"
-            aria-label="Bestätigungsdialog schließen"
-            onClick={() => setItemPendingRemoval(null)}
-            disabled={isRemovingItem}
-          />
-
-          <dialog
-            className="subscription-modal subscription-remove-dialog"
-            open
-            aria-modal="true"
-            aria-labelledby="subscription-remove-dialog-title"
-          >
-            <div className="subscription-modal__body">
-              <p id="subscription-remove-dialog-title">
-                Möchtest du diesen Artikel wirklich entfernen?
-              </p>
-            </div>
-
-            <div className="subscription-modal__actions">
+      {itemPendingRemoval
+        ? (
+            <>
               <button
-                className="button button--ghost"
+                className="subscription-modal__overlay"
                 type="button"
+                aria-label="Bestätigungsdialog schließen"
                 onClick={() => setItemPendingRemoval(null)}
                 disabled={isRemovingItem}
-              >
-                Abbrechen
-              </button>
+              />
 
-              <button
-                className="button subscription-account-item__delete"
-                type="button"
-                onClick={() => {
-                  void handleConfirmRemoveItem();
-                }}
-                disabled={isRemovingItem}
+              <dialog
+                className="subscription-modal subscription-remove-dialog"
+                open
+                aria-modal="true"
+                aria-labelledby="subscription-remove-dialog-title"
               >
-                Bestätigen
-              </button>
-            </div>
-          </dialog>
-        </>
-      ) : null}
+                <div className="subscription-modal__body">
+                  <p id="subscription-remove-dialog-title">
+                    Möchtest du diesen Artikel wirklich entfernen?
+                  </p>
+                </div>
+
+                <div className="subscription-modal__actions">
+                  <button
+                    className="button button--ghost"
+                    type="button"
+                    onClick={() => setItemPendingRemoval(null)}
+                    disabled={isRemovingItem}
+                  >
+                    Abbrechen
+                  </button>
+
+                  <button
+                    className="button subscription-account-item__delete"
+                    type="button"
+                    onClick={() => {
+                      void handleConfirmRemoveItem();
+                    }}
+                    disabled={isRemovingItem}
+                  >
+                    Bestätigen
+                  </button>
+                </div>
+              </dialog>
+            </>
+          )
+        : null}
     </div>
   );
 }

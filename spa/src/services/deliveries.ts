@@ -1,6 +1,6 @@
-const DELIVERIES_API_URL =
-  import.meta.env.VITE_DELIVERIES_API_URL ??
-  "https://restocker-deliveries.restockoffice.de/api/deliveries";
+const DELIVERIES_API_URL
+  = import.meta.env.VITE_DELIVERIES_API_URL
+    ?? "https://restocker-deliveries.restockoffice.de/api/deliveries";
 
 export interface DeliveryItemDetail {
   id: string;
@@ -45,12 +45,12 @@ export interface Tour {
   endTime: string | null;
   earnings: number;
   tourDate: string;
-  deliveries?: Array<{
+  deliveries?: {
     id: string;
     collected: boolean;
     deliveredAt: string | null;
     stopOrder: number;
-  }>;
+  }[];
 }
 
 export interface DeliveryOverviewEntry {
@@ -166,10 +166,10 @@ function normalizeDeliveryItem(rawItem: unknown): DeliveryItemDetail {
 function normalizeDeliveryDetail(rawDetail: unknown): DeliveryDetail {
   const detail = rawDetail as Record<string, unknown>;
   const customer = (
-    detail.customer ??
-    detail.customerData ??
-    detail.customerProfile ??
-    detail.user
+    detail.customer
+    ?? detail.customerData
+    ?? detail.customerProfile
+    ?? detail.user
   ) as Record<string, unknown> | undefined;
 
   return {
@@ -190,31 +190,31 @@ function normalizeDeliveryDetail(rawDetail: unknown): DeliveryDetail {
       typeof detail.deliveredAt === "string" ? detail.deliveredAt : null,
     restockerName:
       typeof detail.restockerName === "string" ? detail.restockerName : null,
-    recipientEmail: readString(detail, ["recipientEmail", "customerEmail", "email"]) ||
-      readString(customer, ["recipientEmail", "customerEmail", "email"]),
-    companyName: readString(detail, ["companyName", "customerName", "name"]) ||
-      readString(customer, ["companyName", "customerName", "name"]),
-    street: readString(detail, ["street", "addressLine1"]) ||
-      readString(customer, ["street", "addressLine1"]),
-    houseNumber: readString(detail, ["houseNumber"]) ||
-      readString(customer, ["houseNumber"]),
-    postalCode: readString(detail, ["postalCode", "zipCode"]) ||
-      readString(customer, ["postalCode", "zipCode"]),
-    city: readString(detail, ["city"]) ||
-      readString(customer, ["city"]),
-    country: readString(detail, ["country"]) ||
-      readString(customer, ["country"]),
-    phoneNumber: readString(detail, ["phoneNumber", "phone"]) ||
-      readString(customer, ["phoneNumber", "phone"]),
-    contactPerson: readString(detail, ["contactPerson", "roleInCompany"]) ||
-      readString(customer, ["contactPerson", "roleInCompany"]),
-    deliveryHint: readString(detail, ["deliveryHint", "deliveryNotes", "notes"]) ||
-      readString(customer, ["deliveryHint", "deliveryNotes", "notes"]),
-    deliveryDay: readString(detail, ["deliveryDay"]) ||
-      readString(customer, ["deliveryDay"]),
+    recipientEmail: readString(detail, ["recipientEmail", "customerEmail", "email"])
+      || readString(customer, ["recipientEmail", "customerEmail", "email"]),
+    companyName: readString(detail, ["companyName", "customerName", "name"])
+      || readString(customer, ["companyName", "customerName", "name"]),
+    street: readString(detail, ["street", "addressLine1"])
+      || readString(customer, ["street", "addressLine1"]),
+    houseNumber: readString(detail, ["houseNumber"])
+      || readString(customer, ["houseNumber"]),
+    postalCode: readString(detail, ["postalCode", "zipCode"])
+      || readString(customer, ["postalCode", "zipCode"]),
+    city: readString(detail, ["city"])
+      || readString(customer, ["city"]),
+    country: readString(detail, ["country"])
+      || readString(customer, ["country"]),
+    phoneNumber: readString(detail, ["phoneNumber", "phone"])
+      || readString(customer, ["phoneNumber", "phone"]),
+    contactPerson: readString(detail, ["contactPerson", "roleInCompany"])
+      || readString(customer, ["contactPerson", "roleInCompany"]),
+    deliveryHint: readString(detail, ["deliveryHint", "deliveryNotes", "notes"])
+      || readString(customer, ["deliveryHint", "deliveryNotes", "notes"]),
+    deliveryDay: readString(detail, ["deliveryDay"])
+      || readString(customer, ["deliveryDay"]),
     deliveryTime:
-      readNumber(detail, ["deliveryTime"]) ??
-      readNumber(customer, ["deliveryTime"]),
+      readNumber(detail, ["deliveryTime"])
+      ?? readNumber(customer, ["deliveryTime"]),
     deliveryDate: typeof detail.deliveryDate === "string" ? detail.deliveryDate : null,
     items: Array.isArray(detail.items) ? detail.items.map(normalizeDeliveryItem) : [],
   };
@@ -230,8 +230,8 @@ function deriveDeliveryStatus(detail: Record<string, unknown>) {
   }
 
   if (
-    (typeof detail.acceptedAt === "string" && detail.acceptedAt) ||
-    (typeof detail.restockerName === "string" && detail.restockerName)
+    (typeof detail.acceptedAt === "string" && detail.acceptedAt)
+    || (typeof detail.restockerName === "string" && detail.restockerName)
   ) {
     return "ACCEPTED";
   }
@@ -249,7 +249,7 @@ function resolveToken(token?: string) {
 
 function createHeaders(token: string) {
   return {
-    Authorization: `Bearer ${token}`,
+    "Authorization": `Bearer ${token}`,
     "Content-Type": "application/json",
   };
 }
@@ -264,8 +264,8 @@ async function parseJsonResponse<T>(response: Response, fallbackMessage: string)
           message?: string;
           error?: string;
         };
-        const normalizedMessage =
-          parsedError.details || parsedError.message || parsedError.error;
+        const normalizedMessage
+          = parsedError.details || parsedError.message || parsedError.error;
         if (normalizedMessage) {
           throw new Error(normalizedMessage);
         }
@@ -559,9 +559,9 @@ export async function endTour({
 }
 
 export async function loadCustomerDeliveryOverview({
-   customerId,
-   token,
- }: {
+  customerId,
+  token,
+}: {
   customerId: string;
   token?: string;
 }) {
@@ -570,12 +570,11 @@ export async function loadCustomerDeliveryOverview({
   const url = `${DELIVERIES_API_URL}/customers/${customerId}/delivery-overview`;
 
   return await requestJson<CustomerDeliveryOverview>(
-      url,
-      {
-        method: "GET",
-        headers: createHeaders(resolvedToken),
-      },
-      "Lieferübersicht konnte nicht geladen werden",
+    url,
+    {
+      method: "GET",
+      headers: createHeaders(resolvedToken),
+    },
+    "Lieferübersicht konnte nicht geladen werden",
   );
 }
-

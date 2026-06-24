@@ -46,10 +46,8 @@ class CreateInvoiceDelegateTest {
     void testExecute_WithDeliveries_SetsVariables() throws Exception {
         // Arrange
         String customerId = "u1";
-        InvoicePreparationData data = new InvoicePreparationData(
-                customerId, "test@mail.de", "Firma", "Str", "123", "Stadt",
-                Collections.emptyList(), BigDecimal.TEN
-        );
+        InvoicePreparationData data = new InvoicePreparationData(customerId, "test@mail.de", "Firma", "Str", "123",
+                "Stadt", Collections.emptyList(), BigDecimal.TEN);
 
         when(execution.getVariable("customerId")).thenReturn(customerId);
         when(dataService.prepareInvoiceData(customerId)).thenReturn(Optional.of(data));

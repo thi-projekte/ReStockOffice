@@ -1,16 +1,16 @@
 import products from "../mocks/products.json";
 import logoColored from "../assets/logos/logo_colored.png";
-import type {Product} from "../types/shop";
+import type { Product } from "../types/shop";
 
 export const useAPIs = true;
 
-const PRODUCTS_API_URL =
-  import.meta.env.VITE_PRODUCTS_API_URL ?? "https://articles.restockoffice.de/articles";
-const PRODUCT_API_URL =
-  import.meta.env.VITE_PRODUCT_API_URL ?? "https://articles.restockoffice.de/article";
-const PRODUCTS_BY_CATEGORY_API_URL =
-  import.meta.env.VITE_PRODUCTS_BY_CATEGORY_API_URL ??
-  "https://articles.restockoffice.de/articleByCategory";
+const PRODUCTS_API_URL
+  = import.meta.env.VITE_PRODUCTS_API_URL ?? "https://articles.restockoffice.de/articles";
+const PRODUCT_API_URL
+  = import.meta.env.VITE_PRODUCT_API_URL ?? "https://articles.restockoffice.de/article";
+const PRODUCTS_BY_CATEGORY_API_URL
+  = import.meta.env.VITE_PRODUCTS_BY_CATEGORY_API_URL
+    ?? "https://articles.restockoffice.de/articleByCategory";
 const LEGACY_MOCK_IMAGE_PREFIX = "../assets/";
 const mockAssetModules = import.meta.glob("../assets/**/*.{png,jpg,jpeg,svg}", {
   eager: true,
@@ -39,9 +39,9 @@ function stringifyProductValue(value: unknown, fallback: string): string {
   }
 
   if (
-    typeof value === "number" ||
-    typeof value === "boolean" ||
-    typeof value === "bigint"
+    typeof value === "number"
+    || typeof value === "boolean"
+    || typeof value === "bigint"
   ) {
     return value.toString();
   }
@@ -191,18 +191,18 @@ export async function getProductById(productId: number): Promise<Product | undef
   }
 
   if (allProductsCache) {
-    return allProductsCache.find((product) => product.productId === productId);
+    return allProductsCache.find(product => product.productId === productId);
   }
 
   if (useAPIs) {
     try {
       return await loadProductByIdFromApi(productId);
     } catch {
-      return productMocks.find((product) => product.productId === productId);
+      return productMocks.find(product => product.productId === productId);
     }
   }
 
-  return productMocks.find((product) => product.productId === productId);
+  return productMocks.find(product => product.productId === productId);
 }
 
 export function getCategorySlug(category: string): string {
@@ -214,7 +214,7 @@ export async function getProductsByCategorySlug(categorySlug: string): Promise<P
 
   if (allProductsCache) {
     return allProductsCache.filter(
-      (product) => getCategorySlug(product.category) === normalizedSlug,
+      product => getCategorySlug(product.category) === normalizedSlug,
     );
   }
 
@@ -229,7 +229,7 @@ export async function getProductsByCategorySlug(categorySlug: string): Promise<P
   }
 
   return productMocks.filter(
-    (product) => getCategorySlug(product.category) === normalizedSlug,
+    product => getCategorySlug(product.category) === normalizedSlug,
   );
 }
 
@@ -243,7 +243,7 @@ export async function getCategoryNameBySlug(categorySlug: string): Promise<strin
 
   if (allProductsCache) {
     const matchingProduct = allProductsCache.find(
-      (product) => getCategorySlug(product.category) === normalizedSlug,
+      product => getCategorySlug(product.category) === normalizedSlug,
     );
 
     return matchingProduct?.category;
@@ -251,7 +251,7 @@ export async function getCategoryNameBySlug(categorySlug: string): Promise<strin
 
   const availableProducts = await getProducts();
   const matchingProduct = availableProducts.find(
-    (product) => getCategorySlug(product.category) === normalizedSlug,
+    product => getCategorySlug(product.category) === normalizedSlug,
   );
 
   return matchingProduct?.category;

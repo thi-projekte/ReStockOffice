@@ -24,7 +24,7 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
     private static final Logger log = LoggerFactory.getLogger(FetchDeliveriesForAnnouncementDelegate.class);
     private static final String CLIENT_REGISTRATION_ID = "keycloak";
     private static final String SERVICE_PRINCIPAL = "CamundaTimerService";
-    //necessary for tests
+    // necessary for tests
     private RestTemplate restTemplate = new RestTemplate();
 
     @Autowired(required = false)
@@ -41,19 +41,13 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         LocalDate announcementTargetDate = LocalDate.now().plusDays(announcementLeadDays);
         String url = trimTrailingSlash(deliveriesServiceBaseUrl) + "/api/deliveries/admin/all-deliveries";
 
-        ResponseEntity<DeliveryDetailResponse[]> responseEntity = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                httpEntity(serviceAuthorizationHeader()),
-                DeliveryDetailResponse[].class
-        );
+        ResponseEntity<DeliveryDetailResponse[]> responseEntity = restTemplate.exchange(url, HttpMethod.GET,
+                httpEntity(serviceAuthorizationHeader()), DeliveryDetailResponse[].class);
         DeliveryDetailResponse[] response = responseEntity.getBody();
-        List<DeliveryMonitoringItem> deliveries =
-                Arrays.stream(response != null ? response : new DeliveryDetailResponse[0])
-                        .filter(delivery -> announcementTargetDate.equals(parseDate(delivery.deliveryDate())))
-                        .filter(this::isMonitorableDelivery)
-                        .map(this::toMonitoringItem)
-                        .toList();
+        List<DeliveryMonitoringItem> deliveries = Arrays
+                .stream(response != null ? response : new DeliveryDetailResponse[0])
+                .filter(delivery -> announcementTargetDate.equals(parseDate(delivery.deliveryDate())))
+                .filter(this::isMonitorableDelivery).map(this::toMonitoringItem).toList();
 
         execution.setVariable("deliveries", deliveries);
         execution.setVariable("announcementTargetDate", announcementTargetDate.toString());
@@ -61,12 +55,8 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
     }
 
     private DeliveryMonitoringItem toMonitoringItem(DeliveryDetailResponse response) {
-        return new DeliveryMonitoringItem(
-                response.id(),
-                response.orderId(),
-                response.userId(),
-                parseDate(response.deliveryDate())
-        );
+        return new DeliveryMonitoringItem(response.id(), response.orderId(), response.userId(),
+                parseDate(response.deliveryDate()));
     }
 
     private LocalDate parseDate(String value) {
@@ -74,11 +64,8 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
     }
 
     private boolean isMonitorableDelivery(DeliveryDetailResponse delivery) {
-        return delivery.status() == null
-                || delivery.status().isBlank()
-                || "OPEN".equalsIgnoreCase(delivery.status())
-                || "ACCEPTED".equalsIgnoreCase(delivery.status())
-                || "COLLECTED".equalsIgnoreCase(delivery.status());
+        return delivery.status() == null || delivery.status().isBlank() || "OPEN".equalsIgnoreCase(delivery.status())
+                || "ACCEPTED".equalsIgnoreCase(delivery.status()) || "COLLECTED".equalsIgnoreCase(delivery.status());
     }
 
     private String trimTrailingSlash(String value) {
@@ -102,10 +89,8 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         }
 
         try {
-            OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
-                    .withClientRegistrationId(CLIENT_REGISTRATION_ID)
-                    .principal(SERVICE_PRINCIPAL)
-                    .build();
+            OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest.withClientRegistrationId(CLIENT_REGISTRATION_ID)
+                    .principal(SERVICE_PRINCIPAL).build();
 
             var authorizedClient = authorizedClientManager.authorize(authRequest);
             if (authorizedClient == null || authorizedClient.getAccessToken() == null) {
@@ -119,12 +104,6 @@ public class FetchDeliveriesForAnnouncementDelegate implements JavaDelegate {
         }
     }
 
-    public record DeliveryDetailResponse(
-            String id,
-            String orderId,
-            String userId,
-            String deliveryDate,
-            String status
-    ) {
+    public record DeliveryDetailResponse(String id, String orderId, String userId, String deliveryDate, String status) {
     }
 }

@@ -25,15 +25,24 @@ export function RestockerOrderCard({
     <article className="restocker-order-card">
       <button className="restocker-order-card__main-action" type="button" onClick={onClick}>
         <div className="restocker-order-card__head">
-          <span className="restocker-order-card__id">#{order.orderId}</span>
-          <span className="restocker-order-card__articles">{order.articleCount} Artikel</span>
+          <span className="restocker-order-card__id">
+            #
+            {order.orderId}
+          </span>
+          <span className="restocker-order-card__articles">
+            {order.articleCount}
+            {" "}
+            Artikel
+          </span>
         </div>
 
         <div className="restocker-order-card__body">
           <strong className="restocker-order-card__company-name">{order.companyName}</strong>
           <span>{order.addressLine1}</span>
           <span>
-            {order.postalCode} {order.city}
+            {order.postalCode}
+            {" "}
+            {order.city}
           </span>
         </div>
 
@@ -57,11 +66,13 @@ export function RestockerOrderCard({
       </button>
 
       <div className="restocker-order-card__footer">
-        {statusLabel ? (
-          <span className="restocker-order-card__status">{statusLabel}</span>
-        ) : (
-          <span className="restocker-order-card__status-spacer" aria-hidden="true" />
-        )}
+        {statusLabel
+          ? (
+              <span className="restocker-order-card__status">{statusLabel}</span>
+            )
+          : (
+              <span className="restocker-order-card__status-spacer" aria-hidden="true" />
+            )}
 
         <div
           className={`restocker-order-card__actions ${
@@ -79,18 +90,20 @@ export function RestockerOrderCard({
             {detailLabel}
           </button>
 
-          {secondaryActionLabel && onSecondaryAction ? (
-            <button
-              className="restocker-order-card__secondary-action"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onSecondaryAction();
-              }}
-            >
-              {secondaryActionLabel}
-            </button>
-          ) : null}
+          {secondaryActionLabel && onSecondaryAction
+            ? (
+                <button
+                  className="restocker-order-card__secondary-action"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSecondaryAction();
+                  }}
+                >
+                  {secondaryActionLabel}
+                </button>
+              )
+            : null}
         </div>
       </div>
     </article>

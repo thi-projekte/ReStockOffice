@@ -65,16 +65,11 @@ public class NotificationMailService {
         values.put(DELIVERY_WINDOW_KEY, escapeHtml(request.deliveryWindow()));
         values.put(DELIVERY_LOCATION_KEY, escapeHtml(request.deliveryLocation()));
         values.put("changeDeadline", escapeHtml(request.changeDeadline()));
-        values.put(
-                SUPPORT_EMAIL_KEY,
-                escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
+        values.put(SUPPORT_EMAIL_KEY, escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
         values.put("manageSubscriptionUrl", SUBSCRIPTION_URL);
         values.put("orderItemsHtml", buildOrderItemsHtml(request.orderItems()));
 
-        String subject = defaultIfBlank(
-                request.subject(),
-                "Abo-Bestellbestätigung " + request.orderNumber()
-        );
+        String subject = defaultIfBlank(request.subject(), "Abo-Bestellbestätigung " + request.orderNumber());
 
         return new RenderedMail(subject, templateService.render(ABO_TEMPLATE, values));
     }
@@ -99,17 +94,12 @@ public class NotificationMailService {
         values.put(SUPPLIER_NAME_KEY, escapeHtml(request.supplierName()));
         values.put(DELIVERY_LOCATION_KEY, escapeHtml(request.deliveryLocation()));
         values.put("deliveryInstructions", escapeHtml(request.deliveryInstructions()));
-        values.put(
-                SUPPORT_EMAIL_KEY,
-                escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail()))
-        );
+        values.put(SUPPORT_EMAIL_KEY, escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
         values.put("deliveryDetailsUrl", escapeHtml(defaultIfBlank(request.deliveryDetailsUrl(), "#")));
         values.put("deliveryItemsHtml", buildDeliveryItemsHtml(request.deliveryItems()));
 
-        String subject = defaultIfBlank(
-                request.subject(),
-                "Deine ReStockOffice Lieferung kommt am " + request.deliveryDate()
-        );
+        String subject = defaultIfBlank(request.subject(),
+                "Deine ReStockOffice Lieferung kommt am " + request.deliveryDate());
 
         return new RenderedMail(subject, templateService.render(DELIVERY_TEMPLATE, values));
     }
@@ -129,17 +119,12 @@ public class NotificationMailService {
         values.put(DELIVERY_WINDOW_KEY, escapeHtml(request.deliveryWindow()));
         values.put(ORDER_NUMBER_KEY, escapeHtml(request.orderNumber()));
         values.put(SUPPLIER_NAME_KEY, escapeHtml(request.supplierName()));
-        values.put(
-                SUPPORT_EMAIL_KEY,
-                escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail()))
-        );
+        values.put(SUPPORT_EMAIL_KEY, escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
         values.put("deliveryDetailsUrl", escapeHtml(defaultIfBlank(request.deliveryDetailsUrl(), "#")));
         values.put("deliveryItemsHtml", buildDeliveryItemsHtml(request.deliveryItems()));
 
-        String subject = defaultIfBlank(
-                request.subject(),
-                "Deine ReStockOffice Lieferung vom " + request.deliveryDate() + " ist angekommen"
-        );
+        String subject = defaultIfBlank(request.subject(),
+                "Deine ReStockOffice Lieferung vom " + request.deliveryDate() + " ist angekommen");
 
         return new RenderedMail(subject, templateService.render(DELIVERY_CONFIRMATION_TEMPLATE, values));
     }
@@ -181,11 +166,8 @@ public class NotificationMailService {
 
     private void appendOrderItemDetails(StringBuilder html, OrderItem item) {
         if (!isBlank(item.statusLabel())) {
-            html.append("<div style=\"font-size:14px;line-height:1.55;")
-                    .append(MUTED_ITEM_TEXT_STYLE)
-                    .append("Status: ")
-                    .append(escapeHtml(item.statusLabel()))
-                    .append(DIV_CLOSE);
+            html.append("<div style=\"font-size:14px;line-height:1.55;").append(MUTED_ITEM_TEXT_STYLE)
+                    .append("Status: ").append(escapeHtml(item.statusLabel())).append(DIV_CLOSE);
             return;
         }
 
@@ -216,18 +198,13 @@ public class NotificationMailService {
         return "Deine Lieferung kommt in " + normalizedDays + " Tagen.";
     }
 
-
     private void appendOptionalOrderItemLine(StringBuilder html, String label, String value) {
         if (isBlank(value)) {
             return;
         }
 
-        html.append("<div style=\"font-size:14px;line-height:1.55;")
-                .append(MUTED_ITEM_TEXT_STYLE)
-                .append(escapeHtml(label))
-                .append(": ")
-                .append(escapeHtml(value))
-                .append(DIV_CLOSE);
+        html.append("<div style=\"font-size:14px;line-height:1.55;").append(MUTED_ITEM_TEXT_STYLE)
+                .append(escapeHtml(label)).append(": ").append(escapeHtml(value)).append(DIV_CLOSE);
     }
 
     private String buildDeliveryItemsHtml(List<DeliveryItem> items) {
@@ -245,39 +222,24 @@ public class NotificationMailService {
         return html.toString();
     }
 
-    private void appendItemDescriptionCell(
-            StringBuilder html,
-            boolean isLast,
-            String itemName,
-            String articleNumber
-    ) {
+    private void appendItemDescriptionCell(StringBuilder html, boolean isLast, String itemName, String articleNumber) {
         html.append("<tr class=\"item-row\">")
                 .append("<td class=\"item-main\" style=\"padding:14px 0;vertical-align:top;");
         appendItemBorderStyle(html, isLast);
-        html.append("\">")
-                .append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">")
-                .append(escapeHtml(itemName))
-                .append(DIV_CLOSE)
-                .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;")
-                .append(MUTED_ITEM_TEXT_STYLE)
-                .append("Artikel-Nr. ")
-                .append(escapeHtml(articleNumber))
-                .append(DIV_CLOSE);
+        html.append("\">").append("<div style=\"font-size:22px;line-height:1.2;font-weight:700;color:#264037;\">")
+                .append(escapeHtml(itemName)).append(DIV_CLOSE)
+                .append("<div style=\"padding-top:8px;font-size:14px;line-height:1.55;").append(MUTED_ITEM_TEXT_STYLE)
+                .append("Artikel-Nr. ").append(escapeHtml(articleNumber)).append(DIV_CLOSE);
     }
 
     private void appendItemQuantityCell(StringBuilder html, boolean isLast, String quantity) {
-        html.append(TABLE_CELL_CLOSE)
-                .append("<td align=\"right\" class=\"qty-cell\" ")
-                .append("style=\"width:98px;padding:14px 0 14px 16px;")
-                .append("vertical-align:top;text-align:right;");
+        html.append(TABLE_CELL_CLOSE).append("<td align=\"right\" class=\"qty-cell\" ")
+                .append("style=\"width:98px;padding:14px 0 14px 16px;").append("vertical-align:top;text-align:right;");
         appendItemBorderStyle(html, isLast);
-        html.append("\">")
-                .append("<span class=\"qty-text\" ")
+        html.append("\">").append("<span class=\"qty-text\" ")
                 .append("style=\"display:inline-block;color:#264037;font-weight:700;")
                 .append("font-size:18px;line-height:1.3;white-space:nowrap;\">")
-                .append(escapeHtml(formatQuantityAsMultiplier(quantity)))
-                .append("</span>")
-                .append(TABLE_CELL_CLOSE)
+                .append(escapeHtml(formatQuantityAsMultiplier(quantity))).append("</span>").append(TABLE_CELL_CLOSE)
                 .append("</tr>");
     }
 
@@ -286,7 +248,6 @@ public class NotificationMailService {
             html.append(ITEM_BORDER_STYLE);
         }
     }
-
 
     private void validateAboConfirmation(AboConfirmationRequest request) {
         requireRequest(request);
@@ -345,10 +306,7 @@ public class NotificationMailService {
 
     private String escapeHtml(String value) {
         String safeValue = value == null ? "" : value;
-        return safeValue.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
+        return safeValue.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
                 .replace("'", "&#39;");
     }
 }

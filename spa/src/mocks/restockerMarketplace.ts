@@ -1,7 +1,7 @@
 import type { RestockOrder, RestockerCustomerProfile } from "../types/shop";
 
 const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlaceholder">> = {
-  "100": {
+  100: {
     companyName: "Technische Hochschule Ingolstadt",
     street: "Esplanade 138",
     postalCode: "85049",
@@ -9,7 +9,7 @@ const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlace
     deliveryTime: "11:00 Uhr",
     deliveryNotes: "Bitte an der Warenannahme anmelden und am Empfang kurz Bescheid geben.",
   },
-  "101": {
+  101: {
     companyName: "AUDI AG",
     street: "Auto-Union-Strasse 1",
     postalCode: "85057",
@@ -17,7 +17,7 @@ const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlace
     deliveryTime: "11:20 Uhr",
     deliveryNotes: "Anlieferung über Tor 3. Sicherheitsfreigabe am Empfang einholen.",
   },
-  "102": {
+  102: {
     companyName: "COM-IN Telekommunikations GmbH",
     street: "Mauthstrasse 4",
     postalCode: "85049",
@@ -25,7 +25,7 @@ const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlace
     deliveryTime: "11:30 Uhr",
     deliveryNotes: "Bitte bei Ankunft den Wareneingang im 1. OG telefonisch informieren.",
   },
-  "103": {
+  103: {
     companyName: "AUMOVIO Microelectronic GmbH",
     street: "Ringlerstrasse 7",
     postalCode: "85055",
@@ -33,7 +33,7 @@ const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlace
     deliveryTime: "12:00 Uhr",
     deliveryNotes: "Lieferung am Seiteneingang abgeben. Zugang über Halle B.",
   },
-  "104": {
+  104: {
     companyName: "MediaMarktSaturn Campus",
     street: "Wankelstrasse 5",
     postalCode: "85046",
@@ -41,7 +41,7 @@ const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlace
     deliveryTime: "09:00 Uhr",
     deliveryNotes: "Noch offene Demo-Lieferung. Bitte an der Warenannahme im Erdgeschoss melden.",
   },
-  "105": {
+  105: {
     companyName: "Brunel Ingolstadt",
     street: "Eriagstrasse 28",
     postalCode: "85053",
@@ -49,7 +49,7 @@ const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlace
     deliveryTime: "10:00 Uhr",
     deliveryNotes: "Abgeschlossene Demo-Lieferung fuer die heutige Tagesstatistik.",
   },
-    "106": {
+  106: {
     companyName: "Siemens Mobility GmbH",
     street: "Rheinstrasse 12",
     postalCode: "85049",
@@ -57,7 +57,7 @@ const predefinedProfiles: Record<string, Omit<RestockerCustomerProfile, "isPlace
     deliveryTime: "14:00 Uhr",
     deliveryNotes: "Testsatz mit heutigem Liefertag fuer Filtertests.",
   },
-  "107": {
+  107: {
     companyName: "Capgemini Deutschland",
     street: "Bahnhofstrasse 18",
     postalCode: "85051",

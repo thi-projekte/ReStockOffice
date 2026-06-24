@@ -40,14 +40,10 @@ public class MailResource {
         RenderedMail renderedMail = notificationMailService.renderAboConfirmation(request);
         String messageId = notificationMailService.sendAboConfirmation(request);
 
-        log.info("Abo confirmation sent successfully - messageId={}, recipient={}",
-                messageId, request.recipientEmail());
+        log.info("Abo confirmation sent successfully - messageId={}, recipient={}", messageId,
+                request.recipientEmail());
 
-        return new SendMailResponse(
-                "abo-confirmation",
-                request.recipientEmail(),
-                renderedMail.subject(),
-                messageId,
+        return new SendMailResponse("abo-confirmation", request.recipientEmail(), renderedMail.subject(), messageId,
                 MAIL_STATUS_QUEUED);
     }
 
@@ -74,15 +70,11 @@ public class MailResource {
         RenderedMail renderedMail = notificationMailService.renderDeliveryAnnouncement(request);
         String messageId = notificationMailService.sendDeliveryAnnouncement(request);
 
-        log.info("Delivery announcement sent successfully - messageId={}, recipient={}",
-                messageId, request.recipientEmail());
+        log.info("Delivery announcement sent successfully - messageId={}, recipient={}", messageId,
+                request.recipientEmail());
 
-        return new SendMailResponse(
-                "delivery-announcement",
-                request.recipientEmail(),
-                renderedMail.subject(),
-                messageId,
-                MAIL_STATUS_QUEUED);
+        return new SendMailResponse("delivery-announcement", request.recipientEmail(), renderedMail.subject(),
+                messageId, MAIL_STATUS_QUEUED);
     }
 
     @POST
@@ -108,15 +100,11 @@ public class MailResource {
         RenderedMail renderedMail = notificationMailService.renderDeliveryConfirmation(request);
         String messageId = notificationMailService.sendDeliveryConfirmation(request);
 
-        log.info("Delivery confirmation sent successfully - messageId={}, recipient={}",
-                messageId, request.recipientEmail());
+        log.info("Delivery confirmation sent successfully - messageId={}, recipient={}", messageId,
+                request.recipientEmail());
 
-        return new SendMailResponse(
-                "delivery-confirmation",
-                request.recipientEmail(),
-                renderedMail.subject(),
-                messageId,
-                MAIL_STATUS_QUEUED);
+        return new SendMailResponse("delivery-confirmation", request.recipientEmail(), renderedMail.subject(),
+                messageId, MAIL_STATUS_QUEUED);
     }
 
     @POST
@@ -134,68 +122,33 @@ public class MailResource {
     }
 
     private AboConfirmationRequest exampleAboConfirmationRequest() {
-        return new AboConfirmationRequest(
-                PREVIEW_RECIPIENT_EMAIL,
-                PREVIEW_CUSTOMER_NAME,
-                "RSO-DEMO-0042",
-                "04.05.2026",
-                "Montag",
-                "Montag, 11.05.2026 zwischen 08:00 und 12:00 Uhr",
-                "Buerostrasse 12, 85049 Ingolstadt",
-                "08.05.2026, 12:00 Uhr",
-                null,
-                "https://app.restockoffice.de/subscription",
-                PREVIEW_LOGO_URL,
-                null,
-                List.of(
-                        new OrderItem("Druckerpapier A4", "10001", "12", "Alle 2 Wochen", PREVIEW_NEXT_DELIVERY_DATE, null),
-                        new OrderItem("Kugelschreiber Blau", "10002", "6", "Monatlich", PREVIEW_NEXT_DELIVERY_DATE, null),
-                        new OrderItem("Notizblock kariert", "10003", "8", "Alle 4 Wochen", PREVIEW_NEXT_DELIVERY_DATE, null)
-                )
-        );
+        return new AboConfirmationRequest(PREVIEW_RECIPIENT_EMAIL, PREVIEW_CUSTOMER_NAME, "RSO-DEMO-0042", "04.05.2026",
+                "Montag", "Montag, 11.05.2026 zwischen 08:00 und 12:00 Uhr", "Buerostrasse 12, 85049 Ingolstadt",
+                "08.05.2026, 12:00 Uhr", null, "https://app.restockoffice.de/subscription", PREVIEW_LOGO_URL, null,
+                List.of(new OrderItem("Druckerpapier A4", "10001", "12", "Alle 2 Wochen", PREVIEW_NEXT_DELIVERY_DATE,
+                        null),
+                        new OrderItem("Kugelschreiber Blau", "10002", "6", "Monatlich", PREVIEW_NEXT_DELIVERY_DATE,
+                                null),
+                        new OrderItem("Notizblock kariert", "10003", "8", "Alle 4 Wochen", PREVIEW_NEXT_DELIVERY_DATE,
+                                null)));
     }
 
     private DeliveryAnnouncementRequest exampleDeliveryAnnouncementRequest() {
-        return new DeliveryAnnouncementRequest(
-                PREVIEW_RECIPIENT_EMAIL,
-                PREVIEW_CUSTOMER_NAME,
-                "2",
-                "Mittwoch",
-                "06.05.2026",
-                "Mittwoch, 06.05.2026 zwischen 09:00 und 11:00 Uhr",
-                "RSO-DEMO-0042",
-                "ReStockOffice Restocker",
-                "Buerostrasse 12, 85049 Ingolstadt",
-                "Bitte am Empfang abgeben.",
-                null,
-                "https://app.restockoffice.de/restocker/deliveries",
-                PREVIEW_LOGO_URL,
-                null,
-                List.of(
-                        new DeliveryItem("Druckerpapier A4", "10001", "12"),
+        return new DeliveryAnnouncementRequest(PREVIEW_RECIPIENT_EMAIL, PREVIEW_CUSTOMER_NAME, "2", "Mittwoch",
+                "06.05.2026", "Mittwoch, 06.05.2026 zwischen 09:00 und 11:00 Uhr", "RSO-DEMO-0042",
+                "ReStockOffice Restocker", "Buerostrasse 12, 85049 Ingolstadt", "Bitte am Empfang abgeben.", null,
+                "https://app.restockoffice.de/restocker/deliveries", PREVIEW_LOGO_URL, null,
+                List.of(new DeliveryItem("Druckerpapier A4", "10001", "12"),
                         new DeliveryItem("Kugelschreiber Blau", "10002", "6"),
-                        new DeliveryItem("Notizblock kariert", "10003", "8")
-                )
-        );
+                        new DeliveryItem("Notizblock kariert", "10003", "8")));
     }
 
     private DeliveryConfirmationRequest exampleDeliveryConfirmationRequest() {
-        return new DeliveryConfirmationRequest(
-                PREVIEW_RECIPIENT_EMAIL,
-                PREVIEW_CUSTOMER_NAME,
-                "Freitag, 15.05.2026",
-                "um 15:30 Uhr",
-                "RSO-DEMO-0042",
-                "ReStockOffice Restocker",
-                null,
-                "https://app.restockoffice.de/restocker/deliveries",
-                PREVIEW_LOGO_URL,
-                null,
-                List.of(
-                        new DeliveryItem("Druckerpapier A4", "10001", "4 Pack"),
+        return new DeliveryConfirmationRequest(PREVIEW_RECIPIENT_EMAIL, PREVIEW_CUSTOMER_NAME, "Freitag, 15.05.2026",
+                "um 15:30 Uhr", "RSO-DEMO-0042", "ReStockOffice Restocker", null,
+                "https://app.restockoffice.de/restocker/deliveries", PREVIEW_LOGO_URL, null,
+                List.of(new DeliveryItem("Druckerpapier A4", "10001", "4 Pack"),
                         new DeliveryItem("Kugelschreiber Blau", "10002", "2 Kartons"),
-                        new DeliveryItem("Notizblock kariert", "10003", "12 Stk")
-                )
-        );
+                        new DeliveryItem("Notizblock kariert", "10003", "12 Stk")));
     }
 }

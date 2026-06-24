@@ -1,10 +1,10 @@
-import {type ReactElement, useEffect, useState} from "react";
-import {Link, Navigate, NavLink, useOutletContext, useParams} from "react-router-dom";
-import {ProductCarousel} from "../components/ProductCarousel";
-import {SubscriptionProfileProgress} from "../components/SubscriptionProfileProgress";
-import {getProductById, getProducts} from "../services/products";
-import type {Product, RestockOrderWithProduct} from "../types/shop";
-import type {SubscriptionProfileStatus} from "../utils/subscriptionProfile";
+import { type ReactElement, useEffect, useState } from "react";
+import { Link, Navigate, NavLink, useOutletContext, useParams } from "react-router-dom";
+import { ProductCarousel } from "../components/ProductCarousel";
+import { SubscriptionProfileProgress } from "../components/SubscriptionProfileProgress";
+import { getProductById, getProducts } from "../services/products";
+import type { Product, RestockOrderWithProduct } from "../types/shop";
+import type { SubscriptionProfileStatus } from "../utils/subscriptionProfile";
 
 interface ProductDetailProps {
   readonly onAddToSubscription: (product: Product) => void;
@@ -30,9 +30,9 @@ function formatPrice(value: number): string {
 
 function getSimilarProducts(products: Product[], currentProduct: Product): Product[] {
   const sameCategory = products.filter(
-    (product) =>
-      product.productId !== currentProduct.productId &&
-      product.category === currentProduct.category,
+    product =>
+      product.productId !== currentProduct.productId
+      && product.category === currentProduct.category,
   );
 
   if (sameCategory.length >= 3) {
@@ -40,9 +40,9 @@ function getSimilarProducts(products: Product[], currentProduct: Product): Produ
   }
 
   const fallbackProducts = products.filter(
-    (product) =>
-      product.productId !== currentProduct.productId &&
-      product.category !== currentProduct.category,
+    product =>
+      product.productId !== currentProduct.productId
+      && product.category !== currentProduct.category,
   );
 
   return [...sameCategory, ...fallbackProducts].slice(0, 6);
@@ -60,8 +60,8 @@ export function ProductDetailPage(): ReactElement {
     subscriptionItems,
     canModifySubscription,
     subscriptionProfileStatus,
-  } =
-    useOutletContext<ProductDetailProps>();
+  }
+    = useOutletContext<ProductDetailProps>();
 
   useEffect(() => {
     async function loadProduct(): Promise<void> {
@@ -84,7 +84,7 @@ export function ProductDetailPage(): ReactElement {
   }, [productId]);
 
   if (Number.isNaN(productId)) {
-    return <Navigate to="/products" replace/>;
+    return <Navigate to="/products" replace />;
   }
 
   if (isLoading) {
@@ -92,10 +92,10 @@ export function ProductDetailPage(): ReactElement {
   }
 
   const isInSub = product
-    ? subscriptionItems.some((item) => item.productId === product.productId.toString())
+    ? subscriptionItems.some(item => item.productId === product.productId.toString())
     : false;
   const subscriptionItem = product
-    ? subscriptionItems.find((item) => item.productId === product.productId.toString())
+    ? subscriptionItems.find(item => item.productId === product.productId.toString())
     : undefined;
 
   if (!product) {
@@ -181,7 +181,7 @@ export function ProductDetailPage(): ReactElement {
           <span className="eyebrow">{product.category}</span>
         </div>
         <div className="product-detail__media">
-          <img src={product.imageUrl} alt={product.name}/>
+          <img src={product.imageUrl} alt={product.name} />
         </div>
         <div className="product-detail__summary">
           <h1>{product.name}</h1>
@@ -200,7 +200,9 @@ export function ProductDetailPage(): ReactElement {
             <div>
               <dt>Einheiten</dt>
               <dd>
-                {product.unitCount} {product.unit}
+                {product.unitCount}
+                {" "}
+                {product.unit}
               </dd>
             </div>
             <div>
@@ -244,7 +246,9 @@ export function ProductDetailPage(): ReactElement {
           <article className="product-specs__item">
             <span>Einheiten pro Packung</span>
             <strong>
-              {product.unitCount} {product.unit}
+              {product.unitCount}
+              {" "}
+              {product.unit}
             </strong>
           </article>
           <article className="product-specs__item">

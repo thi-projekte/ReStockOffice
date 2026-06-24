@@ -1,8 +1,8 @@
-type KeycloakConfig = {
+interface KeycloakConfig {
   readonly url: string;
   readonly realm: string;
   readonly clientId: string;
-};
+}
 
 export const keycloakConfig: KeycloakConfig = {
   url: import.meta.env.VITE_KEYCLOAK_URL ?? "https://id.restockoffice.de",

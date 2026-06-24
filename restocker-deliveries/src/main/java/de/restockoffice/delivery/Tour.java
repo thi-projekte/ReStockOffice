@@ -68,7 +68,6 @@ public class Tour extends PanacheEntityBase {
     }
 
     public static List<Tour> findTodayByRestocker(String restockerName) {
-        return list("restockerName = ?1 and tourDate = ?2",
-                restockerName, java.time.LocalDate.now());
+        return list("restockerName = ?1 and tourDate = ?2", restockerName, java.time.LocalDate.now());
     }
 }

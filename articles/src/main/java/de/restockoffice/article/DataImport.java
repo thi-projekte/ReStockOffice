@@ -27,7 +27,8 @@ public class DataImport {
 
     @Transactional
     public void loadInitialData(@Observes StartupEvent ev) {
-        if (articleRepository.count() > 0) return;
+        if (articleRepository.count() > 0)
+            return;
 
         try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("products.json")) {
             if (is == null) {

@@ -1,15 +1,15 @@
-﻿import {type ReactElement, useEffect, useRef, useState} from "react";
-import {Navigate, useLocation, useOutletContext} from "react-router-dom";
-import {MdEdit, MdLogout, MdOutlineWarningAmber, MdReceiptLong, MdSave} from "react-icons/md";
-import {FaBell, FaMoon, FaSun} from "react-icons/fa";
+﻿import { type ReactElement, useEffect, useRef, useState } from "react";
+import { Navigate, useLocation, useOutletContext } from "react-router-dom";
+import { MdEdit, MdLogout, MdOutlineWarningAmber, MdReceiptLong, MdSave } from "react-icons/md";
+import { FaBell, FaMoon, FaSun } from "react-icons/fa";
 import toast from "react-hot-toast";
-import type {Product, RestockOrderWithProduct} from "../types/shop";
+import type { Product, RestockOrderWithProduct } from "../types/shop";
 import keycloak from "../auth/keycloak";
-import {useAuth} from "../auth/AuthProvider";
-import {getInvoices, requestInvoicePdf, type InvoiceSummary} from "../services/invoices";
-import {getMyUser, saveMyUser, type UserProfile} from "../services/users";
-import type {SubscriptionProfileStatus} from "../utils/subscriptionProfile";
-import {useAddressAutocomplete} from "../utils/useAddressAutocomplete";
+import { useAuth } from "../auth/AuthProvider";
+import { getInvoices, requestInvoicePdf, type InvoiceSummary } from "../services/invoices";
+import { getMyUser, saveMyUser, type UserProfile } from "../services/users";
+import type { SubscriptionProfileStatus } from "../utils/subscriptionProfile";
+import { useAddressAutocomplete } from "../utils/useAddressAutocomplete";
 import {
   computeErrors,
   formatBIC,
@@ -111,7 +111,7 @@ export function AccountPage(): ReactElement {
     isLoggedIn, onLogout, onSetTheme, theme,
     subscriptionProfileStatus, onSubscriptionProfileUpdated,
   } = useOutletContext<OutletContext>();
-  const {hasRole, token, user} = useAuth();
+  const { hasRole, token, user } = useAuth();
   const isRestocker = hasRole("Restocker");
   const userKind = isRestocker ? "restocker" : "customer";
   const location = useLocation();
@@ -144,8 +144,11 @@ export function AccountPage(): ReactElement {
   // ── Daten laden ────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!isLoggedIn || !user) return;
-    getMyUser({token, kind: userKind})
+    if (!isLoggedIn || !user) {
+      return;
+    }
+
+    getMyUser({ token, kind: userKind })
       .then((u) => {
         setLoadedUser(u);
         const form: ProfileFormState = {
@@ -177,7 +180,7 @@ export function AccountPage(): ReactElement {
       return;
     }
 
-    getInvoices({token, kind: userKind})
+    getInvoices({ token, kind: userKind })
       .then((loaded) => {
         setInvoices(loaded);
         setVisibleInvoiceCount(INVOICE_PAGE_SIZE);
@@ -186,13 +189,19 @@ export function AccountPage(): ReactElement {
   }, [isLoggedIn, token, user, userKind]);
 
   useEffect(() => {
-    if (!location.hash) return;
+    if (!location.hash) {
+      return;
+    }
+
     const sectionId = location.hash.slice(1);
     globalThis.requestAnimationFrame(() => {
       const section = document.getElementById(sectionId);
-      if (!section) return;
+      if (!section) {
+        return;
+      }
+
       const top = section.getBoundingClientRect().top + window.scrollY - 96;
-      window.scrollTo({top, behavior: "smooth"});
+      window.scrollTo({ top, behavior: "smooth" });
     });
   }, [location.hash, invoices.length]);
 
@@ -208,7 +217,9 @@ export function AccountPage(): ReactElement {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!isLoggedIn) return <Navigate to="/login" replace/>;
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
 
   // ── Hilfsfunktionen ────────────────────────────────────────────────────────
 
@@ -236,7 +247,7 @@ export function AccountPage(): ReactElement {
 
   function hasUnsavedChanges(): boolean {
     return (Object.keys(profileForm) as (keyof ProfileFormState)[]).some(
-      (key) => profileForm[key] !== lastSavedForm.current[key],
+      key => profileForm[key] !== lastSavedForm.current[key],
     );
   }
 
@@ -266,13 +277,13 @@ export function AccountPage(): ReactElement {
         break;
     }
 
-    const updated = {...profileForm, [field]: sanitized};
+    const updated = { ...profileForm, [field]: sanitized };
     setProfileForm(updated);
     setFormErrors(computeErrors(updated));
   }
 
   function touchField(field: keyof ProfileFormState): void {
-    setTouchedFields((prev) => new Set([...prev, field]));
+    setTouchedFields(prev => new Set([...prev, field]));
   }
 
   // ── Adress-Autocomplete ────────────────────────────────────────────────────
@@ -299,19 +310,21 @@ export function AccountPage(): ReactElement {
     addressAC.setSuggestions([]);
     setShowAddressSuggestions(false);
     // Alle Adressfelder als berührt markieren
-    setTouchedFields((prev) => new Set([...prev, "street", "city", "postalCode", "country"]));
+    setTouchedFields(prev => new Set([...prev, "street", "city", "postalCode", "country"]));
   }
 
   // ── Persistierung ──────────────────────────────────────────────────────────
 
   async function persistUser(form: ProfileFormState): Promise<boolean> {
-    if (!loadedUser) return false;
+    if (!loadedUser) {
+      return false;
+    }
 
     // Alle Felder als berührt markieren → Fehler sichtbar machen
     setTouchedFields(new Set(Object.keys(form) as (keyof ProfileFormState)[]));
     const errors = computeErrors(form);
     const hasValidationErrors = Object.keys(errors).length > 0;
-    const hasMissingRequired = getRequiredFields().some((f) => form[f].trim() === "");
+    const hasMissingRequired = getRequiredFields().some(f => form[f].trim() === "");
 
     if (hasValidationErrors || hasMissingRequired) {
       toast.error("Bitte korrigiere die markierten Felder.");
@@ -322,46 +335,46 @@ export function AccountPage(): ReactElement {
     try {
       const savedUser = isRestocker
         ? await saveMyUser(
-          {
-            kind: "restocker",
-            userId: loadedUser.userId,
-            phoneNumber: form.phone,
-            birthDate: form.birthDate || undefined,
-            street: form.street,
-            houseNumber: form.houseNumber,
-            postalCode: form.postalCode,
-            city: form.city,
-            country: form.country,
-            profilePictureUrl: loadedUser.profilePictureUrl,
-            iban: form.iban,
-            bic: form.bic,
-            accountHolder: form.accountHolder,
-            existsInUserService: loadedUser.existsInUserService,
-          },
-          {token, kind: userKind},
-        )
+            {
+              kind: "restocker",
+              userId: loadedUser.userId,
+              phoneNumber: form.phone,
+              birthDate: form.birthDate || undefined,
+              street: form.street,
+              houseNumber: form.houseNumber,
+              postalCode: form.postalCode,
+              city: form.city,
+              country: form.country,
+              profilePictureUrl: loadedUser.profilePictureUrl,
+              iban: form.iban,
+              bic: form.bic,
+              accountHolder: form.accountHolder,
+              existsInUserService: loadedUser.existsInUserService,
+            },
+            { token, kind: userKind },
+          )
         : await saveMyUser(
-          {
-            kind: "customer",
-            userId: loadedUser.userId,
-            phoneNumber: form.phone,
-            birthDate: form.birthDate || undefined,
-            street: form.street,
-            houseNumber: form.houseNumber,
-            postalCode: form.postalCode,
-            city: form.city,
-            country: form.country,
-            profilePictureUrl: loadedUser.profilePictureUrl,
-            companyName: form.company,
-            roleInCompany: form.role || undefined,
-            deliveryHint: form.note || undefined,
-            deliveryDay: form.deliveryDay || undefined,
-            deliveryTime: Number(form.deliveryTime?.split(":")[0] || 0),
-            iban: form.iban,
-            existsInUserService: loadedUser.existsInUserService,
-          },
-          {token, kind: userKind},
-        );
+            {
+              kind: "customer",
+              userId: loadedUser.userId,
+              phoneNumber: form.phone,
+              birthDate: form.birthDate || undefined,
+              street: form.street,
+              houseNumber: form.houseNumber,
+              postalCode: form.postalCode,
+              city: form.city,
+              country: form.country,
+              profilePictureUrl: loadedUser.profilePictureUrl,
+              companyName: form.company,
+              roleInCompany: form.role || undefined,
+              deliveryHint: form.note || undefined,
+              deliveryDay: form.deliveryDay || undefined,
+              deliveryTime: Number(form.deliveryTime?.split(":")[0] || 0),
+              iban: form.iban,
+              existsInUserService: loadedUser.existsInUserService,
+            },
+            { token, kind: userKind },
+          );
 
       setLoadedUser(savedUser);
       onSubscriptionProfileUpdated(savedUser);
@@ -382,14 +395,17 @@ export function AccountPage(): ReactElement {
     }
     if (hasUnsavedChanges()) {
       const wasSaved = await persistUser(profileForm);
-      if (!wasSaved) return;
+      if (!wasSaved) {
+        return;
+      }
+
       toast.success("Deine Änderungen wurden gespeichert.");
     }
     setIsEditingProfile(false);
   }
 
   function toggleNotification(field: keyof NotificationState): void {
-    setNotifications((c) => ({...c, [field]: !c[field]}));
+    setNotifications(c => ({ ...c, [field]: !c[field] }));
   }
 
   function formatInvoiceAmount(invoice: InvoiceSummary): string {
@@ -425,32 +441,38 @@ export function AccountPage(): ReactElement {
     }
 
     return (
-        <section className="page-card subscription-profile-progress">
-          <div className="subscription-profile-progress__copy">
-            <div>
-              <strong>Profil noch nicht vollständig</strong>
-              <p>
-                {isRestocker
-                  ? "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, kannst du keine RestockOrders ausliefern."
-                  : "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, sind Änderungen am Abo gesperrt."}
-              </p>
-            </div>
-            <span className="subscription-profile-progress__percent">
-              {subscriptionProfileStatus?.completionPercentage ?? 0}%
-            </span>
-          </div>
-          <progress
-            className="subscription-profile-progress__bar"
-            aria-label="Profilfortschritt"
-            value={subscriptionProfileStatus?.completionPercentage ?? 0}
-            max={100}
-          />
-          {subscriptionProfileStatus?.missingFields.length ? (
-            <p className="subscription-profile-progress__missing">
-              Fehlt noch: {subscriptionProfileStatus.missingFields.join(", ")}.
+      <section className="page-card subscription-profile-progress">
+        <div className="subscription-profile-progress__copy">
+          <div>
+            <strong>Profil noch nicht vollständig</strong>
+            <p>
+              {isRestocker
+                ? "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, kannst du keine RestockOrders ausliefern."
+                : "Dein Profil muss noch vervollständigt werden. Solange Pflichtfelder fehlen, sind Änderungen am Abo gesperrt."}
             </p>
-          ) : null}
-        </section>
+          </div>
+          <span className="subscription-profile-progress__percent">
+            {subscriptionProfileStatus?.completionPercentage ?? 0}
+            %
+          </span>
+        </div>
+        <progress
+          className="subscription-profile-progress__bar"
+          aria-label="Profilfortschritt"
+          value={subscriptionProfileStatus?.completionPercentage ?? 0}
+          max={100}
+        />
+        {subscriptionProfileStatus?.missingFields.length
+          ? (
+              <p className="subscription-profile-progress__missing">
+                Fehlt noch:
+                {" "}
+                {subscriptionProfileStatus.missingFields.join(", ")}
+                .
+              </p>
+            )
+          : null}
+      </section>
     );
   }
 
@@ -466,11 +488,18 @@ export function AccountPage(): ReactElement {
           </p>
         </div>
         <div className="account-hero__summary">
-          <div className="account-badge"><span>Benutzerkonto</span><strong>{username}</strong></div>
-          <div className="account-badge"><span>Unternehmen</span><strong>{profileForm.company || "—"}</strong>
+          <div className="account-badge">
+            <span>Benutzerkonto</span>
+            <strong>{username}</strong>
           </div>
           <div className="account-badge">
-            <span>Rolle</span><strong>{isRestocker ? "Restocker" : "Customer"}</strong></div>
+            <span>Unternehmen</span>
+            <strong>{profileForm.company || "—"}</strong>
+          </div>
+          <div className="account-badge">
+            <span>Rolle</span>
+            <strong>{isRestocker ? "Restocker" : "Customer"}</strong>
+          </div>
         </div>
       </section>
     );
@@ -494,7 +523,7 @@ export function AccountPage(): ReactElement {
             void handleProfileAction();
           }}
         >
-          {isEditingProfile ? <MdSave/> : <MdEdit/>}
+          {isEditingProfile ? <MdSave /> : <MdEdit />}
           {profileActionLabel}
         </button>
       </div>
@@ -510,24 +539,24 @@ export function AccountPage(): ReactElement {
     return (
       <div className="account-panel">
         <div className="account-panel__head">
-          <h3 style={{paddingBottom: "1rem"}}>Persönliche Daten</h3>
+          <h3 style={{ paddingBottom: "1rem" }}>Persönliche Daten</h3>
         </div>
         <div className="account-form-grid">
           <label className="account-field">
             <span>Benutzername</span>
-            <input value={username} disabled/>
+            <input value={username} disabled />
           </label>
           <label className="account-field">
             <span>E-Mail</span>
-            <input value={email} disabled/>
+            <input value={email} disabled />
           </label>
           <label className="account-field">
             <span>Vorname</span>
-            <input value={firstName} disabled/>
+            <input value={firstName} disabled />
           </label>
           <label className="account-field">
             <span>Nachname</span>
-            <input value={lastName} disabled/>
+            <input value={lastName} disabled />
           </label>
           <label className="account-field">
             <span>Geburtsdatum</span>
@@ -535,7 +564,7 @@ export function AccountPage(): ReactElement {
               type="date"
               value={profileForm.birthDate}
               disabled={!isEditingProfile}
-              onChange={(e) => updateField("birthDate", e.target.value)}
+              onChange={e => updateField("birthDate", e.target.value)}
             />
           </label>
           <label className="account-field">
@@ -546,7 +575,7 @@ export function AccountPage(): ReactElement {
               inputMode="tel"
               placeholder="+49 151 12345678"
               className={isFieldInvalid("phone") ? "input--invalid" : ""}
-              onChange={(e) => updateField("phone", e.target.value)}
+              onChange={e => updateField("phone", e.target.value)}
               onBlur={() => touchField("phone")}
             />
             {getFieldError("phone") && (
@@ -560,7 +589,7 @@ export function AccountPage(): ReactElement {
               disabled={!isEditingProfile}
               maxLength={80}
               className={roleClassName}
-              onChange={(e) => updateField(roleField, e.target.value)}
+              onChange={e => updateField(roleField, e.target.value)}
             />
           </label>
         </div>
@@ -581,7 +610,7 @@ export function AccountPage(): ReactElement {
           disabled={!isEditingProfile}
           maxLength={120}
           className={isFieldInvalid("company") ? "input--invalid" : ""}
-          onChange={(e) => updateField("company", e.target.value)}
+          onChange={e => updateField("company", e.target.value)}
         />
       </label>
     );
@@ -594,7 +623,7 @@ export function AccountPage(): ReactElement {
 
     return (
       <ul className="account-address-suggestions">
-        {addressAC.suggestions.map((s) => (
+        {addressAC.suggestions.map(s => (
           <li key={`${s.street}-${s.houseNumber}-${s.postalCode}-${s.city}`}>
             <button
               type="button"
@@ -604,8 +633,19 @@ export function AccountPage(): ReactElement {
                 handleAddressSelect(s);
               }}
             >
-              <strong>{s.street} {s.houseNumber}</strong>
-              <span>{s.postalCode} {s.city}, {s.country}</span>
+              <strong>
+                {s.street}
+                {" "}
+                {s.houseNumber}
+              </strong>
+              <span>
+                {s.postalCode}
+                {" "}
+                {s.city}
+                ,
+                {" "}
+                {s.country}
+              </span>
             </button>
           </li>
         ))}
@@ -618,7 +658,7 @@ export function AccountPage(): ReactElement {
 
     return (
       <div className="account-field account-field--full account-street-row">
-        <div className="account-field" ref={addressContainerRef} style={{position: "relative"}}>
+        <div className="account-field" ref={addressContainerRef} style={{ position: "relative" }}>
           <span>{getFieldLabel("street", "Straße")}</span>
           <input
             value={streetValue}
@@ -626,7 +666,7 @@ export function AccountPage(): ReactElement {
             placeholder="Straße eingeben und aus Vorschlägen wählen…"
             autoComplete="off"
             className={isFieldInvalid("street") ? "input--invalid" : ""}
-            onChange={(e) => handleAddressSearchChange(e.target.value)}
+            onChange={e => handleAddressSearchChange(e.target.value)}
             onFocus={() => setShowAddressSuggestions(true)}
             onBlur={() => touchField("street")}
           />
@@ -643,7 +683,7 @@ export function AccountPage(): ReactElement {
             inputMode="numeric"
             maxLength={6}
             className={isFieldInvalid("houseNumber") ? "input--invalid" : ""}
-            onChange={(e) => updateField("houseNumber", e.target.value)}
+            onChange={e => updateField("houseNumber", e.target.value)}
           />
         </label>
       </div>
@@ -663,9 +703,9 @@ export function AccountPage(): ReactElement {
             value={profileForm.deliveryDay}
             disabled={!isEditingProfile}
             className="account-field__select"
-            onChange={(e) => updateField("deliveryDay", e.target.value)}
+            onChange={e => updateField("deliveryDay", e.target.value)}
           >
-            {DELIVERY_DAYS.map((d) => (
+            {DELIVERY_DAYS.map(d => (
               <option key={d} value={d}>{d}</option>
             ))}
           </select>
@@ -679,7 +719,7 @@ export function AccountPage(): ReactElement {
             min="07:00"
             max="18:00"
             className={isFieldInvalid("deliveryTime") ? "input--invalid" : ""}
-            onChange={(e) => updateField("deliveryTime", e.target.value)}
+            onChange={e => updateField("deliveryTime", e.target.value)}
             onBlur={() => touchField("deliveryTime")}
           />
           {getFieldError("deliveryTime") && (
@@ -705,7 +745,7 @@ export function AccountPage(): ReactElement {
           placeholder="COBADEFFXXX"
           maxLength={11}
           className={isFieldInvalid("bic") ? "input--invalid" : ""}
-          onChange={(e) => updateField("bic", e.target.value)}
+          onChange={e => updateField("bic", e.target.value)}
           onBlur={() => touchField("bic")}
         />
         {getFieldError("bic") && (
@@ -724,7 +764,10 @@ export function AccountPage(): ReactElement {
       <div className="account-field account-field--full">
         <div className="account-field__head-row">
           <span>Lieferhinweis</span>
-          <span className="account-field__counter">{profileForm.note.length}/300</span>
+          <span className="account-field__counter">
+            {profileForm.note.length}
+            /300
+          </span>
         </div>
         <textarea
           rows={4}
@@ -732,7 +775,7 @@ export function AccountPage(): ReactElement {
           disabled={!isEditingProfile}
           maxLength={300}
           className={profileForm.note.length >= 300 ? "input--invalid" : ""}
-          onChange={(e) => updateField("note", e.target.value)}
+          onChange={e => updateField("note", e.target.value)}
         />
       </div>
     );
@@ -742,7 +785,7 @@ export function AccountPage(): ReactElement {
     return (
       <div className="account-panel account-panel--accent">
         <div className="account-panel__head">
-          <h3 style={{paddingBottom: "1rem"}}>
+          <h3 style={{ paddingBottom: "1rem" }}>
             {isRestocker ? "Abrechnungs- und Adressdaten" : "Lieferadresse"}
           </h3>
         </div>
@@ -754,10 +797,10 @@ export function AccountPage(): ReactElement {
               value={profileForm.country}
               disabled={!isEditingProfile}
               className={`account-field__select${isFieldInvalid("country") ? " input--invalid" : ""}`}
-              onChange={(e) => updateField("country", e.target.value)}
+              onChange={e => updateField("country", e.target.value)}
             >
               <option value="">Bitte wählen</option>
-              {ALLOWED_COUNTRIES.map((c) => (
+              {ALLOWED_COUNTRIES.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -771,7 +814,7 @@ export function AccountPage(): ReactElement {
               inputMode="numeric"
               maxLength={5}
               className={isFieldInvalid("postalCode") ? "input--invalid" : ""}
-              onChange={(e) => updateField("postalCode", e.target.value)}
+              onChange={e => updateField("postalCode", e.target.value)}
               onBlur={() => touchField("postalCode")}
             />
             {getFieldError("postalCode") && (
@@ -785,7 +828,7 @@ export function AccountPage(): ReactElement {
               disabled={!isEditingProfile}
               maxLength={80}
               className={isFieldInvalid("city") ? "input--invalid" : ""}
-              onChange={(e) => updateField("city", e.target.value)}
+              onChange={e => updateField("city", e.target.value)}
             />
           </label>
           {renderDeliveryPreferenceFields()}
@@ -798,7 +841,7 @@ export function AccountPage(): ReactElement {
               placeholder="DE89 3704 0044 0532 0130 00"
               maxLength={34}
               className={isFieldInvalid("iban") ? "input--invalid" : ""}
-              onChange={(e) => updateField("iban", e.target.value)}
+              onChange={e => updateField("iban", e.target.value)}
               onBlur={() => touchField("iban")}
             />
             {getFieldError("iban") && (
@@ -841,7 +884,10 @@ export function AccountPage(): ReactElement {
             <div className="account-settings-section__head">
               <div>
                 <h3>Darstellung</h3>
-                <span>Aktuelles Schema: {theme === "dark" ? "Dark Mode" : "Light Mode"}</span>
+                <span>
+                  Aktuelles Schema:
+                  {theme === "dark" ? "Dark Mode" : "Light Mode"}
+                </span>
               </div>
             </div>
             <div className="account-theme-grid">
@@ -850,23 +896,23 @@ export function AccountPage(): ReactElement {
                 type="button"
                 onClick={() => onSetTheme("light")}
               >
-                <div className="account-theme-option__swatch account-theme-option__swatch--light"/>
+                <div className="account-theme-option__swatch account-theme-option__swatch--light" />
                 <strong>Light Mode</strong>
-                <FaSun/>
+                <FaSun />
               </button>
               <button
                 className={`account-theme-option ${theme === "dark" ? "active" : ""}`.trim()}
                 type="button"
                 onClick={() => onSetTheme("dark")}
               >
-                <div className="account-theme-option__swatch account-theme-option__swatch--dark"/>
+                <div className="account-theme-option__swatch account-theme-option__swatch--dark" />
                 <strong>Dark Mode</strong>
-                <FaMoon/>
+                <FaMoon />
               </button>
             </div>
           </div>
 
-          <div className="account-settings-divider"/>
+          <div className="account-settings-divider" />
 
           <div className="account-settings-section">
             <div className="account-settings-section__head">
@@ -876,7 +922,7 @@ export function AccountPage(): ReactElement {
               </div>
             </div>
             <div className="account-toggle-list">
-              {NOTIFICATION_OPTIONS.map(({key, title, description}) => (
+              {NOTIFICATION_OPTIONS.map(({ key, title, description }) => (
                 <button
                   key={key}
                   className={`account-toggle-button ${notifications[key] ? "active" : ""}`.trim()}
@@ -888,7 +934,7 @@ export function AccountPage(): ReactElement {
                     <span>{description}</span>
                   </div>
                   <span className="account-toggle-pill">
-                    <FaBell/>
+                    <FaBell />
                     {notifications[key] ? " Aktiv" : " Inaktiv"}
                   </span>
                 </button>
@@ -918,7 +964,7 @@ export function AccountPage(): ReactElement {
           <div className="account-settings-shell">
             <div className="account-settings-section">
               <ul className="account-invoice-list">
-                {visibleInvoices.map((invoice) => (
+                {visibleInvoices.map(invoice => (
                   <li key={invoice.invoiceId}>
                     <button
                       className="account-invoice-item"
@@ -933,7 +979,7 @@ export function AccountPage(): ReactElement {
                         <strong>{invoice.title}</strong>
                       </div>
                       <span className="account-invoice-pill">
-                        <MdReceiptLong/>
+                        <MdReceiptLong />
                         {formatInvoiceAmount(invoice)}
                       </span>
                     </button>
@@ -944,7 +990,7 @@ export function AccountPage(): ReactElement {
                 <button
                   className="button button--ghost account-invoice-more"
                   type="button"
-                  onClick={() => setVisibleInvoiceCount((c) => c + INVOICE_PAGE_SIZE)}
+                  onClick={() => setVisibleInvoiceCount(c => c + INVOICE_PAGE_SIZE)}
                 >
                   Mehr anzeigen
                 </button>
@@ -973,13 +1019,16 @@ export function AccountPage(): ReactElement {
             type="button"
             onClick={onLogout}
           >
-            <MdLogout/>
+            <MdLogout />
             Abmelden
           </button>
         </div>
         <div className="account-danger-zone">
           <div className="account-danger-zone__copy">
-            <h3><MdOutlineWarningAmber/>Kritische Aktionen</h3>
+            <h3>
+              <MdOutlineWarningAmber />
+              Kritische Aktionen
+            </h3>
             <p>Diese Aktionen beeinflussen dein Konto und laufende Prozesse dauerhaft.</p>
           </div>
           <div className="account-danger-zone__actions">

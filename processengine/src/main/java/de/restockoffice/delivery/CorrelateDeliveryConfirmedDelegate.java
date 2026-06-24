@@ -21,27 +21,22 @@ public class CorrelateDeliveryConfirmedDelegate implements JavaDelegate {
 
     @Override
     public void execute(DelegateExecution execution) {
-        String deliveryId = firstNonBlank(
-                stringValue(execution.getVariable("deliveredDeliveryId")),
-                stringValue(execution.getVariable("deliveryId"))
-        );
+        String deliveryId = firstNonBlank(stringValue(execution.getVariable("deliveredDeliveryId")),
+                stringValue(execution.getVariable("deliveryId")));
 
         if (isBlank(deliveryId)) {
             throw new IllegalStateException("DeliveryConfirmed message cannot be sent without deliveryId.");
         }
 
         try {
-            runtimeService
-                    .createMessageCorrelation(MESSAGE_NAME)
-                    .localVariableEquals("deliveryId", deliveryId)
-                    .setVariable("deliveryId", deliveryId)
-                    .setVariable("deliveredDeliveryId", deliveryId)
-                    .correlate();
+            runtimeService.createMessageCorrelation(MESSAGE_NAME).localVariableEquals("deliveryId", deliveryId)
+                    .setVariable("deliveryId", deliveryId).setVariable("deliveredDeliveryId", deliveryId).correlate();
 
             log.info("Correlated {} message for delivery {}", MESSAGE_NAME, deliveryId);
         } catch (RuntimeException exception) {
             if (exception.getMessage() != null && exception.getMessage().contains("Cannot correlate")) {
-                log.info("No waiting {} subscription found for delivery {}; skipping correlation", MESSAGE_NAME, deliveryId);
+                log.info("No waiting {} subscription found for delivery {}; skipping correlation", MESSAGE_NAME,
+                        deliveryId);
                 return;
             }
 

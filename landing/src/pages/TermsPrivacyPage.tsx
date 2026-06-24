@@ -5,7 +5,7 @@ import Footer from "../components/Footer.tsx";
 export default function TermsPrivacyPage() {
   return (
     <div className={styles.page}>
-      <Header/>
+      <Header />
       <main className={styles.main}>
         <div className={styles.content}>
           <h1 className={styles.title}>Rechtliche Hinweise</h1>
@@ -78,7 +78,7 @@ export default function TermsPrivacyPage() {
           </div>
         </div>
       </main>
-      <Footer/>
+      <Footer />
     </div>
   );
 }

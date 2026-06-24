@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
-@TestSecurity(user = "test-user", roles = {"admin"})
+@TestSecurity(user = "test-user", roles = { "admin" })
 class InvoiceServiceTest {
 
     @Inject
@@ -54,13 +54,11 @@ class InvoiceServiceTest {
 
     @Test
     void testCreateAndPersistInvoice() {
-        InvoiceRequest request = new InvoiceRequest(
-                "user123", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
-                null, "2026-06-15", "2026-06-30", new BigDecimal("100.00"), List.of()
-        );
+        InvoiceRequest request = new InvoiceRequest("user123", "test@example.com", "Max Mustermann", "Str 1", "12345",
+                "Stadt", null, "2026-06-15", "2026-06-30", new BigDecimal("100.00"), List.of());
 
-        when(pdfGenerator.createPDF(any())).thenReturn(new byte[]{1, 2, 3});
-        when(eBillingService.makeZUGFeRD(any(), any())).thenReturn(new byte[]{4, 5, 6});
+        when(pdfGenerator.createPDF(any())).thenReturn(new byte[] { 1, 2, 3 });
+        when(eBillingService.makeZUGFeRD(any(), any())).thenReturn(new byte[] { 4, 5, 6 });
 
         String invoiceNumber = invoiceService.createAndPersistInvoice(request);
 
@@ -75,14 +73,12 @@ class InvoiceServiceTest {
         String testInvoiceNumber = "RE-MAIL-123";
         InvoiceEntity entity = new InvoiceEntity();
         entity.setInvoiceNumber(testInvoiceNumber);
-        entity.setZugferdPdf(new byte[]{7, 8, 9});
+        entity.setZugferdPdf(new byte[] { 7, 8, 9 });
 
         when(invoiceRepository.findByInvoiceNumber(testInvoiceNumber)).thenReturn(Optional.of(entity));
 
-        InvoiceRequest request = new InvoiceRequest(
-                "user123", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
-                testInvoiceNumber, "2026-06-15", "2026-06-30", new BigDecimal("100.00"), List.of()
-        );
+        InvoiceRequest request = new InvoiceRequest("user123", "test@example.com", "Max Mustermann", "Str 1", "12345",
+                "Stadt", testInvoiceNumber, "2026-06-15", "2026-06-30", new BigDecimal("100.00"), List.of());
 
         invoiceService.sendInvoiceViaEmail(request);
 
@@ -93,10 +89,8 @@ class InvoiceServiceTest {
     void testSendInvoiceViaEmail_NotFound() {
         when(invoiceRepository.findByInvoiceNumber("RE-UNKNOWN")).thenReturn(Optional.empty());
 
-        InvoiceRequest request = new InvoiceRequest(
-                "user123", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
-                "RE-UNKNOWN", "2026-06-15", "2026-06-30", new BigDecimal("100.00"), List.of()
-        );
+        InvoiceRequest request = new InvoiceRequest("user123", "test@example.com", "Max Mustermann", "Str 1", "12345",
+                "Stadt", "RE-UNKNOWN", "2026-06-15", "2026-06-30", new BigDecimal("100.00"), List.of());
 
         assertThrows(WebApplicationException.class, () -> {
             invoiceService.sendInvoiceViaEmail(request);
@@ -106,13 +100,11 @@ class InvoiceServiceTest {
     @Test
     void testProcessInvoice() {
         String testInvoiceNumber = "RE-PROC-001";
-        InvoiceRequest request = new InvoiceRequest(
-                "user-proc", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
-                testInvoiceNumber, "2026-06-15", "2026-06-30", new BigDecimal("250.00"), List.of()
-        );
+        InvoiceRequest request = new InvoiceRequest("user-proc", "test@example.com", "Max Mustermann", "Str 1", "12345",
+                "Stadt", testInvoiceNumber, "2026-06-15", "2026-06-30", new BigDecimal("250.00"), List.of());
 
-        when(pdfGenerator.createPDF(any())).thenReturn(new byte[]{1, 2});
-        when(eBillingService.makeZUGFeRD(any(), any())).thenReturn(new byte[]{3, 4});
+        when(pdfGenerator.createPDF(any())).thenReturn(new byte[] { 1, 2 });
+        when(eBillingService.makeZUGFeRD(any(), any())).thenReturn(new byte[] { 3, 4 });
 
         invoiceService.processInvoice(request);
 

@@ -10,7 +10,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import org.jboss.logging.Logger;
 
-
 @Entity
 @Table(name = "orders_tb")
 public class Order extends PanacheEntity {

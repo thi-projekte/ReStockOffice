@@ -20,7 +20,8 @@ public class TemplateService {
     }
 
     private String loadResource(String resourcePath) {
-        try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)) {
+        try (InputStream inputStream = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(resourcePath)) {
             if (inputStream == null) {
                 throw new MailValidationException("Template resource not found: " + resourcePath);
             }

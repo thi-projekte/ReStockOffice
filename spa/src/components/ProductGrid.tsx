@@ -1,12 +1,12 @@
-import {type ReactElement} from "react";
-import {Link} from "react-router-dom";
-import type {Product} from "../types/shop";
+import { type ReactElement } from "react";
+import { Link } from "react-router-dom";
+import type { Product } from "../types/shop";
 
 interface ProductGridProps {
   readonly products: readonly Product[];
 }
 
-export function ProductGrid({products}: Readonly<ProductGridProps>): ReactElement {
+export function ProductGrid({ products }: Readonly<ProductGridProps>): ReactElement {
   if (products.length === 0) {
     return (
       <p className="empty-state product-grid-empty">
@@ -18,8 +18,8 @@ export function ProductGrid({products}: Readonly<ProductGridProps>): ReactElemen
   return (
     <div className="product-grid-shell">
       <div className="product-grid">
-        {products.map((product) => (
-          <ProductCard key={product.productId} product={product}/>
+        {products.map(product => (
+          <ProductCard key={product.productId} product={product} />
         ))}
       </div>
     </div>
@@ -30,7 +30,7 @@ interface ProductCardProps {
   readonly product: Product;
 }
 
-function ProductCard({product}: Readonly<ProductCardProps>): ReactElement {
+function ProductCard({ product }: Readonly<ProductCardProps>): ReactElement {
   return (
     <Link
       className="product-card product-card--link"
@@ -54,7 +54,9 @@ function ProductCard({product}: Readonly<ProductCardProps>): ReactElement {
           <div>
             <dt>Verpackung</dt>
             <dd>
-              {product.unitCount} {product.unit}
+              {product.unitCount}
+              {" "}
+              {product.unit}
             </dd>
           </div>
         </dl>

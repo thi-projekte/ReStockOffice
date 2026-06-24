@@ -1,46 +1,49 @@
-import Keycloak from 'keycloak-js'
+import Keycloak from "keycloak-js";
 
 const keycloak = new Keycloak({
-  url:      import.meta.env.VITE_KEYCLOAK_URL as string,
-  realm:    import.meta.env.VITE_KEYCLOAK_REALM as string,
+  url: import.meta.env.VITE_KEYCLOAK_URL as string,
+  realm: import.meta.env.VITE_KEYCLOAK_REALM as string,
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID as string,
-})
+});
 
-let initPromise: Promise<boolean> | null = null
+let initPromise: Promise<boolean> | null = null;
 
 function init(): Promise<boolean> {
   if (!initPromise) {
     initPromise = keycloak.init({ checkLoginIframe: false }).catch(() => {
-      initPromise = null
-      return false
-    })
+      initPromise = null;
+      return false;
+    });
   }
-  return initPromise
+  return initPromise;
 }
 
 export async function getAuthState(): Promise<{ authenticated: boolean; name?: string; email?: string }> {
-  await init()
-  if (!keycloak.authenticated) return { authenticated: false }
+  await init();
+  if (!keycloak.authenticated) {
+    return { authenticated: false };
+  }
+
   return {
     authenticated: true,
-    name:  keycloak.tokenParsed?.given_name as string | undefined,
+    name: keycloak.tokenParsed?.given_name as string | undefined,
     email: keycloak.tokenParsed?.email as string | undefined,
-  }
+  };
 }
 
-const APP_URL = 'https://app.restockoffice.de'
+const APP_URL = "https://app.restockoffice.de";
 
 export async function redirectToRegister(): Promise<void> {
-  await init()
-  keycloak.register({ redirectUri: APP_URL })
+  await init();
+  keycloak.register({ redirectUri: APP_URL });
 }
 
 export async function redirectToLogin(): Promise<void> {
-  await init()
-  keycloak.login({ redirectUri: APP_URL })
+  await init();
+  keycloak.login({ redirectUri: APP_URL });
 }
 
 export async function logout(): Promise<void> {
-  await init()
-  keycloak.logout({ redirectUri: window.location.origin + '/landing' })
+  await init();
+  keycloak.logout({ redirectUri: window.location.origin + "/landing" });
 }

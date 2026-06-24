@@ -109,11 +109,8 @@ public class DeliveryTourService {
     }
 
     private Tour findOrCreateOpenTour(String restockerName, LocalDate deliveryDate) {
-        Tour tour = Tour.find(
-                "restockerName = ?1 and tourDate = ?2 and endTime is null",
-                restockerName,
-                deliveryDate
-        ).firstResult();
+        Tour tour = Tour.find("restockerName = ?1 and tourDate = ?2 and endTime is null", restockerName, deliveryDate)
+                .firstResult();
 
         if (tour != null) {
             return tour;
@@ -139,10 +136,7 @@ public class DeliveryTourService {
             return 1;
         }
 
-        return Delivery.findByTour(tour.id).stream()
-                .mapToInt(delivery -> delivery.stopOrder)
-                .max()
-                .orElse(0) + 1;
+        return Delivery.findByTour(tour.id).stream().mapToInt(delivery -> delivery.stopOrder).max().orElse(0) + 1;
     }
 
     private void validateRestockerName(String restockerName) {

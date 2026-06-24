@@ -25,11 +25,8 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = {
-        SendDeliveryConfirmationDelegate.class,
-        SendAboConfirmationDelegate.class,
-        ConfirmationDelegatesTest.TestConfig.class
-})
+@SpringBootTest(classes = { SendDeliveryConfirmationDelegate.class, SendAboConfirmationDelegate.class,
+        ConfirmationDelegatesTest.TestConfig.class })
 @ActiveProfiles("test")
 class ConfirmationDelegatesTest {
 
@@ -78,14 +75,11 @@ class ConfirmationDelegatesTest {
         assertThat(restTemplate.postUrl).isEqualTo("http://mail.test/emails/delivery-confirmation");
         Map<String, Object> payload = OBJECT_MAPPER.convertValue(restTemplate.postBody, new TypeReference<>() {
         });
-        assertThat(payload)
-                .containsEntry("recipientEmail", "customer@example.com")
-                .containsEntry("deliveryDate", "10.06.2026")
-                .containsEntry("orderNumber", "ORD-42");
+        assertThat(payload).containsEntry("recipientEmail", "customer@example.com")
+                .containsEntry("deliveryDate", "10.06.2026").containsEntry("orderNumber", "ORD-42");
         assertThat(payload.get("deliveryItems")).asList().singleElement()
                 .satisfies(item -> assertThat(item).asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP)
-                        .containsEntry("name", "Kaffee")
-                        .containsEntry("articleNumber", "A-1")
+                        .containsEntry("name", "Kaffee").containsEntry("articleNumber", "A-1")
                         .containsEntry("quantity", "2"));
     }
 
@@ -102,13 +96,8 @@ class ConfirmationDelegatesTest {
             execution.setVariable("deliveryLocation", "Hauptstraße 1");
             execution.setVariable("changeDeadline", "07.06.2026, 12:00 Uhr");
             execution.setVariable("manageSubscriptionUrl", "https://app.restockoffice.de/subscription");
-            execution.setVariable("orderItems", List.of(Map.of(
-                    "name", "Kaffee",
-                    "articleNumber", "A-1",
-                    "quantity", "2",
-                    "intervalDescription", "alle 4 Wochen",
-                    "nextDeliveryDate", "10.06.2026"
-            )));
+            execution.setVariable("orderItems", List.of(Map.of("name", "Kaffee", "articleNumber", "A-1", "quantity",
+                    "2", "intervalDescription", "alle 4 Wochen", "nextDeliveryDate", "10.06.2026")));
         };
 
         sendAboConfirmationDelegate.execute(execution(variables));
@@ -117,20 +106,16 @@ class ConfirmationDelegatesTest {
         assertThat(restTemplate.postUrl).isEqualTo("http://mail.test/emails/abo-confirmation");
         Map<String, Object> payload = OBJECT_MAPPER.convertValue(restTemplate.postBody, new TypeReference<>() {
         });
-        assertThat(payload)
-                .containsEntry("recipientEmail", "customer@example.com")
-                .containsEntry("orderNumber", "ABO-42")
-                .containsEntry("deliveryDay", "Mittwoch")
+        assertThat(payload).containsEntry("recipientEmail", "customer@example.com")
+                .containsEntry("orderNumber", "ABO-42").containsEntry("deliveryDay", "Mittwoch")
                 .containsEntry("deliveryLocation", "Hauptstraße 1")
                 .containsEntry("manageSubscriptionUrl", "https://app.restockoffice.de/subscription");
         assertThat(payload.get("orderItems")).asList().hasSize(1);
     }
 
     private DelegateExecution execution(Map<String, Object> variables) {
-        return (DelegateExecution) Proxy.newProxyInstance(
-                DelegateExecution.class.getClassLoader(),
-                new Class<?>[]{DelegateExecution.class},
-                (proxy, method, args) -> {
+        return (DelegateExecution) Proxy.newProxyInstance(DelegateExecution.class.getClassLoader(),
+                new Class<?>[] { DelegateExecution.class }, (proxy, method, args) -> {
                     // The delegates only need process variables, so a small proxy is enough here.
                     if ("getVariable".equals(method.getName())) {
                         return variables.get(args[0]);
@@ -140,8 +125,7 @@ class ConfirmationDelegatesTest {
                         return null;
                     }
                     return defaultValue(method.getReturnType());
-                }
-        );
+                });
     }
 
     private Object defaultValue(Class<?> returnType) {
@@ -204,7 +188,8 @@ class ConfirmationDelegatesTest {
         private Object postBody;
 
         @Override
-        public <T> ResponseEntity<T> postForEntity(String url, Object request, Class<T> responseType, Object... uriVariables) {
+        public <T> ResponseEntity<T> postForEntity(String url, Object request, Class<T> responseType,
+                Object... uriVariables) {
             // Capture the outgoing request instead of opening a real HTTP connection.
             postUrl = url;
             postBody = request;

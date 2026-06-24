@@ -35,7 +35,8 @@ public class ArticleRessource {
     @GET
     @Path("articleByCategory")
     public List<Article> getArticleByCategory(@QueryParam("category") String category) {
-        List<Article> articleList = articleRepository.find("LOWER(category) = LOWER(?1)", category.toLowerCase()).list();
+        List<Article> articleList = articleRepository.find("LOWER(category) = LOWER(?1)", category.toLowerCase())
+                .list();
 
         if (articleList.isEmpty()) {
             throw new WebApplicationException("Keine Artikel für den Typ '" + category + "' gefunden", 404);

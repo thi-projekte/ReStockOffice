@@ -15,13 +15,10 @@ public class LoadAllCustomersDelegate implements JavaDelegate {
 
     private final RestClient deliveryServiceClient;
 
-    public LoadAllCustomersDelegate(
-            RestClient.Builder restClientBuilder,
+    public LoadAllCustomersDelegate(RestClient.Builder restClientBuilder,
             @Value("${deliveriesservice.base-url}") String deliveriesServiceBaseUrl) {
 
-        this.deliveryServiceClient = restClientBuilder
-                .baseUrl(deliveriesServiceBaseUrl)
-                .build();
+        this.deliveryServiceClient = restClientBuilder.baseUrl(deliveriesServiceBaseUrl).build();
     }
 
     @Override
@@ -31,12 +28,10 @@ public class LoadAllCustomersDelegate implements JavaDelegate {
         String formattedMonth = previousMonthDate.format(DateTimeFormatter.ofPattern("MM.yyyy"));
 
         DeliveryServiceResponse response = deliveryServiceClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/api/deliveries/customers") // Kombiniert die Base-URL mit dem API-Pfad
-                        .queryParam("month", formattedMonth)
-                        .build())
-                .retrieve()
-                .body(DeliveryServiceResponse.class);
+                .uri(uriBuilder -> uriBuilder.path("/api/deliveries/customers") // Kombiniert die Base-URL mit dem
+                                                                                // API-Pfad
+                        .queryParam("month", formattedMonth).build())
+                .retrieve().body(DeliveryServiceResponse.class);
 
         execution.setVariable("InvoiceForMonth", formattedMonth);
 

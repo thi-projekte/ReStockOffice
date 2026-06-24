@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface AddressSuggestion {
   displayName: string;
@@ -63,15 +63,15 @@ export function useAddressAutocomplete(): UseAddressAutocompleteResult {
         `https://nominatim.openstreetmap.org/search?${params}`,
         {
           signal: abortRef.current.signal,
-          headers: {"Accept-Language": "de"},
-        }
+          headers: { "Accept-Language": "de" },
+        },
       );
 
       const data = await res.json() as NominatimResult[];
 
       const mapped: AddressSuggestion[] = data
-        .filter((r) => r.address?.road)
-        .map((r) => ({
+        .filter(r => r.address?.road)
+        .map(r => ({
           displayName: r.display_name,
           street: r.address.road ?? "",
           houseNumber: r.address.house_number ?? "",
@@ -92,16 +92,21 @@ export function useAddressAutocomplete(): UseAddressAutocompleteResult {
   }, []);
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
     debounceRef.current = setTimeout(() => {
       void search(query);
     }, 350);
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
     };
   }, [query, search]);
 
-  return {query, setQuery, suggestions, setSuggestions, isLoading};
+  return { query, setQuery, suggestions, setSuggestions, isLoading };
 }
 
 interface NominatimResult {

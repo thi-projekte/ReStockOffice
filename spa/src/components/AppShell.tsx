@@ -1,5 +1,5 @@
-﻿import {type FocusEvent, type KeyboardEvent, type ReactElement, type ReactNode, useEffect, useRef, useState} from "react";
-import {Link, NavLink, useLocation, useNavigate} from "react-router-dom";
+﻿import { type FocusEvent, type KeyboardEvent, type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   FaBars,
   FaChevronRight,
@@ -9,14 +9,14 @@ import {
   FaTimes,
   FaUser,
   FaCalendarAlt,
-  FaArchive, FaClipboardList, FaTruck, FaShieldAlt, FaPaintBrush, FaSignOutAlt, FaFileInvoiceDollar
+  FaArchive, FaClipboardList, FaTruck, FaShieldAlt, FaPaintBrush, FaSignOutAlt, FaFileInvoiceDollar,
 } from "react-icons/fa";
-import toast, {Toaster} from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import iconColored from "../assets/logos/icon_colored.png";
-import {useAuth} from "../auth/AuthProvider";
-import {useSubscriptionCart} from "../hooks/useSubscriptionCart";
-import {getProducts} from "../services/products";
-import {getMyUser, type UserProfile} from "../services/users";
+import { useAuth } from "../auth/AuthProvider";
+import { useSubscriptionCart } from "../hooks/useSubscriptionCart";
+import { getProducts } from "../services/products";
+import { getMyUser, type UserProfile } from "../services/users";
 import type {
   Product,
   RestockOrderWithProduct,
@@ -25,9 +25,9 @@ import {
   getSubscriptionProfileStatus,
   type SubscriptionProfileStatus,
 } from "../utils/subscriptionProfile";
-import {ProductGrid} from "./ProductGrid";
-import {SubscriptionDialog} from "./SubscriptionDialog";
-import {SubscriptionProfileProgress} from "./SubscriptionProfileProgress";
+import { ProductGrid } from "./ProductGrid";
+import { SubscriptionDialog } from "./SubscriptionDialog";
+import { SubscriptionProfileProgress } from "./SubscriptionProfileProgress";
 
 interface AppShellProps {
   readonly children: (context: Readonly<{
@@ -49,14 +49,14 @@ interface AppShellProps {
 
 type ActiveSubscriptionLayer = "overview" | "dialog" | null;
 
-const INCOMPLETE_PROFILE_SUBSCRIPTION_MESSAGE =
-  "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.";
+const INCOMPLETE_PROFILE_SUBSCRIPTION_MESSAGE
+  = "Dein Profil ist noch nicht vollständig. Bitte vervollständige die Pflichtfelder, bevor du dein Abo änderst.";
 
 function showIncompleteProfileWarning(): void {
   toast.error(INCOMPLETE_PROFILE_SUBSCRIPTION_MESSAGE);
 }
 
-export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
+export function AppShell({ children }: Readonly<AppShellProps>): ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [query, setQuery] = useState("");
@@ -67,15 +67,15 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>();
-  const [subscriptionProfileStatus, setSubscriptionProfileStatus] =
-    useState<SubscriptionProfileStatus | null>(null);
-  const {hasRole} = useAuth();
-  const [activeSubscriptionLayer, setActiveSubscriptionLayer] =
-    useState<ActiveSubscriptionLayer>(null);
+  const [subscriptionProfileStatus, setSubscriptionProfileStatus]
+    = useState<SubscriptionProfileStatus | null>(null);
+  const { hasRole } = useAuth();
+  const [activeSubscriptionLayer, setActiveSubscriptionLayer]
+    = useState<ActiveSubscriptionLayer>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSavingSubscription, setIsSavingSubscription] = useState(false);
-  const [selectedSubscriptionItem, setSelectedSubscriptionItem] =
-    useState<RestockOrderWithProduct | undefined>(undefined);
+  const [selectedSubscriptionItem, setSelectedSubscriptionItem]
+    = useState<RestockOrderWithProduct | undefined>(undefined);
   const auth = useAuth();
   const isLoggedIn = auth.isAuthenticated;
   const subscriptionCart = useSubscriptionCart({
@@ -88,16 +88,16 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
   const profileMenuCloseTimerRef = useRef<number | null>(null);
 
   const articleTypeOptions = Array.from(
-    new Set(products.map((product) => product.category)),
+    new Set(products.map(product => product.category)),
   ).sort((a, b) => a.localeCompare(b, "de"));
   const articleTypeBrandMap = new Map(
-    articleTypeOptions.map((articleType) => [
+    articleTypeOptions.map(articleType => [
       articleType,
       Array.from(
         new Set(
           products
-            .filter((product) => product.category === articleType)
-            .map((product) => product.brand),
+            .filter(product => product.category === articleType)
+            .map(product => product.brand),
         ),
       ).sort((a, b) => a.localeCompare(b, "de")),
     ]),
@@ -106,10 +106,10 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
     new Set(
       products
         .filter(
-          (product) =>
+          product =>
             !selectedArticleType || product.category === selectedArticleType,
         )
-        .map((product) => product.brand),
+        .map(product => product.brand),
     ),
   ).sort((a, b) => a.localeCompare(b, "de"));
 
@@ -117,28 +117,28 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
   const queryLength = query.trim().length;
   const quickArticleTypeMatches = normalizedQuery
     ? articleTypeOptions
-      .filter((articleType) => articleType.toLowerCase().includes(normalizedQuery))
-      .slice(0, 6)
+        .filter(articleType => articleType.toLowerCase().includes(normalizedQuery))
+        .slice(0, 6)
     : [];
   const hasBrands = (articleType: string): boolean =>
     (articleTypeBrandMap.get(articleType)?.length ?? 0) > 1;
-  const activeAssistArticleType =
-    quickArticleTypeMatches.includes(selectedArticleType) &&
-    hasBrands(selectedArticleType)
+  const activeAssistArticleType
+    = quickArticleTypeMatches.includes(selectedArticleType)
+      && hasBrands(selectedArticleType)
       ? selectedArticleType
       : "";
   const quickBrandMatches = activeAssistArticleType
     ? (articleTypeBrandMap.get(activeAssistArticleType) ?? []).slice(0, 6)
     : [];
   const filteredProducts = products.filter((product) => {
-    const matchesText =
-      !normalizedQuery ||
-      [product.name, product.description, product.category, product.brand]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedQuery);
-    const matchesArticleType =
-      !selectedArticleType || product.category === selectedArticleType;
+    const matchesText
+      = !normalizedQuery
+        || [product.name, product.description, product.category, product.brand]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedQuery);
+    const matchesArticleType
+      = !selectedArticleType || product.category === selectedArticleType;
     const matchesBrand = !selectedBrand || product.brand === selectedBrand;
 
     return matchesText && matchesArticleType && matchesBrand;
@@ -281,7 +281,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
     }
 
     if (isLoggedIn && location.pathname === "/login") {
-      navigate("/", {replace: true});
+      navigate("/", { replace: true });
     }
   }, [auth.isInitializing, isLoggedIn, location.pathname, navigate]);
 
@@ -314,7 +314,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
     setMenuOpen(false);
     setIsHeaderAssistOpen(false);
     setIsProfileMenuOpen(false);
-    window.scrollTo({top: 0, behavior: "instant"});
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
 
   useEffect(() => {
@@ -373,23 +373,23 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
     {
       to: "/restocker",
       label: "Startseite",
-      icon: <FaHome/>,
+      icon: <FaHome />,
       activePaths: ["/restocker-deliveries"],
     },
     {
       to: "/restocker-orders",
       label: "Offene Auftr\u00e4ge",
-      icon: <FaClipboardList/>,
+      icon: <FaClipboardList />,
     },
     {
       to: "/restocker-my-orders",
       label: "Meine Auftr\u00e4ge",
-      icon: <FaTruck/>,
+      icon: <FaTruck />,
     },
     {
       to: "/account",
       label: "Konto",
-      icon: <FaUser/>,
+      icon: <FaUser />,
     },
   ];
 
@@ -447,7 +447,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
         aria-label="Schnellauswahl"
       >
         <div className="search-quick-column">
-          {quickArticleTypeMatches.map((articleType) => (
+          {quickArticleTypeMatches.map(articleType => (
             <button
               key={articleType}
               className={`search-quick-row ${activeAssistArticleType === articleType ? "active" : ""}`}
@@ -455,30 +455,34 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
               onClick={() => handleQuickArticleTypeSelect(articleType)}
             >
               <span>{articleType}</span>
-              {hasBrands(articleType) ? (
-                <FaChevronRight
-                  className="search-quick-row__arrow"
-                  aria-hidden="true"
-                />
-              ) : null}
+              {hasBrands(articleType)
+                ? (
+                    <FaChevronRight
+                      className="search-quick-row__arrow"
+                      aria-hidden="true"
+                    />
+                  )
+                : null}
             </button>
           ))}
         </div>
 
-        {showBrandColumn ? (
-          <div className="search-quick-column">
-            {quickBrandMatches.map((brand) => (
-              <button
-                key={brand}
-                className={`search-quick-row ${selectedBrand === brand ? "active" : ""}`}
-                type="button"
-                onClick={() => handleQuickBrandSelect(brand)}
-              >
-                <span>{brand}</span>
-              </button>
-            ))}
-          </div>
-        ) : null}
+        {showBrandColumn
+          ? (
+              <div className="search-quick-column">
+                {quickBrandMatches.map(brand => (
+                  <button
+                    key={brand}
+                    className={`search-quick-row ${selectedBrand === brand ? "active" : ""}`}
+                    type="button"
+                    onClick={() => handleQuickBrandSelect(brand)}
+                  >
+                    <span>{brand}</span>
+                  </button>
+                ))}
+              </div>
+            )
+          : null}
       </fieldset>
     );
   }
@@ -493,11 +497,11 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
         <select
           className="search-select"
           value={selectedArticleType}
-          onChange={(event) => handleArticleTypeChange(event.target.value)}
+          onChange={event => handleArticleTypeChange(event.target.value)}
           aria-label="Kategorie auswÃ¤hlen"
         >
           <option value="">Alle Kategorien</option>
-          {articleTypeOptions.map((articleType) => (
+          {articleTypeOptions.map(articleType => (
             <option key={articleType} value={articleType}>
               {articleType}
             </option>
@@ -507,11 +511,11 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
         <select
           className="search-select"
           value={selectedBrand}
-          onChange={(event) => handleBrandChange(event.target.value)}
+          onChange={event => handleBrandChange(event.target.value)}
           aria-label="Unterkategorie auswÃ¤hlen"
         >
           <option value="">Alle Marken</option>
-          {brandOptions.map((brand) => (
+          {brandOptions.map(brand => (
             <option key={brand} value={brand}>
               {brand}
             </option>
@@ -524,11 +528,11 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
   function renderSearchControls(source: "header" | "page"): ReactElement {
     const isHeader = source === "header";
     const showToggle = !isHeader;
-    const showQuickAssist =
-      isHeader &&
-      isHeaderAssistOpen &&
-      queryLength >= 2 &&
-      quickArticleTypeMatches.length > 0;
+    const showQuickAssist
+      = isHeader
+        && isHeaderAssistOpen
+        && queryLength >= 2
+        && quickArticleTypeMatches.length > 0;
     const showBrandColumn = quickBrandMatches.length > 0;
 
     return (
@@ -540,9 +544,9 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
               type="search"
               placeholder="Artikel oder Kategorie suchen"
               value={query}
-              onChange={(event) => handleSearchInputChange(event.target.value, isHeader)}
+              onChange={event => handleSearchInputChange(event.target.value, isHeader)}
               onFocus={() => handleHeaderAssistOpen(isHeader)}
-              onKeyDown={(event) => handleSearchInputKeyDown(event, isHeader)}
+              onKeyDown={event => handleSearchInputKeyDown(event, isHeader)}
               aria-label="Artikel oder Kategorie suchen"
             />
 
@@ -553,30 +557,32 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
               aria-label="Suche starten"
               title="Suche starten"
             >
-              <FaSearch/>
+              <FaSearch />
             </button>
           </div>
 
-          {showToggle ? (
-            <button
-              className={`button button--ghost search-toggle ${isAdvancedSearch ? "active" : ""}`}
-              type="button"
-              onClick={handleSearchToggle}
-              aria-label={
-                isAdvancedSearch
-                  ? "Filter schließen"
-                  : "Filter öffnen"
-              }
-              title={
-                isAdvancedSearch
-                  ? "Filter schließen"
-                  : "Filter öffnen"
-              }
-            >
-              <FaSlidersH/>
-              <span>Filter</span>
-            </button>
-          ) : null}
+          {showToggle
+            ? (
+                <button
+                  className={`button button--ghost search-toggle ${isAdvancedSearch ? "active" : ""}`}
+                  type="button"
+                  onClick={handleSearchToggle}
+                  aria-label={
+                    isAdvancedSearch
+                      ? "Filter schließen"
+                      : "Filter öffnen"
+                  }
+                  title={
+                    isAdvancedSearch
+                      ? "Filter schließen"
+                      : "Filter öffnen"
+                  }
+                >
+                  <FaSlidersH />
+                  <span>Filter</span>
+                </button>
+              )
+            : null}
         </div>
 
         {showQuickAssist ? renderQuickSearchAssist(isHeader, showBrandColumn) : null}
@@ -644,71 +650,75 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
           title="Konto"
           aria-label="Konto"
         >
-          {profilePictureUrl ? (
-            <img
-              className="header-profile-avatar"
-              src={profilePictureUrl}
-              alt="Profilbild"
-              onError={() => setProfilePictureUrl(undefined)}
-            />
-          ) : (
-            <FaUser/>
-          )}
+          {profilePictureUrl
+            ? (
+                <img
+                  className="header-profile-avatar"
+                  src={profilePictureUrl}
+                  alt="Profilbild"
+                  onError={() => setProfilePictureUrl(undefined)}
+                />
+              )
+            : (
+                <FaUser />
+              )}
         </NavLink>
 
-        {isProfileMenuOpen ? (
-          <section
-            className="header-profile-popover"
-            aria-label="Kontobereiche"
-          >
-            <Link
-              className="header-profile-popover__link"
-              to="/account#profile"
-              onClick={closeProfileMenu}
-            >
-              <FaUser/>
-              <span>Profil</span>
-            </Link>
-
-            <Link
-              className="header-profile-popover__link"
-              to="/account#settings"
-              onClick={closeProfileMenu}
-            >
-              <FaPaintBrush/>
-              <span>Darstellung</span>
-            </Link>
-
-            {!isRestocker && (
-              <Link
-                className="header-profile-popover__link"
-                to="/account#finance"
-                onClick={closeProfileMenu}
+        {isProfileMenuOpen
+          ? (
+              <section
+                className="header-profile-popover"
+                aria-label="Kontobereiche"
               >
-                <FaFileInvoiceDollar/>
-                <span>Finanzen</span>
-              </Link>
-            )}
+                <Link
+                  className="header-profile-popover__link"
+                  to="/account#profile"
+                  onClick={closeProfileMenu}
+                >
+                  <FaUser />
+                  <span>Profil</span>
+                </Link>
 
-            <Link
-              className="header-profile-popover__link"
-              to="/account#security"
-              onClick={closeProfileMenu}
-            >
-              <FaShieldAlt/>
-              <span>Sicherheit</span>
-            </Link>
+                <Link
+                  className="header-profile-popover__link"
+                  to="/account#settings"
+                  onClick={closeProfileMenu}
+                >
+                  <FaPaintBrush />
+                  <span>Darstellung</span>
+                </Link>
 
-            <button
-              className="header-profile-popover__link header-profile-popover__link--danger"
-              type="button"
-              onClick={handleLogout}
-            >
-              <FaSignOutAlt/>
-              <span>Abmelden</span>
-            </button>
-          </section>
-        ) : null}
+                {!isRestocker && (
+                  <Link
+                    className="header-profile-popover__link"
+                    to="/account#finance"
+                    onClick={closeProfileMenu}
+                  >
+                    <FaFileInvoiceDollar />
+                    <span>Finanzen</span>
+                  </Link>
+                )}
+
+                <Link
+                  className="header-profile-popover__link"
+                  to="/account#security"
+                  onClick={closeProfileMenu}
+                >
+                  <FaShieldAlt />
+                  <span>Sicherheit</span>
+                </Link>
+
+                <button
+                  className="header-profile-popover__link header-profile-popover__link--danger"
+                  type="button"
+                  onClick={handleLogout}
+                >
+                  <FaSignOutAlt />
+                  <span>Abmelden</span>
+                </button>
+              </section>
+            )
+          : null}
       </nav>
     );
   }
@@ -726,7 +736,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
           to={isRestocker ? "/restocker" : "/"}
           title="Startseite"
         >
-          <FaHome/>
+          <FaHome />
         </NavLink>
 
         {/* Produkte: Nur Customer  */}
@@ -736,7 +746,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             to="/products"
             title="Alle Produkte"
           >
-            <FaArchive/>
+            <FaArchive />
           </NavLink>
         )}
 
@@ -748,7 +758,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             title="Abo-Übersicht"
             aria-label="Abo-Übersicht"
           >
-            <FaCalendarAlt/>
+            <FaCalendarAlt />
           </NavLink>
         )}
 
@@ -759,7 +769,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             to="/restocker-orders"
             title="Offene Aufträge"
           >
-            <FaClipboardList/>
+            <FaClipboardList />
           </NavLink>
         )}
 
@@ -769,7 +779,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             to="/restocker-my-orders"
             title="Meine Aufträge"
           >
-            <FaCalendarAlt/>
+            <FaCalendarAlt />
           </NavLink>
         )}
 
@@ -777,13 +787,13 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
         <button
           className={`button button--ghost hamburger-btn ${isRestocker ? "hamburger-btn--restocker" : ""}`.trim()}
           type="button"
-          onClick={() => setMenuOpen((v) => !v)}
+          onClick={() => setMenuOpen(v => !v)}
           aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
         >
-          {menuOpen ? <FaTimes/> : <FaBars/>}
+          {menuOpen ? <FaTimes /> : <FaBars />}
         </button>
 
-        {/* Account: Für beide gleich*/}
+        {/* Account: Für beide gleich */}
         {renderProfileMenu()}
       </>
     );
@@ -804,7 +814,9 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             to={isRestocker ? "/restocker" : "/"}
             onClick={() => setMenuOpen(false)}
           >
-            <FaHome/> Startseite
+            <FaHome />
+            {" "}
+            Startseite
           </NavLink>
 
           {/* Produkte: Nur Customer */}
@@ -814,7 +826,9 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
               to="/products"
               onClick={() => setMenuOpen(false)}
             >
-              <FaArchive/> Alle Produkte
+              <FaArchive />
+              {" "}
+              Alle Produkte
             </NavLink>
           )}
 
@@ -825,7 +839,9 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
               to="/subscription"
               onClick={() => setMenuOpen(false)}
             >
-              <FaCalendarAlt/> Aboverwaltung
+              <FaCalendarAlt />
+              {" "}
+              Aboverwaltung
             </NavLink>
           )}
 
@@ -836,7 +852,9 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
               to="/restocker-orders"
               onClick={() => setMenuOpen(false)}
             >
-              <FaClipboardList/> Offene Aufträge
+              <FaClipboardList />
+              {" "}
+              Offene Aufträge
             </NavLink>
           )}
 
@@ -846,7 +864,9 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
               to="/restocker-my-orders"
               onClick={() => setMenuOpen(false)}
             >
-              <FaTruck/> Meine Aufträge
+              <FaTruck />
+              {" "}
+              Meine Aufträge
             </NavLink>
           )}
 
@@ -856,7 +876,9 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             to="/account"
             onClick={() => setMenuOpen(false)}
           >
-            <FaUser/> Konto
+            <FaUser />
+            {" "}
+            Konto
           </NavLink>
 
         </div>
@@ -871,13 +893,13 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
 
     return (
       <nav className="restocker-mobile-tabbar" aria-label="Restocker Navigation">
-        {restockerMobileNavItems.map((item) => (
+        {restockerMobileNavItems.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
-            className={({isActive}) => {
-              const isItemActive =
-                isActive || item.activePaths?.includes(location.pathname);
+            className={({ isActive }) => {
+              const isItemActive
+                = isActive || item.activePaths?.includes(location.pathname);
 
               return `restocker-mobile-tabbar__item ${isItemActive ? "active" : ""}`;
             }}
@@ -986,7 +1008,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             </nav>
           </div>
 
-          <div className="header-search"/>
+          <div className="header-search" />
 
           <div className="header-actions">
             {renderHeaderActions()}
@@ -1018,7 +1040,7 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
             onLogout: handleLogout,
             theme,
             onToggleTheme: () => setTheme(isDarkMode ? "light" : "dark"),
-            onSetTheme: (newTheme) => setTheme(newTheme),
+            onSetTheme: newTheme => setTheme(newTheme),
           })}
 
           {renderProductsSection()}
@@ -1030,14 +1052,18 @@ export function AppShell({children}: Readonly<AppShellProps>): ReactElement {
           <a href="https://restockoffice.de/kontakt">Kontakt</a>
           <a href="https://restockoffice.de/impressum">Impressum</a>
           <a href="https://restockoffice.de/rechtliches">Rechtliche Hinweise</a>
-          <span>ReStockOffice {'\u00A9'}2026</span>
+          <span>
+            ReStockOffice
+            {"\u00A9"}
+            2026
+          </span>
         </div>
 
         {renderRestockerMobileTabbar()}
       </footer>
 
       {renderSubscriptionDialog()}
-      <Toaster position="bottom-center"/>
+      <Toaster position="bottom-center" />
     </div>
   );
 }

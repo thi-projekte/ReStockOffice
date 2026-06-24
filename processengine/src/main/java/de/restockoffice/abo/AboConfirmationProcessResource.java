@@ -29,8 +29,7 @@ public class AboConfirmationProcessResource {
 
     @PostMapping("/change")
     public ResponseEntity<AboConfirmationProcessResponse> startOrAppend(
-            @RequestBody AboConfirmationProcessRequest request
-    ) {
+            @RequestBody AboConfirmationProcessRequest request) {
         if (request == null || isBlank(request.businessKey())) {
             return ResponseEntity.badRequest().build();
         }
@@ -40,22 +39,16 @@ public class AboConfirmationProcessResource {
         Map<String, Map<String, Object>> orderSnapshots = appendOrderSnapshot(null, orderId, variables);
 
         synchronized (startLock) {
-            List<ProcessInstance> activeProcesses = runtimeService
-                    .createProcessInstanceQuery()
-                    .processDefinitionKey(PROCESS_DEFINITION_KEY)
-                    .processInstanceBusinessKey(request.businessKey())
-                    .active()
-                    .list();
+            List<ProcessInstance> activeProcesses = runtimeService.createProcessInstanceQuery()
+                    .processDefinitionKey(PROCESS_DEFINITION_KEY).processInstanceBusinessKey(request.businessKey())
+                    .active().list();
             ProcessInstance activeProcess = activeProcesses.isEmpty() ? null : activeProcesses.get(0);
 
             if (activeProcess != null) {
                 String processInstanceId = activeProcess.getProcessInstanceId();
                 String currentOrderIds = stringValue(runtimeService.getVariable(processInstanceId, "orderIdsCsv"));
                 orderSnapshots = appendOrderSnapshot(
-                        runtimeService.getVariable(processInstanceId, ORDER_SNAPSHOTS_VARIABLE),
-                        orderId,
-                        variables
-                );
+                        runtimeService.getVariable(processInstanceId, ORDER_SNAPSHOTS_VARIABLE), orderId, variables);
                 variables.put("orderIdsCsv", appendOrderId(currentOrderIds, orderId));
                 variables.put(ORDER_SNAPSHOTS_VARIABLE, orderSnapshots);
                 runtimeService.setVariables(processInstanceId, variables);
@@ -64,11 +57,8 @@ public class AboConfirmationProcessResource {
 
             variables.put("orderIdsCsv", appendOrderId("", orderId));
             variables.put(ORDER_SNAPSHOTS_VARIABLE, orderSnapshots);
-            ProcessInstance processInstance = runtimeService
-                    .createProcessInstanceByKey(PROCESS_DEFINITION_KEY)
-                    .businessKey(request.businessKey())
-                    .setVariables(variables)
-                    .execute();
+            ProcessInstance processInstance = runtimeService.createProcessInstanceByKey(PROCESS_DEFINITION_KEY)
+                    .businessKey(request.businessKey()).setVariables(variables).execute();
 
             return ResponseEntity.ok(new AboConfirmationProcessResponse(processInstance.getProcessInstanceId(), true));
         }
@@ -108,11 +98,8 @@ public class AboConfirmationProcessResource {
         return String.join(",", orderIds);
     }
 
-    private Map<String, Map<String, Object>> appendOrderSnapshot(
-            Object existingSnapshots,
-            String orderId,
-            Map<String, Object> variables
-    ) {
+    private Map<String, Map<String, Object>> appendOrderSnapshot(Object existingSnapshots, String orderId,
+            Map<String, Object> variables) {
         Map<String, Map<String, Object>> snapshots = new LinkedHashMap<>();
 
         if (existingSnapshots instanceof Map<?, ?> existingMap) {
@@ -137,10 +124,10 @@ public class AboConfirmationProcessResource {
             putIfPresent(snapshot, "orderId", variables.get("orderId"));
             putIfPresent(snapshot, "customerId", variables.get("customerId"));
             putIfPresent(snapshot, "productId", variables.get("productId"));
-            putIfPresent(snapshot, "firstChangeType", firstNonBlank(
-                    stringValue(existingSnapshot != null ? existingSnapshot.get("firstChangeType") : null),
-                    stringValue(variables.get("changeType"))
-            ));
+            putIfPresent(snapshot, "firstChangeType",
+                    firstNonBlank(
+                            stringValue(existingSnapshot != null ? existingSnapshot.get("firstChangeType") : null),
+                            stringValue(variables.get("changeType"))));
             putIfPresent(snapshot, "changeType", variables.get("changeType"));
             putIfPresent(snapshot, "status", variables.get("status"));
             putIfPresent(snapshot, "quantity", variables.get("quantity"));

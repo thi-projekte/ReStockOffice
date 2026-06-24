@@ -85,7 +85,8 @@ public class UserResource {
     // JWT Token wird verwendet, da sub nicht über securityIdentity ausgelesen werden kann
     private String getLoggedInUserId() {
         if (jwt == null || jwt.getSubject() == null) {
-            throw new WebApplicationException("Nicht authentifiziert: Kein gültiges Sub-Claim im Token vorhanden.", 401);
+            throw new WebApplicationException("Nicht authentifiziert: Kein gültiges Sub-Claim im Token vorhanden.",
+                    401);
         }
         return jwt.getSubject();
     }
@@ -94,7 +95,7 @@ public class UserResource {
     @GET
     @Path("customer/me")
     public CustomerProfileResponse getMyCustomerData() {
-        Customer customer =  findCustomerOrThrow(getLoggedInUserId());
+        Customer customer = findCustomerOrThrow(getLoggedInUserId());
         String email = jwt.getClaim("email");
         return new CustomerProfileResponse(customer, email);
     }
@@ -111,22 +112,19 @@ public class UserResource {
     // Any Customer by ID (admin-role or own user needed)
     @GET
     @Path("customer")
-    public CustomerProfileResponse getCustomerById(@QueryParam("userId") String userId){
+    public CustomerProfileResponse getCustomerById(@QueryParam("userId") String userId) {
         String loggedInId = getLoggedInUserId();
 
-        if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN) && !securityIdentity.hasRole(ROLE_PROCESS_ENGINE)) {
+        if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN)
+                && !securityIdentity.hasRole(ROLE_PROCESS_ENGINE)) {
             throw new WebApplicationException("Zugriff verweigert: Sie dürfen nur Ihre eigenen Daten einsehen.", 403);
         }
-        Customer customer =  findCustomerOrThrow(userId);
+        Customer customer = findCustomerOrThrow(userId);
 
         String customerEmail = null;
-        try{
-            customerEmail = keycloak.realm(KEYCLOAK_REALM)
-                    .users()
-                    .get(userId)
-                    .toRepresentation()
-                    .getEmail();
-        }catch (Exception e) {
+        try {
+            customerEmail = keycloak.realm(KEYCLOAK_REALM).users().get(userId).toRepresentation().getEmail();
+        } catch (Exception e) {
             LOG.error("Fehler beim Abrufen der Keycloak-Email für User {}: ", userId, e);
             customerEmail = "E-Mail nicht verfügbar";
         }
@@ -136,9 +134,11 @@ public class UserResource {
     // Extra view for Restockers with limited access (only for Restocker and Admin)
     @GET
     @Path("customerForRestocker")
-    public RestockerCustomerDTO getCustomerAddressForRestocker(@QueryParam("userId") String userId){
-        if (!securityIdentity.hasRole(ROLE_RESTOCKER) && !securityIdentity.hasRole("Restocker") && !securityIdentity.hasRole(ROLE_ADMIN)) {
-            throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.", 403);
+    public RestockerCustomerDTO getCustomerAddressForRestocker(@QueryParam("userId") String userId) {
+        if (!securityIdentity.hasRole(ROLE_RESTOCKER) && !securityIdentity.hasRole("Restocker")
+                && !securityIdentity.hasRole(ROLE_ADMIN)) {
+            throw new WebApplicationException("Zugriff verweigert: Nur Lieferanten dürfen diese Lieferdaten einsehen.",
+                    403);
         }
         if (userId == null || userId.isBlank()) {
             throw new WebApplicationException("Übergebene userId darf nicht leer sein.", 400);
@@ -149,11 +149,7 @@ public class UserResource {
 
         // Get mail from Keycloak
         try {
-            customerEmail = keycloak.realm(KEYCLOAK_REALM)
-                    .users()
-                    .get(userId)
-                    .toRepresentation()
-                    .getEmail();
+            customerEmail = keycloak.realm(KEYCLOAK_REALM).users().get(userId).toRepresentation().getEmail();
         } catch (Exception e) {
             LOG.error("Error at calling the Keycloak-Mail for user: {} ", userId, e);
             customerEmail = "E-Mail nicht verfügbar";
@@ -164,7 +160,7 @@ public class UserResource {
     // Any Restocker by ID (admin-role or own user needed)
     @GET
     @Path("restocker")
-    public Restocker getRestockerById(@QueryParam("userId") String userId){
+    public Restocker getRestockerById(@QueryParam("userId") String userId) {
         String loggedInId = getLoggedInUserId();
 
         if (!loggedInId.equals(userId) && !securityIdentity.hasRole(ROLE_ADMIN)) {
@@ -177,7 +173,7 @@ public class UserResource {
     @GET
     @Path("customers")
     @RolesAllowed("admin")
-    public List<Customer> getAllCustomers(){
+    public List<Customer> getAllCustomers() {
         return customerRepository.listAll();
     }
 
@@ -185,7 +181,7 @@ public class UserResource {
     @GET
     @Path("restockers")
     @RolesAllowed("admin")
-    public List<Restocker> getAllRestockers(){
+    public List<Restocker> getAllRestockers() {
         return restockerRepository.listAll();
     }
 
@@ -193,13 +189,12 @@ public class UserResource {
     @POST
     @Path("customer/create")
     @Transactional
-    public Response createCustomer(Customer newCustomer){
+    public Response createCustomer(Customer newCustomer) {
         String userId = getLoggedInUserId();
         newCustomer.userId = userId;
 
         if (customerRepository.findById(userId) != null) {
-            return Response.status(Response.Status.CONFLICT)
-                    .entity("Profil existiert bereits.").build();
+            return Response.status(Response.Status.CONFLICT).entity("Profil existiert bereits.").build();
         }
 
         newCustomer.createdAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
@@ -235,7 +230,8 @@ public class UserResource {
         }
 
         if (!foundAndUpdated) {
-            throw new WebApplicationException("Kein aktives Benutzerprofil (Customer/Restocker) für diese ID gefunden.", 404);
+            throw new WebApplicationException("Kein aktives Benutzerprofil (Customer/Restocker) für diese ID gefunden.",
+                    404);
         }
 
         return Response.ok()
@@ -247,13 +243,12 @@ public class UserResource {
     @POST
     @Path("restocker/create")
     @Transactional
-    public Response createRestocker(Restocker newRestocker){
+    public Response createRestocker(Restocker newRestocker) {
         String userId = getLoggedInUserId();
         newRestocker.userId = userId;
 
         if (restockerRepository.findById(userId) != null) {
-            return Response.status(Response.Status.CONFLICT)
-                    .entity("Profil existiert bereits.").build();
+            return Response.status(Response.Status.CONFLICT).entity("Profil existiert bereits.").build();
         }
 
         newRestocker.createdAt = LocalDateTime.now(ZoneId.of(ZEITZONE));
@@ -271,8 +266,7 @@ public class UserResource {
             // Userdata as JSON for Fields
             @RestForm("userData") @org.jboss.resteasy.reactive.PartType(MediaType.APPLICATION_JSON) Customer updatedData,
             // File for Profile-Picture
-            @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
-    ){
+            @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file) {
         String userId = getLoggedInUserId();
         updatedData.userId = userId;
         Customer entity = findCustomerOrThrow(userId);
@@ -281,7 +275,7 @@ public class UserResource {
 
         if (file != null && file.uploadedFile() != null) {
             // Prüfung Dateityp
-            if(!file.contentType().startsWith("image/")){
+            if (!file.contentType().startsWith("image/")) {
                 throw new WebApplicationException("Ungültiger Dateityp. Nur Bilder sind erlaubt.", 400);
             }
             // Prüfung Dateigröße
@@ -313,8 +307,7 @@ public class UserResource {
             // Userdata as JSON for Fields
             @RestForm("userData") @org.jboss.resteasy.reactive.PartType(MediaType.APPLICATION_JSON) Restocker updatedData,
             // File for Profile-Picture
-            @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file
-    ){
+            @RestForm("file") org.jboss.resteasy.reactive.multipart.FileUpload file) {
         String userId = getLoggedInUserId();
         updatedData.userId = userId;
         Restocker entity = findRestockerOrThrow(userId);
@@ -322,7 +315,7 @@ public class UserResource {
 
         if (file != null && file.uploadedFile() != null) {
             // Prüfung Dateityp
-            if(!file.contentType().startsWith("image/")){
+            if (!file.contentType().startsWith("image/")) {
                 throw new WebApplicationException("Ungültiger Dateityp. Nur Bilder sind erlaubt.", 400);
             }
             // Prüfung Dateigröße
@@ -330,7 +323,7 @@ public class UserResource {
                 throw new WebApplicationException("Datei ist zu groß. Maximal 5MB erlaubt.", 400);
             }
 
-            entity.profilePictureUrl =uploadProfilePicture(userId, file);
+            entity.profilePictureUrl = uploadProfilePicture(userId, file);
             hasChanged = true;
         }
 
@@ -361,19 +354,58 @@ public class UserResource {
 
     private boolean applyCustomerChanges(Customer entity, Customer updated) {
         boolean changed = false;
-        if (!Objects.equals(entity.postalCode, updated.postalCode)) { entity.postalCode = updated.postalCode; changed = true; }
-        if (!Objects.equals(entity.city, updated.city)) { entity.city = updated.city; changed = true; }
-        if (!Objects.equals(entity.street, updated.street)) { entity.street = updated.street; changed = true; }
-        if (!Objects.equals(entity.houseNumber, updated.houseNumber)) { entity.houseNumber = updated.houseNumber; changed = true; }
-        if (!Objects.equals(entity.country, updated.country)) { entity.country = updated.country; changed = true; }
-        if (!Objects.equals(entity.companyName, updated.companyName)) { entity.companyName = updated.companyName; changed = true; }
-        if (!Objects.equals(entity.phoneNumber, updated.phoneNumber)) { entity.phoneNumber = updated.phoneNumber; changed = true; }
-        if (!Objects.equals(entity.roleInCompany, updated.roleInCompany)) { entity.roleInCompany = updated.roleInCompany; changed = true; }
-        if (!Objects.equals(entity.birthDate, updated.birthDate)) { entity.birthDate = updated.birthDate; changed = true; }
-        if (!Objects.equals(entity.deliveryDay, updated.deliveryDay)) { entity.deliveryDay = updated.deliveryDay; changed = true; }
-        if (!Objects.equals(entity.deliveryTime, updated.deliveryTime)) { entity.deliveryTime = updated.deliveryTime; changed = true; }
-        if (!Objects.equals(entity.deliveryHint, updated.deliveryHint)) { entity.deliveryHint = updated.deliveryHint; changed = true; }
-        if (!Objects.equals(entity.iban, updated.iban)) { entity.iban = updated.iban; changed = true; }
+        if (!Objects.equals(entity.postalCode, updated.postalCode)) {
+            entity.postalCode = updated.postalCode;
+            changed = true;
+        }
+        if (!Objects.equals(entity.city, updated.city)) {
+            entity.city = updated.city;
+            changed = true;
+        }
+        if (!Objects.equals(entity.street, updated.street)) {
+            entity.street = updated.street;
+            changed = true;
+        }
+        if (!Objects.equals(entity.houseNumber, updated.houseNumber)) {
+            entity.houseNumber = updated.houseNumber;
+            changed = true;
+        }
+        if (!Objects.equals(entity.country, updated.country)) {
+            entity.country = updated.country;
+            changed = true;
+        }
+        if (!Objects.equals(entity.companyName, updated.companyName)) {
+            entity.companyName = updated.companyName;
+            changed = true;
+        }
+        if (!Objects.equals(entity.phoneNumber, updated.phoneNumber)) {
+            entity.phoneNumber = updated.phoneNumber;
+            changed = true;
+        }
+        if (!Objects.equals(entity.roleInCompany, updated.roleInCompany)) {
+            entity.roleInCompany = updated.roleInCompany;
+            changed = true;
+        }
+        if (!Objects.equals(entity.birthDate, updated.birthDate)) {
+            entity.birthDate = updated.birthDate;
+            changed = true;
+        }
+        if (!Objects.equals(entity.deliveryDay, updated.deliveryDay)) {
+            entity.deliveryDay = updated.deliveryDay;
+            changed = true;
+        }
+        if (!Objects.equals(entity.deliveryTime, updated.deliveryTime)) {
+            entity.deliveryTime = updated.deliveryTime;
+            changed = true;
+        }
+        if (!Objects.equals(entity.deliveryHint, updated.deliveryHint)) {
+            entity.deliveryHint = updated.deliveryHint;
+            changed = true;
+        }
+        if (!Objects.equals(entity.iban, updated.iban)) {
+            entity.iban = updated.iban;
+            changed = true;
+        }
         return changed;
     }
 
@@ -397,25 +429,21 @@ public class UserResource {
     }
 
     private void triggerCustomerDeliveryReplan(String customerId, String authHeader) {
-        String url = trimTrailingSlash(deliveriesServiceBaseUrl)
-                + "/api/deliveries/customers/"
-                + URLEncoder.encode(customerId.trim(), StandardCharsets.UTF_8)
-                + "/replan";
+        String url = trimTrailingSlash(deliveriesServiceBaseUrl) + "/api/deliveries/customers/"
+                + URLEncoder.encode(customerId.trim(), StandardCharsets.UTF_8) + "/replan";
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(url))
-                .header("Accept", MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON)
+                .header("Accept", MediaType.APPLICATION_JSON).header("Content-Type", MediaType.APPLICATION_JSON)
                 .POST(HttpRequest.BodyPublishers.noBody());
         if (authHeader != null && !authHeader.isBlank()) {
             requestBuilder.header(AUTHORIZATION_HEADER, authHeader);
         }
 
         try {
-            HttpResponse<String> response = getHttpClient().send(
-                    requestBuilder.build(),
-                    HttpResponse.BodyHandlers.ofString()
-            );
+            HttpResponse<String> response = getHttpClient().send(requestBuilder.build(),
+                    HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                LOG.errorf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.statusCode(), response.body());
+                LOG.errorf("Delivery replan failed for customer %s: HTTP %s body=%s", customerId, response.statusCode(),
+                        response.body());
             }
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
@@ -436,16 +464,46 @@ public class UserResource {
     private boolean applyRestockerChanges(Restocker entity, Restocker updated) {
         boolean changed = false;
 
-        if (!Objects.equals(entity.postalCode, updated.postalCode)) { entity.postalCode = updated.postalCode; changed = true; }
-        if (!Objects.equals(entity.city, updated.city)) { entity.city = updated.city; changed = true; }
-        if (!Objects.equals(entity.street, updated.street)) { entity.street = updated.street; changed = true; }
-        if (!Objects.equals(entity.houseNumber, updated.houseNumber)) { entity.houseNumber = updated.houseNumber; changed = true; }
-        if (!Objects.equals(entity.country, updated.country)) { entity.country = updated.country; changed = true; }
-        if (!Objects.equals(entity.phoneNumber, updated.phoneNumber)) { entity.phoneNumber = updated.phoneNumber; changed = true; }
-        if (!Objects.equals(entity.birthDate, updated.birthDate)) { entity.birthDate = updated.birthDate; changed = true; }
-        if (!Objects.equals(entity.iban, updated.iban)) { entity.iban = updated.iban; changed = true; }
-        if (!Objects.equals(entity.bic, updated.bic)) { entity.bic = updated.bic; changed = true; }
-        if (!Objects.equals(entity.accountHolder, updated.accountHolder)) { entity.accountHolder = updated.accountHolder; changed = true; }
+        if (!Objects.equals(entity.postalCode, updated.postalCode)) {
+            entity.postalCode = updated.postalCode;
+            changed = true;
+        }
+        if (!Objects.equals(entity.city, updated.city)) {
+            entity.city = updated.city;
+            changed = true;
+        }
+        if (!Objects.equals(entity.street, updated.street)) {
+            entity.street = updated.street;
+            changed = true;
+        }
+        if (!Objects.equals(entity.houseNumber, updated.houseNumber)) {
+            entity.houseNumber = updated.houseNumber;
+            changed = true;
+        }
+        if (!Objects.equals(entity.country, updated.country)) {
+            entity.country = updated.country;
+            changed = true;
+        }
+        if (!Objects.equals(entity.phoneNumber, updated.phoneNumber)) {
+            entity.phoneNumber = updated.phoneNumber;
+            changed = true;
+        }
+        if (!Objects.equals(entity.birthDate, updated.birthDate)) {
+            entity.birthDate = updated.birthDate;
+            changed = true;
+        }
+        if (!Objects.equals(entity.iban, updated.iban)) {
+            entity.iban = updated.iban;
+            changed = true;
+        }
+        if (!Objects.equals(entity.bic, updated.bic)) {
+            entity.bic = updated.bic;
+            changed = true;
+        }
+        if (!Objects.equals(entity.accountHolder, updated.accountHolder)) {
+            entity.accountHolder = updated.accountHolder;
+            changed = true;
+        }
         return changed;
     }
 
@@ -453,12 +511,12 @@ public class UserResource {
         try {
             String bucketName = "restockoffice";
             String fileName = "users/" + userId + ".jpg";
-            s3.putObject(software.amazon.awssdk.services.s3.model.PutObjectRequest.builder()
-                            .bucket(bucketName).key(fileName)
+            s3.putObject(
+                    software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucketName).key(fileName)
                             .acl(software.amazon.awssdk.services.s3.model.ObjectCannedACL.PUBLIC_READ)
                             .contentType(file.contentType()).build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromFile(file.uploadedFile()));
-            return "https://hel1.your-objectstorage.com/" +bucketName+ "/"+ fileName;
+            return "https://hel1.your-objectstorage.com/" + bucketName + "/" + fileName;
         } catch (Exception e) {
             throw new WebApplicationException("S3 Fehler beim Upload des Profilbilds", 500);
         }
@@ -466,9 +524,7 @@ public class UserResource {
 
     private HttpClient getHttpClient() {
         if (this.httpClient == null) {
-            this.httpClient = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(5))
-                    .build();
+            this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
         }
         return this.httpClient;
     }

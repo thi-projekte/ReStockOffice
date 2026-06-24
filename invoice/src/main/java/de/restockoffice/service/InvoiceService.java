@@ -37,26 +37,15 @@ public class InvoiceService {
     @Transactional
     public String createAndPersistInvoice(InvoiceRequest request) {
         int year = java.time.Year.now().getValue();
-        Long nextVal = (Long) em
-                .createNativeQuery("SELECT nextval('invoice_num_seq')")
-                .getSingleResult();
+        Long nextVal = (Long) em.createNativeQuery("SELECT nextval('invoice_num_seq')").getSingleResult();
         String generatedInvoiceNumber = "RE-" + year + "-" + String.format("%05d", nextVal);
 
         log.info("Automatically generated global invoice number: {}", generatedInvoiceNumber);
 
-        InvoiceRequest updatedRequest = new InvoiceRequest(
-                request.userId(),
-                request.recipientEmail(),
-                request.recipientName(),
-                request.recipientStreet(),
-                request.recipientZip(),
-                request.recipientCity(),
-                generatedInvoiceNumber,
-                request.issueDate(),
-                request.dueDate(),
-                request.netAmount(),
-                request.orderItems()
-        );
+        InvoiceRequest updatedRequest = new InvoiceRequest(request.userId(), request.recipientEmail(),
+                request.recipientName(), request.recipientStreet(), request.recipientZip(), request.recipientCity(),
+                generatedInvoiceNumber, request.issueDate(), request.dueDate(), request.netAmount(),
+                request.orderItems());
 
         log.info("Generating PDF and ZUGFeRD metadata for invoice: {}", generatedInvoiceNumber);
 
@@ -74,7 +63,8 @@ public class InvoiceService {
         return generatedInvoiceNumber;
     }
 
-    private static InvoiceEntity getInvoiceEntity(InvoiceRequest request, String generatedInvoiceNumber, byte[] eBillingPdf) {
+    private static InvoiceEntity getInvoiceEntity(InvoiceRequest request, String generatedInvoiceNumber,
+            byte[] eBillingPdf) {
         InvoiceEntity entity = new InvoiceEntity();
         entity.setUserId(request.userId());
         entity.setInvoiceNumber(generatedInvoiceNumber);

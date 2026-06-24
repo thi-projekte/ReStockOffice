@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserDto {
     private String userId;
-    @JsonAlias({"recipientEmail", "customerEmail", "mail"})
+    @JsonAlias({ "recipientEmail", "customerEmail", "mail" })
     private String email;
     private String postalCode;
     private String city;

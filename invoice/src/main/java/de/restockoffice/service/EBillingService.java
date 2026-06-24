@@ -25,8 +25,7 @@ public class EBillingService {
             exporter.setConformanceLevel(PDFAConformanceLevel.UNICODE);
             exporter.setZUGFeRDVersion(2);
             exporter.setProfile(Profiles.getByName("EN16931"));
-            exporter.setProducer("ReStockOffice")
-                    .setCreator("ReStockOffice");
+            exporter.setProducer("ReStockOffice").setCreator("ReStockOffice");
 
             exporter.setTransaction(new InvoiceTransaction(request));
 
@@ -35,8 +34,8 @@ public class EBillingService {
             return out.toByteArray();
 
         } catch (Exception e) {
-            throw new ZUGFeRDGenerationException("ZUGFeRD-Generierung für Rechnung "
-                    + request.invoiceNumber() + " fehlgeschlagen: " + e.getMessage(), e);
+            throw new ZUGFeRDGenerationException("ZUGFeRD-Generierung für Rechnung " + request.invoiceNumber()
+                    + " fehlgeschlagen: " + e.getMessage(), e);
         }
     }
 
@@ -81,28 +80,21 @@ public class EBillingService {
 
         @Override
         public IZUGFeRDExportableTradeParty getRecipient() {
-            return new TradeParty(
-                    request.recipientName(),
-                    request.recipientStreet(),
-                    request.recipientZip(),
-                    request.recipientCity(),
-                    "DE"
-            );
+            return new TradeParty(request.recipientName(), request.recipientStreet(), request.recipientZip(),
+                    request.recipientCity(), "DE");
         }
 
         @Override
         public IZUGFeRDExportableItem[] getZFItems() {
-            List<IZUGFeRDExportableItem> zfItems = request.orderItems().stream()
-                    .map(orderItem -> {
-                        String description = (orderItem.description() == null || orderItem.description().isBlank())
-                                ? "Position" : orderItem.description();
+            List<IZUGFeRDExportableItem> zfItems = request.orderItems().stream().map(orderItem -> {
+                String description = (orderItem.description() == null || orderItem.description().isBlank()) ? "Position"
+                        : orderItem.description();
 
-                        Product product = new Product(description, "", "C62", new BigDecimal("19"));
+                Product product = new Product(description, "", "C62", new BigDecimal("19"));
 
-                        Item item = new Item(product, orderItem.price(), orderItem.quantity());
-                        return (IZUGFeRDExportableItem) item;
-                    })
-                    .toList();
+                Item item = new Item(product, orderItem.price(), orderItem.quantity());
+                return (IZUGFeRDExportableItem) item;
+            }).toList();
 
             return zfItems.toArray(new IZUGFeRDExportableItem[0]);
         }

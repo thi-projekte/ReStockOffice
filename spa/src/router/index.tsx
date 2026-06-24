@@ -1,24 +1,23 @@
-import {createBrowserRouter} from "react-router-dom";
-import {App} from "../App";
-import {HomePage} from "../pages/HomePage";
-import {LoginPage} from "../pages/LoginPage";
-import {CategoryPage} from "../pages/CategoryPage";
-import {ProductDetailPage} from "../pages/ProductDetailPage";
-import {ProductsPage} from "../pages/ProductsPage";
-import {AccountPage} from "../pages/AccountPage";
-import {SubscriptionPage} from "../pages/SubscriptionPage";
-import {ProtectedRoute} from "../auth/ProtectedRoute";
-import {RestockerPage} from "../pages/restocker-view/RestockerPage";
-import {OrderPage} from "../pages/restocker-view/OrderPage";
-import {MyOrdersPage} from "../pages/restocker-view/MyOrdersPage";
-import {DeliveryPage} from "../pages/restocker-view/DeliveryPage";
-import {IndexPage} from "./IndexPage";
-
+import { createBrowserRouter } from "react-router-dom";
+import { App } from "../App";
+import { HomePage } from "../pages/HomePage";
+import { LoginPage } from "../pages/LoginPage";
+import { CategoryPage } from "../pages/CategoryPage";
+import { ProductDetailPage } from "../pages/ProductDetailPage";
+import { ProductsPage } from "../pages/ProductsPage";
+import { AccountPage } from "../pages/AccountPage";
+import { SubscriptionPage } from "../pages/SubscriptionPage";
+import { ProtectedRoute } from "../auth/ProtectedRoute";
+import { RestockerPage } from "../pages/restocker-view/RestockerPage";
+import { OrderPage } from "../pages/restocker-view/OrderPage";
+import { MyOrdersPage } from "../pages/restocker-view/MyOrdersPage";
+import { DeliveryPage } from "../pages/restocker-view/DeliveryPage";
+import { IndexPage } from "./IndexPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <App/>,
+    element: <App />,
     children: [
 
       // Allgemeine Pages
@@ -26,19 +25,19 @@ export const router = createBrowserRouter([
         index: true,
         element: (
           <ProtectedRoute>
-            <IndexPage/>
+            <IndexPage />
           </ProtectedRoute>
         ),
       },
       {
         path: "login",
-        element: <LoginPage/>,
+        element: <LoginPage />,
       },
       {
         path: "account",
         element: (
           <ProtectedRoute>
-            <AccountPage/>
+            <AccountPage />
           </ProtectedRoute>
         ),
       },
@@ -48,7 +47,7 @@ export const router = createBrowserRouter([
         path: "home",
         element: (
           <ProtectedRoute>
-            <HomePage/>
+            <HomePage />
           </ProtectedRoute>
         ),
       },
@@ -56,7 +55,7 @@ export const router = createBrowserRouter([
         path: "products",
         element: (
           <ProtectedRoute>
-            <ProductsPage/>
+            <ProductsPage />
           </ProtectedRoute>
         ),
       },
@@ -64,7 +63,7 @@ export const router = createBrowserRouter([
         path: "categories/:categorySlug",
         element: (
           <ProtectedRoute>
-            <CategoryPage/>
+            <CategoryPage />
           </ProtectedRoute>
         ),
       },
@@ -72,7 +71,7 @@ export const router = createBrowserRouter([
         path: "products/:productId",
         element: (
           <ProtectedRoute>
-            <ProductDetailPage/>
+            <ProductDetailPage />
           </ProtectedRoute>
         ),
       },
@@ -80,7 +79,7 @@ export const router = createBrowserRouter([
         path: "subscription",
         element: (
           <ProtectedRoute>
-            <SubscriptionPage/>
+            <SubscriptionPage />
           </ProtectedRoute>
         ),
       },
@@ -90,7 +89,7 @@ export const router = createBrowserRouter([
         path: "restocker",
         element: (
           <ProtectedRoute>
-            <RestockerPage/>
+            <RestockerPage />
           </ProtectedRoute>
         ),
       },
@@ -98,7 +97,7 @@ export const router = createBrowserRouter([
         path: "restocker-orders",
         element: (
           <ProtectedRoute>
-            <OrderPage/>
+            <OrderPage />
           </ProtectedRoute>
         ),
       },
@@ -106,7 +105,7 @@ export const router = createBrowserRouter([
         path: "restocker-my-orders",
         element: (
           <ProtectedRoute>
-            <MyOrdersPage/>
+            <MyOrdersPage />
           </ProtectedRoute>
         ),
       },
@@ -114,10 +113,10 @@ export const router = createBrowserRouter([
         path: "restocker-deliveries",
         element: (
           <ProtectedRoute>
-            <DeliveryPage/>
+            <DeliveryPage />
           </ProtectedRoute>
         ),
-      }
+      },
     ],
   },
 ]);

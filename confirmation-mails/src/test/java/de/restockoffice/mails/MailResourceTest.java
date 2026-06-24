@@ -54,24 +54,14 @@ class MailResourceTest {
                 }
                 """;
 
-        given().contentType(ContentType.JSON)
-                .body(payload)
-                .when()
-                .post("/emails/abo-confirmation/preview")
-                .then()
-                .statusCode(200)
-                .contentType(containsString("text/html"))
-                .body(containsString("Max Mustermann"))
+        given().contentType(ContentType.JSON).body(payload).when().post("/emails/abo-confirmation/preview").then()
+                .statusCode(200).contentType(containsString("text/html")).body(containsString("Max Mustermann"))
                 .body(containsString("Bevorzugter Liefertermin:</span> Montag"))
                 .body(not(containsString("Bevorzugter Liefertermin:</span> 08:30 bis 10:00 Uhr")))
-                .body(containsString("Kopierpapier A4 Premium"))
-                .body(containsString("4x"))
-                .body(not(containsString("4 Pack")))
-                .body(containsString("Deabonniert"))
-                .body(not(containsString("Deabonniertx")))
-                .body(not(containsString("Nächste Lieferung")))
-                .body(not(containsString("04.05.2026")))
-                .body(containsString("<style>"));
+                .body(containsString("Kopierpapier A4 Premium")).body(containsString("4x"))
+                .body(not(containsString("4 Pack"))).body(containsString("Deabonniert"))
+                .body(not(containsString("Deabonniertx"))).body(not(containsString("Nächste Lieferung")))
+                .body(not(containsString("04.05.2026"))).body(containsString("<style>"));
     }
 
     @Test
@@ -99,20 +89,12 @@ class MailResourceTest {
                 }
                 """;
 
-        given().contentType(ContentType.JSON)
-                .body(payload)
-                .when()
-                .post("/emails/delivery-announcement")
-                .then()
-                .statusCode(200)
-                .body(TEMPLATE_FIELD, equalTo("delivery-announcement"))
-                .body(STATUS_FIELD, equalTo(QUEUED_STATUS))
-                .body("messageId", notNullValue());
+        given().contentType(ContentType.JSON).body(payload).when().post("/emails/delivery-announcement").then()
+                .statusCode(200).body(TEMPLATE_FIELD, equalTo("delivery-announcement"))
+                .body(STATUS_FIELD, equalTo(QUEUED_STATUS)).body("messageId", notNullValue());
 
-        Assertions.assertTrue(
-                testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
-                "delivery announcement mail should use an inline logo CID"
-        );
+        Assertions.assertTrue(testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
+                "delivery announcement mail should use an inline logo CID");
     }
 
     @Test
@@ -139,16 +121,10 @@ class MailResourceTest {
                 }
                 """;
 
-        given().contentType(ContentType.JSON)
-                .body(payload)
-                .when()
-                .post("/emails/delivery-announcement/preview")
-                .then()
-                .statusCode(200)
-                .contentType(containsString("text/html"))
+        given().contentType(ContentType.JSON).body(payload).when().post("/emails/delivery-announcement/preview").then()
+                .statusCode(200).contentType(containsString("text/html"))
                 .body(containsString("Deine Lieferung kommt heute an."))
-                .body(not(containsString("Deine Lieferung kommt in 0 Tagen.")))
-                .body(containsString("4x"))
+                .body(not(containsString("Deine Lieferung kommt in 0 Tagen."))).body(containsString("4x"))
                 .body(not(containsString("4 Pack")));
     }
 
@@ -176,27 +152,16 @@ class MailResourceTest {
                 }
                 """;
 
-        given().contentType(ContentType.JSON)
-                .body(payload)
-                .when()
-                .post("/emails/abo-confirmation")
-                .then()
-                .statusCode(200)
-                .body(TEMPLATE_FIELD, equalTo("abo-confirmation"))
+        given().contentType(ContentType.JSON).body(payload).when().post("/emails/abo-confirmation").then()
+                .statusCode(200).body(TEMPLATE_FIELD, equalTo("abo-confirmation"))
                 .body(STATUS_FIELD, equalTo(QUEUED_STATUS));
 
-        Assertions.assertTrue(
-                testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
-                "abo confirmation mail should use an inline logo CID"
-        );
-        Assertions.assertTrue(
-                testResendMailClient.lastHtml().contains("4x"),
-                "abo confirmation mail should render quantities as multipliers"
-        );
-        Assertions.assertFalse(
-                testResendMailClient.lastHtml().contains("4 Pack"),
-                "abo confirmation mail should not render article units in quantities"
-        );
+        Assertions.assertTrue(testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
+                "abo confirmation mail should use an inline logo CID");
+        Assertions.assertTrue(testResendMailClient.lastHtml().contains("4x"),
+                "abo confirmation mail should render quantities as multipliers");
+        Assertions.assertFalse(testResendMailClient.lastHtml().contains("4 Pack"),
+                "abo confirmation mail should not render article units in quantities");
     }
 
     @Test
@@ -220,17 +185,10 @@ class MailResourceTest {
                 }
                 """;
 
-        given().contentType(ContentType.JSON)
-                .body(payload)
-                .when()
-                .post("/emails/delivery-confirmation/preview")
-                .then()
-                .statusCode(200)
-                .contentType(containsString("text/html"))
-                .body(containsString("Deine Lieferung ist angekommen."))
-                .body(containsString("Kopierpapier A4 Premium"))
-                .body(containsString("4x"))
-                .body(not(containsString("4 Pack")));
+        given().contentType(ContentType.JSON).body(payload).when().post("/emails/delivery-confirmation/preview").then()
+                .statusCode(200).contentType(containsString("text/html"))
+                .body(containsString("Deine Lieferung ist angekommen.")).body(containsString("Kopierpapier A4 Premium"))
+                .body(containsString("4x")).body(not(containsString("4 Pack")));
     }
 
     @Test
@@ -253,18 +211,11 @@ class MailResourceTest {
                 }
                 """;
 
-        given().contentType(ContentType.JSON)
-                .body(payload)
-                .when()
-                .post("/emails/delivery-confirmation")
-                .then()
-                .statusCode(200)
-                .body(TEMPLATE_FIELD, equalTo("delivery-confirmation"))
+        given().contentType(ContentType.JSON).body(payload).when().post("/emails/delivery-confirmation").then()
+                .statusCode(200).body(TEMPLATE_FIELD, equalTo("delivery-confirmation"))
                 .body(STATUS_FIELD, equalTo(QUEUED_STATUS));
 
-        Assertions.assertTrue(
-                testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
-                "delivery confirmation mail should use an inline logo CID"
-        );
+        Assertions.assertTrue(testResendMailClient.lastHtml().contains(INLINE_LOGO_SRC),
+                "delivery confirmation mail should use an inline logo CID");
     }
 }

@@ -1,35 +1,35 @@
-import styles from './HowItWorksSection.module.css'
+import styles from "./HowItWorksSection.module.css";
 
-type Step = {
-  number: string
-  title: string
-  description: string
+interface Step {
+  number: string;
+  title: string;
+  description: string;
 }
 
 const steps: Step[] = [
   {
-    number: '01',
-    title: 'Konto erstellen',
-    description: 'Registrierung in unter 2 Minuten. Direkt loslegen, ohne Aufwand.',
+    number: "01",
+    title: "Konto erstellen",
+    description: "Registrierung in unter 2 Minuten. Direkt loslegen, ohne Aufwand.",
   },
   {
-    number: '02',
-    title: 'Artikel abonnieren',
-    description: 'Gewünschte Büroartikel auswählen und ein Lieferintervall festlegen – einmalig, fertig.',
+    number: "02",
+    title: "Artikel abonnieren",
+    description: "Gewünschte Büroartikel auswählen und ein Lieferintervall festlegen – einmalig, fertig.",
   },
   {
-    number: '03',
-    title: 'Öffnungszeiten hinterlegen',
-    description: 'Teilt uns eure Bürozeiten mit, damit der Restocker zur richtigen Zeit liefern kann.',
+    number: "03",
+    title: "Öffnungszeiten hinterlegen",
+    description: "Teilt uns eure Bürozeiten mit, damit der Restocker zur richtigen Zeit liefern kann.",
   },
   {
-    number: '04',
-    title: 'Fertig – wir liefern automatisch',
-    description: 'ReStockOffice kündigt jede Lieferung rechtzeitig per Mail an und bestätigt die Ankunft.',
+    number: "04",
+    title: "Fertig – wir liefern automatisch",
+    description: "ReStockOffice kündigt jede Lieferung rechtzeitig per Mail an und bestätigt die Ankunft.",
   },
-]
+];
 
-const lastIndex = steps.length - 1
+const lastIndex = steps.length - 1;
 
 export default function HowItWorksSection() {
   return (
@@ -53,5 +53,5 @@ export default function HowItWorksSection() {
         </ol>
       </div>
     </section>
-  )
+  );
 }

@@ -14,7 +14,7 @@ import type {
   KeycloakTokenParsed,
 } from "keycloak-js";
 import keycloak from "./keycloak";
-import {keycloakConfig} from "./keycloakConfig";
+import { keycloakConfig } from "./keycloakConfig";
 
 interface RealmAccess {
   roles: string[];
@@ -55,8 +55,8 @@ function normalizeRoleName(role: string | undefined): string {
 
 function collectRoles(tokenParsed?: RestockTokenParsed): string[] {
   const realmRoles = tokenParsed?.realm_access?.roles ?? [];
-  const clientRoles =
-    tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
+  const clientRoles
+    = tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
 
   return Array.from(new Set([...realmRoles, ...clientRoles]));
 }
@@ -65,7 +65,9 @@ function mapUser(
   tokenParsed: RestockTokenParsed | undefined,
   profile: KeycloakProfile | null,
 ): AuthUser | null {
-  if (!tokenParsed?.sub) return null;
+  if (!tokenParsed?.sub) {
+    return null;
+  }
 
   return {
     id: tokenParsed.sub,
@@ -84,7 +86,7 @@ function refreshTokenOrLogin(): void {
   });
 }
 
-export function AuthProvider({children}: Readonly<{ children: ReactNode }>): ReactElement {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>): ReactElement {
   const refreshTimerRef = useRef<number | undefined>(undefined);
 
   const [isInitializing, setIsInitializing] = useState(true);
@@ -134,7 +136,9 @@ export function AuthProvider({children}: Readonly<{ children: ReactNode }>): Rea
           checkLoginIframe: false,
         });
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         setError(null);
         await syncAuthState();
@@ -147,7 +151,9 @@ export function AuthProvider({children}: Readonly<{ children: ReactNode }>): Rea
           setError("Keycloak ist nicht erreichbar.");
         }
       } finally {
-        if (isMounted) setIsInitializing(false);
+        if (isMounted) {
+          setIsInitializing(false);
+        }
       }
     }
 
@@ -185,7 +191,7 @@ export function AuthProvider({children}: Readonly<{ children: ReactNode }>): Rea
       hasRole: (role) => {
         const normalizedRole = normalizeRoleName(role);
         return user?.roles.some(
-          (userRole) => normalizeRoleName(userRole) === normalizedRole,
+          userRole => normalizeRoleName(userRole) === normalizedRole,
         ) ?? false;
       },
     }),

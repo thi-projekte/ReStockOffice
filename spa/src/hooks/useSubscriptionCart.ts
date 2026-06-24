@@ -1,11 +1,11 @@
-import {useEffect, useMemo, useState} from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   Product,
   RestockOrder,
   RestockOrderWithProduct,
   Subscription,
 } from "../types/shop";
-import {useAPIs} from "../services/products";
+import { useAPIs } from "../services/products";
 import {
   createSubscription,
   deleteSubscriptionOrder,
@@ -39,9 +39,9 @@ interface UseSubscriptionCartResult {
 const MOCK_CUSTOMER_ID = "mock-user";
 
 export function useSubscriptionCart({
-                                      customerId,
-                                      token,
-                                    }: UseSubscriptionCartOptions): UseSubscriptionCartResult {
+  customerId,
+  token,
+}: UseSubscriptionCartOptions): UseSubscriptionCartResult {
   const effectiveCustomerId = useAPIs ? customerId : (customerId ?? MOCK_CUSTOMER_ID);
   const [subscription, setSubscription] = useState<Subscription>(() =>
     createSubscription(effectiveCustomerId),
@@ -63,7 +63,7 @@ export function useSubscriptionCart({
         return;
       }
 
-      const loadedSubscription = await loadSubscription({customerId: effectiveCustomerId, token});
+      const loadedSubscription = await loadSubscription({ customerId: effectiveCustomerId, token });
 
       if (!ignoreResult) {
         setSubscription(loadedSubscription);
@@ -85,7 +85,7 @@ export function useSubscriptionCart({
 
   function registerProducts(products: Product[]): void {
     setProductsById((previousProducts) => {
-      const nextProducts = {...previousProducts};
+      const nextProducts = { ...previousProducts };
 
       for (const product of products) {
         nextProducts[String(product.productId)] = product;
@@ -96,10 +96,10 @@ export function useSubscriptionCart({
   }
 
   async function addOrUpdateItem({
-                                   product,
-                                   quantity,
-                                   intervalCount,
-                                 }: AddSubscriptionPayload): Promise<"created" | "updated"> {
+    product,
+    quantity,
+    intervalCount,
+  }: AddSubscriptionPayload): Promise<"created" | "updated"> {
     if (useAPIs && !token) {
       throw new Error("Abo kann ohne Keycloak-Token nicht gespeichert werden.");
     }
@@ -107,7 +107,7 @@ export function useSubscriptionCart({
     const productId = String(product.productId);
 
     const existingItem = subscription.items.find(
-      (item) => item.productId === productId,
+      item => item.productId === productId,
     );
 
     const hasExistingItem = Boolean(existingItem);
@@ -121,43 +121,43 @@ export function useSubscriptionCart({
       existingItem,
     });
 
-    setProductsById((previousProducts) => ({
+    setProductsById(previousProducts => ({
       ...previousProducts,
       [productId]: product,
     }));
 
     setSubscription((previousSubscription) => {
       const currentItem = previousSubscription.items.find(
-        (item) => item.productId === productId,
+        item => item.productId === productId,
       );
 
       const today = new Date().toISOString().slice(0, 10);
 
       const nextItems: RestockOrder[] = currentItem
-        ? previousSubscription.items.map((item) =>
-          item.productId === productId
-            ? {
-              ...item,
-              ...savedOrder,
-              customerId: item.customerId,
-              createdAt: item.createdAt,
-              updatedAt: today,
-            }
-            : item,
-        )
+        ? previousSubscription.items.map(item =>
+            item.productId === productId
+              ? {
+                  ...item,
+                  ...savedOrder,
+                  customerId: item.customerId,
+                  createdAt: item.createdAt,
+                  updatedAt: today,
+                }
+              : item,
+          )
         : [
-          ...previousSubscription.items,
-          {
-            id: savedOrder.id,
-            customerId: previousSubscription.customerId,
-            productId: savedOrder.productId,
-            status: savedOrder.status,
-            quantity: savedOrder.quantity,
-            interval: savedOrder.interval,
-            createdAt: today,
-            updatedAt: today,
-          },
-        ];
+            ...previousSubscription.items,
+            {
+              id: savedOrder.id,
+              customerId: previousSubscription.customerId,
+              productId: savedOrder.productId,
+              status: savedOrder.status,
+              quantity: savedOrder.quantity,
+              interval: savedOrder.interval,
+              createdAt: today,
+              updatedAt: today,
+            },
+          ];
 
       return {
         ...previousSubscription,
@@ -181,10 +181,10 @@ export function useSubscriptionCart({
       existingItem: item,
     });
 
-    setSubscription((previousSubscription) => ({
+    setSubscription(previousSubscription => ({
       ...previousSubscription,
       items: previousSubscription.items.filter(
-        (subscriptionItem) => subscriptionItem.productId !== item.productId,
+        subscriptionItem => subscriptionItem.productId !== item.productId,
       ),
       updatedAt: new Date().toISOString().slice(0, 10),
     }));
@@ -221,7 +221,7 @@ export function useSubscriptionCart({
 
   function getExistingItem(productId: number): RestockOrder | undefined {
     return subscription.items.find(
-      (item) => item.productId === String(productId),
+      item => item.productId === String(productId),
     );
   }
 

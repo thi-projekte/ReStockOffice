@@ -1,8 +1,8 @@
 import mockRestockOrderTemplates from "../mocks/restockOrders.json";
-import {getProducts, useAPIs} from "./products";
+import { getProducts, useAPIs } from "./products";
 import keycloak from "../auth/keycloak";
 
-import {createDemoRestockOrders, getRestockerCustomerProfile} from "../mocks/restockerMarketplace";
+import { createDemoRestockOrders, getRestockerCustomerProfile } from "../mocks/restockerMarketplace";
 import type {
   Product,
   RestockMarketplaceAssignment,
@@ -23,12 +23,11 @@ import {
   syncTodayOrders,
   type DeliveryDetail,
 } from "./deliveries";
-import {loadCustomerProfile} from "./users";
-import type {CustomerUser} from "./users";
+import { loadCustomerProfile } from "./users";
+import type { CustomerUser } from "./users";
 
-const ORDERS_API_URL =
-  import.meta.env.VITE_ORDERS_API_URL ?? "https://orders.restockoffice.de/orders";
-const TEMPORARY_CUSTOMER_ID = "100";
+const ORDERS_API_URL
+  = import.meta.env.VITE_ORDERS_API_URL ?? "https://orders.restockoffice.de/orders";
 const RESTOCKER_ASSIGNMENTS_STORAGE_KEY = "restockoffice-restocker-order-assignments-v1";
 const RESTOCKER_LOOKAHEAD_DAYS = 28;
 const DEMO_OPEN_TODAY_CUSTOMER_ID = "104";
@@ -101,8 +100,8 @@ function isDeliveryDateInPast(dateValue?: string | null, referenceDate = new Dat
 
   const normalizedDate = dateValue.trim().slice(0, 10);
 
-  return /^\d{4}-\d{2}-\d{2}$/.test(normalizedDate) &&
-    normalizedDate < formatLocalIsoDate(referenceDate);
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)
+    && normalizedDate < formatLocalIsoDate(referenceDate);
 }
 
 function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert" | "gelöscht"): string {
@@ -110,7 +109,6 @@ function buildOrdersNetworkErrorMessage(action: "geladen" | "gespeichert" | "gel
 }
 
 async function resolveToken(token?: string): Promise<string> {
-
   if (token) {
     return token;
   }
@@ -135,13 +133,9 @@ async function resolveToken(token?: string): Promise<string> {
 
 function createHeaders(token: string): Record<string, string> {
   return {
-    Authorization: `Bearer ${token}`,
+    "Authorization": `Bearer ${token}`,
     "Content-Type": "application/json",
   };
-}
-
-function resolveCustomerId(customerId?: string): string {
-  return customerId ?? TEMPORARY_CUSTOMER_ID;
 }
 
 function parseIsoDate(dateValue: string) {
@@ -223,7 +217,7 @@ function buildStreetLine(detail?: DeliveryDetail) {
   }
 
   const streetParts = [detail.street, detail.houseNumber]
-    .map((part) => part?.trim())
+    .map(part => part?.trim())
     .filter(Boolean);
 
   return streetParts.length > 0
@@ -253,18 +247,18 @@ function formatMarketplaceDeliveryTime(
   const normalizedTimeValue = normalizedValue.replace(/\s*uhr$/i, "").trim();
 
   if (
-    !normalizedTimeValue ||
-    normalizedTimeValue === "0" ||
-    normalizedTimeValue === "00" ||
-    normalizedTimeValue === "00:00"
+    !normalizedTimeValue
+    || normalizedTimeValue === "0"
+    || normalizedTimeValue === "00"
+    || normalizedTimeValue === "00:00"
   ) {
     return MISSING_DELIVERY_TIME_VALUE;
   }
 
   if (
-    normalizedValue.includes("-") ||
-    normalizedValue.toLowerCase().includes("bis") ||
-    normalizedValue.toLowerCase().includes("uhr")
+    normalizedValue.includes("-")
+    || normalizedValue.toLowerCase().includes("bis")
+    || normalizedValue.toLowerCase().includes("uhr")
   ) {
     return normalizedValue;
   }
@@ -307,19 +301,19 @@ async function loadDeliveryDetailsByCustomerId(
 
   try {
     try {
-      await syncTodayOrders({restockerName, token});
+      await syncTodayOrders({ restockerName, token });
     } catch {
       // Keep reading existing routed deliveries even when today's sync fails.
     }
 
-    const todaysTours = await loadTodayTours({restockerName, token});
+    const todaysTours = await loadTodayTours({ restockerName, token });
 
     if (todaysTours.length === 0) {
       return new Map<string, DeliveryDetail>();
     }
 
     const deliveryDetailGroups = await Promise.all(
-      todaysTours.map((tour) =>
+      todaysTours.map(tour =>
         loadTourDetails({
           tourId: tour.id,
           token,
@@ -349,19 +343,19 @@ async function loadDeliveryDetailsForRestocker(
 
   try {
     try {
-      await syncTodayOrders({restockerName, token});
+      await syncTodayOrders({ restockerName, token });
     } catch {
       // Keep reading existing routed deliveries even when today's sync fails.
     }
 
-    const todaysTours = await loadTodayTours({restockerName, token});
+    const todaysTours = await loadTodayTours({ restockerName, token });
 
     if (todaysTours.length === 0) {
       return [];
     }
 
     const deliveryDetailGroups = await Promise.all(
-      todaysTours.map((tour) =>
+      todaysTours.map(tour =>
         loadTourDetails({
           tourId: tour.id,
           token,
@@ -376,10 +370,10 @@ async function loadDeliveryDetailsForRestocker(
 }
 
 function resolveMarketplaceCustomerData({
-                                          customerId,
-                                          deliveryDetail,
-                                          useMockFallback,
-                                        }: {
+  customerId,
+  deliveryDetail,
+  useMockFallback,
+}: {
   customerId: string;
   deliveryDetail?: DeliveryDetail;
   useMockFallback: boolean;
@@ -402,8 +396,8 @@ function resolveMarketplaceCustomerData({
         customerData.postalCode,
         customerData.city,
         customerData.deliveryTime,
-      ].includes(MISSING_MARKETPLACE_VALUE) ||
-        customerData.deliveryTime === MISSING_DELIVERY_TIME_VALUE,
+      ].includes(MISSING_MARKETPLACE_VALUE)
+      || customerData.deliveryTime === MISSING_DELIVERY_TIME_VALUE,
     };
   }
 
@@ -433,21 +427,21 @@ function resolveMarketplaceCustomerData({
 
 function hasMissingCustomerData(order: RestockMarketplaceOrder) {
   return (
-    order.isPlaceholderCustomerData ||
-    [
+    order.isPlaceholderCustomerData
+    || [
       order.companyName,
       order.addressLine1,
       order.postalCode,
       order.city,
       order.deliveryTime,
-    ].includes(MISSING_MARKETPLACE_VALUE) ||
-    order.deliveryTime === MISSING_DELIVERY_TIME_VALUE
+    ].includes(MISSING_MARKETPLACE_VALUE)
+    || order.deliveryTime === MISSING_DELIVERY_TIME_VALUE
   );
 }
 
 function buildStreetLineFromProfile(profile: CustomerUser): string {
   return [profile.street, profile.houseNumber]
-    .map((part) => part?.trim())
+    .map(part => part?.trim())
     .filter(Boolean)
     .join(" ");
 }
@@ -503,7 +497,7 @@ async function enrichMarketplaceOrdersWithCustomerProfiles(
     new Set(
       orders
         .filter(hasMissingCustomerData)
-        .map((order) => order.customerId)
+        .map(order => order.customerId)
         .filter(Boolean),
     ),
   );
@@ -516,7 +510,7 @@ async function enrichMarketplaceOrdersWithCustomerProfiles(
   await Promise.all(
     missingCustomerIds.map(async (customerId) => {
       try {
-        const profile = await loadCustomerProfile({token, userId: customerId});
+        const profile = await loadCustomerProfile({ token, userId: customerId });
         profilesByCustomerId.set(customerId, profile);
       } catch {
         // Keep the Delivery API payload when a profile cannot be resolved.
@@ -524,7 +518,7 @@ async function enrichMarketplaceOrdersWithCustomerProfiles(
     }),
   );
 
-  return orders.map((order) =>
+  return orders.map(order =>
     applyCustomerProfile(order, profilesByCustomerId.get(order.customerId)),
   );
 }
@@ -535,7 +529,7 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
 ): RestockMarketplaceOrder[] {
   return deliveryDetails
     .filter(
-      (detail) =>
+      detail =>
         options.includePastDeliveries || !isDeliveryDateInPast(detail.deliveryDate),
     )
     .map((detail) => {
@@ -572,9 +566,9 @@ function deriveMarketplaceOrdersFromDeliveryDetails(
         articleCount: detail.items.length,
         items,
         isPlaceholderCustomerData:
-          deliveryTime === MISSING_DELIVERY_TIME_VALUE ||
-          [detail.companyName, detail.street, detail.postalCode, detail.city].some(
-            (value) => !value?.trim(),
+          deliveryTime === MISSING_DELIVERY_TIME_VALUE
+          || [detail.companyName, detail.street, detail.postalCode, detail.city].some(
+            value => !value?.trim(),
           ),
         assignment,
       };
@@ -615,8 +609,8 @@ function isCompletedDeliveryForRestocker(
   restockerIdentifiers: Set<string>,
 ) {
   const assignedRestocker = normalizeRestockerIdentifier(detail.restockerName);
-  const isCompleted =
-    Boolean(detail.deliveredAt) || detail.status.toUpperCase() === "DELIVERED";
+  const isCompleted
+    = Boolean(detail.deliveredAt) || detail.status.toUpperCase() === "DELIVERED";
 
   return isCompleted && restockerIdentifiers.has(assignedRestocker);
 }
@@ -626,7 +620,7 @@ function isCompletedMarketplaceOrder(order: RestockMarketplaceOrder) {
 }
 
 function excludeCompletedMarketplaceOrders(orders: RestockMarketplaceOrder[]) {
-  return orders.filter((order) => !isCompletedMarketplaceOrder(order));
+  return orders.filter(order => !isCompletedMarketplaceOrder(order));
 }
 
 function mergeMarketplaceOrdersByKey(orders: RestockMarketplaceOrder[]) {
@@ -650,13 +644,13 @@ function mergeDeliveryDetailsById(deliveryDetails: DeliveryDetail[]) {
 const mockRestockOrders: RestockOrder[] = [];
 
 function getMockOrdersForCustomer(customerId: string): RestockOrder[] {
-  const customerOrders = mockRestockOrders.filter((order) => order.customerId === customerId);
+  const customerOrders = mockRestockOrders.filter(order => order.customerId === customerId);
 
   if (customerOrders.length > 0) {
     return mockRestockOrders;
   }
 
-  const seededOrders = mockRestockOrderTemplates.map((order) => ({
+  const seededOrders = mockRestockOrderTemplates.map(order => ({
     ...order,
     customerId,
   }));
@@ -671,9 +665,9 @@ function stringifyOrderValue(value: unknown, fallback: string): string {
   }
 
   if (
-    typeof value === "number" ||
-    typeof value === "boolean" ||
-    typeof value === "bigint"
+    typeof value === "number"
+    || typeof value === "boolean"
+    || typeof value === "bigint"
   ) {
     return value.toString();
   }
@@ -687,7 +681,7 @@ function normalizeRestockOrder(rawOrder: unknown): RestockOrder {
   const fallbackDate = formatDate(new Date());
 
   return {
-    ...(Number.isFinite(id) ? {id} : {}),
+    ...(Number.isFinite(id) ? { id } : {}),
     customerId: stringifyOrderValue(source.customerId, ""),
     productId: stringifyOrderValue(source.productId, ""),
     status: stringifyOrderValue(source.status, "ACTIVE"),
@@ -711,7 +705,7 @@ function createSubscriptionFromOrders(
   customerId: string,
 ): Subscription {
   const customerOrders = orders.filter(
-    (order) => order.customerId === customerId && order.status.toUpperCase() === "ACTIVE",
+    order => order.customerId === customerId && order.status.toUpperCase() === "ACTIVE",
   );
   const firstOrder = customerOrders[0];
   const today = formatDate(new Date());
@@ -757,15 +751,15 @@ function readRestockerAssignments(): RestockerOrderAssignment[] {
       const status = source.status;
 
       return (
-        typeof source.orderKey === "string" &&
-        typeof source.restockerId === "string" &&
-        typeof source.acceptedAt === "string" &&
-        (status === undefined ||
-          status === "accepted" ||
-          status === "in_delivery" ||
-          status === "completed")
+        typeof source.orderKey === "string"
+        && typeof source.restockerId === "string"
+        && typeof source.acceptedAt === "string"
+        && (status === undefined
+          || status === "accepted"
+          || status === "in_delivery"
+          || status === "completed")
       );
-    }).map((assignment) => ({
+    }).map(assignment => ({
       ...assignment,
       status: assignment.status ?? "accepted",
     }));
@@ -827,16 +821,16 @@ function mergeAssignments(
 
 function isAssignedDemoOrderKey(orderKey: string) {
   return (
-    orderKey === buildDemoTodayOrderKey(DEMO_OPEN_TODAY_CUSTOMER_ID) ||
-    orderKey === buildDemoTodayOrderKey(DEMO_COMPLETED_TODAY_CUSTOMER_ID)
+    orderKey === buildDemoTodayOrderKey(DEMO_OPEN_TODAY_CUSTOMER_ID)
+    || orderKey === buildDemoTodayOrderKey(DEMO_COMPLETED_TODAY_CUSTOMER_ID)
   );
 }
 
 async function syncStoredDeliveryAssignments({
-                                               assignments,
-                                               token,
-                                               restockerName,
-                                             }: {
+  assignments,
+  token,
+  restockerName,
+}: {
   assignments: RestockerOrderAssignment[];
   token: string;
   restockerName?: string;
@@ -958,8 +952,8 @@ function deriveMarketplaceOrders(
 
     currentOrder.items.push(nextItem);
     currentOrder.articleCount += order.quantity;
-    currentOrder.isPlaceholderCustomerData =
-      currentOrder.isPlaceholderCustomerData || customerProfile.isPlaceholder;
+    currentOrder.isPlaceholderCustomerData
+      = currentOrder.isPlaceholderCustomerData || customerProfile.isPlaceholder;
   }
 
   return Array.from(groupedOrders.values()).sort((firstOrder, secondOrder) => {
@@ -994,9 +988,9 @@ export function createSubscription(customerId = ""): Subscription {
 }
 
 export async function loadSubscription({
-                                         customerId,
-                                         token,
-                                       }: OrdersRequestContext): Promise<Subscription> {
+  customerId,
+  token,
+}: OrdersRequestContext): Promise<Subscription> {
   if (!customerId) {
     return createSubscription();
   }
@@ -1038,20 +1032,20 @@ export async function loadSubscription({
 }
 
 export async function upsertSubscriptionOrder({
-                                                customerId,
-                                                token,
-                                                productId,
-                                                quantity,
-                                                intervalCount,
-                                                existingItem,
-                                              }: UpsertOrderPayload): Promise<Pick<RestockOrder, "id" | "productId" | "status" | "quantity" | "interval">> {
+  customerId,
+  token,
+  productId,
+  quantity,
+  intervalCount,
+  existingItem,
+}: UpsertOrderPayload): Promise<Pick<RestockOrder, "id" | "productId" | "status" | "quantity" | "interval">> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
     }
 
     const existingMockOrder = mockRestockOrders.find(
-      (order) => order.customerId === customerId && order.productId === productId,
+      order => order.customerId === customerId && order.productId === productId,
     );
     const updatedAt = formatDate(new Date());
     const mockOrder: RestockOrder = {
@@ -1116,18 +1110,18 @@ export async function upsertSubscriptionOrder({
 }
 
 export async function deleteSubscriptionOrder({
-                                                customerId,
-                                                token,
-                                                productId,
-                                                existingItem,
-                                              }: DeleteOrderPayload): Promise<void> {
+  customerId,
+  token,
+  productId,
+  existingItem,
+}: DeleteOrderPayload): Promise<void> {
   if (!useAPIs) {
     if (!customerId) {
       throw new Error("Abo kann ohne UserID nicht gespeichert werden.");
     }
 
     const existingMockOrderIndex = mockRestockOrders.findIndex(
-      (order) => order.customerId === customerId && order.productId === productId,
+      order => order.customerId === customerId && order.productId === productId,
     );
 
     if (existingMockOrderIndex >= 0) {
@@ -1138,7 +1132,6 @@ export async function deleteSubscriptionOrder({
   }
 
   const resolvedToken = await resolveToken(token);
-
 
   let response: Response;
 
@@ -1171,9 +1164,9 @@ export async function deleteSubscriptionOrder({
 }
 
 export async function loadOpenRestockOrders({
-                                              token,
-                                              restockerName,
-                                            }: RestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
+  token,
+  restockerName,
+}: RestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
   const resolvedToken = await resolveToken(token);
   const assignments = readRestockerAssignments();
   const products = await getProducts().catch(() => []);
@@ -1182,11 +1175,11 @@ export async function loadOpenRestockOrders({
   try {
     const marketplaceOrders = await enrichMarketplaceOrdersWithCustomerProfiles(
       deriveMarketplaceOrdersFromDeliveryDetails(
-        await loadOpenDeliveries({token: resolvedToken}),
+        await loadOpenDeliveries({ token: resolvedToken }),
       ).filter(
-        (order) =>
-          !order.assignment &&
-          !assignments.some((assignment) => assignment.orderKey === order.orderKey),
+        order =>
+          !order.assignment
+          && !assignments.some(assignment => assignment.orderKey === order.orderKey),
       ),
       resolvedToken,
     );
@@ -1195,7 +1188,7 @@ export async function loadOpenRestockOrders({
       orders: marketplaceOrders,
       source: "live",
       hasPlaceholderCustomerData: marketplaceOrders.some(
-        (order) => order.isPlaceholderCustomerData,
+        order => order.isPlaceholderCustomerData,
       ),
     };
   } catch {
@@ -1213,25 +1206,25 @@ export async function loadOpenRestockOrders({
       productsById,
       deliveryDetailsByCustomerId,
     ).filter(
-      (order) =>
-        !assignments.some((assignment) => assignment.orderKey === order.orderKey) &&
-        !isAssignedDemoOrderKey(order.orderKey),
+      order =>
+        !assignments.some(assignment => assignment.orderKey === order.orderKey)
+        && !isAssignedDemoOrderKey(order.orderKey),
     );
 
     return {
       orders: marketplaceOrders,
       source: "live",
       hasPlaceholderCustomerData: marketplaceOrders.some(
-        (order) => order.isPlaceholderCustomerData,
+        order => order.isPlaceholderCustomerData,
       ),
     };
   } catch {
     const deliveryBackedOrders = deriveMarketplaceOrdersFromDeliveryDetails(
       await loadDeliveryDetailsForRestocker(resolvedToken, restockerName),
     ).filter(
-      (order) =>
-        !assignments.some((assignment) => assignment.orderKey === order.orderKey) &&
-        !isAssignedDemoOrderKey(order.orderKey),
+      order =>
+        !assignments.some(assignment => assignment.orderKey === order.orderKey)
+        && !isAssignedDemoOrderKey(order.orderKey),
     );
 
     if (deliveryBackedOrders.length > 0) {
@@ -1248,9 +1241,9 @@ export async function loadOpenRestockOrders({
       undefined,
       true,
     ).filter(
-      (order) =>
-        !assignments.some((assignment) => assignment.orderKey === order.orderKey) &&
-        !isAssignedDemoOrderKey(order.orderKey),
+      order =>
+        !assignments.some(assignment => assignment.orderKey === order.orderKey)
+        && !isAssignedDemoOrderKey(order.orderKey),
     );
 
     return {
@@ -1262,20 +1255,20 @@ export async function loadOpenRestockOrders({
 }
 
 export async function loadAssignedRestockOrders({
-                                                  token,
-                                                  restockerId,
-                                                  restockerName,
-                                                  includeCompletedDeliveries = true,
-                                                }: AssignedRestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
+  token,
+  restockerId,
+  restockerName,
+  includeCompletedDeliveries = true,
+}: AssignedRestockerOrdersRequestContext): Promise<RestockMarketplaceLoadResult> {
   const resolvedToken = await resolveToken(token);
   const assignments = mergeAssignments(
     readRestockerAssignments().filter(
-      (assignment) => assignment.restockerId === restockerId,
+      assignment => assignment.restockerId === restockerId,
     ),
     createDemoAssignedOrders(restockerId),
   );
   const assignmentsByOrderKey = new Map(
-    assignments.map((assignment) => [
+    assignments.map(assignment => [
       assignment.orderKey,
       {
         restockerId: assignment.restockerId,
@@ -1308,10 +1301,10 @@ export async function loadAssignedRestockOrders({
     );
     const completedDeliveryDetails = includeCompletedDeliveries
       ? (await loadAllDeliveries({
-        token: resolvedToken,
-      }).catch(() => [])).filter((detail) =>
-        isCompletedDeliveryForRestocker(detail, restockerIdentifierCandidates),
-      )
+          token: resolvedToken,
+        }).catch(() => [])).filter(detail =>
+          isCompletedDeliveryForRestocker(detail, restockerIdentifierCandidates),
+        )
       : [];
     const currentDeliveryDetails = mergeDeliveryDetailsById([
       ...assignedDeliveryDetails,
@@ -1322,8 +1315,8 @@ export async function loadAssignedRestockOrders({
     );
     const completedMarketplaceOrders = includeCompletedDeliveries
       ? deriveMarketplaceOrdersFromDeliveryDetails(completedDeliveryDetails, {
-        includePastDeliveries: true,
-      })
+          includePastDeliveries: true,
+        })
       : [];
     const derivedMarketplaceOrders = mergeMarketplaceOrdersByKey([
       ...currentMarketplaceOrders,
@@ -1341,7 +1334,7 @@ export async function loadAssignedRestockOrders({
       orders: marketplaceOrders,
       source: "live",
       hasPlaceholderCustomerData: marketplaceOrders.some(
-        (order) => order.isPlaceholderCustomerData,
+        order => order.isPlaceholderCustomerData,
       ),
     };
   } catch {
@@ -1360,7 +1353,7 @@ export async function loadAssignedRestockOrders({
       deliveryDetailsByCustomerId,
       false,
       assignmentsByOrderKey,
-    ).filter((order) => assignmentsByOrderKey.has(order.orderKey));
+    ).filter(order => assignmentsByOrderKey.has(order.orderKey));
     const marketplaceOrders = includeCompletedDeliveries
       ? derivedMarketplaceOrders
       : excludeCompletedMarketplaceOrders(derivedMarketplaceOrders);
@@ -1369,7 +1362,7 @@ export async function loadAssignedRestockOrders({
       orders: marketplaceOrders,
       source: "live",
       hasPlaceholderCustomerData: marketplaceOrders.some(
-        (order) => order.isPlaceholderCustomerData,
+        order => order.isPlaceholderCustomerData,
       ),
     };
   } catch {
@@ -1394,7 +1387,7 @@ export async function loadAssignedRestockOrders({
       undefined,
       true,
       assignmentsByOrderKey,
-    ).filter((order) => assignmentsByOrderKey.has(order.orderKey));
+    ).filter(order => assignmentsByOrderKey.has(order.orderKey));
     const demoOrders = includeCompletedDeliveries
       ? derivedDemoOrders
       : excludeCompletedMarketplaceOrders(derivedDemoOrders);
@@ -1408,11 +1401,11 @@ export async function loadAssignedRestockOrders({
 }
 
 export async function acceptRestockOrder({
-                                           orderKey,
-                                           restockerId,
-                                           restockerName,
-                                           token,
-                                         }: {
+  orderKey,
+  restockerId,
+  restockerName,
+  token,
+}: {
   orderKey: string;
   restockerId: string;
   restockerName?: string;
@@ -1430,7 +1423,7 @@ export async function acceptRestockOrder({
 
   const assignments = readRestockerAssignments();
   const existingAssignment = assignments.find(
-    (assignment) => assignment.orderKey === orderKey,
+    assignment => assignment.orderKey === orderKey,
   );
 
   if (existingAssignment && existingAssignment.restockerId !== restockerId) {

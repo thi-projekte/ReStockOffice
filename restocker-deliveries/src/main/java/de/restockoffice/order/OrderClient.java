@@ -17,10 +17,7 @@ public interface OrderClient {
 
     @GET
     @Path("/delivery/{id}")
-    OrderDto getOrderById(
-            @PathParam("id") Long id,
-            @HeaderParam("Authorization") String authorizationHeader
-    );
+    OrderDto getOrderById(@PathParam("id") Long id, @HeaderParam("Authorization") String authorizationHeader);
 
     @GET
     @Path("/active")

@@ -5,10 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Enriched delivery response combining data from:
- * - restocker-deliveries DB (collected, deliveredAt, stopOrder)
- * - users service (companyName, address, phone, deliveryHint)
- * - orders service (items, deliveryDate)
+ * Enriched delivery response combining data from: - restocker-deliveries DB (collected, deliveredAt, stopOrder) - users
+ * service (companyName, address, phone, deliveryHint) - orders service (items, deliveryDate)
  */
 public class DeliveryDetailDto {
 
@@ -32,7 +30,7 @@ public class DeliveryDetailDto {
     private String city;
     private String country;
     private String phoneNumber;
-    private String contactPerson;   // roleInCompany as contact label
+    private String contactPerson; // roleInCompany as contact label
     private String deliveryHint;
     private String deliveryDay;
     private String deliveryTime;

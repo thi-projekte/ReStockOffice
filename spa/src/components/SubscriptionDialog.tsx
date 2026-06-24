@@ -1,5 +1,5 @@
-import {type ReactElement, useEffect, useRef, useState} from "react";
-import type {Product, RestockOrderWithProduct} from "../types/shop";
+import { type ReactElement, useEffect, useRef, useState } from "react";
+import type { Product, RestockOrderWithProduct } from "../types/shop";
 
 interface SubscriptionDialogProps {
   readonly items: readonly RestockOrderWithProduct[];
@@ -24,17 +24,17 @@ function getSubscriptionTargetElement(): HTMLElement | null {
     return document.querySelector(".hamburger-btn") as HTMLElement | null;
   }
 
-  return document.querySelector('a[href="/subscription"]') as HTMLElement | null;
+  return document.querySelector("a[href=\"/subscription\"]") as HTMLElement | null;
 }
 
 export function SubscriptionDialog({
-                                      product,
-                                      selectedItem,
-                                      open,
-                                     isProfileComplete,
-                                     onClose,
-                                     onConfirm,
-                                   }: Readonly<SubscriptionDialogProps>): ReactElement | null {
+  product,
+  selectedItem,
+  open,
+  isProfileComplete,
+  onClose,
+  onConfirm,
+}: Readonly<SubscriptionDialogProps>): ReactElement | null {
   const [quantity, setQuantity] = useState(1);
   const [intervalCount, setIntervalCount] = useState(1);
   const [isClosingToHeader, setIsClosingToHeader] = useState(false);
@@ -95,7 +95,7 @@ export function SubscriptionDialog({
       modalElement.style.transform = "translate(0, 0) scale(0.18)";
     });
 
-    await new Promise((resolve) => globalThis.setTimeout(resolve, 480));
+    await new Promise(resolve => globalThis.setTimeout(resolve, 480));
     onClose();
   }
 
@@ -107,7 +107,7 @@ export function SubscriptionDialog({
     setIsClosingToHeader(true);
 
     try {
-      await onConfirm({quantity, intervalCount});
+      await onConfirm({ quantity, intervalCount });
       await animateDialogIntoHeader();
     } catch {
       setIsClosingToHeader(false);
@@ -153,19 +153,23 @@ export function SubscriptionDialog({
             <span>{product.category}</span>
           </div>
 
-          {selectedItem ? (
-            <div className="subscription-modal__warning">
-              Dieses Produkt ist bereits Teil deines Abos. Deine Änderungen werden auf das
-              laufende Abo angewendet.
-            </div>
-          ) : null}
+          {selectedItem
+            ? (
+                <div className="subscription-modal__warning">
+                  Dieses Produkt ist bereits Teil deines Abos. Deine Änderungen werden auf das
+                  laufende Abo angewendet.
+                </div>
+              )
+            : null}
 
-          {isProfileIncomplete ? (
-            <div className="subscription-modal__warning subscription-modal__warning--locked">
-              Dein Profil ist noch nicht vollständig. Solange Pflichtfelder fehlen, kannst du
-              dein Abo nicht ändern.
-            </div>
-          ) : null}
+          {isProfileIncomplete
+            ? (
+                <div className="subscription-modal__warning subscription-modal__warning--locked">
+                  Dein Profil ist noch nicht vollständig. Solange Pflichtfelder fehlen, kannst du
+                  dein Abo nicht ändern.
+                </div>
+              )
+            : null}
 
           <label className="subscription-field">
             <span>Menge</span>
@@ -175,7 +179,7 @@ export function SubscriptionDialog({
               min={1}
               step={1}
               value={quantity}
-              onChange={(event) => setQuantity(Number(event.target.value))}
+              onChange={event => setQuantity(Number(event.target.value))}
             />
           </label>
 
@@ -192,7 +196,7 @@ export function SubscriptionDialog({
               max={12}
               step={1}
               value={intervalCount}
-              onChange={(event) => setIntervalCount(Number(event.target.value))}
+              onChange={event => setIntervalCount(Number(event.target.value))}
             />
             <div className="subscription-slider__scale">
               <span>1 Woche</span>
@@ -201,7 +205,18 @@ export function SubscriptionDialog({
           </div>
 
           <div className="subscription-modal__summary">
-            Alle {intervalCount} Wochen werden {quantity}x {product.name} zugeliefert.
+            Alle
+            {" "}
+            {intervalCount}
+            {" "}
+            Wochen werden
+            {" "}
+            {quantity}
+            x
+            {" "}
+            {product.name}
+            {" "}
+            zugeliefert.
           </div>
         </div>
 

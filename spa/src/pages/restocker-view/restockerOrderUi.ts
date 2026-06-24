@@ -131,11 +131,11 @@ export function formatDeliveryWindow(timeValue: string) {
   const normalizedValue = timeValue.replace(/\s*uhr$/i, "").trim();
 
   if (
-    !normalizedValue ||
-    normalizedValue === "0" ||
-    normalizedValue === "00" ||
-    normalizedValue === "00:00" ||
-    timeValue === MISSING_DELIVERY_WINDOW_LABEL
+    !normalizedValue
+    || normalizedValue === "0"
+    || normalizedValue === "00"
+    || normalizedValue === "00:00"
+    || timeValue === MISSING_DELIVERY_WINDOW_LABEL
   ) {
     return MISSING_DELIVERY_WINDOW_LABEL;
   }

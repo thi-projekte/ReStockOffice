@@ -11,8 +11,7 @@ import java.util.Optional;
 public class InvoiceRepository implements PanacheRepositoryBase<InvoiceEntity, Long> {
 
     public Optional<InvoiceEntity> findByUserIdAndInvoiceNumber(String userId, String invoiceNumber) {
-        return find("userId = ?1 and invoiceNumber = ?2", userId, invoiceNumber)
-                .firstResultOptional();
+        return find("userId = ?1 and invoiceNumber = ?2", userId, invoiceNumber).firstResultOptional();
     }
 
     public Optional<InvoiceEntity> findByInvoiceNumber(String invoiceNumber) {

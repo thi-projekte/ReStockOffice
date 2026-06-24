@@ -1,9 +1,12 @@
-import {isValidIBAN, isValidBIC, electronicFormatIBAN} from "ibantools";
-import {isValidPhoneNumber} from "libphonenumber-js";
+import { isValidIBAN, isValidBIC, electronicFormatIBAN } from "ibantools";
+import { isValidPhoneNumber } from "libphonenumber-js";
 
 // ── Telefon ──────────────────────────────────────────────────────────────────
 export function validatePhone(value: string): string | null {
-  if (!value.trim()) return null; // wird separat als Pflichtfeld geprüft
+  if (!value.trim()) {
+    return null;
+  }
+
   try {
     // Versuche mit DE als Fallback-Land
     const cleaned = value.startsWith("+") ? value : `+49${value.replace(/^0/, "")}`;
@@ -29,7 +32,10 @@ const POSTAL_CODE_PATTERNS: Record<string, RegExp> = {
 
 export function validatePostalCode(value: string, country: string): string | null {
   const pattern = POSTAL_CODE_PATTERNS[country];
-  if (!pattern) return null;
+  if (!pattern) {
+    return null;
+  }
+
   if (!pattern.test(value)) {
     const len = country === "Deutschland" ? "5" : "4";
     return `PLZ muss ${len} Ziffern haben`;
@@ -39,7 +45,10 @@ export function validatePostalCode(value: string, country: string): string | nul
 
 // ── IBAN ─────────────────────────────────────────────────────────────────────
 export function validateIBAN(value: string): string | null {
-  if (!value.trim()) return null;
+  if (!value.trim()) {
+    return null;
+  }
+
   const formatted = electronicFormatIBAN(value);
   if (!formatted || !isValidIBAN(formatted)) {
     return "Ungültige IBAN";
@@ -53,7 +62,10 @@ export function formatIBAN(value: string): string {
 
 // ── BIC ──────────────────────────────────────────────────────────────────────
 export function validateBIC(value: string): string | null {
-  if (!value.trim()) return null;
+  if (!value.trim()) {
+    return null;
+  }
+
   if (!isValidBIC(value)) {
     return "Ungültiger BIC/SWIFT-Code";
   }
@@ -66,7 +78,10 @@ export function formatBIC(value: string): string {
 
 // ── Lieferzeit ───────────────────────────────────────────────────────────────
 export function validateDeliveryTime(value: string): string | null {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
+
   const [h, m] = value.split(":").map(Number);
   const minutes = h * 60 + (m ?? 0);
   if (minutes < 7 * 60 || minutes > 18 * 60) {
@@ -100,21 +115,33 @@ export function computeErrors(form: ProfileFormState): FormErrors {
   const errors: FormErrors = {};
 
   const phoneErr = validatePhone(form.phone);
-  if (phoneErr) errors.phone = phoneErr;
+  if (phoneErr) {
+    errors.phone = phoneErr;
+  }
 
   const ibanErr = validateIBAN(form.iban);
-  if (ibanErr) errors.iban = ibanErr;
+  if (ibanErr) {
+    errors.iban = ibanErr;
+  }
 
   const bicErr = validateBIC(form.bic);
-  if (bicErr) errors.bic = bicErr;
+  if (bicErr) {
+    errors.bic = bicErr;
+  }
 
   const postalErr = validatePostalCode(form.postalCode, form.country);
-  if (postalErr) errors.postalCode = postalErr;
+  if (postalErr) {
+    errors.postalCode = postalErr;
+  }
 
   const timeErr = validateDeliveryTime(form.deliveryTime);
-  if (timeErr) errors.deliveryTime = timeErr;
+  if (timeErr) {
+    errors.deliveryTime = timeErr;
+  }
 
-  if (form.note.length > 300) errors.note = "Maximal 300 Zeichen";
+  if (form.note.length > 300) {
+    errors.note = "Maximal 300 Zeichen";
+  }
 
   return errors;
 }

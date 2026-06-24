@@ -18,10 +18,12 @@ public class DeliverySchemaMigration {
 
     void onStart(@Observes StartupEvent event) {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.execute("alter table if exists deliveries add column if not exists published boolean not null default false");
+                Statement statement = connection.createStatement()) {
+            statement.execute(
+                    "alter table if exists deliveries add column if not exists published boolean not null default false");
             statement.execute("alter table if exists deliveries add column if not exists published_at timestamp");
-            statement.execute("alter table if exists delivery_items drop constraint if exists fkohevvvyp6imme6awd17398gid");
+            statement.execute(
+                    "alter table if exists delivery_items drop constraint if exists fkohevvvyp6imme6awd17398gid");
             statement.execute("alter table if exists delivery_items drop column if exists warehouse_item_id");
             statement.execute("""
                     with duplicate_deliveries as (

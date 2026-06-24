@@ -1,7 +1,8 @@
 package de.restockoffice.security;
 
 public final class SecurityConstants {
-    private SecurityConstants() { }
+    private SecurityConstants() {
+    }
 
     // Roles
     public static final String ROLE_ADMIN = "admin";

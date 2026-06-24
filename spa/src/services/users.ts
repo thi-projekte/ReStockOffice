@@ -2,9 +2,9 @@ import keycloak from "../auth/keycloak";
 import mockRestockOrderTemplates from "../mocks/restockOrders.json";
 import customerTemplate from "../mocks/customer.json";
 import restockerTemplate from "../mocks/restocker.json";
-import type {RestockOrder} from "../types/shop";
-import {useAPIs} from "./products";
-import {keycloakConfig} from "../auth/keycloakConfig";
+import type { RestockOrder } from "../types/shop";
+import { useAPIs } from "./products";
+import { keycloakConfig } from "../auth/keycloakConfig";
 
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL ?? "https://users.restockoffice.de";
 const CUSTOMER_ME_API_URL = `${USERS_API_URL}/customer/me`;
@@ -53,19 +53,19 @@ export interface RestockerUser extends BaseUser {
 
 export type UserProfile = CustomerUser | RestockerUser;
 
-type CreatePayloadFor<T extends UserProfile> = Omit<T, "createdAt" | "updatedAt"> &
-  Partial<Pick<T, "createdAt" | "updatedAt">>;
+type CreatePayloadFor<T extends UserProfile> = Omit<T, "createdAt" | "updatedAt">
+  & Partial<Pick<T, "createdAt" | "updatedAt">>;
 
-type UpdatePayloadFor<T extends UserProfile> = Partial<Omit<T, "userId" | "kind">> &
-  Pick<T, "userId" | "kind">;
+type UpdatePayloadFor<T extends UserProfile> = Partial<Omit<T, "userId" | "kind">>
+  & Pick<T, "userId" | "kind">;
 
-export type CreateUserPayload =
-  | CreatePayloadFor<CustomerUser>
-  | CreatePayloadFor<RestockerUser>;
+export type CreateUserPayload
+  = | CreatePayloadFor<CustomerUser>
+    | CreatePayloadFor<RestockerUser>;
 
-export type UpdateUserPayload =
-  | UpdatePayloadFor<CustomerUser>
-  | UpdatePayloadFor<RestockerUser>;
+export type UpdateUserPayload
+  = | UpdatePayloadFor<CustomerUser>
+    | UpdatePayloadFor<RestockerUser>;
 
 export type SaveUserPayload = (CreateUserPayload | UpdateUserPayload) & {
   profilePictureFile?: File;
@@ -123,7 +123,7 @@ async function resolveToken(token?: string): Promise<string> {
 
 function createJsonHeaders(token: string): Record<string, string> {
   return {
-    Authorization: `Bearer ${token}`,
+    "Authorization": `Bearer ${token}`,
     "Content-Type": "application/json",
   };
 }
@@ -140,9 +140,9 @@ function stringifyUserValue(value: unknown, fallback: string): string {
   }
 
   if (
-    typeof value === "number" ||
-    typeof value === "boolean" ||
-    typeof value === "bigint"
+    typeof value === "number"
+    || typeof value === "boolean"
+    || typeof value === "bigint"
   ) {
     return value.toString();
   }
@@ -185,8 +185,8 @@ function buildProfileImageUrl(): string | undefined {
 
 function collectKeycloakRoles(): string[] {
   const realmRoles = keycloak.tokenParsed?.realm_access?.roles ?? [];
-  const clientRoles =
-    keycloak.tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
+  const clientRoles
+    = keycloak.tokenParsed?.resource_access?.[keycloakConfig.clientId]?.roles ?? [];
 
   return [...realmRoles, ...clientRoles];
 }
@@ -194,7 +194,7 @@ function collectKeycloakRoles(): string[] {
 function resolveKeycloakUserKind(): UserKind | undefined {
   const roles = collectKeycloakRoles();
   const hasRestockerRole = roles.some(
-    (role) => role.trim().toLowerCase() === "restocker"
+    role => role.trim().toLowerCase() === "restocker",
   );
 
   if (hasRestockerRole) {
@@ -377,7 +377,7 @@ function getMockUser(userId: string, kind: UserKind): UserProfile {
   }
 
   if (kind === "customer" && !mockUserRestockOrders[userId]) {
-    mockUserRestockOrders[userId] = mockRestockOrderTemplates.map((order) => ({
+    mockUserRestockOrders[userId] = mockRestockOrderTemplates.map(order => ({
       ...order,
       customerId: userId,
     }));
@@ -440,12 +440,12 @@ async function fetchCurrentUserPayload(context: UserRequestContext = {}): Promis
     throw new Error("Die Users-API hat ein unerwartetes Antwortformat geliefert.");
   }
 
-  return {payload, kind};
+  return { payload, kind };
 }
 
 export async function getMyUser(context: UserRequestContext = {}): Promise<UserProfile> {
   try {
-    const {payload, kind} = await fetchCurrentUserPayload(context);
+    const { payload, kind } = await fetchCurrentUserPayload(context);
     return normalizeUser(payload, kind);
   } catch (error) {
     if (error instanceof UserProfileNotFoundError) {
@@ -574,7 +574,7 @@ export async function saveMyUser(
   assertSuccessfulResponse(response, "gespeichert");
 
   const payload = await readJsonResponse(response);
-  return normalizeUser(payload ?? {...user, existsInUserService: true}, kind);
+  return normalizeUser(payload ?? { ...user, existsInUserService: true }, kind);
 }
 
 export async function getUserbyId(
@@ -594,25 +594,25 @@ export const createUser = saveMyUser;
 export const updateUser = saveMyUser;
 
 export async function getUserRestockOrders({
-                                             userId,
-                                             token,
-                                             kind,
-                                           }: UserRestockOrdersRequestContext): Promise<RestockOrder[]> {
+  userId,
+  token,
+  kind,
+}: UserRestockOrdersRequestContext): Promise<RestockOrder[]> {
   if (!useAPIs) {
     getMockUser(userId, "customer");
     return mockUserRestockOrders[userId] ?? [];
   }
 
   const resolvedKind = kind ?? "customer";
-  const {payload} = await fetchCurrentUserPayload({token, userId, kind: resolvedKind});
+  const { payload } = await fetchCurrentUserPayload({ token, userId, kind: resolvedKind });
 
   return normalizeUserRestockOrders(payload);
 }
 
 export async function loadCustomerProfile({
-                                            token,
-                                            userId,
-                                          }: {
+  token,
+  userId,
+}: {
   token: string;
   userId: string;
 }): Promise<CustomerUser> {

@@ -14,15 +14,11 @@ public interface UserClient {
 
     @GET
     @Path("/customerForRestocker")
-    UserDto getCustomerAddressForRestocker(
-            @QueryParam("userId") String userId,
-            @HeaderParam("Authorization") String authorizationHeader
-    );
+    UserDto getCustomerAddressForRestocker(@QueryParam("userId") String userId,
+            @HeaderParam("Authorization") String authorizationHeader);
 
     @GET
     @Path("/customer")
-    UserDto getCustomerProfile(
-            @QueryParam("userId") String userId,
-            @HeaderParam("Authorization") String authorizationHeader
-    );
+    UserDto getCustomerProfile(@QueryParam("userId") String userId,
+            @HeaderParam("Authorization") String authorizationHeader);
 }

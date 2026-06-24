@@ -15,10 +15,8 @@ public class InvoiceDataService {
     private final RestClient articleClient;
     private final RestClient userClient;
 
-    public InvoiceDataService(
-            @Value("${deliveriesservice.base-url}") String deliveryUrl,
-            @Value("${articlesservice.base-url}") String articleUrl,
-            @Value("${usersservice.base-url}") String userUrl,
+    public InvoiceDataService(@Value("${deliveriesservice.base-url}") String deliveryUrl,
+            @Value("${articlesservice.base-url}") String articleUrl, @Value("${usersservice.base-url}") String userUrl,
             RestClient.Builder authenticatedBuilder) {
 
         this.deliveryClient = authenticatedBuilder.baseUrl(deliveryUrl).build();
@@ -28,10 +26,12 @@ public class InvoiceDataService {
 
     public Optional<InvoicePreparationData> prepareInvoiceData(String customerId) {
         List<Map<String, Object>> deliveries = deliveryClient.get()
-                .uri("/api/deliveries/customers/{customerId}/previous-month-items", customerId)
-                .retrieve().body(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+                .uri("/api/deliveries/customers/{customerId}/previous-month-items", customerId).retrieve()
+                .body(new ParameterizedTypeReference<List<Map<String, Object>>>() {
+                });
 
-        if (deliveries == null || deliveries.isEmpty()) return Optional.empty();
+        if (deliveries == null || deliveries.isEmpty())
+            return Optional.empty();
 
         List<Map<String, Object>> orderItems = new ArrayList<>();
         BigDecimal totalNet = BigDecimal.ZERO;
@@ -39,11 +39,12 @@ public class InvoiceDataService {
         for (Map<String, Object> delivery : deliveries) {
             String articleNumber = (String) delivery.get("articleNumber");
             Integer quantity = (Integer) delivery.get("quantity");
-            if (articleNumber == null || quantity == null) continue;
+            if (articleNumber == null || quantity == null)
+                continue;
 
-            Map<String, Object> article = articleClient.get()
-                    .uri("/article?productId={Id}", articleNumber)
-                    .retrieve().body(new ParameterizedTypeReference<Map<String, Object>>() {});
+            Map<String, Object> article = articleClient.get().uri("/article?productId={Id}", articleNumber).retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
 
             if (article != null) {
                 BigDecimal price = BigDecimal.valueOf((Double) article.getOrDefault("price", 0.0));
@@ -58,16 +59,15 @@ public class InvoiceDataService {
             }
         }
 
-        Map<String, Object> user = userClient.get()
-                .uri("/customer?userId={id}", customerId)
-                .retrieve().body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        Map<String, Object> user = userClient.get().uri("/customer?userId={id}", customerId).retrieve()
+                .body(new ParameterizedTypeReference<Map<String, Object>>() {
+                });
 
-        if (user == null) throw new IllegalStateException("Kundendaten nicht gefunden: " + customerId);
+        if (user == null)
+            throw new IllegalStateException("Kundendaten nicht gefunden: " + customerId);
 
-        return Optional.of(new InvoicePreparationData(
-                customerId, (String) user.get("email"), (String) user.get("companyName"),
-                (String) user.get("street"), (String) user.get("postalCode"), (String) user.get("city"),
-                orderItems, totalNet
-        ));
+        return Optional.of(new InvoicePreparationData(customerId, (String) user.get("email"),
+                (String) user.get("companyName"), (String) user.get("street"), (String) user.get("postalCode"),
+                (String) user.get("city"), orderItems, totalNet));
     }
 }

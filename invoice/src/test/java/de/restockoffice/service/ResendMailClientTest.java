@@ -42,10 +42,9 @@ class ResendMailClientTest {
     @Test
     void testSendInvoiceMail_Success() throws Exception {
         when(mockResponse.statusCode()).thenReturn(200);
-        when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(mockResponse);
+        when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockResponse);
 
-        resendMailClient.sendInvoiceMail("kunde@example.de", new byte[]{1}, createDummyRequest());
+        resendMailClient.sendInvoiceMail("kunde@example.de", new byte[] { 1 }, createDummyRequest());
 
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(mockHttpClient, times(1)).send(requestCaptor.capture(), any());
@@ -59,15 +58,13 @@ class ResendMailClientTest {
     @Test
     void testSendInvoiceMail_ApiError() throws Exception {
         when(mockResponse.statusCode()).thenReturn(401);
-        when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(mockResponse);
+        when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockResponse);
 
         InvoiceRequest request = createDummyRequest();
-        byte[] pdf = new byte[]{1};
+        byte[] pdf = new byte[] { 1 };
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
-                resendMailClient.sendInvoiceMail("kunde@example.de", pdf, request)
-        );
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> resendMailClient.sendInvoiceMail("kunde@example.de", pdf, request));
 
         // Hier ändern: Gib den tatsächlichen Fehler aus, falls er nicht enthält was du erwartest
         String errorMessage = ex.getMessage();
@@ -76,7 +73,7 @@ class ResendMailClientTest {
     }
 
     private InvoiceRequest createDummyRequest() {
-        return new InvoiceRequest("u1", "kunde@test.de", "Max", "Str", "123", "Stadt",
-                "R-1", "01.01.2026", "14.01.2026", BigDecimal.TEN, List.of());
+        return new InvoiceRequest("u1", "kunde@test.de", "Max", "Str", "123", "Stadt", "R-1", "01.01.2026",
+                "14.01.2026", BigDecimal.TEN, List.of());
     }
 }

@@ -21,8 +21,7 @@ import java.util.Objects;
 @ApplicationScoped
 public class DeliveryReportingService {
 
-    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter
-            .ofPattern("MM.uuuu")
+    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MM.uuuu")
             .withResolverStyle(ResolverStyle.STRICT);
 
     private final EntityManager entityManager;
@@ -38,11 +37,8 @@ public class DeliveryReportingService {
         LocalDate currentMonthStart = LocalDate.now().withDayOfMonth(1);
         LocalDate previousMonthStart = currentMonthStart.minusMonths(1);
         LocalDate previousMonthEnd = currentMonthStart.minusDays(1);
-        List<Delivery> deliveries = Delivery.findDeliveredByCustomerBetween(
-                normalizedCustomerId,
-                previousMonthStart,
-                previousMonthEnd
-        );
+        List<Delivery> deliveries = Delivery.findDeliveredByCustomerBetween(normalizedCustomerId, previousMonthStart,
+                previousMonthEnd);
 
         return summarizeDeliveredItemsForPeriod(deliveries, previousMonthStart, previousMonthEnd);
     }
@@ -60,17 +56,12 @@ public class DeliveryReportingService {
         LocalDateTime monthStart = month.atDay(1).atStartOfDay();
         LocalDateTime nextMonthStart = month.plusMonths(1).atDay(1).atStartOfDay();
 
-        return new MonthlyDeliveryCustomersDto(
-                normalizedMonth,
-                findCustomerIdsDeliveredBetween(monthStart, nextMonthStart)
-        );
+        return new MonthlyDeliveryCustomersDto(normalizedMonth,
+                findCustomerIdsDeliveredBetween(monthStart, nextMonthStart));
     }
 
-    static List<DeliveredArticleSummaryDto> summarizeDeliveredItemsForPeriod(
-            List<Delivery> deliveries,
-            LocalDate periodStart,
-            LocalDate periodEnd
-    ) {
+    static List<DeliveredArticleSummaryDto> summarizeDeliveredItemsForPeriod(List<Delivery> deliveries,
+            LocalDate periodStart, LocalDate periodEnd) {
         if (deliveries == null || deliveries.isEmpty()) {
             return List.of();
         }
@@ -91,8 +82,7 @@ public class DeliveryReportingService {
         }
 
         return quantitiesByArticle.entrySet().stream()
-                .map(entry -> new DeliveredArticleSummaryDto(entry.getKey(), entry.getValue()))
-                .toList();
+                .map(entry -> new DeliveredArticleSummaryDto(entry.getKey(), entry.getValue())).toList();
     }
 
     static CustomerDeliveryOverviewDto toCustomerDeliveryOverview(List<Delivery> deliveries, LocalDate today) {
@@ -102,8 +92,7 @@ public class DeliveryReportingService {
         if (deliveries != null) {
             List<Delivery> sortedDeliveries = deliveries.stream()
                     .filter(delivery -> delivery != null && delivery.deliveryDate != null)
-                    .sorted(Comparator.comparing(delivery -> delivery.deliveryDate))
-                    .toList();
+                    .sorted(Comparator.comparing(delivery -> delivery.deliveryDate)).toList();
 
             for (Delivery delivery : sortedDeliveries) {
                 if (delivery.deliveryDate.isBefore(today)) {
@@ -117,42 +106,25 @@ public class DeliveryReportingService {
             }
         }
 
-        return new CustomerDeliveryOverviewDto(
-                toDeliverySummary(lastDelivery),
-                toDeliverySummary(nextDelivery)
-        );
+        return new CustomerDeliveryOverviewDto(toDeliverySummary(lastDelivery), toDeliverySummary(nextDelivery));
     }
 
-    static List<String> customerIdsWithDeliveredAtInPeriod(
-            List<Delivery> deliveries,
-            LocalDateTime periodStart,
-            LocalDateTime periodEndExclusive
-    ) {
+    static List<String> customerIdsWithDeliveredAtInPeriod(List<Delivery> deliveries, LocalDateTime periodStart,
+            LocalDateTime periodEndExclusive) {
         if (deliveries == null || deliveries.isEmpty()) {
             return List.of();
         }
 
-        return deliveries.stream()
-                .filter(Objects::nonNull)
-                .filter(delivery -> !isBlank(delivery.userId))
+        return deliveries.stream().filter(Objects::nonNull).filter(delivery -> !isBlank(delivery.userId))
                 .filter(delivery -> isDeliveredAtInPeriod(delivery, periodStart, periodEndExclusive))
-                .map(delivery -> delivery.userId)
-                .distinct()
-                .sorted()
-                .toList();
+                .map(delivery -> delivery.userId).distinct().sorted().toList();
     }
 
     private List<String> findCustomerIdsDeliveredBetween(LocalDateTime periodStart, LocalDateTime periodEndExclusive) {
-        return entityManager
-                .createQuery(
-                        "select distinct d.userId from Delivery d " +
-                                "where d.userId is not null and d.userId <> '' " +
-                                "and d.deliveredAt >= :periodStart and d.deliveredAt < :periodEnd " +
-                                "order by d.userId asc",
-                        String.class
-                )
-                .setParameter("periodStart", periodStart)
-                .setParameter("periodEnd", periodEndExclusive)
+        return entityManager.createQuery(
+                "select distinct d.userId from Delivery d " + "where d.userId is not null and d.userId <> '' "
+                        + "and d.deliveredAt >= :periodStart and d.deliveredAt < :periodEnd " + "order by d.userId asc",
+                String.class).setParameter("periodStart", periodStart).setParameter("periodEnd", periodEndExclusive)
                 .getResultList();
     }
 
@@ -161,11 +133,7 @@ public class DeliveryReportingService {
             return null;
         }
 
-        return new DeliverySummaryDto(
-                delivery.id,
-                requireDeliveryDate(delivery).toString(),
-                deliveryStatus(delivery)
-        );
+        return new DeliverySummaryDto(delivery.id, requireDeliveryDate(delivery).toString(), deliveryStatus(delivery));
     }
 
     private static boolean isDeliveredInPeriod(Delivery delivery, LocalDate periodStart, LocalDate periodEnd) {
@@ -174,20 +142,13 @@ public class DeliveryReportingService {
         }
 
         LocalDate deliveryDate = delivery.deliveryDate;
-        return deliveryDate != null
-                && !deliveryDate.isBefore(periodStart)
-                && !deliveryDate.isAfter(periodEnd);
+        return deliveryDate != null && !deliveryDate.isBefore(periodStart) && !deliveryDate.isAfter(periodEnd);
     }
 
-    private static boolean isDeliveredAtInPeriod(
-            Delivery delivery,
-            LocalDateTime periodStart,
-            LocalDateTime periodEndExclusive
-    ) {
+    private static boolean isDeliveredAtInPeriod(Delivery delivery, LocalDateTime periodStart,
+            LocalDateTime periodEndExclusive) {
         LocalDateTime deliveredAt = delivery.deliveredAt;
-        return deliveredAt != null
-                && !deliveredAt.isBefore(periodStart)
-                && deliveredAt.isBefore(periodEndExclusive);
+        return deliveredAt != null && !deliveredAt.isBefore(periodStart) && deliveredAt.isBefore(periodEndExclusive);
     }
 
     static YearMonth parseDeliveryMonth(String monthValue) {

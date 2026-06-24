@@ -19,10 +19,8 @@ class PDFGeneratorTest {
 
     @Test
     void testCreatePDF_Success() {
-        InvoiceRequest request = new InvoiceRequest(
-                "user123", "test@example.com", "Max Mustermann", "Str 1", "12345", "Stadt",
-                "RE-PDF-123", "15.06.2026", "30.06.2026", new BigDecimal("100.00"), List.of()
-        );
+        InvoiceRequest request = new InvoiceRequest("user123", "test@example.com", "Max Mustermann", "Str 1", "12345",
+                "Stadt", "RE-PDF-123", "15.06.2026", "30.06.2026", new BigDecimal("100.00"), List.of());
 
         byte[] pdfBytes = pdfGenerator.createPDF(request);
 

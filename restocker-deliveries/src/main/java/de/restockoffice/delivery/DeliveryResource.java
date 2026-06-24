@@ -99,10 +99,8 @@ public class DeliveryResource {
 
     @POST
     @Path("/{deliveryId}/accept")
-    public DeliveryDetailDto acceptDelivery(
-            @PathParam("deliveryId") UUID deliveryId,
-            @QueryParam("restocker") String restockerName
-    ) {
+    public DeliveryDetailDto acceptDelivery(@PathParam("deliveryId") UUID deliveryId,
+            @QueryParam("restocker") String restockerName) {
         return deliveryService.acceptDelivery(deliveryId, restockerName, authorizationHeader());
     }
 
@@ -141,10 +139,7 @@ public class DeliveryResource {
 
     @POST
     @Path("/{deliveryId}/items/{itemId}/delivered")
-    public Response markItemDelivered(
-            @PathParam("deliveryId") UUID deliveryId,
-            @PathParam("itemId") UUID itemId
-    ) {
+    public Response markItemDelivered(@PathParam("deliveryId") UUID deliveryId, @PathParam("itemId") UUID itemId) {
         DeliveryItem item = deliveryService.markItemDelivered(itemId);
         return Response.ok(item).build();
     }

@@ -5,7 +5,8 @@ import io.quarkus.qute.TemplateGlobal;
 @TemplateGlobal(name = "company")
 public class CompanyConstants {
 
-    private CompanyConstants() {}
+    private CompanyConstants() {
+    }
 
     public static final String NAME = "RestockOffice GmbH";
     public static final String STREET = "Esplanade 10";

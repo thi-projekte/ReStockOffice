@@ -35,11 +35,7 @@ public class SendInvoiceMailDelegate implements JavaDelegate {
         invoiceRequest.put("invoiceNumber", invoiceNumber);
 
         // HTTP POST an InvoiceResource
-        invoiceClient.post()
-                .uri("/invoices/send-mail")
-                .body(invoiceRequest)
-                .retrieve()
-                .toBodilessEntity();
+        invoiceClient.post().uri("/invoices/send-mail").body(invoiceRequest).retrieve().toBodilessEntity();
 
         // Temporäre Variablen löschen
         execution.removeVariable("tempInvoiceRequest");

@@ -1,27 +1,27 @@
-import { useEffect, useState } from 'react'
-import { getAuthState, logout, redirectToLogin, redirectToRegister } from '../keycloak'
-import styles from './Header.module.css'
+import { useEffect, useState } from "react";
+import { getAuthState, logout, redirectToLogin, redirectToRegister } from "../keycloak";
+import styles from "./Header.module.css";
 
-type NavLink = {
-  href: string
-  label: string
+interface NavLink {
+  href: string;
+  label: string;
 }
 
 const NAV_LINKS: NavLink[] = [
-  { href: '#features',    label: 'Vorteile' },
-  { href: '#how-it-works', label: "So funktioniert's" },
-  { href: 'https://app.restockoffice.de', label: 'Produkte' },
-]
+  { href: "#features", label: "Vorteile" },
+  { href: "#how-it-works", label: "So funktioniert's" },
+  { href: "https://app.restockoffice.de", label: "Produkte" },
+];
 
 export default function Header() {
-  const [auth, setAuth] = useState<{ authenticated: boolean; name?: string; email?: string } | null>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [auth, setAuth] = useState<{ authenticated: boolean; name?: string; email?: string } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    getAuthState().then(setAuth)
-  }, [])
+    getAuthState().then(setAuth);
+  }, []);
 
-  const closeMenu = () => setMenuOpen(false)
+  const closeMenu = () => setMenuOpen(false);
 
   return (
     <header className={styles.header}>
@@ -32,10 +32,10 @@ export default function Header() {
         <button
           type="button"
           className={styles.menuButton}
-          aria-label={menuOpen ? 'Menü schließen' : 'Menü öffnen'}
+          aria-label={menuOpen ? "Menü schließen" : "Menü öffnen"}
           aria-expanded={menuOpen}
           aria-controls="header-navigation"
-          onClick={() => setMenuOpen((open) => !open)}
+          onClick={() => setMenuOpen(open => !open)}
         >
           <span />
           <span />
@@ -43,25 +43,53 @@ export default function Header() {
         </button>
         <nav
           id="header-navigation"
-          className={`${styles.nav} ${menuOpen ? styles.navOpen : ''}`}
+          className={`${styles.nav} ${menuOpen ? styles.navOpen : ""}`}
         >
           <div className={styles.navActions}>
-            {auth === null ? (
-              <div className={styles.authPlaceholder} />
-            ) : auth.authenticated ? (
-              <>
-                <span className={styles.userName}>
-                  {auth.name ?? auth.email ?? 'Angemeldet'}
-                </span>
-                <a href="https://app.restockoffice.de" className="btn-primary" onClick={closeMenu}>Zur App</a>
-                <button className="btn-outline" onClick={() => { closeMenu(); logout() }}>Abmelden</button>
-              </>
-            ) : (
-              <>
-                <button className="btn-outline" onClick={() => { closeMenu(); redirectToLogin() }}>Anmelden</button>
-                <button className="btn-primary" onClick={() => { closeMenu(); redirectToRegister() }}>Registrieren</button>
-              </>
-            )}
+            {auth === null
+              ? (
+                  <div className={styles.authPlaceholder} />
+                )
+              : auth.authenticated
+                ? (
+                    <>
+                      <span className={styles.userName}>
+                        {auth.name ?? auth.email ?? "Angemeldet"}
+                      </span>
+                      <a href="https://app.restockoffice.de" className="btn-primary" onClick={closeMenu}>Zur App</a>
+                      <button
+                        className="btn-outline"
+                        onClick={() => {
+                          closeMenu();
+                          logout();
+                        }}
+                      >
+                        Abmelden
+                      </button>
+                    </>
+                  )
+                : (
+                    <>
+                      <button
+                        className="btn-outline"
+                        onClick={() => {
+                          closeMenu();
+                          redirectToLogin();
+                        }}
+                      >
+                        Anmelden
+                      </button>
+                      <button
+                        className="btn-primary"
+                        onClick={() => {
+                          closeMenu();
+                          redirectToRegister();
+                        }}
+                      >
+                        Registrieren
+                      </button>
+                    </>
+                  )}
           </div>
           <div className={styles.navLinks}>
             {NAV_LINKS.map(({ href, label }) => (
@@ -71,5 +99,5 @@ export default function Header() {
         </nav>
       </div>
     </header>
-  )
+  );
 }

@@ -1,11 +1,11 @@
-import {type MouseEvent, type ReactElement, useEffect, useState} from "react";
-import {Link, useLocation} from "react-router-dom";
-import {getCategorySlug, getProducts} from "../services/products";
-import type {Product} from "../types/shop";
-import {ProductCarousel} from "../components/ProductCarousel";
+import { type MouseEvent, type ReactElement, useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { getCategorySlug, getProducts } from "../services/products";
+import type { Product } from "../types/shop";
+import { ProductCarousel } from "../components/ProductCarousel";
 import keycloak from "../auth/keycloak";
-import type {CustomerDeliveryOverview} from "../services/deliveries";
-import {loadCustomerDeliveryOverview} from "../services/deliveries";
+import type { CustomerDeliveryOverview } from "../services/deliveries";
+import { loadCustomerDeliveryOverview } from "../services/deliveries";
 
 interface CategoryTile {
   id: string;
@@ -13,7 +13,6 @@ interface CategoryTile {
   description: string;
   count: number;
 }
-
 
 function createCategoryTiles(products: Product[]): CategoryTile[] {
   const groupedCategories = products.reduce<Record<string, number>>((accumulator, product) => {
@@ -52,7 +51,9 @@ function handleSectionJump(event: MouseEvent<HTMLAnchorElement>, sectionId: stri
 }
 
 function formatDate(date?: string | null): string {
-  if (!date) return "—";
+  if (!date) {
+    return "—";
+  }
 
   return new Intl.DateTimeFormat("de-DE", {
     day: "2-digit",
@@ -106,7 +107,9 @@ export function HomePage(): ReactElement {
   const customerId = keycloak.tokenParsed?.sub;
 
   useEffect(() => {
-    if (!customerId || !token) return;
+    if (!customerId || !token) {
+      return;
+    }
 
     loadCustomerDeliveryOverview({
       customerId,
@@ -124,14 +127,17 @@ export function HomePage(): ReactElement {
         <div className="hero-copy">
           <h1>Alles für den Büroalltag an einem Ort</h1>
           <p>
-            Hey {firstName}, lass uns direkt loslegen ...
+            Hey
+            {" "}
+            {firstName}
+            , lass uns direkt loslegen ...
           </p>
 
           <div className="hero-highlights" aria-label="Schnelle Übersicht">
             <a
               className="highlight-tile highlight-tile--link"
               href="#sale"
-              onClick={(event) => handleSectionJump(event, "sale")}
+              onClick={event => handleSectionJump(event, "sale")}
             >
               <strong>Angebote</strong>
               <span>Aktuelle Angebote und reduzierte Produkte entdecken</span>
@@ -141,7 +147,7 @@ export function HomePage(): ReactElement {
             <a
               className="highlight-tile highlight-tile--link"
               href="#office"
-              onClick={(event) => handleSectionJump(event, "office")}
+              onClick={event => handleSectionJump(event, "office")}
             >
               <strong>Empfehlungen</strong>
               <span>Persönlich zusammengestellte Empfehlungen für dich</span>
@@ -151,7 +157,7 @@ export function HomePage(): ReactElement {
             <a
               className="highlight-tile highlight-tile--link"
               href="#categories"
-              onClick={(event) => handleSectionJump(event, "categories")}
+              onClick={event => handleSectionJump(event, "categories")}
             >
               <strong>Kategorien</strong>
               <span>Strukturierte Übersicht aller verfügbaren Produkte</span>
@@ -225,9 +231,8 @@ export function HomePage(): ReactElement {
         </div>
       </section>
 
-
       <ProductCarousel
-        anchorId={"sale"}
+        anchorId="sale"
         eyebrow="Angebote"
         title="Aktuelle Deals"
         description="Entdecke regelmäßig wechselnde Deals und Preisaktionen"
@@ -244,27 +249,33 @@ export function HomePage(): ReactElement {
         </div>
 
         <div className="category-grid">
-          {isLoading ? (
-            <p className="empty-state">Kategorien werden geladen...</p>
-          ) : (
-            topCategories.map((category) => (
-              <Link
-                key={category.id}
-                className="category-tile highlight-tile highlight-tile--link"
-                to={`/categories/${getCategorySlug(category.title)}`}
-                onClick={() => window.scrollTo(0, 0)}
-              >
-                <h3>{category.title}</h3>
-                <p>{category.description}</p>
-                <span className="category-tile__label">{category.count} Produkte</span>
-              </Link>
-            ))
-          )}
+          {isLoading
+            ? (
+                <p className="empty-state">Kategorien werden geladen...</p>
+              )
+            : (
+                topCategories.map(category => (
+                  <Link
+                    key={category.id}
+                    className="category-tile highlight-tile highlight-tile--link"
+                    to={`/categories/${getCategorySlug(category.title)}`}
+                    onClick={() => window.scrollTo(0, 0)}
+                  >
+                    <h3>{category.title}</h3>
+                    <p>{category.description}</p>
+                    <span className="category-tile__label">
+                      {category.count}
+                      {" "}
+                      Produkte
+                    </span>
+                  </Link>
+                ))
+              )}
         </div>
       </section>
 
       <ProductCarousel
-        anchorId={"office"}
+        anchorId="office"
         eyebrow="Empfehlungen"
         title="Für dein Büro"
         description="Produkte, die auf deinen Interessen und bisherigen Käufen basieren"
@@ -273,7 +284,7 @@ export function HomePage(): ReactElement {
       />
 
       <ProductCarousel
-        anchorId={"reorder"}
+        anchorId="reorder"
         eyebrow="Nachbestellen"
         title="Nochmal kaufen"
         description="Produkte aus früheren Bestellungen schnell erneut kaufen"

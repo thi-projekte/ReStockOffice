@@ -1,5 +1,5 @@
-import type {SubscriptionProfileStatus} from "../utils/subscriptionProfile";
-import {NavLink} from "react-router-dom";
+import type { SubscriptionProfileStatus } from "../utils/subscriptionProfile";
+import { NavLink } from "react-router-dom";
 
 interface SubscriptionProfileProgressProps {
   readonly status: SubscriptionProfileStatus | null;
@@ -7,9 +7,9 @@ interface SubscriptionProfileProgressProps {
 }
 
 export function SubscriptionProfileProgress({
-                                              status,
-                                              message,
-                                            }: Readonly<SubscriptionProfileProgressProps>) {
+  status,
+  message,
+}: Readonly<SubscriptionProfileProgressProps>) {
   if (status?.isComplete !== false) {
     return null;
   }
@@ -23,8 +23,9 @@ export function SubscriptionProfileProgress({
             <p>{message}</p>
           </div>
           <span className="subscription-profile-progress__percent">
-              {status.completionPercentage}%
-            </span>
+            {status.completionPercentage}
+            %
+          </span>
         </div>
 
         <progress
@@ -34,11 +35,15 @@ export function SubscriptionProfileProgress({
           max={100}
         />
 
-        {status.missingFields.length > 0 ? (
-          <p className="subscription-profile-progress__missing">
-            Fehlt noch: {status.missingFields.join(", ")}
-          </p>
-        ) : null}
+        {status.missingFields.length > 0
+          ? (
+              <p className="subscription-profile-progress__missing">
+                Fehlt noch:
+                {" "}
+                {status.missingFields.join(", ")}
+              </p>
+            )
+          : null}
       </NavLink>
     </section>
   );

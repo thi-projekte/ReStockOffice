@@ -25,9 +25,9 @@ import {
 import "../../styles/restocker-deliveries.css";
 
 const EARNINGS_PER_COMPANY = 7;
-const RESTOCKER_TOUR_PROCESS_API_URL =
-  import.meta.env.VITE_RESTOCKER_TOUR_PROCESS_API_URL ??
-  "https://pe.restockoffice.de/api/restocker-tour-process";
+const RESTOCKER_TOUR_PROCESS_API_URL
+  = import.meta.env.VITE_RESTOCKER_TOUR_PROCESS_API_URL
+    ?? "https://pe.restockoffice.de/api/restocker-tour-process";
 const START_TOUR_TASK_DEFINITION_KEY = "Activity_Ware_eingeladen";
 const CONFIRM_DELIVERY_TASK_DEFINITION_KEY = "Activity_Auslieferung_bestaetigen";
 const MISSING_DELIVERY_TIME_LABEL = "Keine Angabe";
@@ -38,7 +38,9 @@ interface ProcessTaskLookupResponse {
 }
 
 function formatDate(value: string | null) {
-  if (!value) return "Heute";
+  if (!value) {
+    return "Heute";
+  }
 
   return new Intl.DateTimeFormat("de-DE").format(new Date(value));
 }
@@ -59,13 +61,13 @@ function sortDeliveries(deliveries: DeliveryDetail[]) {
 }
 
 function findNextOpenStopIndex(deliveries: DeliveryDetail[]) {
-  const nextOpenIndex = deliveries.findIndex((delivery) => !delivery.deliveredAt);
+  const nextOpenIndex = deliveries.findIndex(delivery => !delivery.deliveredAt);
   return nextOpenIndex >= 0 ? nextOpenIndex : Math.max(deliveries.length - 1, 0);
 }
 
 function countCompanies(deliveries: DeliveryDetail[]) {
   const companyKeys = new Set(
-    deliveries.map((delivery) => delivery.userId || delivery.companyName).filter(Boolean),
+    deliveries.map(delivery => delivery.userId || delivery.companyName).filter(Boolean),
   );
 
   return companyKeys.size;
@@ -88,18 +90,18 @@ function formatDeliveryTime(value: DeliveryDetail["deliveryTime"]) {
   const normalizedTimeValue = normalizedValue.replace(/\s*uhr$/i, "").trim();
 
   if (
-    !normalizedTimeValue ||
-    normalizedTimeValue === "0" ||
-    normalizedTimeValue === "00" ||
-    normalizedTimeValue === "00:00"
+    !normalizedTimeValue
+    || normalizedTimeValue === "0"
+    || normalizedTimeValue === "00"
+    || normalizedTimeValue === "00:00"
   ) {
     return MISSING_DELIVERY_TIME_LABEL;
   }
 
   if (
-    normalizedValue.includes("-") ||
-    normalizedValue.toLowerCase().includes("bis") ||
-    normalizedValue.toLowerCase().includes("uhr")
+    normalizedValue.includes("-")
+    || normalizedValue.toLowerCase().includes("bis")
+    || normalizedValue.toLowerCase().includes("uhr")
   ) {
     return normalizedValue;
   }
@@ -171,10 +173,10 @@ export function DeliveryPage() {
   const restockerName = auth.user?.username ?? auth.user?.id ?? "";
   const sortedDeliveries = useMemo(() => sortDeliveries(deliveries), [deliveries]);
   const activeDelivery = sortedDeliveries[activeStopIndex] ?? sortedDeliveries[0];
-  const allCollected = sortedDeliveries.length > 0 && sortedDeliveries.every((delivery) => delivery.collected);
-  const completedStops = sortedDeliveries.filter((delivery) => delivery.deliveredAt).length;
-  const allStopsDelivered =
-    sortedDeliveries.length > 0 && completedStops === sortedDeliveries.length;
+  const allCollected = sortedDeliveries.length > 0 && sortedDeliveries.every(delivery => delivery.collected);
+  const completedStops = sortedDeliveries.filter(delivery => delivery.deliveredAt).length;
+  const allStopsDelivered
+    = sortedDeliveries.length > 0 && completedStops === sortedDeliveries.length;
   const companyCount = countCompanies(sortedDeliveries);
   const calculatedEarnings = Number((companyCount * EARNINGS_PER_COMPANY).toFixed(2));
   const isTourStarted = Boolean(tour?.startTime);
@@ -189,20 +191,22 @@ export function DeliveryPage() {
     phase = "finished";
   }
 
-  const currentItemsReady =
-    activeDelivery?.items.length > 0 &&
-    activeDelivery.items.every((item) => item.delivered);
+  const currentItemsReady
+    = activeDelivery?.items.length > 0
+      && activeDelivery.items.every(item => item.delivered);
   const isLastStop = activeStopIndex >= sortedDeliveries.length - 1;
-  const canFinishDeliveredLastStop =
-    isLastStop && Boolean(activeDelivery?.deliveredAt) && !hasTourEndTime;
+  const canFinishDeliveredLastStop
+    = isLastStop && Boolean(activeDelivery?.deliveredAt) && !hasTourEndTime;
   const activeStreetLine = activeDelivery ? buildStreetLine(activeDelivery) : "";
   const activeCityLine = activeDelivery ? buildCityLine(activeDelivery) : "";
   const activeDeliveryTime = activeDelivery ? formatDeliveryTime(activeDelivery.deliveryTime) : "";
-  const activeDeliveryDay =
-    activeDelivery?.deliveryDay || formatDate(activeDelivery?.deliveryDate ?? null);
+  const activeDeliveryDay
+    = activeDelivery?.deliveryDay || formatDate(activeDelivery?.deliveryDate ?? null);
 
   async function reloadDeliveries(nextTour = tour) {
-    if (!nextTour) return;
+    if (!nextTour) {
+      return;
+    }
 
     const details = await loadTourDetails({
       tourId: nextTour.id,
@@ -232,9 +236,12 @@ export function DeliveryPage() {
             token: auth.token,
           });
         } catch (syncError) {
-          if (!isMounted) return;
-          const syncMessage =
-            syncError instanceof Error
+          if (!isMounted) {
+            return;
+          }
+
+          const syncMessage
+            = syncError instanceof Error
               ? syncError.message
               : "Die heutige Delivery-Synchronisierung ist fehlgeschlagen.";
           toast.error(`${syncMessage} Vorhandene Lieferungen werden trotzdem geladen.`);
@@ -244,10 +251,12 @@ export function DeliveryPage() {
           restockerName,
           token: auth.token,
         });
-        const todaysTour =
-          tours.find((candidate) => !candidate.endTime) ?? tours[0] ?? null;
+        const todaysTour
+          = tours.find(candidate => !candidate.endTime) ?? tours[0] ?? null;
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         setTour(todaysTour);
 
@@ -256,7 +265,10 @@ export function DeliveryPage() {
             tourId: todaysTour.id,
             token: auth.token,
           });
-          if (!isMounted) return;
+          if (!isMounted) {
+            return;
+          }
+
           const sorted = sortDeliveries(details);
           setDeliveries(sorted);
           setActiveStopIndex(findNextOpenStopIndex(sorted));
@@ -265,7 +277,10 @@ export function DeliveryPage() {
           setActiveStopIndex(0);
         }
       } catch (loadError) {
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
+
         setError(
           loadError instanceof Error
             ? loadError.message
@@ -286,13 +301,15 @@ export function DeliveryPage() {
   }, [auth.token, restockerName]);
 
   async function handleCollect(delivery: DeliveryDetail) {
-    if (delivery.collected || isBusy) return;
+    if (delivery.collected || isBusy) {
+      return;
+    }
 
     setIsBusy(true);
     try {
       await collectDelivery({ deliveryId: delivery.id, token: auth.token });
-      setDeliveries((current) =>
-        current.map((item) =>
+      setDeliveries(current =>
+        current.map(item =>
           item.id === delivery.id
             ? { ...item, collected: true, collectedAt: new Date().toISOString() }
             : item,
@@ -368,7 +385,9 @@ export function DeliveryPage() {
   }
 
   async function handleStartTour() {
-    if (!tour || isBusy) return;
+    if (!tour || isBusy) {
+      return;
+    }
 
     setIsBusy(true);
 
@@ -407,20 +426,22 @@ export function DeliveryPage() {
   }
 
   async function handleMarkItem(deliveryId: string, itemId: string) {
-    if (isBusy) return;
+    if (isBusy) {
+      return;
+    }
 
     setIsBusy(true);
     try {
       await markDeliveryItemDelivered({ deliveryId, itemId, token: auth.token });
-      setDeliveries((current) =>
-        current.map((delivery) =>
+      setDeliveries(current =>
+        current.map(delivery =>
           delivery.id === deliveryId
             ? {
-              ...delivery,
-              items: delivery.items.map((item) =>
-                item.id === itemId ? { ...item, delivered: true } : item,
-              ),
-            }
+                ...delivery,
+                items: delivery.items.map(item =>
+                  item.id === itemId ? { ...item, delivered: true } : item,
+                ),
+              }
             : delivery,
         ),
       );
@@ -436,7 +457,9 @@ export function DeliveryPage() {
   }
 
   async function handleAdvance() {
-    if (!tour || !activeDelivery || isBusy) return;
+    if (!tour || !activeDelivery || isBusy) {
+      return;
+    }
 
     if (canFinishDeliveredLastStop) {
       setIsBusy(true);
@@ -461,7 +484,9 @@ export function DeliveryPage() {
       return;
     }
 
-    if (!currentItemsReady || Boolean(activeDelivery.deliveredAt)) return;
+    if (!currentItemsReady || Boolean(activeDelivery.deliveredAt)) {
+      return;
+    }
 
     setIsBusy(true);
     try {
@@ -541,8 +566,8 @@ export function DeliveryPage() {
       await completeProcessTask(CONFIRM_DELIVERY_TASK_DEFINITION_KEY, processVariables);
 
       const deliveredAt = new Date().toISOString();
-      setDeliveries((current) =>
-        current.map((delivery) =>
+      setDeliveries(current =>
+        current.map(delivery =>
           delivery.id === activeDelivery.id ? { ...delivery, deliveredAt } : delivery,
         ),
       );
@@ -557,7 +582,7 @@ export function DeliveryPage() {
         setShowDoneDialog(true);
         toast.success("Tour wurde beendet.");
       } else {
-        setActiveStopIndex((current) => current + 1);
+        setActiveStopIndex(current => current + 1);
         toast.success("Zustellung wurde bestätigt.");
       }
     } catch (advanceError) {
@@ -603,178 +628,216 @@ export function DeliveryPage() {
 
   return (
     <section className="page-card restocker-delivery-page">
-      {phase === "warehouse" ? (
-        <div className="delivery-flow">
-          <div className="delivery-flow__head">
-            <div>
-              <span className="eyebrow">Lager-Dashboard</span>
-              <h1>Pakete einsammeln</h1>
-              <p>Alle Pakete für deine heutige Tour im Lager bereitstellen.</p>
-            </div>
-            <div className="delivery-summary-pill">
-              <FaBoxOpen />
-              <span>{sortedDeliveries.filter((delivery) => delivery.collected).length} / {sortedDeliveries.length}</span>
-            </div>
-          </div>
-
-          <div className="delivery-table delivery-table--warehouse">
-            <div className="delivery-table__row delivery-table__row--head">
-              <span>Eingesammelt</span>
-              <span>Paket</span>
-            </div>
-            {sortedDeliveries.map((delivery) => (
-              <div className="delivery-table__row" key={delivery.id}>
-                <button
-                  className={`delivery-check ${delivery.collected ? "active" : ""}`}
-                  type="button"
-                  onClick={() => void handleCollect(delivery)}
-                  disabled={delivery.collected || isBusy}
-                  aria-label={`Paket ${delivery.stopOrder} einsammeln`}
-                  title="Paket einsammeln"
-                >
-                  {delivery.collected ? <FaCheck /> : null}
-                </button>
-                <span className={delivery.collected ? "delivery-line-muted" : ""}>
-                  Paket #{delivery.stopOrder}
-                </span>
+      {phase === "warehouse"
+        ? (
+            <div className="delivery-flow">
+              <div className="delivery-flow__head">
+                <div>
+                  <span className="eyebrow">Lager-Dashboard</span>
+                  <h1>Pakete einsammeln</h1>
+                  <p>Alle Pakete für deine heutige Tour im Lager bereitstellen.</p>
+                </div>
+                <div className="delivery-summary-pill">
+                  <FaBoxOpen />
+                  <span>
+                    {sortedDeliveries.filter(delivery => delivery.collected).length}
+                    {" "}
+                    /
+                    {" "}
+                    {sortedDeliveries.length}
+                  </span>
+                </div>
               </div>
-            ))}
-          </div>
 
-          <div className="delivery-action-row">
-            <button
-              className="button delivery-primary-action"
-              type="button"
-              disabled={!allCollected || isBusy}
-              onClick={() => void handleStartTour()}
-            >
-              <FaTruck />
-              Tour beginnen
-            </button>
-          </div>
-        </div>
-      ) : null}
+              <div className="delivery-table delivery-table--warehouse">
+                <div className="delivery-table__row delivery-table__row--head">
+                  <span>Eingesammelt</span>
+                  <span>Paket</span>
+                </div>
+                {sortedDeliveries.map(delivery => (
+                  <div className="delivery-table__row" key={delivery.id}>
+                    <button
+                      className={`delivery-check ${delivery.collected ? "active" : ""}`}
+                      type="button"
+                      onClick={() => void handleCollect(delivery)}
+                      disabled={delivery.collected || isBusy}
+                      aria-label={`Paket ${delivery.stopOrder} einsammeln`}
+                      title="Paket einsammeln"
+                    >
+                      {delivery.collected ? <FaCheck /> : null}
+                    </button>
+                    <span className={delivery.collected ? "delivery-line-muted" : ""}>
+                      Paket #
+                      {delivery.stopOrder}
+                    </span>
+                  </div>
+                ))}
+              </div>
 
-      {phase !== "warehouse" && activeDelivery ? (
-        <div className="delivery-flow">
-          <div className="delivery-flow__head">
-            <div>
-              <span className="eyebrow">Aktuelle Tour</span>
-              <h1>Zustellung läuft</h1>
-              <p>Nächster Stopp: {Math.min(activeStopIndex + 1, sortedDeliveries.length)} von {sortedDeliveries.length}</p>
+              <div className="delivery-action-row">
+                <button
+                  className="button delivery-primary-action"
+                  type="button"
+                  disabled={!allCollected || isBusy}
+                  onClick={() => void handleStartTour()}
+                >
+                  <FaTruck />
+                  Tour beginnen
+                </button>
+              </div>
             </div>
-            <a
-              className="button button--ghost delivery-map-link"
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                [activeStreetLine, activeCityLine, activeDelivery.country]
-                  .filter(Boolean)
-                  .join(", "),
-              )}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <FaMapMarkedAlt />
-              Navigation
-            </a>
-          </div>
+          )
+        : null}
 
-          <div className="delivery-info-grid">
-            <div className="delivery-info-card">
-              <span>Unternehmen</span>
-              <strong>{activeDelivery.companyName || "Nicht hinterlegt"}</strong>
-            </div>
-            <div className="delivery-info-card">
-              <span>Adresse</span>
-              <strong>{activeStreetLine || "Nicht hinterlegt"}</strong>
-              {activeCityLine ? <small>{activeCityLine}</small> : null}
-              {activeDelivery.country ? <small>{activeDelivery.country}</small> : null}
-            </div>
-            <div className="delivery-info-card">
-              <span>Liefertag</span>
-              <strong>{activeDeliveryDay}</strong>
-              {activeDeliveryTime ? <small>{activeDeliveryTime}</small> : null}
-            </div>
-            <div className="delivery-info-card">
-              <span>Telefonnummer</span>
-              {activeDelivery.phoneNumber ? (
-                <a href={`tel:${activeDelivery.phoneNumber}`}>
-                  <FaPhoneAlt /> {activeDelivery.phoneNumber}
+      {phase !== "warehouse" && activeDelivery
+        ? (
+            <div className="delivery-flow">
+              <div className="delivery-flow__head">
+                <div>
+                  <span className="eyebrow">Aktuelle Tour</span>
+                  <h1>Zustellung läuft</h1>
+                  <p>
+                    Nächster Stopp:
+                    {Math.min(activeStopIndex + 1, sortedDeliveries.length)}
+                    {" "}
+                    von
+                    {sortedDeliveries.length}
+                  </p>
+                </div>
+                <a
+                  className="button button--ghost delivery-map-link"
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    [activeStreetLine, activeCityLine, activeDelivery.country]
+                      .filter(Boolean)
+                      .join(", "),
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <FaMapMarkedAlt />
+                  Navigation
                 </a>
-              ) : (
-                <strong>Nicht hinterlegt</strong>
-              )}
-              {activeDelivery.contactPerson ? <small>{activeDelivery.contactPerson}</small> : null}
-            </div>
-          </div>
-
-          {activeDelivery.deliveryHint ? (
-            <p className="delivery-hint"><strong>Hinweis:</strong> {activeDelivery.deliveryHint}</p>
-          ) : null}
-
-          <div className="delivery-table delivery-table--items">
-            <div className="delivery-table__row delivery-table__row--head">
-              <span>Eingeräumt</span>
-              <span>Artikelnr</span>
-              <span>Bezeichnung</span>
-              <span>Menge</span>
-            </div>
-            {activeDelivery.items.map((item) => (
-              <div className="delivery-table__row" key={item.id}>
-                <button
-                  className={`delivery-check ${item.delivered ? "active" : ""}`}
-                  type="button"
-                  onClick={() => void handleMarkItem(activeDelivery.id, item.id)}
-                  disabled={item.delivered || isBusy || Boolean(activeDelivery.deliveredAt)}
-                  aria-label={`${item.name} einraeumen`}
-                  title="Artikel einraeumen"
-                >
-                  {item.delivered ? <FaCheck /> : null}
-                </button>
-                <span className={item.delivered ? "delivery-line-muted" : ""}>{item.articleNumber}</span>
-                <span className={item.delivered ? "delivery-line-muted" : ""}>{item.name}</span>
-                <span>{formatQuantityLabel(item.quantity)}</span>
               </div>
-            ))}
-          </div>
 
-          <div className="delivery-action-row">
-            <button
-              className="button delivery-primary-action"
-              type="button"
-              disabled={
-                isBusy ||
-                (!canFinishDeliveredLastStop &&
-                  (!currentItemsReady || Boolean(activeDelivery.deliveredAt)))
-              }
-              onClick={() => void handleAdvance()}
-            >
-              {isLastStop ? <FaRoute /> : <FaTruck />}
-              {isLastStop ? "Tour beenden" : "Nächste Zustellung"}
-            </button>
-          </div>
-        </div>
-      ) : null}
+              <div className="delivery-info-grid">
+                <div className="delivery-info-card">
+                  <span>Unternehmen</span>
+                  <strong>{activeDelivery.companyName || "Nicht hinterlegt"}</strong>
+                </div>
+                <div className="delivery-info-card">
+                  <span>Adresse</span>
+                  <strong>{activeStreetLine || "Nicht hinterlegt"}</strong>
+                  {activeCityLine ? <small>{activeCityLine}</small> : null}
+                  {activeDelivery.country ? <small>{activeDelivery.country}</small> : null}
+                </div>
+                <div className="delivery-info-card">
+                  <span>Liefertag</span>
+                  <strong>{activeDeliveryDay}</strong>
+                  {activeDeliveryTime ? <small>{activeDeliveryTime}</small> : null}
+                </div>
+                <div className="delivery-info-card">
+                  <span>Telefonnummer</span>
+                  {activeDelivery.phoneNumber
+                    ? (
+                        <a href={`tel:${activeDelivery.phoneNumber}`}>
+                          <FaPhoneAlt />
+                          {" "}
+                          {activeDelivery.phoneNumber}
+                        </a>
+                      )
+                    : (
+                        <strong>Nicht hinterlegt</strong>
+                      )}
+                  {activeDelivery.contactPerson ? <small>{activeDelivery.contactPerson}</small> : null}
+                </div>
+              </div>
 
-      {shouldShowDoneDialog ? (
-        <div className="delivery-complete-overlay" role="presentation">
-          <div className="delivery-complete-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-complete-title">
-            <h2 id="delivery-complete-title">Alle Lieferungen erledigt</h2>
-            <p>Starke Leistung. Du hast alle Aufträge für heute erfolgreich zugestellt.</p>
-            <div className="delivery-complete-stats">
-              <span>Abgeschlossene Stopps: {completedStops} von {sortedDeliveries.length}</span>
-              <span>Gesammelte Vergütung: {formatMoney(tour.earnings || calculatedEarnings)}</span>
-              <span>Status: Tour beendet</span>
+              {activeDelivery.deliveryHint
+                ? (
+                    <p className="delivery-hint">
+                      <strong>Hinweis:</strong>
+                      {" "}
+                      {activeDelivery.deliveryHint}
+                    </p>
+                  )
+                : null}
+
+              <div className="delivery-table delivery-table--items">
+                <div className="delivery-table__row delivery-table__row--head">
+                  <span>Eingeräumt</span>
+                  <span>Artikelnr</span>
+                  <span>Bezeichnung</span>
+                  <span>Menge</span>
+                </div>
+                {activeDelivery.items.map(item => (
+                  <div className="delivery-table__row" key={item.id}>
+                    <button
+                      className={`delivery-check ${item.delivered ? "active" : ""}`}
+                      type="button"
+                      onClick={() => void handleMarkItem(activeDelivery.id, item.id)}
+                      disabled={item.delivered || isBusy || Boolean(activeDelivery.deliveredAt)}
+                      aria-label={`${item.name} einraeumen`}
+                      title="Artikel einraeumen"
+                    >
+                      {item.delivered ? <FaCheck /> : null}
+                    </button>
+                    <span className={item.delivered ? "delivery-line-muted" : ""}>{item.articleNumber}</span>
+                    <span className={item.delivered ? "delivery-line-muted" : ""}>{item.name}</span>
+                    <span>{formatQuantityLabel(item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="delivery-action-row">
+                <button
+                  className="button delivery-primary-action"
+                  type="button"
+                  disabled={
+                    isBusy
+                    || (!canFinishDeliveredLastStop
+                      && (!currentItemsReady || Boolean(activeDelivery.deliveredAt)))
+                  }
+                  onClick={() => void handleAdvance()}
+                >
+                  {isLastStop ? <FaRoute /> : <FaTruck />}
+                  {isLastStop ? "Tour beenden" : "Nächste Zustellung"}
+                </button>
+              </div>
             </div>
-            <button
-              className="button"
-              type="button"
-              onClick={() => navigate("/restocker")}
-            >
-              Zurück zum Dashboard
-            </button>
-          </div>
-        </div>
-      ) : null}
+          )
+        : null}
+
+      {shouldShowDoneDialog
+        ? (
+            <div className="delivery-complete-overlay" role="presentation">
+              <div className="delivery-complete-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-complete-title">
+                <h2 id="delivery-complete-title">Alle Lieferungen erledigt</h2>
+                <p>Starke Leistung. Du hast alle Aufträge für heute erfolgreich zugestellt.</p>
+                <div className="delivery-complete-stats">
+                  <span>
+                    Abgeschlossene Stopps:
+                    {completedStops}
+                    {" "}
+                    von
+                    {sortedDeliveries.length}
+                  </span>
+                  <span>
+                    Gesammelte Vergütung:
+                    {formatMoney(tour.earnings || calculatedEarnings)}
+                  </span>
+                  <span>Status: Tour beendet</span>
+                </div>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={() => navigate("/restocker")}
+                >
+                  Zurück zum Dashboard
+                </button>
+              </div>
+            </div>
+          )
+        : null}
     </section>
   );
 }

@@ -5,7 +5,7 @@ import Footer from "../components/Footer.tsx";
 export default function ContactPage() {
   return (
     <div className={styles.page}>
-      <Header/>
+      <Header />
       <main className={styles.main}>
         <div className={styles.content}>
           <h1 className={styles.title}>Kontakt</h1>
@@ -21,7 +21,8 @@ export default function ContactPage() {
               <p>Für Fragen oder Feedback erreichst du uns unter:</p>
               <div className={styles.contactRow}>
                 <p>
-                  E-Mail:{" "}
+                  E-Mail:
+                  {" "}
                   <a href="mailto:support@restockoffice.de">support@restockoffice.de</a>
                 </p>
                 <p>Telefon: +49 000 000000 (Demo-Nummer)</p>
@@ -39,7 +40,7 @@ export default function ContactPage() {
           </div>
         </div>
       </main>
-      <Footer/>
+      <Footer />
     </div>
   );
 }

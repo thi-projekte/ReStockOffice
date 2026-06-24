@@ -21,14 +21,8 @@ public class OrderServiceMockResource implements QuarkusTestResourceLifecycleMan
             server.start();
 
             String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
-            return Map.of(
-                    "processengine.abo-confirmation-start-url",
-                    baseUrl + "/api/abo-confirmation-process/change",
-                    "deliveriesservice.base-url",
-                    baseUrl,
-                    "usersservice.base-url",
-                    baseUrl
-            );
+            return Map.of("processengine.abo-confirmation-start-url", baseUrl + "/api/abo-confirmation-process/change",
+                    "deliveriesservice.base-url", baseUrl, "usersservice.base-url", baseUrl);
         } catch (IOException exception) {
             throw new IllegalStateException("Could not start orders test mock server", exception);
         }

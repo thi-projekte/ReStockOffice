@@ -34,11 +34,9 @@ public class CreateInvoiceDelegate implements JavaDelegate {
         InvoicePreparationData data = dataOpt.get();
         Map<String, Object> request = buildRequest(data);
 
-        Map<String, String> response = invoiceClient.post()
-                .uri("/invoices/create")
-                .body(request)
-                .retrieve()
-                .body(new ParameterizedTypeReference<>() {});
+        Map<String, String> response = invoiceClient.post().uri("/invoices/create").body(request).retrieve()
+                .body(new ParameterizedTypeReference<>() {
+                });
 
         execution.setVariable("hasDeliveries", true);
 

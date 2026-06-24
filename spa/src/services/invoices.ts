@@ -1,7 +1,7 @@
 import invoices from "../mocks/invoices.json";
 import keycloak from "../auth/keycloak";
-import {useAPIs} from "./products";
-import type {UserKind} from "./users";
+import { useAPIs } from "./products";
+import type { UserKind } from "./users";
 
 const INVOICES_API_URL = "https://invoice.restockoffice.de/invoices";
 const INVOICE_PDF_API_URL = "https://invoice.restockoffice.de/invoices/download";
@@ -48,7 +48,7 @@ async function resolveToken(token?: string): Promise<string> {
 
 function createHeaders(token: string): Record<string, string> {
   return {
-    Authorization: `Bearer ${token}`,
+    "Authorization": `Bearer ${token}`,
     "Content-Type": "application/json",
   };
 }
@@ -63,9 +63,9 @@ function stringifyInvoiceValue(value: unknown, fallback = ""): string {
   }
 
   if (
-    typeof value === "number" ||
-    typeof value === "boolean" ||
-    typeof value === "bigint"
+    typeof value === "number"
+    || typeof value === "boolean"
+    || typeof value === "bigint"
   ) {
     return value.toString();
   }
@@ -110,7 +110,7 @@ function resolveUserId(): string {
 async function loadInvoicesFromApi(context: InvoiceRequestContext = {}): Promise<InvoiceSummary[]> {
   const token = await resolveToken(context.token);
   const userId = resolveUserId();
-  const query = new URLSearchParams({userId});
+  const query = new URLSearchParams({ userId });
 
   let response: Response;
 
@@ -152,7 +152,7 @@ export async function requestInvoicePdf(
 
   const token = await resolveToken(context.token);
   const userId = resolveUserId();
-  const query = new URLSearchParams({userId, invoiceNumber: invoiceId});
+  const query = new URLSearchParams({ userId, invoiceNumber: invoiceId });
 
   const response = await fetch(`${INVOICE_PDF_API_URL}?${query.toString()}`, {
     headers: createHeaders(token),

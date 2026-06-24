@@ -30,10 +30,7 @@ public class DeliveryDetailAssembler {
     private final ArticleClient articleClient;
 
     @Inject
-    public DeliveryDetailAssembler(
-            @RestClient UserClient userClient,
-            @RestClient ArticleClient articleClient
-    ) {
+    public DeliveryDetailAssembler(@RestClient UserClient userClient, @RestClient ArticleClient articleClient) {
         this.userClient = userClient;
         this.articleClient = articleClient;
     }
@@ -43,31 +40,18 @@ public class DeliveryDetailAssembler {
         Map<String, ArticleDto> articleCache = new HashMap<>();
         AuthenticatedRestocker authenticatedRestocker = authenticatedRestocker(authorizationHeader);
 
-        return deliveries.stream()
-                .map(delivery -> toDetailDto(
-                        delivery,
-                        loadCachedUser(delivery.userId, userCache, authorizationHeader),
-                        articleCache,
-                        authenticatedRestocker
-                ))
+        return deliveries.stream().map(delivery -> toDetailDto(delivery,
+                loadCachedUser(delivery.userId, userCache, authorizationHeader), articleCache, authenticatedRestocker))
                 .toList();
     }
 
     public DeliveryDetailDto toDetailDtoWithFreshData(Delivery delivery, String authorizationHeader) {
-        return toDetailDto(
-                delivery,
-                tryLoadUser(delivery.userId, authorizationHeader),
-                new HashMap<>(),
-                authenticatedRestocker(authorizationHeader)
-        );
+        return toDetailDto(delivery, tryLoadUser(delivery.userId, authorizationHeader), new HashMap<>(),
+                authenticatedRestocker(authorizationHeader));
     }
 
-    private DeliveryDetailDto toDetailDto(
-            Delivery delivery,
-            UserDto user,
-            Map<String, ArticleDto> articleCache,
-            AuthenticatedRestocker authenticatedRestocker
-    ) {
+    private DeliveryDetailDto toDetailDto(Delivery delivery, UserDto user, Map<String, ArticleDto> articleCache,
+            AuthenticatedRestocker authenticatedRestocker) {
         DeliveryDetailDto dto = new DeliveryDetailDto();
         dto.setId(delivery.id);
         dto.setOrderId(delivery.orderId);
@@ -79,7 +63,8 @@ public class DeliveryDetailAssembler {
         dto.setDeliveredAt(delivery.deliveredAt);
         dto.setRestockerName(restockerDisplayName(delivery, authenticatedRestocker));
         dto.setStatus(deliveryStatus(delivery));
-        dto.setRecipientEmail(valueOrEmpty(valueOrFallback(delivery.recipientEmail, user != null ? user.getEmail() : null)));
+        dto.setRecipientEmail(
+                valueOrEmpty(valueOrFallback(delivery.recipientEmail, user != null ? user.getEmail() : null)));
         dto.setCompanyName(valueOrEmpty(user != null ? user.getCompanyName() : null));
         dto.setStreet(valueOrEmpty(user != null ? user.getStreet() : null));
         dto.setHouseNumber(valueOrEmpty(user != null ? user.getHouseNumber() : null));
@@ -96,39 +81,30 @@ public class DeliveryDetailAssembler {
         return dto;
     }
 
-    private List<DeliveryDetailDto.DeliveryItemDetailDto> toDetailItems(
-            Delivery delivery,
-            Map<String, ArticleDto> articleCache
-    ) {
-        return delivery.items.stream()
-                .map(item -> toDetailItem(item, articleCache))
-                .toList();
+    private List<DeliveryDetailDto.DeliveryItemDetailDto> toDetailItems(Delivery delivery,
+            Map<String, ArticleDto> articleCache) {
+        return delivery.items.stream().map(item -> toDetailItem(item, articleCache)).toList();
     }
 
-    private DeliveryDetailDto.DeliveryItemDetailDto toDetailItem(
-            DeliveryItem item,
-            Map<String, ArticleDto> articleCache
-    ) {
+    private DeliveryDetailDto.DeliveryItemDetailDto toDetailItem(DeliveryItem item,
+            Map<String, ArticleDto> articleCache) {
         ArticleDto article = loadArticle(item.articleNumber, articleCache);
         DeliveryDetailDto.DeliveryItemDetailDto detailItem = new DeliveryDetailDto.DeliveryItemDetailDto();
         detailItem.setId(item.id);
         detailItem.setArticleNumber(item.articleNumber);
         detailItem.setDelivered(item.delivered);
-        detailItem.setName(valueOrFallback(item.name, article != null ? article.getName() : fallbackArticleName(item.articleNumber)));
+        detailItem.setName(valueOrFallback(item.name,
+                article != null ? article.getName() : fallbackArticleName(item.articleNumber)));
         detailItem.setQuantity(item.quantity);
         detailItem.setUnit(valueOrFallback(item.unit, article != null ? article.getUnit() : DEFAULT_UNIT));
         return detailItem;
     }
 
-    private UserDto loadCachedUser(
-            String userId,
-            Map<String, Optional<UserDto>> userCache,
-            String authorizationHeader
-    ) {
-        return userCache.computeIfAbsent(
-                userId,
-                ignored -> Optional.ofNullable(tryLoadUser(userId, authorizationHeader))
-        ).orElse(null);
+    private UserDto loadCachedUser(String userId, Map<String, Optional<UserDto>> userCache,
+            String authorizationHeader) {
+        return userCache
+                .computeIfAbsent(userId, ignored -> Optional.ofNullable(tryLoadUser(userId, authorizationHeader)))
+                .orElse(null);
     }
 
     private UserDto tryLoadUser(String userId, String authorizationHeader) {
@@ -163,37 +139,44 @@ public class DeliveryDetailAssembler {
     }
 
     private String deliveryStatus(Delivery delivery) {
-        if (delivery.deliveredAt != null) return "DELIVERED";
-        if (delivery.collected) return "COLLECTED";
+        if (delivery.deliveredAt != null)
+            return "DELIVERED";
+        if (delivery.collected)
+            return "COLLECTED";
         return delivery.tour != null || delivery.acceptedAt != null ? "ACCEPTED" : "OPEN";
     }
 
     private String restockerDisplayName(Delivery delivery, AuthenticatedRestocker authenticatedRestocker) {
-        if (delivery.tour == null || isBlank(delivery.tour.restockerName)) return null;
+        if (delivery.tour == null || isBlank(delivery.tour.restockerName))
+            return null;
         if (authenticatedRestocker != null && delivery.tour.restockerName.equals(authenticatedRestocker.username())
-                && !isBlank(authenticatedRestocker.displayName())) return authenticatedRestocker.displayName();
+                && !isBlank(authenticatedRestocker.displayName()))
+            return authenticatedRestocker.displayName();
         return delivery.tour.restockerName;
     }
 
     private AuthenticatedRestocker authenticatedRestocker(String authorizationHeader) {
         String token = bearerToken(authorizationHeader);
-        if (isBlank(token)) return null;
+        if (isBlank(token))
+            return null;
         String[] parts = token.split("\\.");
-        if (parts.length < 2) return null;
+        if (parts.length < 2)
+            return null;
         try {
-            JsonNode claims = OBJECT_MAPPER.readTree(new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8));
+            JsonNode claims = OBJECT_MAPPER
+                    .readTree(new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8));
             return new AuthenticatedRestocker(
                     firstNonBlank(textClaim(claims, "preferred_username"), textClaim(claims, "sub")),
-                    firstNonBlank(joinName(textClaim(claims, "given_name"), textClaim(claims, "family_name")), textClaim(claims, "name"))
-            );
+                    firstNonBlank(joinName(textClaim(claims, "given_name"), textClaim(claims, "family_name")),
+                            textClaim(claims, "name")));
         } catch (Exception ignored) {
             return null;
         }
     }
 
     private String bearerToken(String authorizationHeader) {
-        return isBlank(authorizationHeader) || !authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7)
-                ? null : authorizationHeader.substring(7).trim();
+        return isBlank(authorizationHeader) || !authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7) ? null
+                : authorizationHeader.substring(7).trim();
     }
 
     private String textClaim(JsonNode claims, String claimName) {
@@ -206,18 +189,34 @@ public class DeliveryDetailAssembler {
     }
 
     private java.time.LocalDate requireDeliveryDate(Delivery delivery) {
-        if (delivery.deliveryDate == null) throw new IllegalStateException("Delivery hat kein deliveryDate: " + delivery.id);
+        if (delivery.deliveryDate == null)
+            throw new IllegalStateException("Delivery hat kein deliveryDate: " + delivery.id);
         return delivery.deliveryDate;
     }
 
-    private String valueOrEmpty(String value) { return value == null ? "" : value; }
-    private String valueOrFallback(String value, String fallback) { return isBlank(value) ? fallback : value; }
-    private String fallbackArticleName(String articleNumber) { return "Artikel " + articleNumber; }
-    private boolean isBlank(String value) { return value == null || value.isBlank(); }
+    private String valueOrEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    private String valueOrFallback(String value, String fallback) {
+        return isBlank(value) ? fallback : value;
+    }
+
+    private String fallbackArticleName(String articleNumber) {
+        return "Artikel " + articleNumber;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
     private String firstNonBlank(String... values) {
-        for (String value : values) if (!isBlank(value)) return value;
+        for (String value : values)
+            if (!isBlank(value))
+                return value;
         return null;
     }
 
-    private record AuthenticatedRestocker(String username, String displayName) { }
+    private record AuthenticatedRestocker(String username, String displayName) {
+    }
 }

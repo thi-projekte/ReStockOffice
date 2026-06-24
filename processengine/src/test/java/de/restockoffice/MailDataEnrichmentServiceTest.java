@@ -58,9 +58,8 @@ class MailDataEnrichmentServiceTest {
 
         service.enrichAboConfirmation(execution(variables));
 
-        assertThat(variables)
-                .containsEntry("deliveryDay", "Montag")
-                .containsEntry("deliveryLocation", "Hauptstraße 7, 12345 Berlin");
+        assertThat(variables).containsEntry("deliveryDay", "Montag").containsEntry("deliveryLocation",
+                "Hauptstraße 7, 12345 Berlin");
     }
 
     @Test
@@ -87,19 +86,15 @@ class MailDataEnrichmentServiceTest {
 
         service.enrichDeliveryAnnouncement(execution(variables));
 
-        assertThat(variables)
-                .containsEntry("deliveryDateLabel", "17.06.2026")
-                .containsEntry("recipientEmail", "customer@example.com")
-                .containsEntry("customerName", "Test GmbH")
+        assertThat(variables).containsEntry("deliveryDateLabel", "17.06.2026")
+                .containsEntry("recipientEmail", "customer@example.com").containsEntry("customerName", "Test GmbH")
                 .containsEntry("supplierName", "Rita Restocker");
-        assertThat((java.util.List<?>) variables.get("deliveryItems"))
-                .singleElement()
-                .satisfies(item -> {
-                    Map<?, ?> deliveryItem = (Map<?, ?>) item;
-                    assertThat(deliveryItem.get("name")).isEqualTo("Kopierpapier");
-                    assertThat(deliveryItem.get("articleNumber")).isEqualTo("RS-1");
-                    assertThat(deliveryItem.get("quantity")).isEqualTo("2 Pack");
-                });
+        assertThat((java.util.List<?>) variables.get("deliveryItems")).singleElement().satisfies(item -> {
+            Map<?, ?> deliveryItem = (Map<?, ?>) item;
+            assertThat(deliveryItem.get("name")).isEqualTo("Kopierpapier");
+            assertThat(deliveryItem.get("articleNumber")).isEqualTo("RS-1");
+            assertThat(deliveryItem.get("quantity")).isEqualTo("2 Pack");
+        });
     }
 
     @Test
@@ -113,9 +108,8 @@ class MailDataEnrichmentServiceTest {
 
         service.enrichDeliveryConfirmation(execution(variables));
 
-        assertThat(variables)
-                .containsEntry("deliveryDateLabel", "17.06.2026")
-                .containsEntry("supplierName", "Rita Restocker");
+        assertThat(variables).containsEntry("deliveryDateLabel", "17.06.2026").containsEntry("supplierName",
+                "Rita Restocker");
         assertThat((java.util.List<?>) variables.get("deliveryItems")).hasSize(1);
     }
 
@@ -175,18 +169,14 @@ class MailDataEnrichmentServiceTest {
 
         service.enrichDeliveryAnnouncement(execution(variables));
 
-        assertThat(variables)
-                .containsEntry("recipientEmail", "second@example.com")
-                .containsEntry("customerName", "Second GmbH")
-                .containsEntry("orderNumber", "RSO-43");
-        assertThat((java.util.List<?>) variables.get("deliveryItems"))
-                .singleElement()
-                .satisfies(item -> {
-                    Map<?, ?> deliveryItem = (Map<?, ?>) item;
-                    assertThat(deliveryItem.get("name")).isEqualTo("Haftnotizen");
-                    assertThat(deliveryItem.get("articleNumber")).isEqualTo("RS-2");
-                    assertThat(deliveryItem.get("quantity")).isEqualTo("5 Stück");
-                });
+        assertThat(variables).containsEntry("recipientEmail", "second@example.com")
+                .containsEntry("customerName", "Second GmbH").containsEntry("orderNumber", "RSO-43");
+        assertThat((java.util.List<?>) variables.get("deliveryItems")).singleElement().satisfies(item -> {
+            Map<?, ?> deliveryItem = (Map<?, ?>) item;
+            assertThat(deliveryItem.get("name")).isEqualTo("Haftnotizen");
+            assertThat(deliveryItem.get("articleNumber")).isEqualTo("RS-2");
+            assertThat(deliveryItem.get("quantity")).isEqualTo("5 Stück");
+        });
     }
 
     private void handleRequest(HttpExchange exchange) throws IOException {
@@ -354,10 +344,8 @@ class MailDataEnrichmentServiceTest {
     }
 
     private DelegateExecution execution(Map<String, Object> variables) {
-        return (DelegateExecution) Proxy.newProxyInstance(
-                DelegateExecution.class.getClassLoader(),
-                new Class<?>[]{DelegateExecution.class},
-                (proxy, method, args) -> {
+        return (DelegateExecution) Proxy.newProxyInstance(DelegateExecution.class.getClassLoader(),
+                new Class<?>[] { DelegateExecution.class }, (proxy, method, args) -> {
                     if ("getVariable".equals(method.getName())) {
                         return variables.get(args[0]);
                     }
@@ -366,8 +354,7 @@ class MailDataEnrichmentServiceTest {
                         return null;
                     }
                     return defaultValue(method.getReturnType());
-                }
-        );
+                });
     }
 
     private Object defaultValue(Class<?> returnType) {

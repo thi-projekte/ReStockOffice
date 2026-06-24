@@ -67,7 +67,7 @@ class UserResourceTest {
     }
 
     @Test
-    @TestSecurity(user = "max", roles = {"customer"})
+    @TestSecurity(user = "max", roles = { "customer" })
     void testGetMyCustomerData_Success() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("cust-123");
         Mockito.when(MOCK_JWT.getClaim("email")).thenReturn("max@mustermann.de");
@@ -76,44 +76,38 @@ class UserResourceTest {
         fakeCustomer.userId = "cust-123";
         Mockito.when(customerRepository.findById("cust-123")).thenReturn(fakeCustomer);
 
-        given().when().get("/customer/me")
-                .then().statusCode(200)
-                .body("userId", equalTo("cust-123"))
-                .body("email", equalTo("max@mustermann.de"));
+        given().when().get("/customer/me").then().statusCode(200).body("userId", equalTo("cust-123")).body("email",
+                equalTo("max@mustermann.de"));
     }
 
     @Test
-    @TestSecurity(user = "max", roles = {"customer"})
+    @TestSecurity(user = "max", roles = { "customer" })
     void testGetMyCustomerData_NotFound() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("unknown-id");
         Mockito.when(customerRepository.findById("unknown-id")).thenReturn(null);
 
-        given().when().get("/customer/me")
-                .then().statusCode(404);
+        given().when().get("/customer/me").then().statusCode(404);
     }
 
     @Test
-    @TestSecurity(user = "admin", roles = {"admin"})
+    @TestSecurity(user = "admin", roles = { "admin" })
     void testGetAllCustomersAsAdmin_Success() {
         Mockito.when(customerRepository.listAll()).thenReturn(Collections.emptyList());
 
-        given().when().get("/customers")
-                .then().statusCode(200);
+        given().when().get("/customers").then().statusCode(200);
     }
 
     @Test
-    @TestSecurity(user = "max", roles = {"customer"})
+    @TestSecurity(user = "max", roles = { "customer" })
     void testGetCustomerById_AccessDenied() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("max-id");
         Mockito.when(securityIdentity.hasRole(anyString())).thenReturn(false);
 
-        given().queryParam("userId", "other-id")
-                .when().get("/customer")
-                .then().statusCode(403);
+        given().queryParam("userId", "other-id").when().get("/customer").then().statusCode(403);
     }
 
     @Test
-    @TestSecurity(user = "admin", roles = {"admin"})
+    @TestSecurity(user = "admin", roles = { "admin" })
     void testGetCustomerById_AsAdminWithKeycloakMock() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("admin-id");
         Mockito.when(securityIdentity.hasRole("admin")).thenReturn(true);
@@ -134,14 +128,12 @@ class UserResourceTest {
         Mockito.when(usersResource.get("target-user-id")).thenReturn(userResource);
         Mockito.when(userResource.toRepresentation()).thenReturn(userRep);
 
-        given().queryParam("userId", "target-user-id")
-                .when().get("/customer")
-                .then().statusCode(200)
-                .body("email", equalTo("target@keycloak.de"));
+        given().queryParam("userId", "target-user-id").when().get("/customer").then().statusCode(200).body("email",
+                equalTo("target@keycloak.de"));
     }
 
     @Test
-    @TestSecurity(user = "new-user", roles = {"customer"})
+    @TestSecurity(user = "new-user", roles = { "customer" })
     void testCreateCustomer_Success() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("new-user-id");
         Mockito.when(customerRepository.findById("new-user-id")).thenReturn(null);
@@ -149,26 +141,22 @@ class UserResourceTest {
         Customer body = new Customer();
         body.city = "München";
 
-        given().contentType(ContentType.JSON).body(body)
-                .when().post("/customer/create")
-                .then().statusCode(201)
-                .body("userId", equalTo("new-user-id"))
-                .body("city", equalTo("München"));
+        given().contentType(ContentType.JSON).body(body).when().post("/customer/create").then().statusCode(201)
+                .body("userId", equalTo("new-user-id")).body("city", equalTo("München"));
     }
 
     @Test
-    @TestSecurity(user = "max", roles = {"customer"})
+    @TestSecurity(user = "max", roles = { "customer" })
     void testCreateCustomer_Conflict() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("existing-id");
         Mockito.when(customerRepository.findById("existing-id")).thenReturn(new Customer());
 
-        given().contentType(ContentType.JSON).body(new Customer())
-                .when().post("/customer/create")
-                .then().statusCode(409);
+        given().contentType(ContentType.JSON).body(new Customer()).when().post("/customer/create").then()
+                .statusCode(409);
     }
 
     @Test
-    @TestSecurity(user = "max", roles = {"customer"})
+    @TestSecurity(user = "max", roles = { "customer" })
     void testUpdateCustomer_WithMultipartAndS3() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("cust-123");
 
@@ -179,14 +167,12 @@ class UserResourceTest {
 
         given().contentType(ContentType.MULTIPART)
                 .multiPart("userData", "{\"city\":\"Hamburg\",\"deliveryDay\":\"Montag\"}", "application/json")
-                .multiPart("file", "avatar.jpg", "image/jpeg".getBytes(), "image/jpeg")
-                .when().post("/customer/update")
-                .then().statusCode(200)
-                .body("city", equalTo("Hamburg"));
+                .multiPart("file", "avatar.jpg", "image/jpeg".getBytes(), "image/jpeg").when().post("/customer/update")
+                .then().statusCode(200).body("city", equalTo("Hamburg"));
     }
 
     @Test
-    @TestSecurity(user = "bob", roles = {"Restocker"})
+    @TestSecurity(user = "bob", roles = { "Restocker" })
     void testGetMyRestockerData_Success() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("restock-123");
         Mockito.when(MOCK_JWT.getClaim("email")).thenReturn("bob@restocker.de");
@@ -195,13 +181,11 @@ class UserResourceTest {
         fakeRestocker.userId = "restock-123";
         Mockito.when(restockerRepository.findById("restock-123")).thenReturn(fakeRestocker);
 
-        given().when().get("/restocker/me")
-                .then().statusCode(200)
-                .body("email", equalTo("bob@restocker.de"));
+        given().when().get("/restocker/me").then().statusCode(200).body("email", equalTo("bob@restocker.de"));
     }
 
     @Test
-    @TestSecurity(user = "bob", roles = {"Restocker"})
+    @TestSecurity(user = "bob", roles = { "Restocker" })
     void testGetCustomerAddressForRestocker_Success() {
         Mockito.when(securityIdentity.hasRole("restocker")).thenReturn(true);
 
@@ -221,15 +205,12 @@ class UserResourceTest {
         Mockito.when(usersResource.get("cust-999")).thenReturn(userResource);
         Mockito.when(userResource.toRepresentation()).thenReturn(userRep);
 
-        given().queryParam("userId", "cust-999")
-                .when().get("/customerForRestocker")
-                .then().statusCode(200)
-                .body("city", equalTo("Köln"))
-                .body("email", equalTo("cust-999@keycloak.de"));
+        given().queryParam("userId", "cust-999").when().get("/customerForRestocker").then().statusCode(200)
+                .body("city", equalTo("Köln")).body("email", equalTo("cust-999@keycloak.de"));
     }
 
     @Test
-    @TestSecurity(user = "bob", roles = {"Restocker"})
+    @TestSecurity(user = "bob", roles = { "Restocker" })
     void testGetRestockerById_OwnProfileSuccess() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("restock-123");
 
@@ -237,23 +218,20 @@ class UserResourceTest {
         restocker.userId = "restock-123";
         Mockito.when(restockerRepository.findById("restock-123")).thenReturn(restocker);
 
-        given().queryParam("userId", "restock-123")
-                .when().get("/restocker")
-                .then().statusCode(200)
-                .body("userId", equalTo("restock-123"));
+        given().queryParam("userId", "restock-123").when().get("/restocker").then().statusCode(200).body("userId",
+                equalTo("restock-123"));
     }
 
     @Test
-    @TestSecurity(user = "admin", roles = {"admin"})
+    @TestSecurity(user = "admin", roles = { "admin" })
     void testGetAllRestockersAsAdmin_Success() {
         Mockito.when(restockerRepository.listAll()).thenReturn(Collections.emptyList());
 
-        given().when().get("/restockers")
-                .then().statusCode(200);
+        given().when().get("/restockers").then().statusCode(200);
     }
 
     @Test
-    @TestSecurity(user = "new-restocker", roles = {"Restocker"})
+    @TestSecurity(user = "new-restocker", roles = { "Restocker" })
     void testCreateRestocker_Success() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("new-restock-id");
         Mockito.when(restockerRepository.findById("new-restock-id")).thenReturn(null);
@@ -261,15 +239,12 @@ class UserResourceTest {
         Restocker body = new Restocker();
         body.city = "Stuttgart";
 
-        given().contentType(ContentType.JSON).body(body)
-                .when().post("/restocker/create")
-                .then().statusCode(201)
-                .body("userId", equalTo("new-restock-id"))
-                .body("city", equalTo("Stuttgart"));
+        given().contentType(ContentType.JSON).body(body).when().post("/restocker/create").then().statusCode(201)
+                .body("userId", equalTo("new-restock-id")).body("city", equalTo("Stuttgart"));
     }
 
     @Test
-    @TestSecurity(user = "bob", roles = {"Restocker"})
+    @TestSecurity(user = "bob", roles = { "Restocker" })
     void testUpdateRestocker_WithMultipartAndS3() {
         Mockito.when(MOCK_JWT.getSubject()).thenReturn("restock-123");
 
@@ -278,11 +253,8 @@ class UserResourceTest {
         existing.city = "Dortmund";
         Mockito.when(restockerRepository.findById("restock-123")).thenReturn(existing);
 
-        given().contentType(ContentType.MULTIPART)
-                .multiPart("userData", "{\"city\":\"Leipzig\"}", "application/json")
-                .multiPart("file", "avatar.jpg", "image/jpeg".getBytes(), "image/jpeg")
-                .when().post("/restocker/update")
-                .then().statusCode(200)
-                .body("city", equalTo("Leipzig"));
+        given().contentType(ContentType.MULTIPART).multiPart("userData", "{\"city\":\"Leipzig\"}", "application/json")
+                .multiPart("file", "avatar.jpg", "image/jpeg".getBytes(), "image/jpeg").when().post("/restocker/update")
+                .then().statusCode(200).body("city", equalTo("Leipzig"));
     }
 }

@@ -21,7 +21,8 @@ public class PrepareDeliveryMonitoringContextDelegate implements JavaDelegate {
         execution.setVariableLocal("deliveredDeliveryId", delivery.deliveryId());
         execution.setVariableLocal("orderId", delivery.orderId());
         execution.setVariableLocal("customerId", delivery.customerId());
-        execution.setVariableLocal("deliveryDate", deliveryDate != null ? deliveryDate.atTime(LocalTime.of(8, 0)).toString() : null);
+        execution.setVariableLocal("deliveryDate",
+                deliveryDate != null ? deliveryDate.atTime(LocalTime.of(8, 0)).toString() : null);
         execution.setVariableLocal("deliveryDateLabel", deliveryDate != null ? deliveryDate.toString() : null);
     }
 

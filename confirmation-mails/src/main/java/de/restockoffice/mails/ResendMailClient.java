@@ -42,8 +42,7 @@ public class ResendMailClient {
             return "dry-run-message-id";
         }
 
-        String resendApiKey = mailSettings.resendApiKey()
-                .filter(value -> !value.isBlank())
+        String resendApiKey = mailSettings.resendApiKey().filter(value -> !value.isBlank())
                 .orElseThrow(() -> new MailValidationException("QUARKUS_MAILER_PASSWORD is missing"));
 
         Map<String, Object> payload = new LinkedHashMap<>();
@@ -57,15 +56,12 @@ public class ResendMailClient {
             payload.put("attachments", List.of(buildInlineLogoAttachment()));
         }
 
-        try{
+        try {
             String jsonBody = objectMapper.writeValueAsString(payload);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(mailSettings.resendBaseUrl() + "/emails"))
-                    .header("Authorization", "Bearer " + resendApiKey)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .build();
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(mailSettings.resendBaseUrl() + "/emails"))
+                    .header("Authorization", "Bearer " + resendApiKey).header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody)).build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -87,30 +83,30 @@ public class ResendMailClient {
     }
 
     private Map<String, Object> buildInlineLogoAttachment() {
-        try (InputStream input = Thread.currentThread()
-                .getContextClassLoader()
-                .getResourceAsStream(LOGO_RESOURCE)) {
+        try (InputStream input = Thread.currentThread().getContextClassLoader().getResourceAsStream(LOGO_RESOURCE)) {
             if (input == null) {
                 throw new MailValidationException("Inline logo resource is missing: " + LOGO_RESOURCE);
             }
 
-            return Map.of(
-                    "content", Base64.getEncoder().encodeToString(input.readAllBytes()),
-                    "filename", "restockoffice-logo.png",
-                    "content_type", "image/png",
-                    "content_id", INLINE_LOGO_CID
-            );
+            return Map.of("content", Base64.getEncoder().encodeToString(input.readAllBytes()), "filename",
+                    "restockoffice-logo.png", "content_type", "image/png", "content_id", INLINE_LOGO_CID);
         } catch (IOException e) {
             throw new MailValidationException("Inline logo resource could not be loaded: " + e.getMessage());
         }
     }
 
     private void validateInputs(String email, String sub, String body) {
-        if (mailSettings.sender().isBlank()) throw new MailValidationException("RESTOCK_MAIL_SENDER missing");
-        if (mailSettings.replyTo().isBlank()) throw new MailValidationException("RESTOCK_MAIL_REPLY_TO missing");
-        if(mailSettings.resendBaseUrl().isBlank()) throw new MailValidationException("RESTOCK_MAIL_RESEND_BASE_URL missing");
-        if (email == null || email.isBlank()) throw new MailValidationException("recipientEmail missing");
-        if (sub == null || sub.isBlank()) throw new MailValidationException("subject missing");
-        if (body == null || body.isBlank()) throw new MailValidationException("html missing");
+        if (mailSettings.sender().isBlank())
+            throw new MailValidationException("RESTOCK_MAIL_SENDER missing");
+        if (mailSettings.replyTo().isBlank())
+            throw new MailValidationException("RESTOCK_MAIL_REPLY_TO missing");
+        if (mailSettings.resendBaseUrl().isBlank())
+            throw new MailValidationException("RESTOCK_MAIL_RESEND_BASE_URL missing");
+        if (email == null || email.isBlank())
+            throw new MailValidationException("recipientEmail missing");
+        if (sub == null || sub.isBlank())
+            throw new MailValidationException("subject missing");
+        if (body == null || body.isBlank())
+            throw new MailValidationException("html missing");
     }
 }

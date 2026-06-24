@@ -5,7 +5,7 @@ import Footer from "../components/Footer.tsx";
 export default function ImprintPage() {
   return (
     <div className={styles.page}>
-      <Header/>
+      <Header />
       <main className={styles.main}>
         <div className={styles.content}>
           <h1 className={styles.title}>Impressum</h1>
@@ -17,12 +17,15 @@ export default function ImprintPage() {
                 <p>Max Mustermann</p>
                 <p>Studentisches Projekt der Technischen Hochschule Ingolstadt</p>
                 <p>
-                  Esplanade 10<br/>
-                  85049 Ingolstadt<br/>
+                  Esplanade 10
+                  <br />
+                  85049 Ingolstadt
+                  <br />
                   Deutschland
                 </p>
                 <p>
-                  E-Mail:{" "}
+                  E-Mail:
+                  {" "}
                   <a href="mailto:support@restockoffice.de">support@restockoffice.de</a>
                 </p>
               </div>
@@ -40,7 +43,7 @@ export default function ImprintPage() {
           </div>
         </div>
       </main>
-      <Footer/>
+      <Footer />
     </div>
   );
 }

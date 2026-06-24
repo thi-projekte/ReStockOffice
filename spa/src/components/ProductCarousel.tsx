@@ -1,7 +1,7 @@
-import {type ReactElement, useRef} from "react";
-import {Link} from "react-router-dom";
+import { type ReactElement, useRef } from "react";
+import { Link } from "react-router-dom";
 import logoColored from "../assets/logos/logo_colored.png";
-import type {Product} from "../types/shop";
+import type { Product } from "../types/shop";
 
 interface ProductCarouselProps {
   readonly anchorId: string;
@@ -14,14 +14,14 @@ interface ProductCarouselProps {
 }
 
 export function ProductCarousel({
-                                  anchorId,
-                                  eyebrow,
-                                  title,
-                                  description,
-                                  products,
-                                  isLoading = false,
-                                  getBadge,
-                                }: Readonly<ProductCarouselProps>): ReactElement {
+  anchorId,
+  eyebrow,
+  title,
+  description,
+  products,
+  isLoading = false,
+  getBadge,
+}: Readonly<ProductCarouselProps>): ReactElement {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   function scrollSection(direction: "left" | "right"): void {
@@ -52,79 +52,85 @@ export function ProductCarousel({
         </div>
       </div>
 
-      {isLoading ? (
-        <p className="empty-state">Produkte werden geladen...</p>
-      ) : (
-        <div className="carousel-shell">
-          <button
-            type="button"
-            className="carousel-button carousel-button--side"
-            aria-label={`${title} nach links scrollen`}
-            onClick={() => scrollSection("left")}
-          >
-            &larr;
-          </button>
-
-          <div ref={carouselRef} className="carousel-row">
-            {products.map((product, index) => (
-              <Link
-                key={`${title}-${product.productId}`}
-                className="product-card product-card--link carousel-card"
-                to={`/products/${product.productId}`}
-                onClick={() => window.scrollTo(0, 0)}
+      {isLoading
+        ? (
+            <p className="empty-state">Produkte werden geladen...</p>
+          )
+        : (
+            <div className="carousel-shell">
+              <button
+                type="button"
+                className="carousel-button carousel-button--side"
+                aria-label={`${title} nach links scrollen`}
+                onClick={() => scrollSection("left")}
               >
-                <div className="carousel-card__media">
-                  {getBadge ? (
-                    <span className="product-card__badge">{getBadge(product, index)}</span>
-                  ) : null}
-                  <img
-                    className="product-card__image"
-                    src={product.imageUrl || logoColored}
-                    alt={product.name}
-                  />
-                </div>
+                &larr;
+              </button>
 
-                <div className="product-card__content">
-                  <div className="product-card__category">{product.category}</div>
-                  <h3>{product.name}</h3>
-                  <p>{product.description}</p>
-
-                  <dl className="product-card__meta">
-                    <div>
-                      <dt>Marke</dt>
-                      <dd>{product.brand}</dd>
+              <div ref={carouselRef} className="carousel-row">
+                {products.map((product, index) => (
+                  <Link
+                    key={`${title}-${product.productId}`}
+                    className="product-card product-card--link carousel-card"
+                    to={`/products/${product.productId}`}
+                    onClick={() => window.scrollTo(0, 0)}
+                  >
+                    <div className="carousel-card__media">
+                      {getBadge
+                        ? (
+                            <span className="product-card__badge">{getBadge(product, index)}</span>
+                          )
+                        : null}
+                      <img
+                        className="product-card__image"
+                        src={product.imageUrl || logoColored}
+                        alt={product.name}
+                      />
                     </div>
-                    <div>
-                      <dt>Verpackung</dt>
-                      <dd>
-                        {product.unitCount} {product.unit}
-                      </dd>
+
+                    <div className="product-card__content">
+                      <div className="product-card__category">{product.category}</div>
+                      <h3>{product.name}</h3>
+                      <p>{product.description}</p>
+
+                      <dl className="product-card__meta">
+                        <div>
+                          <dt>Marke</dt>
+                          <dd>{product.brand}</dd>
+                        </div>
+                        <div>
+                          <dt>Verpackung</dt>
+                          <dd>
+                            {product.unitCount}
+                            {" "}
+                            {product.unit}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      <div className="product-card__footer">
+                        <strong>
+                          {product.price.toLocaleString("de-DE", {
+                            style: "currency",
+                            currency: "EUR",
+                          })}
+                        </strong>
+                      </div>
                     </div>
-                  </dl>
+                  </Link>
+                ))}
+              </div>
 
-                  <div className="product-card__footer">
-                    <strong>
-                      {product.price.toLocaleString("de-DE", {
-                        style: "currency",
-                        currency: "EUR",
-                      })}
-                    </strong>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className="carousel-button carousel-button--side"
-            aria-label={`${title} nach rechts scrollen`}
-            onClick={() => scrollSection("right")}
-          >
-            &rarr;
-          </button>
-        </div>
-      )}
+              <button
+                type="button"
+                className="carousel-button carousel-button--side"
+                aria-label={`${title} nach rechts scrollen`}
+                onClick={() => scrollSection("right")}
+              >
+                &rarr;
+              </button>
+            </div>
+          )}
     </section>
   );
 }

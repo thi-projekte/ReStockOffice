@@ -18,7 +18,7 @@ public class SendAboConfirmationDelegate implements JavaDelegate {
     private static final Logger log = LoggerFactory.getLogger(SendAboConfirmationDelegate.class);
 
     private final MailDataEnrichmentService mailDataEnrichmentService;
-    //necessary for tests
+    // necessary for tests
     private RestTemplate restTemplate = new RestTemplate();
 
     @Value("${mailservice.base-url}")
@@ -49,8 +49,7 @@ public class SendAboConfirmationDelegate implements JavaDelegate {
             if (list.isEmpty()) {
                 log.info(
                         "Skipping abo confirmation for {} because all changes were cancelled within the confirmation window",
-                        execution.getVariable("recipientEmail")
-                );
+                        execution.getVariable("recipientEmail"));
                 return;
             }
 
@@ -65,11 +64,7 @@ public class SendAboConfirmationDelegate implements JavaDelegate {
             request.put("orderItems", List.of(orderItem));
         }
 
-        restTemplate.postForEntity(
-                mailServiceBaseUrl + "/emails/abo-confirmation",
-                request,
-                String.class
-        );
+        restTemplate.postForEntity(mailServiceBaseUrl + "/emails/abo-confirmation", request, String.class);
 
         log.info("Abo confirmation sent for {}", execution.getVariable("recipientEmail"));
     }

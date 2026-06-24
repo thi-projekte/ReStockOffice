@@ -59,7 +59,10 @@ export function RestockerOrderDetailDialog({
             </button>
 
             <div className="restocker-order-dialog__title-block">
-              <h2 id="restocker-order-dialog-title">Lieferung #{order.orderId}</h2>
+              <h2 id="restocker-order-dialog-title">
+                Lieferung #
+                {order.orderId}
+              </h2>
             </div>
           </div>
 
@@ -90,7 +93,9 @@ export function RestockerOrderDetailDialog({
                   {order.addressLine1}
                 </strong>
                 <span className="restocker-order-dialog__info-subline">
-                  {order.postalCode} {order.city}
+                  {order.postalCode}
+                  {" "}
+                  {order.city}
                 </span>
               </div>
             </div>
@@ -126,7 +131,7 @@ export function RestockerOrderDetailDialog({
                 <span>Bezeichnung</span>
               </div>
 
-              {order.items.map((item) => (
+              {order.items.map(item => (
                 <div
                   key={`${order.orderKey}-${item.position}`}
                   className="restocker-order-dialog__table-row"
