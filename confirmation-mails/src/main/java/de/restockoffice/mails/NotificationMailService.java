@@ -95,7 +95,7 @@ public class NotificationMailService {
         values.put(DELIVERY_LOCATION_KEY, escapeHtml(request.deliveryLocation()));
         values.put("deliveryInstructions", escapeHtml(request.deliveryInstructions()));
         values.put(SUPPORT_EMAIL_KEY, escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
-        values.put("deliveryDetailsUrl", escapeHtml(defaultIfBlank(request.deliveryDetailsUrl(), "#")));
+        values.put("deliveryDetailsUrl", SUBSCRIPTION_URL);
         values.put("deliveryItemsHtml", buildDeliveryItemsHtml(request.deliveryItems()));
 
         String subject = defaultIfBlank(request.subject(),
@@ -120,7 +120,7 @@ public class NotificationMailService {
         values.put(ORDER_NUMBER_KEY, escapeHtml(request.orderNumber()));
         values.put(SUPPLIER_NAME_KEY, escapeHtml(request.supplierName()));
         values.put(SUPPORT_EMAIL_KEY, escapeHtml(defaultIfBlank(request.supportEmail(), mailSettings.supportEmail())));
-        values.put("deliveryDetailsUrl", escapeHtml(defaultIfBlank(request.deliveryDetailsUrl(), "#")));
+        values.put("deliveryDetailsUrl", SUBSCRIPTION_URL);
         values.put("deliveryItemsHtml", buildDeliveryItemsHtml(request.deliveryItems()));
 
         String subject = defaultIfBlank(request.subject(),
