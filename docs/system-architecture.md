@@ -4,7 +4,7 @@ Stand: 2026-06-20
 
 Diese Visualisierung basiert auf der aktuellen Repo-Struktur, den Docker-Compose-Dateien, den Service-Konfigurationen, REST-Clients und den BPMN-Prozessen im `processengine`-Modul.
 
-## 1. Gesamtueberblick
+## 1. Systemkontextdiagramm: Gesamtueberblick
 
 ```mermaid
 flowchart TB
@@ -29,7 +29,7 @@ flowchart TB
         users["Users Service<br/>Quarkus<br/>Customer and restocker profiles"]
         orders["Orders Service<br/>Quarkus<br/>Subscriptions / restock orders"]
         deliveries["Restocker Deliveries Service<br/>Quarkus<br/>Planning, tours, delivery execution"]
-        processengine["Process Engine<br/>Spring Boot + CIB seven<br/>BPMN orchestration"]
+        processengine["Process Engine<br/>Spring Boot + CIB seven<br/>BPMN Orchestration"]
         mailer["Confirmation Mail Service<br/>Quarkus<br/>Operational mail templates"]
         invoice["Invoice Service<br/>Quarkus<br/>Invoices, PDFs, invoice mails"]
     end
@@ -65,7 +65,7 @@ flowchart TB
     spa -->|"Bearer REST"| users
     spa -->|"Bearer REST"| orders
     spa -->|"Bearer REST"| deliveries
-    spa -->|"Bearer REST"| processengine
+    spa -->|"Bearer REST<br/>orchestration APIs"| processengine
     spa -->|"Bearer REST"| invoice
 
     articles --> articlesDb
@@ -83,7 +83,7 @@ flowchart TB
     invoice -->|"invoice mails"| resend
 ```
 
-## 2. Service-Abhaengigkeiten
+## 2. Komponentendiagramm: Service-Abhaengigkeiten
 
 ```mermaid
 flowchart LR
@@ -93,7 +93,7 @@ flowchart LR
     users["Users"]
     orders["Orders"]
     deliveries["Restocker Deliveries"]
-    processengine["Process Engine"]
+    processengine["Process Engine<br/>Orchestration"]
     mailer["Confirmation Mail"]
     invoice["Invoice"]
     resend["Resend"]
@@ -104,7 +104,7 @@ flowchart LR
     spa -->|"profiles"| users
     spa -->|"subscriptions"| orders
     spa -->|"delivery views and tour ops"| deliveries
-    spa -->|"BPMN helper APIs"| processengine
+    spa -->|"BPMN orchestration APIs"| processengine
     spa -->|"invoice list / PDF download"| invoice
 
     orders -->|"customer mail context"| users
@@ -132,9 +132,9 @@ flowchart LR
     invoice --> objectStorage
 ```
 
-## 3. Wichtige Laufzeit-Flows
+## 3. Sequenzdiagramme: Wichtige Laufzeit-Flows
 
-### 3.1 Abo anlegen oder aendern
+### 3.1 Sequenzdiagramm: Abo anlegen oder aendern
 
 ```mermaid
 sequenceDiagram
@@ -143,24 +143,37 @@ sequenceDiagram
     participant Orders
     participant OrdersDB as Orders DB
     participant Users
-    participant ProcessEngine
+    participant ProcessEngine as Process Engine (Orchestration)
     participant Deliveries
     participant Mailer as Confirmation Mail
     participant Resend
 
     Customer->>SPA: Abo erstellen oder aendern
-    SPA->>Orders: POST/PUT /orders with Bearer token
-    Orders->>OrdersDB: Order speichern
-    Orders->>Users: Customer-Profil fuer Mail-Kontext laden
-    Orders->>ProcessEngine: Code startet/aktualisiert BPMN via POST /api/abo-confirmation-process/change
-    Orders->>Deliveries: POST /api/deliveries/customers/{customerId}/replan
+    alt Abo anlegen
+        SPA->>Orders: POST /orders -> OrderResource.order(...)
+        Orders->>OrdersDB: persist Order
+    else Abo aendern
+        SPA->>Orders: PUT /orders/{id} -> OrderResource.updateOrder(...)
+        Orders->>OrdersDB: update Order
+    end
+    OrdersDB-->>Orders: Order saved
+    Orders->>Users: GET /customer -> UserResource.getCustomerById(...)
+    Users-->>Orders: 200 OK CustomerProfileResponse
+    Orders->>ProcessEngine: POST /api/abo-confirmation-process/change -> AboConfirmationProcessResource.startOrAppend(...)
+    ProcessEngine-->>Orders: 200 OK AboConfirmationProcessResponse
+    Orders->>Deliveries: POST /api/deliveries/customers/{customerId}/replan -> DeliveryResource.replanCustomerDeliveries(...)
+    Deliveries-->>Orders: 200 OK DeliveryDetailDto[]
+    Orders-->>SPA: 200 OK Order
+    SPA-->>Customer: Abo wurde gespeichert
     ProcessEngine-->>ProcessEngine: AboConfirmationProcess wartet Bestaetigungsfenster
-    ProcessEngine->>Mailer: POST /emails/abo-confirmation
-    Mailer->>Resend: POST /emails
+    ProcessEngine->>Mailer: POST /emails/abo-confirmation -> MailResource.sendAboConfirmation(...)
+    Mailer->>Resend: POST /emails -> ResendMailClient.send(...)
+    Resend-->>Mailer: 200 OK messageId
+    Mailer-->>ProcessEngine: 200 OK SendMailResponse
     Resend-->>Customer: Abo-Bestaetigung
 ```
 
-### 3.2 Delivery-Planung und Restocker-Tour
+### 3.2 Sequenzdiagramm: Delivery-Planung und Restocker-Tour
 
 ```mermaid
 sequenceDiagram
@@ -170,32 +183,45 @@ sequenceDiagram
     participant Orders
     participant Users
     participant Articles
-    participant ProcessEngine
+    participant ProcessEngine as Process Engine (Orchestration)
     participant Mailer as Confirmation Mail
     participant Resend
     actor Customer
 
     Restocker->>SPA: Offene Lieferungen / heutige Tour oeffnen
-    SPA->>Deliveries: GET /api/deliveries/open or /assigned
-    Deliveries->>Orders: GET /orders/active
-    Deliveries->>Users: GET /customerForRestocker or /customer
-    Deliveries->>Articles: GET /article?productId=...
-    Deliveries-->>SPA: Geplante Deliveries und Tourdaten
+    SPA->>Deliveries: GET /api/deliveries/open -> DeliveryResource.getOpenDeliveries(...)
+    Deliveries->>Orders: GET /orders/active -> OrderResource.getActiveOrders()
+    Orders-->>Deliveries: 200 OK OrderDto[]
+    Deliveries->>Users: GET /customerForRestocker -> UserResource.getCustomerAddressForRestocker(...)
+    Users-->>Deliveries: 200 OK RestockerCustomerDTO
+    Deliveries->>Articles: GET /article?productId=... -> ArticleRessource.getArticleByItemId(...)
+    Articles-->>Deliveries: 200 OK Article
+    Deliveries-->>SPA: 200 OK DeliveryDetailDto[]
 
-    SPA->>Deliveries: POST /{deliveryId}/accept, /collect, /items/{itemId}/delivered, /confirm
-    SPA->>ProcessEngine: /api/restocker-tour-process/start and task completion
-    ProcessEngine-->>ProcessEngine: DeliveryProcess korreliert DeliveryConfirmed
-    ProcessEngine->>Mailer: POST /emails/delivery-confirmation
-    Mailer->>Resend: POST /emails
+    SPA->>Deliveries: POST /api/deliveries/{deliveryId}/collect -> DeliveryResource.collectPackage(...)
+    Deliveries-->>SPA: 200 OK deliveryStatusResponse
+    SPA->>Deliveries: POST /api/deliveries/{deliveryId}/items/{itemId}/delivered -> DeliveryResource.markItemDelivered(...)
+    Deliveries-->>SPA: 200 OK DeliveryItem
+    SPA->>Deliveries: POST /api/deliveries/{deliveryId}/confirm -> DeliveryResource.confirmDelivery(...)
+    Deliveries-->>SPA: 200 OK deliveryStatusResponse
+    SPA->>ProcessEngine: POST /api/restocker-tour-process/start -> RestockerTourProcessResource.startOrGetActiveTourProcessFromForm(...)
+    ProcessEngine-->>SPA: 200 OK StartTourProcessResponse
+    SPA->>ProcessEngine: POST /api/restocker-tour-process/task/complete -> RestockerTourProcessResource.completeTaskFromForm(...)
+    ProcessEngine-->>SPA: 204 No Content
+    ProcessEngine-->>ProcessEngine: DeliveryProcess korreliert Message DeliveryConfirmed
+    ProcessEngine->>Mailer: POST /emails/delivery-confirmation -> MailResource.sendDeliveryConfirmation(...)
+    Mailer->>Resend: POST /emails -> ResendMailClient.send(...)
+    Resend-->>Mailer: 200 OK messageId
+    Mailer-->>ProcessEngine: 200 OK SendMailResponse
     Resend-->>Customer: Lieferbestaetigung
 ```
 
-### 3.3 Lieferankuendigung und Ueberwachung
+### 3.3 Sequenzdiagramm: Lieferankuendigung und Ueberwachung
 
 ```mermaid
 sequenceDiagram
     participant Timer as Daily BPMN Timer
-    participant ProcessEngine
+    participant ProcessEngine as Process Engine (Orchestration)
     participant Deliveries
     participant Mailer as Confirmation Mail
     participant Resend
@@ -203,23 +229,28 @@ sequenceDiagram
     actor Restocker
 
     Timer->>ProcessEngine: DeliveryAnnouncementMonitoringProcess startet taeglich
-    ProcessEngine->>Deliveries: GET /api/deliveries/admin/all-deliveries
-    ProcessEngine->>Mailer: POST /emails/delivery-announcement
-    Mailer->>Resend: POST /emails
+    ProcessEngine->>Deliveries: GET /api/deliveries/admin/all-deliveries -> DeliveryResource.getAllDeliveries()
+    Deliveries-->>ProcessEngine: 200 OK DeliveryDetailDto[]
+    ProcessEngine->>Mailer: POST /emails/delivery-announcement -> MailResource.sendDeliveryAnnouncement(...)
+    Mailer->>Resend: POST /emails -> ResendMailClient.send(...)
+    Resend-->>Mailer: 200 OK messageId
+    Mailer-->>ProcessEngine: 200 OK SendMailResponse
     Resend-->>Customer: Lieferankuendigung
     ProcessEngine-->>ProcessEngine: Warten auf Message DeliveryConfirmed
     Restocker->>ProcessEngine: DeliveryConfirmed via DeliveryProcess
-    ProcessEngine->>Mailer: POST /emails/delivery-confirmation
-    Mailer->>Resend: POST /emails
+    ProcessEngine->>Mailer: POST /emails/delivery-confirmation -> MailResource.sendDeliveryConfirmation(...)
+    Mailer->>Resend: POST /emails -> ResendMailClient.send(...)
+    Resend-->>Mailer: 200 OK messageId
+    Mailer-->>ProcessEngine: 200 OK SendMailResponse
     Resend-->>Customer: Lieferbestaetigung
 ```
 
-### 3.4 Monatliche Rechnung
+### 3.4 Sequenzdiagramm: Monatliche Rechnung
 
 ```mermaid
 sequenceDiagram
     participant Timer as Monthly BPMN Timer
-    participant ProcessEngine
+    participant ProcessEngine as Process Engine (Orchestration)
     participant Deliveries
     participant Articles
     participant Users
@@ -229,40 +260,28 @@ sequenceDiagram
     actor Customer
 
     Timer->>ProcessEngine: InvoiceProcess startet zum Monatsanfang
-    ProcessEngine->>Deliveries: GET /api/deliveries/customers?month=MM.YYYY
+    ProcessEngine->>Deliveries: GET /api/deliveries/customers?month=MM.YYYY -> DeliveryResource.getCustomersWithDeliveriesInMonth(...)
+    Deliveries-->>ProcessEngine: 200 OK MonthlyDeliveryCustomersDto
     loop pro Customer mit gelieferten Artikeln
-        ProcessEngine->>Deliveries: GET /api/deliveries/customers/{id}/previous-month-items
-        ProcessEngine->>Articles: GET /article?productId=...
-        ProcessEngine->>Users: GET /customer?userId=...
-        ProcessEngine->>Invoice: POST /invoices/create
-        Invoice->>InvoiceDB: Rechnung speichern
-        ProcessEngine->>Invoice: POST /invoices/send-mail
-        Invoice->>Resend: Rechnungsmail mit PDF
+        ProcessEngine->>Deliveries: GET /api/deliveries/customers/{id}/previous-month-items -> DeliveryResource.getPreviousMonthItems(...)
+        Deliveries-->>ProcessEngine: 200 OK DeliveredArticleSummaryDto[]
+        ProcessEngine->>Articles: GET /article?productId=... -> ArticleRessource.getArticleByItemId(...)
+        Articles-->>ProcessEngine: 200 OK Article
+        ProcessEngine->>Users: GET /customer?userId=... -> UserResource.getCustomerById(...)
+        Users-->>ProcessEngine: 200 OK CustomerProfileResponse
+        ProcessEngine->>Invoice: POST /invoices/create -> InvoiceResource.createInvoice(...)
+        Invoice->>InvoiceDB: persist InvoiceEntity
+        InvoiceDB-->>Invoice: InvoiceEntity persisted
+        Invoice-->>ProcessEngine: 201 Created invoiceNumber
+        ProcessEngine->>Invoice: POST /invoices/send-mail -> InvoiceResource.sendInvoiceMail(...)
+        Invoice->>Resend: POST /emails -> ResendMailClient.send(...)
+        Resend-->>Invoice: 200 OK messageId
+        Invoice-->>ProcessEngine: 202 Accepted
         Resend-->>Customer: Rechnung
     end
 ```
 
-## 4. BPMN-Prozessstarts aus Anwendungscode
-
-```mermaid
-flowchart LR
-    ordersCode["Orders Service Code<br/>OrderResource.order / updateOrder"]
-    restockerSpa["SPA Restocker UI"]
-    processAbo["Process Engine API<br/>/api/abo-confirmation-process/change"]
-    processTour["Process Engine API<br/>/api/restocker-tour-process/start"]
-    aboBpmn["BPMN<br/>AboConfirmationProcess"]
-    tourBpmn["BPMN<br/>DeliveryProcess"]
-
-    ordersCode -->|"nach Order-Create/-Update<br/>startAboConfirmationProcess(...)"| processAbo
-    processAbo -->|"startet oder aktualisiert Prozessinstanz"| aboBpmn
-
-    restockerSpa -->|"Restocker startet Tourprozess"| processTour
-    processTour -->|"startet oder nutzt aktive Prozessinstanz"| tourBpmn
-```
-
-Wichtig: Der Orders Service ruft nicht direkt die CIB-seven Engine-REST-API auf. Er ruft den eigenen Process-Engine-Controller `/api/abo-confirmation-process/change` auf; dort wird die BPMN-Prozessinstanz `AboConfirmationProcess` gestartet oder bei einem aktiven Prozess fuer denselben Business Key aktualisiert. Das passiert im Codepfad `OrderResource.order(...)` und `OrderResource.updateOrder(...)` ueber `startAboConfirmationProcess(...)`.
-
-## 5. Komponenten-Inventar
+## 4. Komponenten-Inventar
 
 | Komponente | Technologie | Hauptaufgabe | Datenhaltung / externe Systeme |
 | --- | --- | --- | --- |
@@ -273,11 +292,11 @@ Wichtig: Der Orders Service ruft nicht direkt die CIB-seven Engine-REST-API auf.
 | `users` | Quarkus, Keycloak Admin Client, S3 SDK | Customer-/Restocker-Profile, Profilbilder, Keycloak-Maildaten | Postgres `users_db`, Object Storage, Keycloak |
 | `orders` | Quarkus, Hibernate ORM | Abos/RestockOrders, Abo-Aenderungen | Postgres `orders_db`, Users, Process Engine, Deliveries |
 | `restocker-deliveries` | Quarkus, MicroProfile REST Client | Delivery-Planung, Touren, Annahme, Sammlung, Zustellung | Postgres `deliveries_db`, Orders, Users, Articles |
-| `processengine` | Spring Boot, CIB seven | BPMN-Orchestrierung fuer Abo-, Liefer- und Rechnungsprozesse | Postgres `processengine`, Keycloak service token, andere Services |
+| `processengine` | Spring Boot, CIB seven | BPMN Orchestration fuer Abo-, Liefer- und Rechnungsprozesse | Postgres `processengine`, Keycloak service token, andere Services |
 | `confirmation-mails` | Quarkus, Qute templates | Abo-, Lieferankuendigungs- und Lieferbestaetigungsmails | Resend API |
 | `invoice` | Quarkus, PDF/e-billing, Qute templates | Rechnungserstellung, PDF-Download, Rechnungsmails | Postgres `invoices_db`, Resend API, Object Storage |
 
-## 6. Deployment-Sicht
+## 5. Deploymentdiagramm: Deployment-Sicht
 
 ```mermaid
 flowchart TB
@@ -305,7 +324,7 @@ flowchart TB
     internals -->|"private mailer link"| processToMailer["processengine -> confirmation-mails"]
 ```
 
-## 7. Repo-Quellen fuer die Visualisierung
+## 6. Repo-Quellen fuer die Visualisierung
 
 | Bereich | Wichtige Dateien |
 | --- | --- |
@@ -315,7 +334,7 @@ flowchart TB
 | Service-zu-Service Calls | `orders/src/main/java/de/restockoffice/OrderResource.java`, `users/src/main/java/de/restockoffice/api/UserResource.java`, `restocker-deliveries/src/main/java/de/restockoffice/**`, `processengine/src/main/java/de/restockoffice/**` |
 | BPMN-Prozesse | `processengine/src/main/resources/*.bpmn` |
 
-## 8. Hinweise und Annahmen
+## 7. Hinweise und Annahmen
 
 - `bestellungsservice` liegt noch im Repository, taucht aber in den aktuellen Compose-/Runtime-Konfigurationen nicht als produktiver Service auf und ist deshalb nicht im Hauptdiagramm enthalten.
 - Die Services werden im Deployment ueber `nginx-proxy-manager` oeffentlich erreichbar gemacht. Einige Service-zu-Service-URLs zeigen in den Defaults ebenfalls auf die oeffentlichen Domains; der Mailservice wird vom Process Engine Compose zusaetzlich ueber das interne `mailer`-Netz angesprochen.
